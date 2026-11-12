@@ -1,8 +1,8 @@
-FROM docker.io/library/node:22-bookworm-slim AS deps
+FROM docker.io/library/node:26-bookworm-slim AS deps
 
 WORKDIR /app
 
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
@@ -13,12 +13,12 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN pnpm build
 
-FROM docker.io/library/node:22-bookworm-slim AS runtime
+FROM docker.io/library/node:26-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 WORKDIR /app
 
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile

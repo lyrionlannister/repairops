@@ -1,9 +1,12 @@
 {
-  "name": "customer-service",
+  "name": "repairops-api",
   "version": "1.0.0",
   "description": "",
   "type": "module",
   "main": "dist/index.js",
+  "engines": {
+    "node": "26.x"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
@@ -11,6 +14,7 @@
     "test": "tsc --noEmit",
     "test:unit": "vitest run",
     "test:arch": "depcruise src --config .dependency-cruiser.cjs",
+    "seed:demo": "tsx src/scripts/seed-demo.ts",
     "migration:generate": "typeorm-ts-node-esm migration:generate -d src/core/config/migration-data-source.ts",
     "migration:run": "typeorm-ts-node-esm migration:run -d src/core/config/migration-data-source.ts",
     "migration:revert": "typeorm-ts-node-esm migration:revert -d src/core/config/migration-data-source.ts",
@@ -38,6 +42,7 @@
     "react": "^19.3.1",
     "reflect-metadata": "^0.2.2",
     "sharp": "^0.35.5",
+    "tsyringe": "^4.10.0",
     "typeorm": "^0.3.31",
     "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz"
   },
@@ -46,14 +51,14 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^25.9.9",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/supertest": "^7.2.1",
     "dependency-cruiser": "^16.10.4",
     "supertest": "^7.3.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.12"
   },
   "pnpm": {
