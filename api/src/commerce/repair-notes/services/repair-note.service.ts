@@ -37,6 +37,10 @@ export class RepairNoteService {
     return this.repairNoteDao.findById(id);
   }
 
+  async getByControlNumber(controlNumber: number): Promise<RepairNote | null> {
+    return this.repairNoteDao.findByControlNumber(controlNumber);
+  }
+
   async getItems(repairNoteId: string): Promise<RepairNoteItem[]> {
     return this.repairNoteItemDao.findByRepairNoteId(repairNoteId);
   }

@@ -116,6 +116,50 @@ const LocalPage = () => {
 
           <hr className="border-gray-100 dark:border-gray-800" />
 
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <Label className="text-gray-500">Moneda</Label>
+              <select
+                name="currency"
+                value={form.currency}
+                onChange={handleChange}
+                disabled={saving}
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value="MXN">Peso mexicano (MXN)</option>
+                <option value="USD">Dólar estadounidense (USD)</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-gray-500">Tamaño de ticket por defecto</Label>
+              <select
+                name="defaultTicketSize"
+                value={form.defaultTicketSize}
+                onChange={handleChange}
+                disabled={saving}
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value="58mm">Térmico 58mm</option>
+                <option value="80mm">Térmico 80mm</option>
+                <option value="letter">Carta</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-gray-500">Cláusula de garantía (aparece impresa en el ticket)</Label>
+              <textarea
+                name="warrantyClause"
+                rows={3}
+                placeholder="Ej. Garantía de 30 días en mano de obra, no cubre daño por líquidos."
+                value={form.warrantyClause}
+                onChange={handleChange}
+                disabled={saving}
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              />
+            </div>
+          </div>
+
+          <hr className="border-gray-100 dark:border-gray-800" />
+
           <div className="max-w-md">
             <Label className="text-gray-500">Base de atribución de ingresos</Label>
             <select

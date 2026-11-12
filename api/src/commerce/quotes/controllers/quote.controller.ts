@@ -9,9 +9,7 @@ import { toQuotePdfData } from "../../../reporting/pdf/documents/quote.pdf-data.
 import { CreateQuoteDto } from "../dtos/create-quote.dto.js";
 import { UpdateQuoteDto } from "../dtos/update-quote.dto.js";
 import { SetQuoteStatusDto } from "../dtos/set-quote-status.dto.js";
-
-const validationErrors = (errors: { constraints?: Record<string, string> }[]): string[] =>
-  errors.map((e) => Object.values(e.constraints ?? {})).flat();
+import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
 
 export class QuoteController {
   constructor(

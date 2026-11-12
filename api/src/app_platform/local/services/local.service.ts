@@ -18,4 +18,8 @@ export class LocalService {
   async consumeControlNumber(): Promise<number> {
     return this.localDao.consumeControlNumber();
   }
+
+  async consumeSaleNumber(): Promise<number> {
+    return this.localDao.consumeSaleNumber();
+  }
 }

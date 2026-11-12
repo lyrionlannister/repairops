@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Download, ArrowLeft } from "lucide-react";
+import { Download, ArrowLeft, Printer } from "lucide-react";
 import { useRepairNotes } from "../hooks/use-repair-notes";
 import { useEmployees } from "@identity/users/hooks/use-employees";
 import { useServiceTypes } from "@common/hooks/use-service-types";
 import { useLocal } from "../../../app_platform/local/hooks/use-local";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { RepairNoteRecord } from "../types/repair-note.types";
-import type { LocalRecord } from "../../../app_platform/local/hooks/use-local";
+import type { LocalRecord, TicketSize } from "../../../app_platform/local/hooks/use-local";
 import PageMeta from "@common/pages/page-meta";
+import ThermalReceipt from "../components/thermal-receipt";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BLUE = "#1e40af";
@@ -513,16 +514,37 @@ const Receipt: React.FC<{ note: RepairNoteRecord; local: LocalRecord | null }> =
 const RepairNotePrintPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { note, loading: loadingNote, fetchNote } = useRepairNotes();
+  const { note, loading: loadingNote, fetchNote, fetchNoteServiceTypeIds } = useRepairNotes();
   const { local, loading: loadingLocal, fetchLocal } = useLocal();
+  const { serviceTypes, fetchAll: fetchServiceTypes } = useServiceTypes();
   const { apiClient } = useApiClient();
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [ticketSize, setTicketSize] = useState<TicketSize | null>(null);
+  const [serviceTypeNames, setServiceTypeNames] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) fetchNote(id);
     fetchLocal();
-  }, [id, fetchNote, fetchLocal]);
+    fetchServiceTypes();
+  }, [id, fetchNote, fetchLocal, fetchServiceTypes]);
+
+  // Por defecto, el tamaño configurado en "Mi Local" -- pero se puede
+  // cambiar aquí mismo para probar/imprimir en otro tamaño sin tocar la
+  // configuración del local.
+  useEffect(() => {
+    if (local && ticketSize === null) setTicketSize(local.defaultTicketSize);
+  }, [local, ticketSize]);
+
+  useEffect(() => {
+    if (!note) return;
+    fetchNoteServiceTypeIds(note.id).then((ids) => {
+      const nameById = new Map(serviceTypes.map((t) => [t.id, t.name]));
+      setServiceTypeNames(ids.map((noteId) => nameById.get(noteId)).filter((n): n is string => Boolean(n)));
+    });
+  }, [note, serviceTypes, fetchNoteServiceTypeIds]);
+
+  const handlePrint = () => window.print();
 
   const handleDownload = async () => {
     if (!id || !note) return;
@@ -555,12 +577,27 @@ const RepairNotePrintPage: React.FC = () => {
     return <div className="p-8 text-center text-sm text-red-500">Nota no encontrada.</div>;
   }
 
+  const isThermal = ticketSize === "58mm" || ticketSize === "80mm";
+  const pageWidthMm = ticketSize === "58mm" ? 58 : 80;
+
   return (
     <div className="flex h-full flex-col">
       <PageMeta title="Nota de Reparación" description="Vista previa e impresión" />
 
+      {/* Solo .print-area queda visible al imprimir; @page fija el ancho
+          físico del papel térmico cuando aplica (letter usa el tamaño por
+          defecto del navegador, igual que antes). */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          .print-area, .print-area * { visibility: visible; }
+          .print-area { position: absolute; left: 0; top: 0; }
+          ${isThermal ? `@page { size: ${pageWidthMm}mm auto; margin: 0; }` : ""}
+        }
+      `}</style>
+
       {/* Controls */}
-      <div className="mb-4 flex shrink-0 items-center gap-3">
+      <div className="mb-4 flex shrink-0 items-center gap-3 print:hidden">
         <button
           onClick={() => navigate("/admin/repair-notes")}
           className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
@@ -570,22 +607,47 @@ const RepairNotePrintPage: React.FC = () => {
         <h1 className="flex-1 text-xl font-semibold text-brand-600 dark:text-brand-400">
           Nota #{note.controlNumber}
         </h1>
-        {downloadError && <span className="text-sm text-red-500">{downloadError}</span>}
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+        <select
+          value={ticketSize ?? "80mm"}
+          onChange={(event) => setTicketSize(event.target.value as TicketSize)}
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
         >
-          <Download className="size-4" />
-          {downloading ? "Generando..." : "Descargar PDF"}
-        </button>
+          <option value="58mm">Térmico 58mm</option>
+          <option value="80mm">Térmico 80mm</option>
+          <option value="letter">Carta</option>
+        </select>
+        {downloadError && <span className="text-sm text-red-500">{downloadError}</span>}
+        {isThermal ? (
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+          >
+            <Printer className="size-4" />
+            Imprimir
+          </button>
+        ) : (
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+          >
+            <Download className="size-4" />
+            {downloading ? "Generando..." : "Descargar PDF"}
+          </button>
+        )}
       </div>
 
       {/* Preview */}
-      <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto rounded-2xl border border-gray-200 bg-gray-100 p-8 dark:border-gray-700 dark:bg-gray-900">
-        <div style={{ width: 720, flexShrink: 0 }}>
-          <Receipt note={note} local={local} />
-        </div>
+      <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto rounded-2xl border border-gray-200 bg-gray-100 p-8 dark:border-gray-700 dark:bg-gray-900 print:border-0 print:bg-white print:p-0">
+        {isThermal ? (
+          <div className="print-area bg-white shadow">
+            <ThermalReceipt note={note} local={local} serviceTypeNames={serviceTypeNames} widthMm={pageWidthMm} />
+          </div>
+        ) : (
+          <div className="print-area" style={{ width: 720, flexShrink: 0 }}>
+            <Receipt note={note} local={local} />
+          </div>
+        )}
       </div>
     </div>
   );

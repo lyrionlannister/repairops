@@ -5,6 +5,7 @@ import { ReportsService } from "../services/reports.service.js";
 import { EmployeePerformanceQueryDto } from "../dtos/employee-performance-query.dto.js";
 import { AccessorySalesQueryDto } from "../dtos/accessory-sales-query.dto.js";
 import { RepairNotesByTypeQueryDto } from "../dtos/repair-notes-by-type-query.dto.js";
+import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
 export class ReportsController {
   constructor(private service: ReportsService) {}
@@ -14,7 +15,7 @@ export class ReportsController {
       const dto = plainToInstance(EmployeePerformanceQueryDto, req.query);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       res.status(200).json(await this.service.getEmployeePerformance(dto));
@@ -28,7 +29,7 @@ export class ReportsController {
       const dto = plainToInstance(AccessorySalesQueryDto, req.query);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       res.status(200).json(await this.service.getAccessorySales(dto));
@@ -42,7 +43,7 @@ export class ReportsController {
       const dto = plainToInstance(RepairNotesByTypeQueryDto, req.query);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       res.status(200).json(await this.service.getRepairNotesByType(dto));

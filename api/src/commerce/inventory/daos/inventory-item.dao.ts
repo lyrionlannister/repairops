@@ -10,4 +10,16 @@ export class InventoryItemDao extends TenantScopedDao<InventoryItem> {
   async findAllOrdered(): Promise<InventoryItem[]> {
     return this.scoped().orderBy("entity.name", "ASC").getMany();
   }
+
+  async findBySku(sku: string): Promise<InventoryItem | null> {
+    return this.scoped().andWhere("entity.sku = :sku", { sku }).getOne();
+  }
+
+  async findLowStock(): Promise<InventoryItem[]> {
+    return this.scoped()
+      .andWhere("entity.minStock > 0")
+      .andWhere("entity.quantityOnHand <= entity.minStock")
+      .orderBy("entity.name", "ASC")
+      .getMany();
+  }
 }

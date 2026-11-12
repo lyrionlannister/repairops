@@ -70,6 +70,8 @@ import { SaleItem } from "./commerce/inventory/entities/sale-item.entity.js";
 import { SaleDao } from "./commerce/inventory/daos/sale.dao.js";
 import { SaleItemDao } from "./commerce/inventory/daos/sale-item.dao.js";
 import { SaleService } from "./commerce/inventory/services/sale.service.js";
+import { SalePayment } from "./commerce/payments/entities/sale-payment.entity.js";
+import { SalePaymentDao } from "./commerce/payments/daos/sale-payment.dao.js";
 import { SaleController } from "./commerce/inventory/controllers/sale.controller.js";
 import { createSaleRouter } from "./commerce/inventory/routes/sale.routes.js";
 import { createN8nPublicRouter } from "./messaging/n8n/n8n-public.routes.js";
@@ -111,6 +113,7 @@ import { CustomerService } from "./commerce/customers/services/customer.service.
 import { CustomerController } from "./commerce/customers/controllers/customer.controller.js";
 import { createCustomerRouter } from "./commerce/customers/routes/customer.routes.js";
 import { seedAdminUser } from "./core/seed/admin-seed.js";
+import { seedDemoShop } from "./core/seed/demo-seed.js";
 import { Tenant } from "./core/tenancy/entities/tenant.entity.js";
 import { allowSystemScope, runWithTenant } from "./core/tenancy/tenant-context.js";
 
@@ -134,7 +137,12 @@ Promise.all([AppDataSource.initialize(), CustomerServiceDataSource.initialize()]
 
     const userRepository = AppDataSource.getRepository(User);
     const tenantRepository = AppDataSource.getRepository(Tenant);
-    await seedAdminUser(userRepository, tenantRepository);
+    const adminTenant = await seedAdminUser(userRepository, tenantRepository);
+
+    // Taller demo: nunca en producción, solo conveniencia de dev/CI/staging.
+    if (adminTenant && process.env.NODE_ENV !== "production") {
+      await seedDemoShop(adminTenant.id);
+    }
 
     // Configurar servicios y controladores
     const exclusionsRepository = AppDataSource.getRepository(ExcludedPhone);
@@ -162,10 +170,10 @@ Promise.all([AppDataSource.initialize(), CustomerServiceDataSource.initialize()]
 
     const saleRepository = AppDataSource.getRepository(Sale);
     const saleItemRepository = AppDataSource.getRepository(SaleItem);
+    const salePaymentRepository = AppDataSource.getRepository(SalePayment);
     const saleDao = new SaleDao(saleRepository);
     const saleItemDao = new SaleItemDao(saleItemRepository);
-    const saleService = new SaleService(saleDao, saleItemDao, inventoryService);
-    const saleController = new SaleController(saleService);
+    const salePaymentDao = new SalePaymentDao(salePaymentRepository);
 
     const serviceTypeRepository = AppDataSource.getRepository(ServiceType);
     const serviceTypeDao = new ServiceTypeDao(serviceTypeRepository);
@@ -205,8 +213,19 @@ Promise.all([AppDataSource.initialize(), CustomerServiceDataSource.initialize()]
     const cashMovementRepository = AppDataSource.getRepository(CashMovement);
     const cashSessionDao = new CashSessionDao(cashSessionRepository);
     const cashMovementDao = new CashMovementDao(cashMovementRepository);
-    const cashService = new CashService(cashSessionDao, cashMovementDao, localService);
+    const cashService = new CashService(cashSessionDao, cashMovementDao, localService, userDao);
     const cashController = new CashController(cashService);
+
+    const saleService = new SaleService(
+      saleDao,
+      saleItemDao,
+      salePaymentDao,
+      inventoryService,
+      localService,
+      cashSessionDao,
+      serviceTypeDao,
+    );
+    const saleController = new SaleController(saleService);
 
     const revenueAttributionRepository = AppDataSource.getRepository(RevenueAttributionSetting);
     const revenueAttributionDao = new RevenueAttributionSettingDao(revenueAttributionRepository);

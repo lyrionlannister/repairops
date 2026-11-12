@@ -10,4 +10,8 @@ export class SaleDao extends TenantScopedDao<Sale> {
   async findAllOrdered(): Promise<Sale[]> {
     return this.scoped().orderBy("entity.createdAt", "DESC").getMany();
   }
+
+  async findByIdempotencyKey(idempotencyKey: string): Promise<Sale | null> {
+    return this.scoped().andWhere("entity.idempotencyKey = :idempotencyKey", { idempotencyKey }).getOne();
+  }
 }

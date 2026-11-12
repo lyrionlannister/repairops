@@ -15,6 +15,7 @@ import {
 } from "@ui/table/table";
 import PageShell from "@common/components/page-shell/page-shell";
 import ConfirmModal from "@ui/modal/confirm-modal";
+import { useCurrentUser } from "@common/hooks/use-current-user";
 
 const formatDate = (dateStr?: string) => {
   if (!dateStr) return "—";
@@ -27,6 +28,10 @@ const formatCurrency = (value: number) =>
 
 const RepairNotesPage: React.FC = () => {
   const navigate = useNavigate();
+  const currentUser = useCurrentUser();
+  // Un cajero no edita diagnósticos de reparación, ni por pantalla ni por
+  // API (requireRole en repair-note.routes.ts bloquea el lado de API).
+  const canEditNotes = currentUser?.role !== "cashier";
   const { notes, loading, error, fetchNotes, deleteNote, cancelNote } = useRepairNotes();
   const {
     search,
@@ -53,13 +58,15 @@ const RepairNotesPage: React.FC = () => {
       title="Notas de Reparación"
       description="Gestiona el taller de reparación de celulares."
       action={
-        <Button
-          variant="primary"
-          startIcon={<Plus className="size-4" />}
-          onClick={() => navigate("/admin/repair-notes/new")}
-        >
-          Nueva nota
-        </Button>
+        canEditNotes ? (
+          <Button
+            variant="primary"
+            startIcon={<Plus className="size-4" />}
+            onClick={() => navigate("/admin/repair-notes/new")}
+          >
+            Nueva nota
+          </Button>
+        ) : undefined
       }
     >
       <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-sm sm:flex-row sm:items-center dark:border-gray-800 dark:bg-gray-900">
@@ -106,13 +113,15 @@ const RepairNotesPage: React.FC = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {notes.length === 0 ? "Crea la primera nota para comenzar." : "Prueba con otro cliente, equipo o estado."}
             </p>
-            <Button
-              variant="primary"
-              startIcon={<Plus className="size-4" />}
-              onClick={() => navigate("/admin/repair-notes/new")}
-            >
-              Nueva nota
-            </Button>
+            {canEditNotes && (
+              <Button
+                variant="primary"
+                startIcon={<Plus className="size-4" />}
+                onClick={() => navigate("/admin/repair-notes/new")}
+              >
+                Nueva nota
+              </Button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -176,31 +185,35 @@ const RepairNotesPage: React.FC = () => {
                           >
                             <Printer className="size-4" />
                           </button>
-                          <button
-                            title="Editar"
-                            onClick={() => navigate(`/admin/repair-notes/${note.id}/edit`)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-                          >
-                            <Pencil className="size-4" />
-                          </button>
-                          {note.status !== "delivered" && note.status !== "cancelled" && (
-                            <button
-                              title="Cancelar"
-                              onClick={() => setConfirmCancelId(note.id)}
-                              disabled={cancellingId === note.id}
-                              className="rounded-lg p-1.5 text-gray-400 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20 dark:hover:text-orange-400 disabled:opacity-50"
-                            >
-                              <Ban className="size-4" />
-                            </button>
+                          {canEditNotes && (
+                            <>
+                              <button
+                                title="Editar"
+                                onClick={() => navigate(`/admin/repair-notes/${note.id}/edit`)}
+                                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
+                              >
+                                <Pencil className="size-4" />
+                              </button>
+                              {note.status !== "delivered" && note.status !== "cancelled" && (
+                                <button
+                                  title="Cancelar"
+                                  onClick={() => setConfirmCancelId(note.id)}
+                                  disabled={cancellingId === note.id}
+                                  className="rounded-lg p-1.5 text-gray-400 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20 dark:hover:text-orange-400 disabled:opacity-50"
+                                >
+                                  <Ban className="size-4" />
+                                </button>
+                              )}
+                              <button
+                                title="Eliminar"
+                                onClick={() => setConfirmDeleteId(note.id)}
+                                disabled={deletingId === note.id}
+                                className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </>
                           )}
-                          <button
-                            title="Eliminar"
-                            onClick={() => setConfirmDeleteId(note.id)}
-                            disabled={deletingId === note.id}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
                         </div>
                       </TableCell>
                     </TableRow>

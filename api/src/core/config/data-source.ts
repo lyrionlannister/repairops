@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { DataSource } from "typeorm";
+import { DataSource, type DataSourceOptions } from "typeorm";
 import { User } from "../../identity/auth/entities/user.entity.js";
 import { ExcludedPhone } from "../../messaging/whatsapp-admin/entities/excluded-phone.entity.js";
 import { WhatsappSettings } from "../../messaging/whatsapp-admin/entities/whatsapp-settings.entity.js";
@@ -18,6 +18,7 @@ import { InventoryItem } from "../../commerce/inventory/entities/inventory-item.
 import { InventoryMovement } from "../../commerce/inventory/entities/inventory-movement.entity.js";
 import { Sale } from "../../commerce/inventory/entities/sale.entity.js";
 import { SaleItem } from "../../commerce/inventory/entities/sale-item.entity.js";
+import { SalePayment } from "../../commerce/payments/entities/sale-payment.entity.js";
 import { Quote } from "../../commerce/quotes/entities/quote.entity.js";
 import { QuoteItem } from "../../commerce/quotes/entities/quote-item.entity.js";
 import { CashSession } from "../../commerce/cash/entities/cash-session.entity.js";
@@ -26,14 +27,18 @@ import { RevenueAttributionSetting } from "../../commerce/revenue-attribution/en
 import { Branch } from "../../identity/branches/entities/branch.entity.js";
 import { Customer } from "../../commerce/customers/entities/customer.entity.js";
 
-const AppDataSource = new DataSource({
+// Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
+// TypeORM no intente cargar los archivos de migración en cada `initialize()`) y por el
+// DataSource del CLI de migraciones (migration-data-source.ts), que sí las necesita.
+export const appDataSourceOptions: DataSourceOptions = {
   type: "postgres",
   host: process.env.DB_HOST || "localhost",
   port: parseInt(process.env.DB_PORT || "5432", 10),
   username: process.env.DB_USERNAME || "n8n",
   password: process.env.DB_PASSWORD || "n8n_password_dev",
   database: process.env.DB_NAME || "app_db",
-  synchronize: true, // Auto-sync entities (deshabilitar en producción)
+  synchronize: false,
+  migrationsTableName: "migrations",
   logging: process.env.NODE_ENV === "development",
   entities: [
     Tenant,
@@ -54,6 +59,7 @@ const AppDataSource = new DataSource({
     InventoryMovement,
     Sale,
     SaleItem,
+    SalePayment,
     Quote,
     QuoteItem,
     CashSession,
@@ -62,6 +68,8 @@ const AppDataSource = new DataSource({
     Branch,
     Customer,
   ],
-});
+};
+
+const AppDataSource = new DataSource(appDataSourceOptions);
 
 export default AppDataSource;

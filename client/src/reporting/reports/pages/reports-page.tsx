@@ -1,0 +1,229 @@
+import { useEffect, useState } from "react";
+import { BarChart3 } from "lucide-react";
+
+import useBranch from "@common/hooks/use-branch";
+import { useLocal } from "@app-platform/local/hooks/use-local";
+import { useCash } from "@commerce/cash/hooks/use-cash";
+import Alert from "@ui/alert/alert";
+import Input from "@ui/inputs/input";
+import Label from "@ui/inputs/label";
+import PageMeta from "@common/pages/page-meta";
+
+import { useReports } from "../hooks/use-reports";
+
+const STATUS_LABELS: Record<string, string> = {
+  received: "Recibido",
+  in_repair: "En reparación",
+  done: "Terminado",
+  delivered: "Entregado",
+  cancelled: "Cancelado",
+};
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+const formatMoney = (value: number, currency: string) =>
+  `${value.toLocaleString("es-MX", { minimumFractionDigits: 2 })} ${currency}`;
+
+const ReportsPage = () => {
+  const { local, fetchLocal } = useLocal();
+  const { activeBranchId } = useBranch();
+  const { session, summary, fetchOpenSession, fetchSummary } = useCash();
+  const { employeePerformance, accessorySales, repairNotesByType, loading, error, fetchReports } = useReports();
+
+  const [periodStart, setPeriodStart] = useState(todayIso());
+  const [periodEnd, setPeriodEnd] = useState(todayIso());
+  const currency = local?.currency ?? "MXN";
+
+  useEffect(() => {
+    fetchLocal();
+  }, [fetchLocal]);
+
+  useEffect(() => {
+    fetchReports(periodStart, periodEnd);
+  }, [fetchReports, periodStart, periodEnd]);
+
+  useEffect(() => {
+    if (activeBranchId) fetchOpenSession(activeBranchId);
+  }, [activeBranchId, fetchOpenSession]);
+
+  useEffect(() => {
+    if (session) fetchSummary(session.id);
+  }, [session, fetchSummary]);
+
+  const repairNotesRevenue = repairNotesByType?.totalRevenue ?? 0;
+  const accessoryRevenue = accessorySales?.totalRevenue ?? 0;
+  const expectedTotal = repairNotesRevenue + accessoryRevenue;
+  const cashIncome = summary?.totalIncome ?? 0;
+
+  return (
+    <div className="space-y-6">
+      <PageMeta title="Reportes" description="Reportes del taller y del día" />
+      <div>
+        <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">Reportes</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Productividad, ventas de accesorios y notas por tipo en el período seleccionado.
+        </p>
+      </div>
+
+      {error && <Alert variant="error" title="Error" message={error} />}
+
+      <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
+        <div>
+          <Label className="text-gray-500">Desde</Label>
+          <Input type="date" value={periodStart} onChange={(event) => setPeriodStart(event.target.value)} />
+        </div>
+        <div>
+          <Label className="text-gray-500">Hasta</Label>
+          <Input type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} />
+        </div>
+        {loading && <p className="text-xs text-gray-400">Cargando...</p>}
+      </div>
+
+      {/* Caja del día: mismo período que los reportes, para comparar a ojo que cuadran */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
+        <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Caja de la sesión abierta</h2>
+        {!session ? (
+          <p className="text-sm text-gray-400">No hay una sesión de caja abierta para este local.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-semibold uppercase text-gray-400">Ingresos en caja</p>
+              <p className="mt-1 text-lg font-bold text-green-600 dark:text-green-400">{formatMoney(cashIncome, currency)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase text-gray-400">Reparaciones + accesorios (reporte)</p>
+              <p className="mt-1 text-lg font-bold text-gray-800 dark:text-white/90">{formatMoney(expectedTotal, currency)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase text-gray-400">Diferencia</p>
+              <p className={`mt-1 text-lg font-bold ${Math.abs(cashIncome - expectedTotal) < 0.01 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                {formatMoney(cashIncome - expectedTotal, currency)}
+              </p>
+            </div>
+          </div>
+        )}
+        <p className="mt-2 text-xs text-gray-400">
+          La caja registra pagos por su fecha de movimiento; los reportes de arriba agrupan por fecha de la nota/venta — una diferencia puede ser normal si hay anticipos de días anteriores.
+        </p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
+          <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Órdenes de reparación por tipo</h2>
+          {!repairNotesByType || repairNotesByType.byType.length === 0 ? (
+            <p className="text-sm text-gray-400">Sin datos en este período.</p>
+          ) : (
+            <>
+              <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                {repairNotesByType.totalNotes} notas · {formatMoney(repairNotesByType.totalRevenue, currency)}
+              </p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
+                    <th className="py-2 text-left font-medium text-gray-500 dark:text-gray-400">Tipo</th>
+                    <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Notas</th>
+                    <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {repairNotesByType.byType.map((row) => (
+                    <tr key={row.type}>
+                      <td className="py-2">{row.label}</td>
+                      <td className="py-2 text-right tabular-nums">{row.count}</td>
+                      <td className="py-2 text-right tabular-nums">{formatMoney(row.totalValue, currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <h3 className="mt-4 mb-2 text-xs font-semibold uppercase text-gray-400">Por estado</h3>
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {repairNotesByType.byStatus.map((row) => (
+                    <tr key={row.status}>
+                      <td className="py-2">{STATUS_LABELS[row.status] ?? row.status}</td>
+                      <td className="py-2 text-right tabular-nums">{row.count}</td>
+                      <td className="py-2 text-right tabular-nums">{formatMoney(row.totalValue, currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
+          <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Ventas de accesorios</h2>
+          {!accessorySales || accessorySales.data.length === 0 ? (
+            <p className="text-sm text-gray-400">Sin ventas en este período.</p>
+          ) : (
+            <>
+              <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                {accessorySales.salesCount} ventas · {formatMoney(accessorySales.totalRevenue, currency)} · ticket promedio{" "}
+                {formatMoney(accessorySales.averageTicket, currency)}
+              </p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
+                    <th className="py-2 text-left font-medium text-gray-500 dark:text-gray-400">Item</th>
+                    <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
+                    <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Ingreso</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {accessorySales.data.map((row) => (
+                    <tr key={row.key}>
+                      <td className="py-2">{row.label}</td>
+                      <td className="py-2 text-right tabular-nums">{row.quantity}</td>
+                      <td className="py-2 text-right tabular-nums">{formatMoney(row.revenue, currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
+        <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Productividad por empleado</h2>
+        {!employeePerformance || employeePerformance.employees.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 p-8 text-center text-gray-400">
+            <BarChart3 className="size-10 opacity-40" />
+            <p className="text-sm">Sin datos en este período.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <th className="py-2 text-left font-medium text-gray-500 dark:text-gray-400">Empleado</th>
+                <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Notas</th>
+                <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Ventas</th>
+                <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Atribuido</th>
+                <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Salario del período</th>
+                <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Cubre salario</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {employeePerformance.employees.map((row) => (
+                <tr key={row.employeeId}>
+                  <td className="py-2">{row.employeeName}</td>
+                  <td className="py-2 text-right tabular-nums">{row.repairNotesCount}</td>
+                  <td className="py-2 text-right tabular-nums">{row.salesCount}</td>
+                  <td className="py-2 text-right tabular-nums">{formatMoney(row.attributedAmount, currency)}</td>
+                  <td className="py-2 text-right tabular-nums">{formatMoney(row.salaryAmount, currency)}</td>
+                  <td className="py-2 text-center">
+                    <span className={row.coversSalary ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                      {row.coversSalary ? "Sí" : "No"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ReportsPage;

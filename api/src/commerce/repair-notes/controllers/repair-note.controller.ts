@@ -37,6 +37,24 @@ export class RepairNoteController {
     }
   };
 
+  getByControlNumber = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const controlNumber = Number(req.params["controlNumber"]);
+      if (!Number.isInteger(controlNumber)) {
+        res.status(400).json({ error: "Número de control inválido" });
+        return;
+      }
+      const note = await this.repairNoteService.getByControlNumber(controlNumber);
+      if (!note) {
+        res.status(404).json({ error: "Nota no encontrada" });
+        return;
+      }
+      res.status(200).json(note);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
   create = async (req: Request, res: Response): Promise<void> => {
     try {
       const { items, serviceTypeIds, ...data } = req.body;

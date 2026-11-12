@@ -12,6 +12,9 @@ export interface CashSessionRecord {
   openingBalance: number;
   closingBalance: number | null;
   status: CashSessionStatus;
+  variance: number | null;
+  varianceReason: string | null;
+  varianceAuthorizedByEmployeeId: string | null;
   openedAt: string;
   closedAt: string | null;
 }
@@ -37,6 +40,7 @@ export interface CashSummary {
 export const useCash = () => {
   const { apiClient } = useApiClient();
   const [session, setSession] = useState<CashSessionRecord | null>(null);
+  const [closedSession, setClosedSession] = useState<CashSessionRecord | null>(null);
   const [movements, setMovements] = useState<CashMovementRecord[]>([]);
   const [summary, setSummary] = useState<CashSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -78,6 +82,7 @@ export const useCash = () => {
           throw new Error((body as { error?: string | string[] }).error?.toString() ?? "Error al abrir caja");
         }
         setSession((await res.json()) as CashSessionRecord);
+        setClosedSession(null);
         return true;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido");
@@ -90,26 +95,33 @@ export const useCash = () => {
   );
 
   const closeSession = useCallback(
-    async (id: string, closingBalance: number): Promise<boolean> => {
+    async (
+      id: string,
+      closingBalance: number,
+      reason?: string,
+      authorizedByEmployeeId?: string,
+    ): Promise<CashSessionRecord | null> => {
       setSaving(true);
       setError(null);
       try {
         const res = await apiClient(`/cash/sessions/${id}/close`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ closingBalance }),
+          body: JSON.stringify({ closingBalance, reason, authorizedByEmployeeId }),
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error((body as { error?: string | string[] }).error?.toString() ?? "Error al cerrar caja");
         }
+        const closed = (await res.json()) as CashSessionRecord;
         setSession(null);
         setMovements([]);
         setSummary(null);
-        return true;
+        setClosedSession(closed);
+        return closed;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido");
-        return false;
+        return null;
       } finally {
         setSaving(false);
       }
@@ -184,6 +196,7 @@ export const useCash = () => {
 
   return {
     session,
+    closedSession,
     movements,
     summary,
     loading,
@@ -196,5 +209,6 @@ export const useCash = () => {
     fetchSummary,
     registerMovement,
     clearError: () => setError(null),
+    clearClosedSession: () => setClosedSession(null),
   };
 };

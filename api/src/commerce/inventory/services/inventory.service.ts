@@ -34,6 +34,14 @@ export class InventoryService {
     return this.itemDao.findById(id);
   }
 
+  async getBySku(sku: string): Promise<InventoryItem | null> {
+    return this.itemDao.findBySku(sku);
+  }
+
+  async getLowStock(): Promise<InventoryItem[]> {
+    return this.itemDao.findLowStock();
+  }
+
   async create(data: CreateItemPayload): Promise<InventoryItem> {
     return this.itemDao.create({ ...data, quantityOnHand: 0 } as Partial<InventoryItem>);
   }

@@ -5,9 +5,7 @@ import { CashService } from "../services/cash.service.js";
 import { OpenCashSessionDto } from "../dtos/open-cash-session.dto.js";
 import { CloseCashSessionDto } from "../dtos/close-cash-session.dto.js";
 import { RegisterCashMovementDto } from "../dtos/register-cash-movement.dto.js";
-
-const validationErrors = (errors: { constraints?: Record<string, string> }[]): string[] =>
-  errors.map((e) => Object.values(e.constraints ?? {})).flat();
+import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
 
 export class CashController {
   constructor(private service: CashService) {}
@@ -69,7 +67,12 @@ export class CashController {
         res.status(400).json({ error: validationErrors(errors) });
         return;
       }
-      const session = await this.service.closeSession(req.params["id"] as string, dto.closingBalance);
+      const session = await this.service.closeSession(
+        req.params["id"] as string,
+        dto.closingBalance,
+        dto.reason,
+        dto.authorizedByEmployeeId,
+      );
       res.status(200).json(session);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

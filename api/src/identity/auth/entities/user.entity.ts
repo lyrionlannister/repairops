@@ -6,7 +6,7 @@ import {
 } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
-export type UserRole = "owner" | "admin" | "employee";
+export type UserRole = "owner" | "admin" | "employee" | "technician" | "cashier";
 export type PayCycle = "weekly" | "biweekly" | "monthly";
 
 @Entity("usuarios")

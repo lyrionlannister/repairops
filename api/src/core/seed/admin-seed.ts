@@ -4,12 +4,15 @@ import { User } from "../../identity/auth/entities/user.entity.js";
 import { Tenant } from "../tenancy/entities/tenant.entity.js";
 import { allowSystemScope, runWithTenant } from "../tenancy/tenant-context.js";
 
+// Devuelve el tenant del admin (el recién creado, o el ya existente si el
+// seed se omite) para que el caller pueda sembrar datos demo sobre él sin
+// repetir la búsqueda del tenant "principal".
 export async function seedAdminUser(
   userRepository: Repository<User>,
   tenantRepository: Repository<Tenant>,
-): Promise<void> {
+): Promise<Tenant | null> {
   const count = await userRepository.count();
-  if (count > 0) return;
+  if (count > 0) return allowSystemScope(() => tenantRepository.findOne({ where: {} }));
 
   const firstName = process.env.ADMIN_FIRST_NAME;
   const lastName = process.env.ADMIN_LAST_NAME;
@@ -18,7 +21,7 @@ export async function seedAdminUser(
 
   if (!firstName || !lastName || !email || !password) {
     console.warn("Seed de administrador omitido: faltan variables ADMIN_* en el entorno.");
-    return;
+    return allowSystemScope(() => tenantRepository.findOne({ where: {} }));
   }
 
   const tenant = await allowSystemScope(() =>
@@ -41,4 +44,5 @@ export async function seedAdminUser(
   });
 
   console.log(`Usuario administrador creado: ${email}`);
+  return tenant;
 }

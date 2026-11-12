@@ -3,6 +3,7 @@ import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { RevenueAttributionService } from "../services/revenue-attribution.service.js";
 import { SetAttributionBasisDto } from "../dtos/set-attribution-basis.dto.js";
+import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
 export class RevenueAttributionController {
   constructor(private service: RevenueAttributionService) {}
@@ -20,7 +21,7 @@ export class RevenueAttributionController {
       const dto = plainToInstance(SetAttributionBasisDto, req.body);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       res.status(200).json(await this.service.setBasis(dto.attributionBasis));

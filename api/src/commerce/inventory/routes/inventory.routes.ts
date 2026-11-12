@@ -9,6 +9,8 @@ export const createInventoryRouter = (controller: InventoryController): Router =
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", controller.getAll);
   router.post("/import", express.raw({ type: "*/*", limit: "10mb" }), controller.bulkImport);
+  router.get("/low-stock", controller.getLowStock);
+  router.get("/by-sku/:sku", controller.getBySku);
   router.get("/:id", controller.getById);
   router.post("/", controller.create);
   router.patch("/:id", controller.update);

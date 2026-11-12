@@ -33,6 +33,11 @@ export class InventoryItem extends BaseEntity {
   @Column({ type: "int", default: 0, name: "cantidad_disponible" })
   quantityOnHand!: number;
 
+  // 0 = sin alerta configurada. InventoryItemDao.findLowStock compara
+  // quantityOnHand <= minStock, igual criterio que usa la pantalla.
+  @Column({ type: "int", default: 0, name: "stock_minimo" })
+  minStock!: number;
+
   @CreateDateColumn({ name: "fecha_creacion", default: () => "CURRENT_TIMESTAMP" })
   createdAt!: Date;
 

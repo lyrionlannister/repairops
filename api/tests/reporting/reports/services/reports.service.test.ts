@@ -122,13 +122,21 @@ describe("ReportsService", () => {
       const sale = await runWithTenant(basisTenant, () =>
         saleDao.create({
           localId: "1",
+          saleNumber: 1,
+          cashSessionId: "1",
+          subtotal: 100,
           totalValue: 100,
-          paymentMethod: "efectivo",
           createdByEmployeeId: employee.id,
         } as Partial<Sale>),
       );
       await runWithTenant(basisTenant, () =>
-        saleItemDao.create({ saleId: sale.id, inventoryItemId: item.id, quantity: 1, unitPrice: 100 } as Partial<SaleItem>),
+        saleItemDao.create({
+          saleId: sale.id,
+          lineType: "inventory_item",
+          referenceId: item.id,
+          quantity: 1,
+          unitPrice: 100,
+        } as Partial<SaleItem>),
       );
 
       const getFor = async (basis: "total_value" | "margin" | "labor_only") => {
@@ -218,17 +226,29 @@ describe("ReportsService", () => {
       );
 
       const saleA = await runWithTenant(salesTenant, () =>
-        saleDao.create({ localId: "1", totalValue: 30, paymentMethod: "efectivo" } as Partial<Sale>),
+        saleDao.create({ localId: "1", saleNumber: 1, cashSessionId: "1", subtotal: 30, totalValue: 30 } as Partial<Sale>),
       );
       await runWithTenant(salesTenant, () =>
-        saleItemDao.create({ saleId: saleA.id, inventoryItemId: itemA.id, quantity: 2, unitPrice: 15 } as Partial<SaleItem>),
+        saleItemDao.create({
+          saleId: saleA.id,
+          lineType: "inventory_item",
+          referenceId: itemA.id,
+          quantity: 2,
+          unitPrice: 15,
+        } as Partial<SaleItem>),
       );
 
       const saleB = await runWithTenant(salesTenant, () =>
-        saleDao.create({ localId: "1", totalValue: 10, paymentMethod: "tarjeta" } as Partial<Sale>),
+        saleDao.create({ localId: "1", saleNumber: 2, cashSessionId: "1", subtotal: 10, totalValue: 10 } as Partial<Sale>),
       );
       await runWithTenant(salesTenant, () =>
-        saleItemDao.create({ saleId: saleB.id, inventoryItemId: itemB.id, quantity: 1, unitPrice: 10 } as Partial<SaleItem>),
+        saleItemDao.create({
+          saleId: saleB.id,
+          lineType: "inventory_item",
+          referenceId: itemB.id,
+          quantity: 1,
+          unitPrice: 10,
+        } as Partial<SaleItem>),
       );
 
       const report = await runWithTenant(salesTenant, () => reportsService.getAccessorySales(WIDE_PERIOD));
@@ -250,10 +270,16 @@ describe("ReportsService", () => {
         inventoryItemDao.create({ localId: "1", name: "Mica", kind: "accessory", costPrice: 2, salePrice: 8 } as Partial<InventoryItem>),
       );
       const sale = await runWithTenant(dayTenant, () =>
-        saleDao.create({ localId: "1", totalValue: 8, paymentMethod: "efectivo" } as Partial<Sale>),
+        saleDao.create({ localId: "1", saleNumber: 1, cashSessionId: "1", subtotal: 8, totalValue: 8 } as Partial<Sale>),
       );
       await runWithTenant(dayTenant, () =>
-        saleItemDao.create({ saleId: sale.id, inventoryItemId: item.id, quantity: 1, unitPrice: 8 } as Partial<SaleItem>),
+        saleItemDao.create({
+          saleId: sale.id,
+          lineType: "inventory_item",
+          referenceId: item.id,
+          quantity: 1,
+          unitPrice: 8,
+        } as Partial<SaleItem>),
       );
 
       const report = await runWithTenant(dayTenant, () =>

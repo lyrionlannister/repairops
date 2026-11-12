@@ -2,28 +2,43 @@ import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 
 export type PaymentMethod = "efectivo" | "tarjeta" | "transferencia";
+export type SaleItemLineType = "inventory_item" | "service_type";
 
 export interface SaleItemInput {
-  inventoryItemId: string;
+  lineType: SaleItemLineType;
+  referenceId: string;
   quantity: number;
   unitPrice: number;
+  discountPercent?: number;
 }
 
 export interface Sale {
   id: string;
   localId: string;
+  saleNumber: number;
   customerName: string | null;
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
   totalValue: number;
-  paymentMethod: PaymentMethod;
   createdByEmployeeId: string | null;
   createdAt: string;
 }
 
+export interface PaymentInput {
+  method: PaymentMethod;
+  amount: number;
+  providerReference?: string;
+  providerAuthorizationCode?: string;
+}
+
 export interface CreateSalePayload {
   localId: string;
+  cashSessionId: string;
   customerName?: string;
-  paymentMethod: PaymentMethod;
+  payments: PaymentInput[];
   createdByEmployeeId?: string;
+  idempotencyKey?: string;
   items: SaleItemInput[];
 }
 

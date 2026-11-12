@@ -31,6 +31,7 @@ export const useCashPage = ({
   fetchOpenSession,
   openSession,
   closeSession,
+  clearClosedSession,
   fetchMovements,
   fetchSummary,
   registerMovement,
@@ -47,7 +48,13 @@ export const useCashPage = ({
   fetchLocal: () => Promise<void>;
   fetchOpenSession: (localId: string) => Promise<CashSessionRecord | null>;
   openSession: (localId: string, openingBalance: number, openedByEmployeeId?: string) => Promise<boolean>;
-  closeSession: (id: string, closingBalance: number) => Promise<boolean>;
+  closeSession: (
+    id: string,
+    closingBalance: number,
+    reason?: string,
+    authorizedByEmployeeId?: string,
+  ) => Promise<CashSessionRecord | null>;
+  clearClosedSession: () => void;
   fetchMovements: (sessionId: string) => Promise<void>;
   fetchSummary: (sessionId: string) => Promise<void>;
   registerMovement: (
@@ -68,6 +75,10 @@ export const useCashPage = ({
   const [movementForm, setMovementForm] = useState<CashMovementForm>(emptyCashMovementForm);
   const [isCloseOpen, setIsCloseOpen] = useState(false);
   const [closingBalance, setClosingBalance] = useState("0");
+  const [closeReason, setCloseReason] = useState("");
+  const [closeAuthorizedByEmployeeId, setCloseAuthorizedByEmployeeId] = useState("");
+  const [showCloseReasonField, setShowCloseReasonField] = useState(false);
+  const [showCloseAuthorizerField, setShowCloseAuthorizerField] = useState(false);
 
   useEffect(() => {
     fetchLocal();
@@ -108,15 +119,47 @@ export const useCashPage = ({
     }
   };
 
+  // Arqueo ciego: el motivo y el autorizador solo se piden cuando el servidor
+  // los exige (closeSession, dos puertas), nunca antes -- la pantalla no
+  // adelanta si hay diferencia o cuanta.
+  useEffect(() => {
+    if (!error) return;
+    if (error.includes("motivo")) setShowCloseReasonField(true);
+    if (error.includes("autorización") || error.includes("rol owner")) setShowCloseAuthorizerField(true);
+  }, [error]);
+
+  const resetCloseForm = () => {
+    setIsCloseOpen(false);
+    setClosingBalance("0");
+    setCloseReason("");
+    setCloseAuthorizedByEmployeeId("");
+    setShowCloseReasonField(false);
+    setShowCloseAuthorizerField(false);
+  };
+
   const handleClose = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!session) return;
 
-    const ok = await closeSession(session.id, Number(closingBalance) || 0);
-    if (ok) {
-      setIsCloseOpen(false);
+    const closed = await closeSession(
+      session.id,
+      Number(closingBalance) || 0,
+      closeReason || undefined,
+      closeAuthorizedByEmployeeId || undefined,
+    );
+    if (closed) {
+      resetCloseForm();
       if (branchId) fetchOpenSession(branchId);
     }
+  };
+
+  const handleCancelClose = () => {
+    resetCloseForm();
+    clearError();
+  };
+
+  const handleDismissClosedSession = () => {
+    clearClosedSession();
   };
 
   return {
@@ -132,6 +175,12 @@ export const useCashPage = ({
     setIsCloseOpen,
     closingBalance,
     setClosingBalance,
+    closeReason,
+    setCloseReason,
+    closeAuthorizedByEmployeeId,
+    setCloseAuthorizedByEmployeeId,
+    showCloseReasonField,
+    showCloseAuthorizerField,
     loading,
     saving,
     error,
@@ -143,5 +192,7 @@ export const useCashPage = ({
     handleOpen,
     handleRegisterMovement,
     handleClose,
+    handleCancelClose,
+    handleDismissClosedSession,
   };
 };

@@ -24,6 +24,8 @@ const ROLE_LABELS: Record<UserRole, string> = {
   owner: "Dueño",
   admin: "Administrador",
   employee: "Empleado",
+  technician: "Técnico",
+  cashier: "Cajero",
 };
 
 const PAY_CYCLE_LABELS: Record<PayCycle, string> = {
