@@ -10,18 +10,24 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [-3712, 304],
+      "position": [
+        -3712,
+        304
+      ],
       "id": "92f1cdd8-e7dd-451f-8c42-d73230233656",
       "name": "Webhook",
       "webhookId": "97c71c06-20b2-4c12-a8be-16442536f909"
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body ?? {};\nconst context_id = body.from;\nconst message = String(body.body ?? '').trim();\n\nreturn [{\n  json: {\n    context_id,\n    message,\n    waitSeconds: 6,\n  },\n}];"
+        "jsCode": "const body = $json.body ?? {};\n// tenantId viene del API (whatsapp-service.ts) -- hoy siempre el mismo\n// tenant (sesion unica compartida), listo para cuando Fase 4 resuelva\n// tenant real por phone_number_id. Fallback \"default\" si falta, para no\n// romper si algo manda el payload viejo sin tenantId.\nconst tenantId = body.tenantId || \"default\";\nconst context_id = `${tenantId}:${body.from}`;\nconst message = String(body.body ?? \"\").trim();\n\nreturn [{\n  json: {\n    context_id,\n    message,\n    waitSeconds: 6,\n  },\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-3488, 304],
+      "position": [
+        -3488,
+        304
+      ],
       "id": "ed8b196c-ff22-4ef2-9f78-680e8b06ed54",
       "name": "Preparar Mensaje"
     },
@@ -33,7 +39,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [-3264, 304],
+      "position": [
+        -3264,
+        304
+      ],
       "id": "b5f677fc-d369-42db-b93b-2cd9f28d2ece",
       "name": "Buffer Redis",
       "credentials": {
@@ -54,7 +63,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [-3040, 304],
+      "position": [
+        -3040,
+        304
+      ],
       "id": "970e3e78-1990-4665-9c9b-a084612b9656",
       "name": "Actualizar Ultimo Mensaje",
       "alwaysOutputData": true,
@@ -74,7 +86,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [-2816, 304],
+      "position": [
+        -2816,
+        304
+      ],
       "id": "066a59bd-ea0e-4d81-9d7f-bc442ae21d3b",
       "name": "Leer Espera Activa",
       "credentials": {
@@ -111,7 +126,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-2592, 304],
+      "position": [
+        -2592,
+        304
+      ],
       "id": "79d99952-c9bd-41c3-afb8-6f8e5a9ed35a",
       "name": "Ya Hay Respuesta En Espera?"
     },
@@ -123,7 +141,10 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [-2368, 208],
+      "position": [
+        -2368,
+        208
+      ],
       "id": "0471cfe5-4fd7-4e13-9011-4081ff91f13d",
       "name": "Responder Sin Mensaje"
     },
@@ -137,7 +158,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [-2368, 400],
+      "position": [
+        -2368,
+        400
+      ],
       "id": "9a7bf483-5a7d-4f29-9e3c-51931eac4252",
       "name": "Marcar Espera Activa",
       "credentials": {
@@ -153,7 +177,10 @@
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [-2144, 400],
+      "position": [
+        -2144,
+        400
+      ],
       "id": "2d67bb47-d0f8-4b30-bc58-3b91cf69e44c",
       "name": "Esperar Buffer",
       "webhookId": "bce3df94-a5d9-4cd5-85db-27e31ef71f43"
@@ -167,7 +194,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [-1920, 400],
+      "position": [
+        -1920,
+        400
+      ],
       "id": "507458db-d769-4b64-8597-6f688ea1b3c6",
       "name": "Leer Buffer",
       "credentials": {
@@ -183,7 +213,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1696, 400],
+      "position": [
+        -1696,
+        400
+      ],
       "id": "5e61bd61-7dfc-41d7-b9fa-49f3104f05ca",
       "name": "Consolidar Buffer"
     },
@@ -194,7 +227,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [-1472, 400],
+      "position": [
+        -1472,
+        400
+      ],
       "id": "1c7624dd-c9af-47b6-9882-b9c9e18b4bbc",
       "name": "Limpiar Buffer",
       "credentials": {
@@ -211,7 +247,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [-1248, 400],
+      "position": [
+        -1248,
+        400
+      ],
       "id": "37b9238e-2b6d-4b11-843a-28bd2f30a498",
       "name": "Limpiar Espera",
       "credentials": {
@@ -247,7 +286,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-1024, 224],
+      "position": [
+        -1024,
+        224
+      ],
       "id": "03150a24-86bd-4ce3-8e70-aa32e5efbafd",
       "name": "Mensaje Solo Saludo?"
     },
@@ -260,7 +302,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [-800, 400],
+      "position": [
+        -800,
+        400
+      ],
       "id": "93e0e85e-59bc-4471-8f79-1042549b73b4",
       "name": "Leer Ruta Actual",
       "credentials": {
@@ -280,7 +325,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [-576, 400],
+      "position": [
+        -576,
+        400
+      ],
       "id": "400650e2-0f24-4738-a4e5-a1d952ed94a2",
       "name": "Intent Classifier"
     },
@@ -310,7 +358,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-224, 208],
+      "position": [
+        -224,
+        208
+      ],
       "id": "483b5012-f0e8-4426-80a3-c8afd066289a",
       "name": "Es saludo?"
     },
@@ -322,7 +373,10 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "id": "29f302f6-08c8-48eb-956e-88413b5158af",
       "name": "Responder Bienvenida"
     },
@@ -352,7 +406,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-112, 416],
+      "position": [
+        -112,
+        416
+      ],
       "id": "4382f604-ac44-4810-af29-a6ed0c9b5cee",
       "name": "Es garantia?"
     },
@@ -382,7 +439,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [0, 608],
+      "position": [
+        0,
+        608
+      ],
       "id": "f572b795-d36e-4691-adcf-1abd46a95e1e",
       "name": "Es reparacion?"
     },
@@ -394,7 +454,10 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [224, 800],
+      "position": [
+        224,
+        800
+      ],
       "id": "4fcc3043-a395-4b4f-aa91-6f9dd25620ab",
       "name": "Responder Aclaracion"
     },
@@ -408,7 +471,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [0, 208],
+      "position": [
+        0,
+        208
+      ],
       "id": "0da05bbf-5fcb-43ea-99cd-a61b08872d42",
       "name": "Guardar Ruta Garantia",
       "credentials": {
@@ -428,7 +494,10 @@
       },
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [224, 592],
+      "position": [
+        224,
+        592
+      ],
       "id": "075efe46-0415-41af-883a-cee8f3751f44",
       "name": "Guardar Ruta Reparacion",
       "credentials": {
@@ -448,7 +517,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [224, 96],
+      "position": [
+        224,
+        96
+      ],
       "id": "c61d2041-64dd-4af2-a36a-71bd78ff356a",
       "name": "Agente Garantia"
     },
@@ -462,7 +534,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [448, 592],
+      "position": [
+        448,
+        592
+      ],
       "id": "892cf110-bd2a-4d48-96fb-6001d83b3523",
       "name": "Agente Reparacion"
     },
@@ -472,7 +547,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [640, 592],
+      "position": [
+        640,
+        592
+      ],
       "id": "2fb7f5f0-70c7-4fb2-9646-63a6c8199dce",
       "name": "Resolver Flujo Reparacion"
     },
@@ -484,7 +562,10 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [800, 400],
+      "position": [
+        800,
+        400
+      ],
       "id": "46cd4898-43d3-4a99-a987-2626a8fa1354",
       "name": "Respond to Webhook"
     },
@@ -500,7 +581,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [-576, 624],
+      "position": [
+        -576,
+        624
+      ],
       "id": "df7c0614-50d7-42c5-a8ad-aa8fd1b38049",
       "name": "Modelo Clasificador",
       "credentials": {
@@ -522,7 +606,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [224, 320],
+      "position": [
+        224,
+        320
+      ],
       "id": "cb3af28b-d387-4977-99cb-c68484777bd7",
       "name": "Modelo Garantia",
       "credentials": {
@@ -544,7 +631,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [448, 800],
+      "position": [
+        448,
+        800
+      ],
       "id": "77e280f8-aa87-445d-8e77-838136609666",
       "name": "Modelo Reparacion",
       "credentials": {
@@ -561,7 +651,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
-      "position": [368, 320],
+      "position": [
+        368,
+        320
+      ],
       "id": "deb56c94-cbda-4849-b500-0466a0215f40",
       "name": "Postgres Chat Memory",
       "credentials": {
@@ -577,7 +670,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 0],
+      "position": [
+        224,
+        0
+      ],
       "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "name": "Preparar Memoria Bienvenida"
     },
@@ -589,7 +685,10 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [448, 0],
+      "position": [
+        448,
+        0
+      ],
       "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
       "name": "Guardar Memoria Bienvenida",
       "credentials": {
@@ -605,7 +704,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [448, 800],
+      "position": [
+        448,
+        800
+      ],
       "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
       "name": "Preparar Memoria Aclaracion"
     },
@@ -617,7 +719,10 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [672, 800],
+      "position": [
+        672,
+        800
+      ],
       "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
       "name": "Guardar Memoria Aclaracion",
       "credentials": {
