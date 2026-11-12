@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   MessagesSquare,
-  Settings2,
   Users,
   Wrench,
   Store,
@@ -112,13 +111,6 @@ const signInNavbarItems = [
     name: "Caja",
     icon: <Wallet className="w-5 h-5" />,
     path: "/admin/cash",
-    group: "Administración",
-    new: false,
-  },
-  {
-    name: "Configuración",
-    icon: <Settings2 className="w-5 h-5" />,
-    path: "/admin/whatsapp",
     group: "Administración",
     new: false,
   },

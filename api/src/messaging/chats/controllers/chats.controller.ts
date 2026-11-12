@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { CHATS_ERROR_MESSAGES } from "../constants/chats.constants.js";
 import { ChatsService } from "../services/chats.service.js";
 import { humanModeService } from "../../../app_platform/human-mode/human-mode.service.js";
-import { listener } from "../../whatsapp/whatsapp-service.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { ContactName } from "../entities/contact-name.entity.js";
 
@@ -95,11 +94,6 @@ export class ChatsController {
         .findOneBy({ phone: sessionId })
         .then((cn) => cn?.name);
       await humanModeService.activate(sessionId, contactName);
-      listener.broadcast("conversation_transferred", {
-        sessionId,
-        phone: sessionId,
-        contactName: contactName ?? null,
-      });
       res.status(200).json({ isHumanMode: true });
     } catch (error) {
       console.error("Error activando transferencia:", error);
@@ -134,8 +128,10 @@ export class ChatsController {
         return;
       }
 
-      await listener.sendReply(sessionId, body.trim());
-      res.status(200).json({ ok: true });
+      // whatsapp-web.js fue retirado -- el envío por Graph API (ventana de
+      // 24h) todavía no existe, se construye en el siguiente checkpoint de
+      // WhatsApp oficial.
+      res.status(501).json({ error: "Envío de mensajes manual no disponible todavía" });
     } catch (error) {
       console.error("Error enviando mensaje manual:", error);
       const message = error instanceof Error ? error.message : "Error al enviar mensaje";

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
-import { authenticatedEventSourceUrl } from "../../../core/common/utils/auth-header";
 
 export interface Message {
   id: number;
@@ -40,23 +39,6 @@ export function useMessages(sessionId: string | null) {
     setMessages([]);
     fetchMessages().catch(console.error);
   }, [fetchMessages]);
-
-  useEffect(() => {
-    if (!sessionId) return;
-
-    const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
-    const eventSource = new EventSource(authenticatedEventSourceUrl(`${baseUrl}/whatsapp/events`));
-
-    eventSource.addEventListener("message_received", (event) => {
-      const payload = JSON.parse((event as MessageEvent).data) as { sessionId?: string };
-      if (!payload.sessionId) return;
-      if (payload.sessionId === sessionId || `${payload.sessionId}@c.us` === sessionId) {
-        fetchMessages().catch(console.error);
-      }
-    });
-
-    return () => eventSource.close();
-  }, [fetchMessages, sessionId]);
 
   return { messages, loading, error };
 }

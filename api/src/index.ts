@@ -3,14 +3,11 @@ import express from "express";
 import cors from "cors";
 import AppDataSource from "./core/config/data-source.js";
 import CustomerServiceDataSource from "./core/config/customer-service-data-source.js";
-import { listener } from "./messaging/whatsapp/whatsapp-service.js";
 import { User } from "./identity/auth/entities/user.entity.js";
 import { UserDao } from "./identity/auth/daos/user.dao.js";
 import { AuthService } from "./identity/auth/services/auth.service.js";
 import { AuthController } from "./identity/auth/controllers/auth.controller.js";
 import { createAuthRouter } from "./identity/auth/routes/auth.routes.js";
-import { createWhatsappAdminRouter } from "./messaging/whatsapp-admin/whatsapp-admin.routes.js";
-import { ExcludedPhone } from "./messaging/whatsapp-admin/entities/excluded-phone.entity.js";
 import { createAutomationAdminRouter } from "./app_platform/automation/automation-admin.routes.js";
 import { createN8nIntegrationRouter } from "./app_platform/integrations/n8n-admin.routes.js";
 import { ChatHistory } from "./messaging/chats/entities/chat-history.entity.js";
@@ -127,7 +124,6 @@ import { allowSystemScope, runWithTenant } from "./core/tenancy/tenant-context.j
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
-const enableWhatsappListener = process.env.ENABLE_WHATSAPP_LISTENER === "true";
 const allowedOrigins = ["http://localhost:4300", "https://app.kaltra.local"];
 
 app.use(
@@ -153,7 +149,6 @@ Promise.all([AppDataSource.initialize(), CustomerServiceDataSource.initialize()]
     }
 
     // Configurar servicios y controladores
-    const exclusionsRepository = AppDataSource.getRepository(ExcludedPhone);
     const userDao = new UserDao(userRepository);
     const authService = new AuthService(userDao, tenantRepository);
     const authController = new AuthController(authService);
@@ -319,7 +314,6 @@ Promise.all([AppDataSource.initialize(), CustomerServiceDataSource.initialize()]
 
     // Rutas
     app.use("/api/v1/auth", createAuthRouter(authController));
-    app.use("/api/v1/whatsapp", createWhatsappAdminRouter(exclusionsRepository));
     app.use("/api/v1/automation", createAutomationAdminRouter());
     app.use("/api/v1/integrations/n8n", createN8nIntegrationRouter());
     app.use("/api/v1/chats", createChatsRouter(chatsController));
@@ -359,13 +353,6 @@ Promise.all([AppDataSource.initialize(), CustomerServiceDataSource.initialize()]
       console.log(
         `Servidor de atención al cliente escuchando en el puerto ${port}`,
       );
-      console.log(
-        `Listener de WhatsApp habilitado: ${enableWhatsappListener ? "sí" : "no"}`,
-      );
-
-      if (enableWhatsappListener) {
-        listener.start();
-      }
     });
   })
   .catch((error) => {

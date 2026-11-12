@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
-import { authenticatedEventSourceUrl } from "../../../core/common/utils/auth-header";
 
 export function useHumanMode(sessionId: string | null) {
   const { apiClient } = useApiClient();
@@ -28,18 +27,6 @@ export function useHumanMode(sessionId: string | null) {
   useEffect(() => {
     fetchStatus().catch(console.error);
   }, [fetchStatus]);
-
-  useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
-    const eventSource = new EventSource(authenticatedEventSourceUrl(`${baseUrl}/whatsapp/events`));
-    eventSource.addEventListener("conversation_transferred", (event) => {
-      const payload = JSON.parse((event as MessageEvent).data) as { sessionId?: string };
-      if (payload.sessionId === sessionId) {
-        setIsHumanMode(true);
-      }
-    });
-    return () => eventSource.close();
-  }, [sessionId]);
 
   const activate = useCallback(async (): Promise<void> => {
     if (!sessionId) return;

@@ -1,4 +1,3 @@
-import WhatsAppAdminPage from "../messaging/whatsapp/pages/whatsapp-admin-page";
 import ChatsPage from "../messaging/chats/pages/chats-page";
 import AuthPage from "../identity/auth/pages/auth-page";
 import RegisterPage from "../identity/auth/pages/register-page";
@@ -41,10 +40,6 @@ export const protectedRoutes = [
   {
     path: "/admin/dashboard",
     element: <DashboardPage />,
-  },
-  {
-    path: "/admin/whatsapp",
-    element: <WhatsAppAdminPage />,
   },
   {
     path: "/admin/chats",
