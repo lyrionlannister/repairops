@@ -2,12 +2,14 @@ import { Redis } from "ioredis";
 
 const redisHost = process.env.REDIS_HOST ?? "redis";
 const redisPort = parseInt(process.env.REDIS_PORT ?? "6379", 10);
+const redisUser = process.env.REDIS_USER ?? undefined;
+const redisPassword = process.env.REDIS_PASSWORD ?? undefined;
 
 export const redisClient = new Redis({
   host: redisHost,
   port: redisPort,
-  username: process.env.REDIS_USER,
-  password: process.env.REDIS_PASSWORD,
+  username: redisUser,
+  password: redisPassword,
   lazyConnect: true,
 });
 
