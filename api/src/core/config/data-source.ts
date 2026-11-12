@@ -26,6 +26,8 @@ import { CashMovement } from "../../commerce/cash/entities/cash-movement.entity.
 import { RevenueAttributionSetting } from "../../commerce/revenue-attribution/entities/revenue-attribution-setting.entity.js";
 import { Branch } from "../../identity/branches/entities/branch.entity.js";
 import { Customer } from "../../commerce/customers/entities/customer.entity.js";
+import { WhatsappAccount } from "../../messaging/whatsapp-official/entities/whatsapp-account.entity.js";
+import { WhatsappTemplateStatus } from "../../messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
 // TypeORM no intente cargar los archivos de migración en cada `initialize()`) y por el
@@ -67,6 +69,8 @@ export const appDataSourceOptions: DataSourceOptions = {
     RevenueAttributionSetting,
     Branch,
     Customer,
+    WhatsappAccount,
+    WhatsappTemplateStatus,
   ],
 };
 

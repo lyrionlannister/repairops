@@ -56,6 +56,10 @@ services:
       REDIS_USER: ${REDIS_USER:?REDIS_USER is required}
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       N8N_INTERNAL_TOKEN: ${N8N_INTERNAL_TOKEN:?N8N_INTERNAL_TOKEN is required}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      WHATSAPP_PILOT_WABA_ID: ${WHATSAPP_PILOT_WABA_ID:?WHATSAPP_PILOT_WABA_ID is required}
+      WHATSAPP_PILOT_PHONE_NUMBER_ID: ${WHATSAPP_PILOT_PHONE_NUMBER_ID:?WHATSAPP_PILOT_PHONE_NUMBER_ID is required}
+      WHATSAPP_PILOT_ACCESS_TOKEN: ${WHATSAPP_PILOT_ACCESS_TOKEN:?WHATSAPP_PILOT_ACCESS_TOKEN is required}
       # Puerto interno del contenedor de Redis (siempre 6379) -- no confundir con
       # REDIS_PORT, que es el puerto publicado en el host para el mapeo de abajo.
       REDIS_PORT: 6379

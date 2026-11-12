@@ -24,6 +24,14 @@ import { LocalDao } from "./app_platform/local/daos/local.dao.js";
 import { LocalService } from "./app_platform/local/services/local.service.js";
 import { LocalController } from "./app_platform/local/controllers/local.controller.js";
 import { createLocalRouter } from "./app_platform/local/routes/local.routes.js";
+import { WhatsappAccount } from "./messaging/whatsapp-official/entities/whatsapp-account.entity.js";
+import { WhatsappAccountDao } from "./messaging/whatsapp-official/daos/whatsapp-account.dao.js";
+import { WhatsappAccountService } from "./messaging/whatsapp-official/services/whatsapp-account.service.js";
+import { WhatsappAccountController } from "./messaging/whatsapp-official/controllers/whatsapp-account.controller.js";
+import { createWhatsappAccountRouter } from "./messaging/whatsapp-official/routes/whatsapp-account.routes.js";
+import { WhatsappTemplateStatus } from "./messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
+import { WhatsappTemplateStatusDao } from "./messaging/whatsapp-official/daos/whatsapp-template-status.dao.js";
+import { WhatsappTemplateService } from "./messaging/whatsapp-official/services/whatsapp-template.service.js";
 import { RepairNote } from "./commerce/repair-notes/entities/repair-note.entity.js";
 import { RepairNoteDao } from "./commerce/repair-notes/daos/repair-note.dao.js";
 import { RepairNoteService } from "./commerce/repair-notes/services/repair-note.service.js";
@@ -160,6 +168,17 @@ Promise.all([AppDataSource.initialize(), CustomerServiceDataSource.initialize()]
     const localDao = new LocalDao(localRepository);
     const localService = new LocalService(localDao);
     const localController = new LocalController(localService);
+
+    const whatsappAccountRepository = AppDataSource.getRepository(WhatsappAccount);
+    const whatsappAccountDao = new WhatsappAccountDao(whatsappAccountRepository);
+    const whatsappAccountService = new WhatsappAccountService(whatsappAccountDao);
+    const whatsappTemplateStatusRepository = AppDataSource.getRepository(WhatsappTemplateStatus);
+    const whatsappTemplateStatusDao = new WhatsappTemplateStatusDao(whatsappTemplateStatusRepository);
+    const whatsappTemplateService = new WhatsappTemplateService(whatsappTemplateStatusDao);
+    const whatsappAccountController = new WhatsappAccountController(
+      whatsappAccountService,
+      whatsappTemplateService,
+    );
 
     const inventoryItemRepository = AppDataSource.getRepository(InventoryItem);
     const inventoryMovementRepository = AppDataSource.getRepository(InventoryMovement);
@@ -305,6 +324,7 @@ Promise.all([AppDataSource.initialize(), CustomerServiceDataSource.initialize()]
     app.use("/api/v1/integrations/n8n", createN8nIntegrationRouter());
     app.use("/api/v1/chats", createChatsRouter(chatsController));
     app.use("/api/v1/local", createLocalRouter(localController));
+    app.use("/api/v1/whatsapp-official", createWhatsappAccountRouter(whatsappAccountController));
     app.use("/api/v1/repair-notes", createRepairNoteRouter(repairNoteController));
     app.use("/api/v1/message-templates", createMessageTemplateRouter(messageTemplateController));
     app.use("/api/v1/suppliers", createSupplierRouter(supplierController));
