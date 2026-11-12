@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { CHATS_ERROR_MESSAGES } from "../constants/chats.constants.js";
 import { ChatsService } from "../services/chats.service.js";
@@ -5,6 +6,7 @@ import { humanModeService } from "../../../app_platform/human-mode/human-mode.se
 import AppDataSource from "../../../core/config/data-source.js";
 import { ContactName } from "../entities/contact-name.entity.js";
 
+@singleton()
 export class ChatsController {
   constructor(private chatsService: ChatsService) {}
 

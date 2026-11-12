@@ -1,40 +1,45 @@
-import AppDataSource from "../config/data-source.js";
-import { runWithTenant } from "../tenancy/tenant-context.js";
-import { Customer } from "../../commerce/customers/entities/customer.entity.js";
-import { CustomerDao } from "../../commerce/customers/daos/customer.dao.js";
-import { ServiceType } from "../../commerce/service-types/entities/service-type.entity.js";
-import { ServiceTypeDao } from "../../commerce/service-types/daos/service-type.dao.js";
-import { Local } from "../../app_platform/local/entities/local.entity.js";
-import { LocalDao } from "../../app_platform/local/daos/local.dao.js";
-import { LocalService } from "../../app_platform/local/services/local.service.js";
-import { InventoryItem } from "../../commerce/inventory/entities/inventory-item.entity.js";
-import { InventoryItemDao } from "../../commerce/inventory/daos/inventory-item.dao.js";
-import { InventoryMovement } from "../../commerce/inventory/entities/inventory-movement.entity.js";
-import { InventoryMovementDao } from "../../commerce/inventory/daos/inventory-movement.dao.js";
-import { InventoryService } from "../../commerce/inventory/services/inventory.service.js";
-import { RepairNote } from "../../commerce/repair-notes/entities/repair-note.entity.js";
-import { RepairNoteDao } from "../../commerce/repair-notes/daos/repair-note.dao.js";
-import { RepairNoteItem } from "../../commerce/repair-notes/entities/repair-note-item.entity.js";
-import { RepairNoteItemDao } from "../../commerce/repair-notes/daos/repair-note-item.dao.js";
-import { RepairNoteServiceType } from "../../commerce/repair-notes/entities/repair-note-service-type.entity.js";
-import { RepairNoteServiceTypeDao } from "../../commerce/repair-notes/daos/repair-note-service-type.dao.js";
-import { RepairNoteService } from "../../commerce/repair-notes/services/repair-note.service.js";
-import { CashSession } from "../../commerce/cash/entities/cash-session.entity.js";
-import { CashSessionDao } from "../../commerce/cash/daos/cash-session.dao.js";
-import { CashMovement } from "../../commerce/cash/entities/cash-movement.entity.js";
-import { CashMovementDao } from "../../commerce/cash/daos/cash-movement.dao.js";
-import { CashService } from "../../commerce/cash/services/cash.service.js";
-import { User } from "../../identity/auth/entities/user.entity.js";
-import { UserDao } from "../../identity/auth/daos/user.dao.js";
+import "reflect-metadata";
+import AppDataSource from "../core/config/data-source.js";
+import { runWithTenant, allowSystemScope } from "../core/tenancy/tenant-context.js";
+import { Tenant } from "../core/tenancy/entities/tenant.entity.js";
+import { Customer } from "../commerce/customers/entities/customer.entity.js";
+import { CustomerDao } from "../commerce/customers/daos/customer.dao.js";
+import { ServiceType } from "../commerce/service-types/entities/service-type.entity.js";
+import { ServiceTypeDao } from "../commerce/service-types/daos/service-type.dao.js";
+import { Local } from "../app_platform/local/entities/local.entity.js";
+import { LocalDao } from "../app_platform/local/daos/local.dao.js";
+import { LocalService } from "../app_platform/local/services/local.service.js";
+import { InventoryItem } from "../commerce/inventory/entities/inventory-item.entity.js";
+import { InventoryItemDao } from "../commerce/inventory/daos/inventory-item.dao.js";
+import { InventoryMovement } from "../commerce/inventory/entities/inventory-movement.entity.js";
+import { InventoryMovementDao } from "../commerce/inventory/daos/inventory-movement.dao.js";
+import { InventoryService } from "../commerce/inventory/services/inventory.service.js";
+import { RepairNote } from "../commerce/repair-notes/entities/repair-note.entity.js";
+import { RepairNoteDao } from "../commerce/repair-notes/daos/repair-note.dao.js";
+import { RepairNoteItem } from "../commerce/repair-notes/entities/repair-note-item.entity.js";
+import { RepairNoteItemDao } from "../commerce/repair-notes/daos/repair-note-item.dao.js";
+import { RepairNoteServiceType } from "../commerce/repair-notes/entities/repair-note-service-type.entity.js";
+import { RepairNoteServiceTypeDao } from "../commerce/repair-notes/daos/repair-note-service-type.dao.js";
+import { RepairNoteService } from "../commerce/repair-notes/services/repair-note.service.js";
+import { CashSession } from "../commerce/cash/entities/cash-session.entity.js";
+import { CashSessionDao } from "../commerce/cash/daos/cash-session.dao.js";
+import { CashMovement } from "../commerce/cash/entities/cash-movement.entity.js";
+import { CashMovementDao } from "../commerce/cash/daos/cash-movement.dao.js";
+import { CashService } from "../commerce/cash/services/cash.service.js";
+import { User } from "../identity/auth/entities/user.entity.js";
+import { UserDao } from "../identity/auth/daos/user.dao.js";
 
-// Taller de demostración repetible: clientes, refacciones, servicios,
-// órdenes y caja. Idempotente por tenant (si ya hay clientes, no vuelve a
-// sembrar) para poder correrlo en cada boot sin duplicar datos.
-export async function seedDemoShop(tenantId: string): Promise<void> {
+// Script manual, nunca enganchado al boot del server (pnpm seed:demo). Taller
+// de demostración repetible: clientes, refacciones, servicios, órdenes y
+// caja. Idempotente por tenant (si ya hay clientes, no vuelve a sembrar).
+async function seedDemoShop(tenantId: string): Promise<void> {
   await runWithTenant(tenantId, async () => {
     const customerRepository = AppDataSource.getRepository(Customer);
     const already = await customerRepository.count({ where: { tenantId } });
-    if (already > 0) return;
+    if (already > 0) {
+      console.log(`Tenant ${tenantId} ya tiene datos demo, no se vuelve a sembrar.`);
+      return;
+    }
 
     const localDao = new LocalDao(AppDataSource.getRepository(Local));
     const localService = new LocalService(localDao);
@@ -66,7 +71,6 @@ export async function seedDemoShop(tenantId: string): Promise<void> {
     const items: InventoryItem[] = [];
     for (const [name, kind, costPrice, salePrice, initialStock] of partsAndAccessories) {
       const item = await inventoryService.create({
-        tenantId,
         localId: local.id,
         name,
         sku: null,
@@ -95,7 +99,6 @@ export async function seedDemoShop(tenantId: string): Promise<void> {
     );
     await repairNoteService.create(
       {
-        tenantId,
         localId: local.id,
         customerId: maria.id,
         customerName: maria.name,
@@ -117,7 +120,6 @@ export async function seedDemoShop(tenantId: string): Promise<void> {
     );
     await repairNoteService.create(
       {
-        tenantId,
         localId: local.id,
         customerId: carlos.id,
         customerName: carlos.name,
@@ -156,3 +158,28 @@ export async function seedDemoShop(tenantId: string): Promise<void> {
     console.log("Taller demo sembrado: 2 clientes, 4 items de inventario, 2 órdenes, 1 sesión de caja.");
   });
 }
+
+async function main(): Promise<void> {
+  await AppDataSource.initialize();
+
+  const tenantIdArg = process.argv[2];
+  const tenantId = tenantIdArg
+    ?? (await allowSystemScope(async () => {
+      const [tenant] = await AppDataSource.getRepository(Tenant).find({ take: 1 });
+      return tenant?.id;
+    }));
+
+  if (!tenantId) {
+    console.error("No hay ningun tenant creado todavia -- registra uno primero, o pasa un id: pnpm seed:demo <tenantId>");
+    process.exitCode = 1;
+    return AppDataSource.destroy();
+  }
+
+  await seedDemoShop(tenantId);
+  await AppDataSource.destroy();
+}
+
+main().catch((error) => {
+  console.error("Error sembrando el taller demo:", error);
+  process.exitCode = 1;
+});

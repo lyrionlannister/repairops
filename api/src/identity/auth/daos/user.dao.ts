@@ -1,9 +1,12 @@
-import { Repository } from "typeorm";
+import { FindOptionsWhere, Repository } from "typeorm";
+import { singleton, inject } from "tsyringe";
+import { repositoryToken } from "../../../core/di/repository-token.js";
 import { User } from "../entities/user.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 
+@singleton()
 export class UserDao extends TenantScopedDao<User> {
-  constructor(repository: Repository<User>) {
+  constructor(@inject(repositoryToken(User)) repository: Repository<User>) {
     super(repository);
   }
 
@@ -16,7 +19,7 @@ export class UserDao extends TenantScopedDao<User> {
   // todos los tenants. Solo usar dentro de allowSystemScope(), nunca para
   // listar/editar datos de negocio.
   async findByEmailAcrossTenants(email: string): Promise<User | null> {
-    return this.repository.findOneBy({ email } as any);
+    return this.repository.findOneBy({ email } as unknown as FindOptionsWhere<User>);
   }
 
   async toggleStatus(id: string): Promise<User | null> {

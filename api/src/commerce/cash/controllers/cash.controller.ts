@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -7,6 +8,7 @@ import { CloseCashSessionDto } from "../dtos/close-cash-session.dto.js";
 import { RegisterCashMovementDto } from "../dtos/register-cash-movement.dto.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
 
+@singleton()
 export class CashController {
   constructor(private service: CashService) {}
 

@@ -1,4 +1,4 @@
-import { ObjectLiteral, Repository, SelectQueryBuilder } from "typeorm";
+import { FindOptionsWhere, ObjectLiteral, Repository, SelectQueryBuilder } from "typeorm";
 import { BaseDao } from "./base.dao.js";
 import { getCurrentTenantId } from "../tenancy/tenant-context.js";
 
@@ -46,7 +46,7 @@ export abstract class TenantScopedDao<
 
   override async findAll(): Promise<T[]> {
     const tenantId = getCurrentTenantId();
-    return this.repository.find({ where: { tenantId } as any });
+    return this.repository.find({ where: { tenantId } as unknown as FindOptionsWhere<T> });
   }
 
   override async update(id: string | number, data: Partial<T>): Promise<T | null> {

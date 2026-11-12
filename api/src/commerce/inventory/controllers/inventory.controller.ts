@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -7,6 +8,7 @@ import { RegisterMovementDto } from "../dtos/register-movement.dto.js";
 import { parseInventoryImportFile } from "../utils/inventory-import-parser.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
+@singleton()
 export class InventoryController {
   constructor(private service: InventoryService) {}
 
@@ -60,7 +62,7 @@ export class InventoryController {
         res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
-      res.status(201).json(await this.service.create(dto as any));
+      res.status(201).json(await this.service.create(dto));
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

@@ -1,3 +1,4 @@
+import { singleton, inject } from "tsyringe";
 import { hash, compare } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Repository } from "typeorm";
@@ -7,15 +8,21 @@ import { LoginUserDto } from "../dtos/login-user.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
 import { User } from "../entities/user.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { repositoryToken } from "../../../core/di/repository-token.js";
 import { requireJwtSecret } from "../jwt-secret.js";
 import { allowSystemScope, runWithTenant } from "../../../core/tenancy/tenant-context.js";
+import { ServiceTypeService } from "../../../commerce/service-types/services/service-type.service.js";
+import { BranchService } from "../../branches/services/branch.service.js";
 
 const { sign } = jwt;
 
+@singleton()
 export class AuthService {
   constructor(
     private userDao: UserDao,
-    private tenantRepository: Repository<Tenant>,
+    @inject(repositoryToken(Tenant)) private tenantRepository: Repository<Tenant>,
+    private serviceTypeService: ServiceTypeService,
+    private branchService: BranchService,
   ) {}
 
   async register(data: RegisterUserDto): Promise<User> {
@@ -37,13 +44,21 @@ export class AuthService {
 
       const hashedPassword = await hash(data.password, 10);
 
-      return this.userDao.create({
+      const owner = await this.userDao.create({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         password: hashedPassword,
         role: "owner",
       });
+
+      // Defaults del tenant nuevo -- una sola vez, aqui, no en cada arranque
+      // del server (ver core/seed, retirado: ese barrido no escala con
+      // muchos tenants y hacia esto mismo en cada boot).
+      await this.serviceTypeService.seed();
+      await this.branchService.seed({});
+
+      return owner;
     });
   }
 

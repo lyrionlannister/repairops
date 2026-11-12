@@ -1,3 +1,5 @@
+import { singleton, inject } from "tsyringe";
+import type { FindOptionsWhere } from "typeorm";
 import { RepairNoteDao } from "../daos/repair-note.dao.js";
 import { RepairNoteItemDao } from "../daos/repair-note-item.dao.js";
 import { RepairNoteServiceTypeDao } from "../daos/repair-note-service-type.dao.js";
@@ -10,8 +12,25 @@ import { RepairNoteServiceType } from "../entities/repair-note-service-type.enti
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 
-type CreatePayload = Omit<RepairNote, "id" | "publicId" | "controlNumber" | "createdAt" | "updatedAt">;
-type UpdatePayload = Partial<Omit<RepairNote, "id" | "publicId" | "controlNumber" | "createdAt" | "updatedAt">>;
+// tenantId/controlNumber los agrega create() desde el contexto/consecutivo
+// (nunca el caller); totalValue/status/requiresAdvance/deviceOff/
+// hasWarranty/hasExtendedWarranty tienen default en la BD, por eso son
+// opcionales aqui aunque la entidad los declare requeridos.
+type DefaultedOnCreate =
+  | "totalValue"
+  | "status"
+  | "requiresAdvance"
+  | "deviceOff"
+  | "hasWarranty"
+  | "hasExtendedWarranty";
+type CreatePayload = Omit<
+  RepairNote,
+  "id" | "publicId" | "tenantId" | "controlNumber" | "createdAt" | "updatedAt" | DefaultedOnCreate
+> &
+  Partial<Pick<RepairNote, DefaultedOnCreate>>;
+type UpdatePayload = Partial<
+  Omit<RepairNote, "id" | "publicId" | "tenantId" | "controlNumber" | "createdAt" | "updatedAt">
+>;
 
 export interface RepairNoteItemInput {
   inventoryItemId: string;
@@ -19,6 +38,7 @@ export interface RepairNoteItemInput {
   unitPrice: number;
 }
 
+@singleton()
 export class RepairNoteService {
   constructor(
     private repairNoteDao: RepairNoteDao,
@@ -123,11 +143,11 @@ export class RepairNoteService {
 
     const tenantId = getCurrentTenantId();
     return AppDataSource.transaction(async (manager) => {
-      const note = await manager.findOneBy(RepairNote, { id, tenantId } as any);
+      const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
       if (!note) return null;
 
       if (items !== undefined) {
-        const oldItems = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as any });
+        const oldItems = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem> });
         for (const oldItem of oldItems) {
           await this.inventoryService.applyMovement(manager, {
             inventoryItemId: oldItem.inventoryItemId,
@@ -138,7 +158,7 @@ export class RepairNoteService {
             reason: "Edición de nota: reverso de item anterior",
           });
         }
-        await manager.delete(RepairNoteItem, { repairNoteId: id, tenantId } as any);
+        await manager.delete(RepairNoteItem, { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem>);
       }
 
       Object.assign(note, data);
@@ -165,7 +185,7 @@ export class RepairNoteService {
       }
 
       if (serviceTypeIds !== undefined) {
-        await manager.delete(RepairNoteServiceType, { repairNoteId: id, tenantId } as any);
+        await manager.delete(RepairNoteServiceType, { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteServiceType>);
         for (const serviceTypeId of serviceTypeIds) {
           const link = manager.create(RepairNoteServiceType, { tenantId, repairNoteId: id, serviceTypeId });
           await manager.save(link);
@@ -181,12 +201,12 @@ export class RepairNoteService {
   async cancel(id: string): Promise<RepairNote> {
     const tenantId = getCurrentTenantId();
     return AppDataSource.transaction(async (manager) => {
-      const note = await manager.findOneBy(RepairNote, { id, tenantId } as any);
+      const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
       if (!note) throw new Error("Nota no encontrada");
       if (note.status === "cancelled") throw new Error("La nota ya está cancelada");
       if (note.status === "delivered") throw new Error("No se puede cancelar una nota ya entregada");
 
-      const items = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as any });
+      const items = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem> });
       for (const item of items) {
         await this.inventoryService.applyMovement(manager, {
           inventoryItemId: item.inventoryItemId,

@@ -1,7 +1,9 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { WhatsappAccountService } from "../services/whatsapp-account.service.js";
 import { WhatsappTemplateService } from "../services/whatsapp-template.service.js";
 
+@singleton()
 export class WhatsappAccountController {
   constructor(
     private whatsappAccountService: WhatsappAccountService,

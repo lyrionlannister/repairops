@@ -1,6 +1,8 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { SupplierService } from "../services/supplier.service.js";
 
+@singleton()
 export class SupplierController {
   constructor(private service: SupplierService) {}
 

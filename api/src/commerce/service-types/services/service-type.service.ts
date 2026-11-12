@@ -1,3 +1,4 @@
+import { singleton, inject } from "tsyringe";
 import { ServiceTypeDao } from "../daos/service-type.dao.js";
 import { ServiceType } from "../entities/service-type.entity.js";
 
@@ -6,6 +7,7 @@ import { ServiceType } from "../entities/service-type.entity.js";
 // cliente). El tenant puede agregar mas desde la UI.
 const SEED_SERVICE_TYPES = ["Reparación", "Mantenimiento", "Diagnóstico", "Revisión", "Mojado", "Software", "Sistema"];
 
+@singleton()
 export class ServiceTypeService {
   constructor(private dao: ServiceTypeDao) {}
 

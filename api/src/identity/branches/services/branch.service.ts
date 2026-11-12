@@ -1,9 +1,11 @@
+import { singleton, inject } from "tsyringe";
 import { BranchDao } from "../daos/branch.dao.js";
 import { Branch } from "../entities/branch.entity.js";
 
 type CreatePayload = Pick<Branch, "name" | "address" | "phone">;
 type UpdatePayload = Partial<CreatePayload>;
 
+@singleton()
 export class BranchService {
   constructor(private dao: BranchDao) {}
 

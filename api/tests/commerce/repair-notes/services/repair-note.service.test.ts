@@ -58,7 +58,7 @@ describe("RepairNoteService items -> inventory movements", () => {
         kind: "part",
         costPrice: 150,
         salePrice: 300,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 4 }),
@@ -72,7 +72,7 @@ describe("RepairNoteService items -> inventory movements", () => {
           model: "A52",
           reportedFailure: "No carga",
           receivedAt: "2026-01-01",
-        } as any,
+        },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 300 }],
       ),
     );
@@ -92,7 +92,7 @@ describe("RepairNoteService items -> inventory movements", () => {
         kind: "part",
         costPrice: 80,
         salePrice: 150,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 5 }),
@@ -106,7 +106,7 @@ describe("RepairNoteService items -> inventory movements", () => {
           model: "A52",
           reportedFailure: "No enciende",
           receivedAt: "2026-01-01",
-        } as any,
+        },
         [{ inventoryItemId: item.id, quantity: 2, unitPrice: 150 }],
       ),
     );
@@ -135,7 +135,7 @@ describe("RepairNoteService items -> inventory movements", () => {
         kind: "part",
         costPrice: 400,
         salePrice: 700,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 3 }),
@@ -150,7 +150,7 @@ describe("RepairNoteService items -> inventory movements", () => {
           reportedFailure: "Pantalla rota",
           receivedAt: "2026-01-01",
           status: "received",
-        } as any,
+        },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 700 }],
       ),
     );
@@ -173,7 +173,7 @@ describe("RepairNoteService items -> inventory movements", () => {
           reportedFailure: "No enciende",
           receivedAt: "2026-01-01",
           status: "delivered",
-        } as any,
+        },
         [],
       ),
     );

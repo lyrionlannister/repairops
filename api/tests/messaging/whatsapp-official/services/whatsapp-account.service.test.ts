@@ -1,6 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
 import type { WhatsappAccountDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-account.dao.js";
+import type { WhatsappAccount } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-account.entity.js";
+import { mockEntity } from "../../../support/mock-entity.js";
 
 function makeDao() {
   return {
@@ -17,7 +19,7 @@ describe("WhatsappAccountService.getOrCreateForTenant", () => {
 
   it("seeds the pilot account from env vars", async () => {
     const dao = makeDao();
-    (dao.getOrCreateForTenant as any).mockResolvedValue({ id: "wa-1" });
+    vi.mocked(dao.getOrCreateForTenant).mockResolvedValue(mockEntity<WhatsappAccount>({ id: "wa-1" }));
 
     const service = new WhatsappAccountService(dao);
     await service.getOrCreateForTenant();

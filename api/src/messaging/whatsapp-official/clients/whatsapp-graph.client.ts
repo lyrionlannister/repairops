@@ -1,6 +1,7 @@
 import type { TemplateCatalogEntry } from "../templates/catalog.js";
+import { optionalEnv } from "../../../core/config/env.js";
 
-const GRAPH_API_VERSION = process.env.WHATSAPP_GRAPH_API_VERSION || "v21.0";
+const GRAPH_API_VERSION = optionalEnv("WHATSAPP_GRAPH_API_VERSION", "v21.0");
 const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
 export type GraphTemplate = {

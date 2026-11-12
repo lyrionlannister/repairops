@@ -66,7 +66,7 @@ describe("SaleService.create", () => {
     // prueba en calculate-sale-totals.test.ts).
     await runWithTenant(tenantId, async () => {
       const local = await localService.getConfig();
-      await localService.updateConfig({ ...local, taxRatePercent: 0 } as any);
+      await localService.updateConfig({ ...local, taxRatePercent: 0 });
     });
   });
 
@@ -92,7 +92,7 @@ describe("SaleService.create", () => {
         costPrice: 20,
         salePrice: 50,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: itemWithStock.id, type: "in", quantity: 5 }),
@@ -107,7 +107,7 @@ describe("SaleService.create", () => {
         costPrice: 30,
         salePrice: 80,
         minStock: 0,
-      } as any),
+      }),
     );
     // Sin stock (quantityOnHand = 0).
 
@@ -144,7 +144,7 @@ describe("SaleService.create", () => {
         costPrice: 10,
         salePrice: 30,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 3 }),
@@ -190,7 +190,7 @@ describe("SaleService.create", () => {
         costPrice: 10,
         salePrice: 60,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 2 }),
@@ -229,7 +229,7 @@ describe("SaleService.create", () => {
         costPrice: 10,
         salePrice: 60,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 2 }),
@@ -268,7 +268,7 @@ describe("SaleService.create", () => {
         costPrice: 10,
         salePrice: 40,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 1 }),
@@ -305,7 +305,7 @@ describe("SaleService.create", () => {
         costPrice: 100,
         salePrice: 200,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: part.id, type: "in", quantity: 2 }),
@@ -382,7 +382,7 @@ describe("SaleService.create", () => {
         costPrice: 5,
         salePrice: 15,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 10 }),
@@ -418,7 +418,7 @@ describe("SaleService.create", () => {
         costPrice: 10,
         salePrice: 50,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 5 }),

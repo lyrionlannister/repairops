@@ -1,12 +1,9 @@
+import { singleton, inject } from "tsyringe";
 import { WhatsappAccountDao } from "../daos/whatsapp-account.dao.js";
 import { WhatsappAccount } from "../entities/whatsapp-account.entity.js";
+import { requiredEnv } from "../../../core/config/env.js";
 
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`${name} is required`);
-  return value;
-}
-
+@singleton()
 export class WhatsappAccountService {
   constructor(private whatsappAccountDao: WhatsappAccountDao) {}
 

@@ -5,7 +5,7 @@ import type { Response } from "express";
 
 function makeRes() {
   const res = { status: vi.fn(), json: vi.fn() } as unknown as Response;
-  (res.status as any).mockReturnValue(res);
+  vi.mocked(res.status).mockReturnValue(res);
   return res;
 }
 

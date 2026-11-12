@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -5,6 +6,7 @@ import { RevenueAttributionService } from "../services/revenue-attribution.servi
 import { SetAttributionBasisDto } from "../dtos/set-attribution-basis.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
+@singleton()
 export class RevenueAttributionController {
   constructor(private service: RevenueAttributionService) {}
 

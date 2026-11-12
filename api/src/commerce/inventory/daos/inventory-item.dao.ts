@@ -1,9 +1,12 @@
 import { Repository } from "typeorm";
+import { singleton, inject } from "tsyringe";
+import { repositoryToken } from "../../../core/di/repository-token.js";
 import { InventoryItem } from "../entities/inventory-item.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 
+@singleton()
 export class InventoryItemDao extends TenantScopedDao<InventoryItem> {
-  constructor(repository: Repository<InventoryItem>) {
+  constructor(@inject(repositoryToken(InventoryItem)) repository: Repository<InventoryItem>) {
     super(repository);
   }
 

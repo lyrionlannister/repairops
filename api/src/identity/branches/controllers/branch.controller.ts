@@ -1,6 +1,8 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { BranchService } from "../services/branch.service.js";
 
+@singleton()
 export class BranchController {
   constructor(private service: BranchService) {}
 

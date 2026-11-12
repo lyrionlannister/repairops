@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import type { ValueTransformer } from "typeorm";
+import { env } from "../config/env.js";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12;
@@ -9,7 +10,7 @@ const IV_LENGTH = 12;
 // ver SPEC-fase4-whatsapp-oficial.md). Se lee en cada uso, no al importar el
 // módulo, para que un test pueda definir la env var antes de instanciar.
 function getKey(): Buffer {
-  const hex = process.env.ENCRYPTION_KEY;
+  const hex = env("ENCRYPTION_KEY");
   if (!hex || hex.length !== 64) {
     throw new Error("ENCRYPTION_KEY debe ser un string hex de 64 caracteres (32 bytes)");
   }

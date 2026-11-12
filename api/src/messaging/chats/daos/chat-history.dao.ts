@@ -1,4 +1,6 @@
-import { Repository } from "typeorm";
+import { FindOptionsOrder, FindOptionsWhere, Repository } from "typeorm";
+import { singleton, inject } from "tsyringe";
+import { repositoryToken } from "../../../core/di/repository-token.js";
 import { BaseDao } from "../../../core/daos/base.dao.js";
 import { ChatHistory } from "../entities/chat-history.entity.js";
 
@@ -23,8 +25,9 @@ export interface LastInteractionResult {
   lastAt: string | null;
 }
 
+@singleton()
 export class ChatHistoryDao extends BaseDao<ChatHistory> {
-  constructor(repository: Repository<ChatHistory>) {
+  constructor(@inject(repositoryToken(ChatHistory)) repository: Repository<ChatHistory>) {
     super(repository);
   }
 
@@ -44,8 +47,8 @@ export class ChatHistoryDao extends BaseDao<ChatHistory> {
 
   async getMessagesBySessionId(sessionId: string): Promise<ChatHistory[]> {
     return this.repository.find({
-      where: { sessionId } as any,
-      order: { id: "ASC" } as any,
+      where: { sessionId } as unknown as FindOptionsWhere<ChatHistory>,
+      order: { id: "ASC" } as unknown as FindOptionsOrder<ChatHistory>,
     });
   }
 

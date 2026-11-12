@@ -1,3 +1,4 @@
+import { singleton, inject } from "tsyringe";
 import { Decimal } from "decimal.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -41,6 +42,7 @@ export interface CreateSalePayload {
   items: SaleItemInput[];
 }
 
+@singleton()
 export class SaleService {
   constructor(
     private saleDao: SaleDao,

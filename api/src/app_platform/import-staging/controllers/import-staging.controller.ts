@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -7,6 +8,7 @@ import { UpdateStagingRowsDto } from "../dtos/update-staging-rows.dto.js";
 import { ImportStagingCallbackDto } from "../dtos/import-staging-callback.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
+@singleton()
 export class ImportStagingController {
   constructor(private service: ImportStagingService) {}
 

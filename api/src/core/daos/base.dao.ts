@@ -1,4 +1,4 @@
-import { Repository, ObjectLiteral } from "typeorm";
+import { FindOptionsWhere, ObjectLiteral, Repository } from "typeorm";
 
 export abstract class BaseDao<T extends ObjectLiteral> {
   protected repository: Repository<T>;
@@ -13,11 +13,11 @@ export abstract class BaseDao<T extends ObjectLiteral> {
   }
 
   async findById(id: string | number): Promise<T | null> {
-    return this.repository.findOneBy({ id } as any);
+    return this.repository.findOneBy({ id } as unknown as FindOptionsWhere<T>);
   }
 
   async findOne(where: Partial<T>): Promise<T | null> {
-    return this.repository.findOneBy(where as any);
+    return this.repository.findOneBy(where as unknown as FindOptionsWhere<T>);
   }
 
   async findAll(): Promise<T[]> {
@@ -25,12 +25,12 @@ export abstract class BaseDao<T extends ObjectLiteral> {
   }
 
   async update(id: string | number, data: Partial<T>): Promise<T | null> {
-    await this.repository.update({ id } as any, data);
+    await this.repository.update({ id } as unknown as FindOptionsWhere<T>, data);
     return this.findById(id);
   }
 
   async delete(id: string | number): Promise<boolean> {
-    const result = await this.repository.delete({ id } as any);
+    const result = await this.repository.delete({ id } as unknown as FindOptionsWhere<T>);
     return (result.affected ?? 0) > 0;
   }
 }

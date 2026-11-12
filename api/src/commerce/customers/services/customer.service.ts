@@ -1,3 +1,4 @@
+import { singleton, inject } from "tsyringe";
 import { CustomerDao } from "../daos/customer.dao.js";
 import { Customer } from "../entities/customer.entity.js";
 import { RepairNoteDao } from "../../repair-notes/daos/repair-note.dao.js";
@@ -13,6 +14,7 @@ export interface CustomerDeviceHistoryEntry {
   notesCount: number;
 }
 
+@singleton()
 export class CustomerService {
   constructor(
     private dao: CustomerDao,

@@ -1,3 +1,4 @@
+import { singleton, inject } from "tsyringe";
 import { RepairNoteDao } from "../../../commerce/repair-notes/daos/repair-note.dao.js";
 import { RepairNoteItemDao } from "../../../commerce/repair-notes/daos/repair-note-item.dao.js";
 import { SaleDao } from "../../../commerce/inventory/daos/sale.dao.js";
@@ -18,6 +19,7 @@ function prorateSalary(salaryAmount: number | null, payCycle: PayCycle | null, p
   return (Number(salaryAmount) / CYCLE_DAYS[payCycle]) * periodDays;
 }
 
+@singleton()
 export class ReportsService {
   constructor(
     private repairNoteDao: RepairNoteDao,

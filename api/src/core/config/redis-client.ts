@@ -1,9 +1,10 @@
 import { Redis } from "ioredis";
+import { env, optionalEnv, optionalEnvNumber } from "./env.js";
 
-const redisHost = process.env.REDIS_HOST ?? "redis";
-const redisPort = parseInt(process.env.REDIS_PORT ?? "6379", 10);
-const redisUser = process.env.REDIS_USER ?? undefined;
-const redisPassword = process.env.REDIS_PASSWORD ?? undefined;
+const redisHost = optionalEnv("REDIS_HOST", "redis");
+const redisPort = optionalEnvNumber("REDIS_PORT", 6379);
+const redisUser = env("REDIS_USER");
+const redisPassword = env("REDIS_PASSWORD");
 
 export const redisClient = new Redis({
   host: redisHost,

@@ -36,7 +36,7 @@ describe("InventoryService.registerMovement concurrency", () => {
         kind: "part",
         costPrice: 500,
         salePrice: 900,
-      } as any),
+      }),
     );
 
     // Seed stock a 10 con un movimiento "in".
@@ -140,7 +140,7 @@ describe("InventoryService.getBySku / getLowStock", () => {
         costPrice: 50,
         salePrice: 120,
         minStock: 0,
-      } as any),
+      }),
     );
 
     const found = await runWithTenant(tenantId, () => service.getBySku("CHG-USBC-01"));
@@ -160,7 +160,7 @@ describe("InventoryService.getBySku / getLowStock", () => {
         costPrice: 400,
         salePrice: 700,
         minStock: 3,
-      } as any),
+      }),
     );
     const healthy = await runWithTenant(tenantId, () =>
       service.create({
@@ -171,7 +171,7 @@ describe("InventoryService.getBySku / getLowStock", () => {
         costPrice: 400,
         salePrice: 700,
         minStock: 3,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       service.create({
@@ -182,7 +182,7 @@ describe("InventoryService.getBySku / getLowStock", () => {
         costPrice: 400,
         salePrice: 700,
         minStock: 0,
-      } as any),
+      }),
     );
 
     await runWithTenant(tenantId, () =>

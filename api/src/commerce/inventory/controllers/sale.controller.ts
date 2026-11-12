@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -6,6 +7,7 @@ import { CreateSaleDto } from "../dtos/create-sale.dto.js";
 import type { AuthenticatedRequest } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
+@singleton()
 export class SaleController {
   constructor(private service: SaleService) {}
 

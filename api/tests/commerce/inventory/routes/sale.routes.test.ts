@@ -106,7 +106,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
         costPrice: 10,
         salePrice: 25,
         minStock: 0,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 3 }),

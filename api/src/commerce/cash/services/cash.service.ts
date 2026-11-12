@@ -1,3 +1,4 @@
+import { singleton, inject } from "tsyringe";
 import { Decimal } from "decimal.js";
 import { CashSessionDao } from "../daos/cash-session.dao.js";
 import { CashMovementDao } from "../daos/cash-movement.dao.js";
@@ -25,6 +26,7 @@ export interface CashSummary {
   byMethod: Record<CashMovementMethod, { income: number; expense: number }>;
 }
 
+@singleton()
 export class CashService {
   constructor(
     private sessionDao: CashSessionDao,

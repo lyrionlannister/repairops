@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { RepairNoteService } from "../services/repair-note.service.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
@@ -6,6 +7,7 @@ import { PdfRendererService } from "../../../reporting/pdf/pdf-renderer.service.
 import { RepairNoteDocument } from "../../../reporting/pdf/documents/repair-note.document.js";
 import { toRepairNotePdfData } from "../../../reporting/pdf/documents/repair-note.pdf-data.js";
 
+@singleton()
 export class RepairNoteController {
   constructor(
     private repairNoteService: RepairNoteService,

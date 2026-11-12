@@ -1,6 +1,8 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { MessageTemplateService } from "../services/message-template.service.js";
 
+@singleton()
 export class MessageTemplateController {
   constructor(private service: MessageTemplateService) {}
 

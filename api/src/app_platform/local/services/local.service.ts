@@ -1,7 +1,9 @@
+import { singleton, inject } from "tsyringe";
 import { LocalDao } from "../daos/local.dao.js";
 import { Local } from "../entities/local.entity.js";
 import { rasterizeLogoIfSvg } from "../../../core/common/utils/rasterize-logo.js";
 
+@singleton()
 export class LocalService {
   constructor(private localDao: LocalDao) {}
 

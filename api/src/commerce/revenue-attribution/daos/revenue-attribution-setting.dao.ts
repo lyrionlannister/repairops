@@ -1,15 +1,20 @@
-import { Repository } from "typeorm";
+import { FindOptionsWhere, Repository } from "typeorm";
+import { singleton, inject } from "tsyringe";
+import { repositoryToken } from "../../../core/di/repository-token.js";
 import { RevenueAttributionSetting } from "../entities/revenue-attribution-setting.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 
+@singleton()
 export class RevenueAttributionSettingDao extends TenantScopedDao<RevenueAttributionSetting> {
-  constructor(repository: Repository<RevenueAttributionSetting>) {
+  constructor(@inject(repositoryToken(RevenueAttributionSetting)) repository: Repository<RevenueAttributionSetting>) {
     super(repository);
   }
 
   async findOrCreate(): Promise<RevenueAttributionSetting> {
     const tenantId = this.currentTenantId();
-    const existing = await this.repository.findOneBy({ tenantId } as any);
+    const existing = await this.repository.findOneBy(
+      { tenantId } as unknown as FindOptionsWhere<RevenueAttributionSetting>,
+    );
     if (existing) return existing;
 
     const created = this.repository.create({ tenantId, attributionBasis: "total_value" } as Partial<RevenueAttributionSetting>);
