@@ -27,35 +27,15 @@ services:
       context: ./api
       dockerfile: Dockerfile
     container_name: repairops-api
+    env_file:
+      - ./api/.env
     environment:
       # Siempre production en el contenedor -- este corre dist/ compilado, no
-      # src/ con ts-node. NODE_ENV del .env es para pnpm dev en el host; si se
-      # pasa aqui pisa el ENV NODE_ENV=production del Dockerfile y
-      # migration-data-source.ts busca migraciones en src/*.ts (que no existe
-      # en la imagen runtime), encuentra cero, y el boot truena en el seed.
+      # src/ con ts-node. env_file no trae NODE_ENV a propósito; si lo
+      # trajera y pisara este ENV NODE_ENV=production del Dockerfile,
+      # migration-data-source.ts buscaría migraciones en src/*.ts (que no
+      # existe en la imagen runtime), encontraría cero, y el boot truena en el seed.
       NODE_ENV: production
-      PORT: ${PORT:?PORT is required}
-      AUTOMATION_URL: ${AUTOMATION_URL:?AUTOMATION_URL is required}
-      DB_HOST: ${DB_HOST:?DB_HOST is required}
-      DB_PORT: ${DB_PORT:?DB_PORT is required}
-      DB_USERNAME: ${DB_USERNAME:?DB_USERNAME is required}
-      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      DB_NAME: ${DB_NAME:?DB_NAME is required}
-      N8N_DB_DATABASE: ${N8N_DB_DATABASE:?N8N_DB_DATABASE is required}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_USER: ${REDIS_USER:?REDIS_USER is required}
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
-      N8N_INTERNAL_TOKEN: ${N8N_INTERNAL_TOKEN:?N8N_INTERNAL_TOKEN is required}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
-      WHATSAPP_PILOT_WABA_ID: ${WHATSAPP_PILOT_WABA_ID:?WHATSAPP_PILOT_WABA_ID is required}
-      WHATSAPP_PILOT_PHONE_NUMBER_ID: ${WHATSAPP_PILOT_PHONE_NUMBER_ID:?WHATSAPP_PILOT_PHONE_NUMBER_ID is required}
-      WHATSAPP_PILOT_ACCESS_TOKEN: ${WHATSAPP_PILOT_ACCESS_TOKEN:?WHATSAPP_PILOT_ACCESS_TOKEN is required}
-      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:?WHATSAPP_APP_SECRET is required}
-      WHATSAPP_WEBHOOK_VERIFY_TOKEN: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:?WHATSAPP_WEBHOOK_VERIFY_TOKEN is required}
-      # Puerto interno del contenedor de Redis (siempre 6379) -- no confundir con
-      # REDIS_PORT, que es el puerto publicado en el host para el mapeo de abajo.
-      REDIS_PORT: 6379
     ports:
       - "${APP_PORT:?APP_PORT is required}:${APP_CONTAINER_PORT:?APP_CONTAINER_PORT is required}"
     depends_on:
@@ -72,23 +52,8 @@ services:
       dockerfile: Dockerfile
     image: repairops-n8n
     container_name: repairops-n8n
-    environment:
-      N8N_HOST: ${N8N_HOST:?N8N_HOST is required}
-      N8N_PORT: ${N8N_PORT:?N8N_PORT is required}
-      N8N_PROTOCOL: ${N8N_PROTOCOL:?N8N_PROTOCOL is required}
-      N8N_LISTEN_ADDRESS: ${N8N_LISTEN_ADDRESS:?N8N_LISTEN_ADDRESS is required}
-      WEBHOOK_URL: ${WEBHOOK_URL:?WEBHOOK_URL is required}
-      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:?N8N_EDITOR_BASE_URL is required}
-      N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE:?N8N_SECURE_COOKIE is required}
-      DB_TYPE: ${N8N_DB_TYPE:?N8N_DB_TYPE is required}
-      DB_POSTGRESDB_HOST: ${N8N_DB_HOST:?N8N_DB_HOST is required}
-      DB_POSTGRESDB_PORT: ${N8N_DB_PORT:?N8N_DB_PORT is required}
-      DB_POSTGRESDB_DATABASE: ${N8N_DB_DATABASE:?N8N_DB_DATABASE is required}
-      DB_POSTGRESDB_USER: ${N8N_DB_USER:?N8N_DB_USER is required}
-      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:?N8N_DB_PASSWORD is required}
-      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:?GENERIC_TIMEZONE is required}
-      TZ: ${TZ:?TZ is required}
-      N8N_INTERNAL_TOKEN: ${N8N_INTERNAL_TOKEN:?N8N_INTERNAL_TOKEN is required}
+    env_file:
+      - ./n8n/.env
     ports:
       - "${N8N_PORT:?N8N_PORT is required}:${N8N_PORT:?N8N_PORT is required}"
     volumes:
@@ -102,17 +67,17 @@ services:
       context: ./database
       dockerfile: Dockerfile
     container_name: repairops-postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+    env_file:
+      - ./database/.env
     ports:
       - "${POSTGRES_PORT:?POSTGRES_PORT is required}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?POSTGRES_USER is required} -d ${POSTGRES_DB:?POSTGRES_DB is required}"]
+      # $$ (no ${...}) -- se resuelve en el shell DEL CONTENEDOR via env_file,
+      # no en la sustitucion de Compose (que no tiene por que conocer POSTGRES_USER).
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -121,15 +86,15 @@ services:
     build:
       context: ./database/redis
     container_name: repairops-redis
-    environment:
-      REDIS_USER: ${REDIS_USER:?REDIS_USER is required}
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    env_file:
+      - ./database/redis/.env
     ports:
       - "${REDIS_PORT:?REDIS_PORT is required}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli --user $REDIS_USER --pass $REDIS_PASSWORD --no-auth-warning ping"]
+      # $$ -- mismo motivo que en postgres arriba.
+      test: ["CMD-SHELL", "redis-cli --user $$REDIS_USER --pass $$REDIS_PASSWORD --no-auth-warning ping"]
       interval: 10s
       timeout: 5s
       retries: 5
