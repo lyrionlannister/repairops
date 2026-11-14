@@ -101,7 +101,7 @@ describe("AuthService.register", () => {
   it("creates a new tenant and makes the registering user its owner", async () => {
     const create = vi.fn().mockImplementation((data) => Promise.resolve(makeUser(data)));
     const userDao = {
-      findByEmail: vi.fn().mockResolvedValue(null),
+      findByEmailAcrossTenants: vi.fn().mockResolvedValue(null),
       create,
     } as unknown as UserDao;
     const tenantRepository = makeTenantRepository();
@@ -120,12 +120,13 @@ describe("AuthService.register", () => {
     expect(persisted.password).not.toBe("plain-text-password");
   });
 
-  it("rejects a duplicate email within the newly created tenant", async () => {
+  it("rejects a duplicate email without creating an orphan tenant", async () => {
     const userDao = {
-      findByEmail: vi.fn().mockResolvedValue(makeUser()),
+      findByEmailAcrossTenants: vi.fn().mockResolvedValue(makeUser()),
       create: vi.fn(),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService());
+    const tenantRepository = makeTenantRepository();
+    const service = new AuthService(userDao, tenantRepository, makeServiceTypeService(), makeBranchService());
 
     await expect(
       service.register({
@@ -135,6 +136,7 @@ describe("AuthService.register", () => {
         password: "whatever123",
       }),
     ).rejects.toThrow("Email ya registrado");
+    expect(tenantRepository.save).not.toHaveBeenCalled();
   });
 });
 

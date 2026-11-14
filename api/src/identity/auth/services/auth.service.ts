@@ -26,22 +26,27 @@ export class AuthService {
   ) {}
 
   async register(data: RegisterUserDto): Promise<User> {
-    // No hay tenant en contexto todavia (quien registra no tiene uno):
+    // Sin tenant en contexto todavia, igual que login: el email solo se
+    // puede checar sin ambiguedad en scope de sistema. Si esto corriera
+    // despues de crear el Tenant, el check siempre pasaria en falso -- un
+    // tenant recien creado nunca tiene usuarios, sin importar que el email
+    // ya exista en otro.
+    const existingUser = await allowSystemScope(() =>
+      this.userDao.findByEmailAcrossTenants(data.email),
+    );
+    if (existingUser) {
+      throw new Error("Email ya registrado");
+    }
+
     // crear el Tenant corre en scope de sistema, explicito.
     const tenant = await allowSystemScope(() =>
       this.tenantRepository.save(this.tenantRepository.create({ name: data.email })),
     );
 
-    // Dentro del tenant recien creado, validar duplicados y crear el owner.
     // No esta envuelto en una transaccion de DB: si el insert del usuario
     // fallara, queda un Tenant huerfano sin dueno (basura inocua, no un
     // problema de integridad de datos como el de numero_control).
     return runWithTenant(tenant.id, async () => {
-      const existingUser = await this.userDao.findByEmail(data.email);
-      if (existingUser) {
-        throw new Error("Email ya registrado");
-      }
-
       const hashedPassword = await hash(data.password, 10);
 
       const owner = await this.userDao.create({
