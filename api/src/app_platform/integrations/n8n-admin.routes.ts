@@ -2,7 +2,6 @@ import { Router } from "express";
 import { settingsService } from "../../identity/settings/settings.service.js";
 import { authMiddleware } from "../../identity/auth/middlewares/auth.middleware.js";
 import { tenantMiddleware } from "../../core/tenancy/tenant.middleware.js";
-import { isProduction } from "../../core/config/env.js";
 
 function validateAbsoluteUrl(url: string): URL | null {
   try {
@@ -12,19 +11,6 @@ function validateAbsoluteUrl(url: string): URL | null {
   } catch {
     return null;
   }
-}
-
-function isAllowedByEnvironment(url: URL): boolean {
-  if (isProduction()) {
-    return url.protocol === "https:";
-  }
-
-  if (url.protocol === "https:") return true;
-
-  return (
-    url.protocol === "http:" &&
-    ["localhost", "127.0.0.1", "::1"].includes(url.hostname)
-  );
 }
 
 export function createN8nIntegrationRouter(): Router {
@@ -54,13 +40,8 @@ export function createN8nIntegrationRouter(): Router {
       return;
     }
 
-    if (!isAllowedByEnvironment(parsedUrl)) {
-      res.status(400).json({
-        error:
-          isProduction()
-            ? "En producción n8nEditorUrl debe usar HTTPS"
-            : "En desarrollo n8nEditorUrl debe usar HTTPS o HTTP en localhost",
-      });
+    if (parsedUrl.protocol !== "https:") {
+      res.status(400).json({ error: "n8nEditorUrl debe usar HTTPS" });
       return;
     }
 
