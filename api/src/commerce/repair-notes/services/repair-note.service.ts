@@ -11,6 +11,7 @@ import { RepairNoteItem } from "../entities/repair-note-item.entity.js";
 import { RepairNoteServiceType } from "../entities/repair-note-service-type.entity.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
+import { WhatsappSendService } from "../../../messaging/whatsapp-official/services/whatsapp-send.service.js";
 
 // tenantId/controlNumber los agrega create() desde el contexto/consecutivo
 // (nunca el caller); totalValue/status/requiresAdvance/deviceOff/
@@ -47,6 +48,7 @@ export class RepairNoteService {
     private inventoryService: InventoryService,
     private repairNoteServiceTypeDao: RepairNoteServiceTypeDao,
     private serviceTypeDao: ServiceTypeDao,
+    private whatsappSendService: WhatsappSendService,
   ) {}
 
   async getAll(): Promise<RepairNote[]> {
@@ -138,13 +140,18 @@ export class RepairNoteService {
     serviceTypeIds?: string[],
   ): Promise<RepairNote | null> {
     if (items === undefined && serviceTypeIds === undefined) {
-      return this.repairNoteDao.update(id, data as Partial<RepairNote>);
+      const previous = await this.repairNoteDao.findById(id);
+      const updated = await this.repairNoteDao.update(id, data as Partial<RepairNote>);
+      await this.notifyIfJustMarkedDone(previous?.status, updated);
+      return updated;
     }
 
     const tenantId = getCurrentTenantId();
-    return AppDataSource.transaction(async (manager) => {
+    let previousStatus: string | undefined;
+    const savedNote = await AppDataSource.transaction(async (manager) => {
       const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
       if (!note) return null;
+      previousStatus = note.status;
 
       if (items !== undefined) {
         const oldItems = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem> });
@@ -194,6 +201,22 @@ export class RepairNoteService {
 
       return savedNote;
     });
+    await this.notifyIfJustMarkedDone(previousStatus, savedNote);
+    return savedNote;
+  }
+
+  // Avisa al cliente (plantilla `order_ready`) la primera vez que la nota
+  // pasa a "done" -- nunca en un guardado posterior que la deje igual. Corre
+  // fuera de cualquier transaccion de BD (es una llamada HTTP a Meta) y
+  // nunca tumba el guardado de la nota ya confirmado: una falla de WhatsApp
+  // queda registrada en WhatsappOutboundMessage, no aqui.
+  private async notifyIfJustMarkedDone(previousStatus: string | undefined, note: RepairNote | null): Promise<void> {
+    if (!note || note.status !== "done" || previousStatus === "done") return;
+    try {
+      await this.whatsappSendService.notifyOrderReady(note);
+    } catch {
+      // swallow: ver comentario de arriba.
+    }
   }
 
   // Cancelar revierte el stock de los items ya descontados (mismo patron de

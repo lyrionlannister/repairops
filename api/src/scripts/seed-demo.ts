@@ -21,6 +21,7 @@ import { RepairNoteItemDao } from "../commerce/repair-notes/daos/repair-note-ite
 import { RepairNoteServiceType } from "../commerce/repair-notes/entities/repair-note-service-type.entity.js";
 import { RepairNoteServiceTypeDao } from "../commerce/repair-notes/daos/repair-note-service-type.dao.js";
 import { RepairNoteService } from "../commerce/repair-notes/services/repair-note.service.js";
+import type { WhatsappSendService } from "../messaging/whatsapp-official/services/whatsapp-send.service.js";
 import { CashSession } from "../commerce/cash/entities/cash-session.entity.js";
 import { CashSessionDao } from "../commerce/cash/daos/cash-session.dao.js";
 import { CashMovement } from "../commerce/cash/entities/cash-movement.entity.js";
@@ -96,6 +97,7 @@ async function seedDemoShop(tenantId: string): Promise<void> {
       inventoryService,
       new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
       serviceTypeDao,
+      { notifyOrderReady: async () => null } as unknown as WhatsappSendService,
     );
     await repairNoteService.create(
       {

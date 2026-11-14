@@ -73,3 +73,34 @@ export async function createTemplate(
     }),
   });
 }
+
+export async function sendTemplateMessage(
+  phoneNumberId: string,
+  accessToken: string,
+  to: string,
+  entry: TemplateCatalogEntry,
+  variables: Record<string, string>,
+): Promise<{ messages: Array<{ id: string }> }> {
+  return graphFetch(`/${phoneNumberId}/messages`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "template",
+      template: {
+        name: entry.metaName,
+        language: { code: entry.language },
+        components: [
+          {
+            type: "body",
+            parameters: entry.variables.map((name) => ({
+              type: "text",
+              parameter_name: name,
+              text: variables[name] ?? "",
+            })),
+          },
+        ],
+      },
+    }),
+  });
+}

@@ -28,6 +28,7 @@ import { Branch } from "../../identity/branches/entities/branch.entity.js";
 import { Customer } from "../../commerce/customers/entities/customer.entity.js";
 import { WhatsappAccount } from "../../messaging/whatsapp-official/entities/whatsapp-account.entity.js";
 import { WhatsappTemplateStatus } from "../../messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
+import { WhatsappOutboundMessage } from "../../messaging/whatsapp-official/entities/whatsapp-outbound-message.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
@@ -72,6 +73,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     Customer,
     WhatsappAccount,
     WhatsappTemplateStatus,
+    WhatsappOutboundMessage,
   ],
 };
 
