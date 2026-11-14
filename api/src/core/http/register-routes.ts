@@ -11,6 +11,8 @@ import { LocalController } from "../../app_platform/local/controllers/local.cont
 import { createLocalRouter } from "../../app_platform/local/routes/local.routes.js";
 import { WhatsappAccountController } from "../../messaging/whatsapp-official/controllers/whatsapp-account.controller.js";
 import { createWhatsappAccountRouter } from "../../messaging/whatsapp-official/routes/whatsapp-account.routes.js";
+import { WhatsappWebhookController } from "../../messaging/whatsapp-official/controllers/whatsapp-webhook.controller.js";
+import { createWhatsappWebhookRouter } from "../../messaging/whatsapp-official/routes/whatsapp-webhook.routes.js";
 import { RepairNoteController } from "../../commerce/repair-notes/controllers/repair-note.controller.js";
 import { createRepairNoteRouter } from "../../commerce/repair-notes/routes/repair-note.routes.js";
 import { MessageTemplateController } from "../../messaging/message-templates/controllers/message-template.controller.js";
@@ -54,6 +56,16 @@ export function registerRoutes(app: Express): void {
   app.use("/api/v1/integrations/n8n", createN8nIntegrationRouter());
   app.use("/api/v1/chats", createChatsRouter(container.resolve(ChatsController)));
   app.use("/api/v1/local", createLocalRouter(container.resolve(LocalController)));
+  // El router del webhook (publico, sin JWT) va ANTES que el de status/
+  // templates (protegido): Express prueba los routers montados en el mismo
+  // prefijo en orden, y el router protegido corre su authMiddleware para
+  // CUALQUIER path que le llegue (incluido /webhook) antes de intentar
+  // matchear una ruta -- si fuera primero, el webhook de Meta (sin JWT)
+  // siempre recibiria 401 antes de llegar a su propio router.
+  app.use(
+    "/api/v1/whatsapp-official",
+    createWhatsappWebhookRouter(container.resolve(WhatsappWebhookController)),
+  );
   app.use(
     "/api/v1/whatsapp-official",
     createWhatsappAccountRouter(container.resolve(WhatsappAccountController)),

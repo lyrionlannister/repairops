@@ -17,7 +17,16 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
+// `verify` guarda el buffer crudo en req.rawBody -- lo necesita el webhook
+// de WhatsApp (X-Hub-Signature-256 firma los bytes exactos, no el JSON
+// re-serializado) sin montar un parser distinto solo para esa ruta.
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf;
+    },
+  }),
+);
 
 Promise.all([AppDataSource.initialize(), ChatMemoryDataSource.initialize()])
   .then(async () => {

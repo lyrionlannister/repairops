@@ -4,7 +4,19 @@ import { WhatsappTemplateStatusDao } from "../daos/whatsapp-template-status.dao.
 import { WhatsappAccountService } from "./whatsapp-account.service.js";
 import { WhatsappOutboundMessage } from "../entities/whatsapp-outbound-message.entity.js";
 import { templateCatalog } from "../templates/catalog.js";
-import { sendTemplateMessage } from "../clients/whatsapp-graph.client.js";
+import { sendTemplateMessage, sendTextMessage } from "../clients/whatsapp-graph.client.js";
+
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
+// Distinta de un error de Meta/red (esas quedan en el log de la nota o se
+// devuelven como 500) -- el caller HTTP (ChatsController.sendMessage) la
+// reconoce para responder 409 en vez de 500: no es una falla, es una regla
+// de negocio de la ventana de 24h.
+export class WhatsappWindowClosedError extends Error {
+  constructor() {
+    super("Fuera de la ventana de 24h: no se puede enviar texto libre a este contacto");
+  }
+}
 
 export interface RepairNoteReadyNotification {
   id: string;
@@ -78,6 +90,24 @@ export class WhatsappSendService {
         errorMessage: error.message ?? "Error desconocido al enviar",
       });
     }
+  }
+
+  // Gate de ventana de 24h desde el ultimo mensaje entrante del contacto --
+  // si ya se cerro, rechaza SIN llamar a Meta (que respondería el mismo
+  // error, pero explicito en nuestro log en vez de depender de su respuesta).
+  // Solo una plantilla aprobada (sendTemplate) podria reabrir contacto; eso
+  // no esta en alcance de este checkpoint para el flujo de chat.
+  async sendFreeText(
+    phoneNumberId: string,
+    accessToken: string,
+    to: string,
+    body: string,
+    lastInboundAt: Date | null,
+  ): Promise<void> {
+    if (!lastInboundAt || Date.now() - lastInboundAt.getTime() > TWENTY_FOUR_HOURS_MS) {
+      throw new WhatsappWindowClosedError();
+    }
+    await sendTextMessage(phoneNumberId, accessToken, to, body);
   }
 
   // Sin número de contacto no hay a quién avisar -- no es un error, la nota

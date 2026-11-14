@@ -2,6 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import {
   createTemplate,
   listTemplates,
+  sendTextMessage,
   WhatsappGraphApiError,
 } from "../../../../src/messaging/whatsapp-official/clients/whatsapp-graph.client.js";
 import { templateCatalog } from "../../../../src/messaging/whatsapp-official/templates/catalog.js";
@@ -39,5 +40,24 @@ describe("whatsapp-graph.client", () => {
     await expect(
       createTemplate("waba-1", "token-1", templateCatalog[0]),
     ).rejects.toThrow(WhatsappGraphApiError);
+  });
+
+  it("sendTextMessage posts a free-text payload to /{phone_number_id}/messages", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ messages: [{ id: "wamid-1" }] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await sendTextMessage("phone-1", "token-1", "5215500000000", "hola");
+
+    expect(result).toEqual({ messages: [{ id: "wamid-1" }] });
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(init.body)).toEqual({
+      messaging_product: "whatsapp",
+      to: "5215500000000",
+      type: "text",
+      text: { body: "hola" },
+    });
   });
 });

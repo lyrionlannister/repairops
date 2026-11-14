@@ -1,5 +1,8 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { WhatsappSendService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
+import {
+  WhatsappSendService,
+  WhatsappWindowClosedError,
+} from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
 import type { WhatsappOutboundMessageDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-outbound-message.dao.js";
 import type { WhatsappTemplateStatusDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-template-status.dao.js";
 import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
@@ -109,6 +112,51 @@ describe("WhatsappSendService.sendTemplate", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(outboundDao.create).not.toHaveBeenCalled();
     expect(result.status).toBe("sent");
+  });
+});
+
+describe("WhatsappSendService.sendFreeText", () => {
+  it("sends via Graph API when the last inbound message was within 24h", async () => {
+    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ messages: [{ id: "wamid-2" }] }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const lastInboundAt = new Date(Date.now() - 60_000);
+
+    await service.sendFreeText("phone-1", "token-1", "5215500000000", "hola", lastInboundAt);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/phone-1/messages"),
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("rejects without calling Meta when the window is closed", async () => {
+    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const lastInboundAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+
+    await expect(
+      service.sendFreeText("phone-1", "token-1", "5215500000000", "hola", lastInboundAt),
+    ).rejects.toThrow(WhatsappWindowClosedError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects without calling Meta when there is no prior inbound message", async () => {
+    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+
+    await expect(
+      service.sendFreeText("phone-1", "token-1", "5215500000000", "hola", null),
+    ).rejects.toThrow(WhatsappWindowClosedError);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

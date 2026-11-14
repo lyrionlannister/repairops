@@ -104,4 +104,20 @@ export class ChatHistoryDao extends BaseDao<ChatHistory> {
     `);
     return result[0]?.lastAt ?? null;
   }
+
+  // Gate de ventana de 24h de WhatsapSendService.sendFreeText: solo el
+  // ultimo mensaje del CLIENTE (type "human") abre la ventana, no la ultima
+  // respuesta de la IA ni la del agente humano.
+  async findLastHumanMessageAt(sessionId: string): Promise<Date | null> {
+    const result = await this.repository.query(
+      `
+      SELECT MAX(created_at) AS "lastAt"
+      FROM n8n_chat_histories
+      WHERE session_id = $1 AND message->>'type' = 'human'
+      `,
+      [sessionId],
+    );
+    const lastAt = result[0]?.lastAt;
+    return lastAt ? new Date(lastAt) : null;
+  }
 }

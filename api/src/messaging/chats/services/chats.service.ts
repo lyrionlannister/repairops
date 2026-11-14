@@ -44,4 +44,8 @@ export class ChatsService {
   async getLastInteractionAt(): Promise<string | null> {
     return this.chatHistoryDao.getLastInteractionAt();
   }
+
+  async getLastHumanMessageAt(sessionId: string): Promise<Date | null> {
+    return this.chatHistoryDao.findLastHumanMessageAt(sessionId);
+  }
 }

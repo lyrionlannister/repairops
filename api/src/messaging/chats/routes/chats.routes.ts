@@ -1,16 +1,17 @@
 import { Router } from "express";
 import { ChatsController } from "../controllers/chats.controller.js";
 import { authMiddleware } from "../../../identity/auth/middlewares/auth.middleware.js";
+import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 
-// NOTA: no se agrega tenantMiddleware aqui. n8n_chat_histories es una tabla
-// propia de n8n (sin columna tenant_id) y hoy el proceso solo sirve una
-// sesion de WhatsApp compartida -- aislar esto por tenant de verdad depende
-// de la misma decision de arquitectura pendiente que el WhatsappListener
-// singleton (una sesion por tenant), fuera de alcance de este modulo.
-// authMiddleware si cierra el hueco critico de "cero autenticacion".
+// n8n_chat_histories sigue sin columna tenant_id (una sola sesion de
+// WhatsApp compartida, ver plan Fase 4) -- tenantMiddleware NO cambia eso,
+// las lecturas/escrituras de historial siguen globales. Lo que si necesita
+// tenant en contexto es el envio manual (sendMessage, Checkpoint 4): resuelve
+// WhatsappAccount de ESTE tenant via TenantScopedDao, igual que cualquier
+// otra ruta protegida.
 export function createChatsRouter(chatsController: ChatsController): Router {
   const router = Router();
-  router.use(authMiddleware);
+  router.use(authMiddleware, tenantMiddleware);
 
   router.get("/", (req, res) => chatsController.listConversations(req, res));
   router.get("/stats/daily", (req, res) => chatsController.getConversationCountsByDay(req, res));

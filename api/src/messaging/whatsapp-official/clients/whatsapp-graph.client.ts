@@ -74,6 +74,23 @@ export async function createTemplate(
   });
 }
 
+export async function sendTextMessage(
+  phoneNumberId: string,
+  accessToken: string,
+  to: string,
+  body: string,
+): Promise<{ messages: Array<{ id: string }> }> {
+  return graphFetch(`/${phoneNumberId}/messages`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "text",
+      text: { body },
+    }),
+  });
+}
+
 export async function sendTemplateMessage(
   phoneNumberId: string,
   accessToken: string,

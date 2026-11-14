@@ -5,10 +5,16 @@ import { ChatsService } from "../services/chats.service.js";
 import { humanModeService } from "../../../app_platform/human-mode/human-mode.service.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { ContactName } from "../entities/contact-name.entity.js";
+import { WhatsappAccountService } from "../../whatsapp-official/services/whatsapp-account.service.js";
+import { WhatsappSendService, WhatsappWindowClosedError } from "../../whatsapp-official/services/whatsapp-send.service.js";
 
 @singleton()
 export class ChatsController {
-  constructor(private chatsService: ChatsService) {}
+  constructor(
+    private chatsService: ChatsService,
+    private whatsappAccountService: WhatsappAccountService,
+    private whatsappSendService: WhatsappSendService,
+  ) {}
 
   async listConversations(_req: Request, res: Response): Promise<void> {
     try {
@@ -130,11 +136,24 @@ export class ChatsController {
         return;
       }
 
-      // whatsapp-web.js fue retirado -- el envío por Graph API (ventana de
-      // 24h) todavía no existe, se construye en el siguiente checkpoint de
-      // WhatsApp oficial.
-      res.status(501).json({ error: "Envío de mensajes manual no disponible todavía" });
+      const [account, lastInboundAt] = await Promise.all([
+        this.whatsappAccountService.getOrCreateForTenant(),
+        this.chatsService.getLastHumanMessageAt(sessionId),
+      ]);
+      await this.whatsappSendService.sendFreeText(
+        account.phoneNumberId,
+        account.accessToken,
+        sessionId,
+        body,
+        lastInboundAt,
+      );
+
+      res.status(200).json({ ok: true });
     } catch (error) {
+      if (error instanceof WhatsappWindowClosedError) {
+        res.status(409).json({ error: error.message });
+        return;
+      }
       console.error("Error enviando mensaje manual:", error);
       const message = error instanceof Error ? error.message : "Error al enviar mensaje";
       res.status(500).json({ error: message });
