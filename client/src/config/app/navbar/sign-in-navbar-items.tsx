@@ -13,6 +13,7 @@ import {
   Truck,
   Building2,
   Users2,
+  MessageCircle,
 } from "lucide-react";
 
 const signInNavbarItems = [
@@ -83,6 +84,13 @@ const signInNavbarItems = [
     name: "Templates",
     icon: <MessageSquareText className="w-5 h-5" />,
     path: "/admin/templates",
+    group: "Administración",
+    new: false,
+  },
+  {
+    name: "WhatsApp",
+    icon: <MessageCircle className="w-5 h-5" />,
+    path: "/admin/whatsapp",
     group: "Administración",
     new: false,
   },
