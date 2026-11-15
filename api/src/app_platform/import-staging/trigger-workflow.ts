@@ -1,6 +1,7 @@
-const WEBHOOK_URL =
-  process.env.IMPORT_STAGING_WEBHOOK_URL ?? "http://n8n:5678/webhook/import-staging";
-const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? "http://api:3000";
+import { optionalEnv } from "../../core/config/env.js";
+
+const WEBHOOK_URL = optionalEnv("IMPORT_STAGING_WEBHOOK_URL", "http://n8n:5678/webhook/import-staging");
+const API_INTERNAL_URL = optionalEnv("API_INTERNAL_URL", "http://api:3000");
 
 /**
  * Dispara el workflow de n8n que mapea columnas con IA y hace staging en Redis.
@@ -17,7 +18,7 @@ export async function triggerImportStagingWorkflow(params: {
   form.set("tenantId", params.tenantId);
   form.set("importId", params.importId);
   form.set("callbackUrl", `${API_INTERNAL_URL}/api/v1/import-staging/callback`);
-  form.set("internalToken", process.env.N8N_INTERNAL_TOKEN ?? "");
+  form.set("internalToken", optionalEnv("N8N_INTERNAL_TOKEN", ""));
   form.set("file", new Blob([new Uint8Array(params.fileBuffer)]), params.fileName);
 
   const response = await fetch(WEBHOOK_URL, { method: "POST", body: form });

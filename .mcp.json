@@ -8,6 +8,10 @@
       "type": "http",
       "url": "https://mcp.facebook.com/whatsapp_business_tools"
     },
+    "meta-social-technologies": {
+      "type": "http",
+      "url": "https://mcp.facebook.com/devtools"
+    },
     "stripe": {
       "type": "http",
       "url": "https://mcp.stripe.com/"

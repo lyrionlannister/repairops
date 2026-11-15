@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { LocalRecord } from "./use-local";
+import type { LocalRecord, TicketSize } from "./use-local";
+
+export type { TicketSize };
 
 export type AttributionBasis = "total_value" | "margin" | "labor_only";
 
@@ -11,6 +13,9 @@ export interface LocalFormState {
   nextControlNumber: string;
   cashRoundingUnit: string;
   logo: string;
+  currency: string;
+  defaultTicketSize: TicketSize;
+  warrantyClause: string;
 }
 
 const emptyForm: LocalFormState = {
@@ -20,6 +25,9 @@ const emptyForm: LocalFormState = {
   nextControlNumber: "1",
   cashRoundingUnit: "0",
   logo: "",
+  currency: "MXN",
+  defaultTicketSize: "80mm",
+  warrantyClause: "",
 };
 
 export const useLocalPage = ({
@@ -81,11 +89,14 @@ export const useLocalPage = ({
         nextControlNumber: String(local.nextControlNumber),
         cashRoundingUnit: String(local.cashRoundingUnit ?? 0),
         logo: local.logo ?? "",
+        currency: local.currency ?? "MXN",
+        defaultTicketSize: local.defaultTicketSize ?? "80mm",
+        warrantyClause: local.warrantyClause ?? "",
       });
     }
   }, [local]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -139,6 +150,9 @@ export const useLocalPage = ({
       nextControlNumber: Number.parseInt(form.nextControlNumber, 10) || 1,
       cashRoundingUnit: Number.parseFloat(form.cashRoundingUnit) || 0,
       logo: form.logo || undefined,
+      currency: form.currency || "MXN",
+      defaultTicketSize: form.defaultTicketSize,
+      warrantyClause: form.warrantyClause || undefined,
     });
   };
 

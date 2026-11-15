@@ -1,3 +1,4 @@
+import { singleton, inject } from "tsyringe";
 import { RepairNoteDao } from "../../../commerce/repair-notes/daos/repair-note.dao.js";
 import { RepairNoteItemDao } from "../../../commerce/repair-notes/daos/repair-note-item.dao.js";
 import { SaleDao } from "../../../commerce/inventory/daos/sale.dao.js";
@@ -18,6 +19,7 @@ function prorateSalary(salaryAmount: number | null, payCycle: PayCycle | null, p
   return (Number(salaryAmount) / CYCLE_DAYS[payCycle]) * periodDays;
 }
 
+@singleton()
 export class ReportsService {
   constructor(
     private repairNoteDao: RepairNoteDao,
@@ -73,7 +75,12 @@ export class ReportsService {
       }
       for (const sale of empSales) {
         const items = saleItemsBySale.get(sale.id) ?? [];
-        const itemsCost = items.reduce((sum, i) => sum + i.quantity * (costById.get(i.inventoryItemId) ?? 0), 0);
+        // Un renglón de servicio (lineType "service_type") no tiene costo
+        // de inventario que restar -- cuenta como 0, el margen es el precio completo.
+        const itemsCost = items.reduce(
+          (sum, i) => sum + i.quantity * (i.lineType === "inventory_item" ? costById.get(i.referenceId) ?? 0 : 0),
+          0,
+        );
         const itemsSalePrice = items.reduce((sum, i) => sum + i.quantity * Number(i.unitPrice), 0);
         attributed += attributedAmount(Number(sale.totalValue), itemsCost, itemsSalePrice, setting.attributionBasis);
       }
@@ -106,7 +113,11 @@ export class ReportsService {
 
     const salesInPeriod = sales.filter((s) => inRange(s.createdAt, start, end));
     const salesById = new Map(salesInPeriod.map((s) => [s.id, s]));
-    const itemsInPeriod = saleItems.filter((i) => salesById.has(i.saleId));
+    // Este reporte es de accesorios/refacciones -- un renglón de servicio
+    // (lineType "service_type", ver sale-item.entity.ts) no cuenta aquí.
+    const itemsInPeriod = saleItems.filter(
+      (i) => salesById.has(i.saleId) && i.lineType === "inventory_item",
+    );
     const nameById = new Map(inventoryItems.map((i) => [i.id, i.name]));
 
     const totalRevenue = round2(salesInPeriod.reduce((sum, s) => sum + Number(s.totalValue), 0));
@@ -117,14 +128,14 @@ export class ReportsService {
 
     if (groupBy === "item") {
       for (const item of itemsInPeriod) {
-        const entry = groups.get(item.inventoryItemId) ?? {
-          label: nameById.get(item.inventoryItemId) ?? "Item eliminado",
+        const entry = groups.get(item.referenceId) ?? {
+          label: nameById.get(item.referenceId) ?? "Item eliminado",
           quantity: 0,
           revenue: 0,
         };
         entry.quantity += item.quantity;
         entry.revenue += item.quantity * Number(item.unitPrice);
-        groups.set(item.inventoryItemId, entry);
+        groups.set(item.referenceId, entry);
       }
     } else {
       for (const sale of salesInPeriod) {

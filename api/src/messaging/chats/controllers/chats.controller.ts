@@ -1,13 +1,20 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { CHATS_ERROR_MESSAGES } from "../constants/chats.constants.js";
 import { ChatsService } from "../services/chats.service.js";
 import { humanModeService } from "../../../app_platform/human-mode/human-mode.service.js";
-import { listener } from "../../whatsapp/whatsapp-service.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { ContactName } from "../entities/contact-name.entity.js";
+import { WhatsappAccountService } from "../../whatsapp-official/services/whatsapp-account.service.js";
+import { WhatsappSendService, WhatsappWindowClosedError } from "../../whatsapp-official/services/whatsapp-send.service.js";
 
+@singleton()
 export class ChatsController {
-  constructor(private chatsService: ChatsService) {}
+  constructor(
+    private chatsService: ChatsService,
+    private whatsappAccountService: WhatsappAccountService,
+    private whatsappSendService: WhatsappSendService,
+  ) {}
 
   async listConversations(_req: Request, res: Response): Promise<void> {
     try {
@@ -95,11 +102,6 @@ export class ChatsController {
         .findOneBy({ phone: sessionId })
         .then((cn) => cn?.name);
       await humanModeService.activate(sessionId, contactName);
-      listener.broadcast("conversation_transferred", {
-        sessionId,
-        phone: sessionId,
-        contactName: contactName ?? null,
-      });
       res.status(200).json({ isHumanMode: true });
     } catch (error) {
       console.error("Error activando transferencia:", error);
@@ -134,9 +136,24 @@ export class ChatsController {
         return;
       }
 
-      await listener.sendReply(sessionId, body.trim());
+      const [account, lastInboundAt] = await Promise.all([
+        this.whatsappAccountService.getOrCreateForTenant(),
+        this.chatsService.getLastHumanMessageAt(sessionId),
+      ]);
+      await this.whatsappSendService.sendFreeText(
+        account.phoneNumberId,
+        account.accessToken,
+        sessionId,
+        body,
+        lastInboundAt,
+      );
+
       res.status(200).json({ ok: true });
     } catch (error) {
+      if (error instanceof WhatsappWindowClosedError) {
+        res.status(409).json({ error: error.message });
+        return;
+      }
       console.error("Error enviando mensaje manual:", error);
       const message = error instanceof Error ? error.message : "Error al enviar mensaje";
       res.status(500).json({ error: message });

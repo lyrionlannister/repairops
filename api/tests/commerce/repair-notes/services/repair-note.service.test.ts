@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
@@ -13,6 +13,7 @@ import { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteService } from "../../../../src/commerce/repair-notes/services/repair-note.service.js";
+import type { WhatsappSendService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
@@ -42,6 +43,7 @@ describe("RepairNoteService items -> inventory movements", () => {
       inventoryService,
       new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
       new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
+      { notifyOrderReady: async () => null } as unknown as WhatsappSendService,
     );
   });
 
@@ -58,7 +60,7 @@ describe("RepairNoteService items -> inventory movements", () => {
         kind: "part",
         costPrice: 150,
         salePrice: 300,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 4 }),
@@ -72,7 +74,7 @@ describe("RepairNoteService items -> inventory movements", () => {
           model: "A52",
           reportedFailure: "No carga",
           receivedAt: "2026-01-01",
-        } as any,
+        },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 300 }],
       ),
     );
@@ -92,7 +94,7 @@ describe("RepairNoteService items -> inventory movements", () => {
         kind: "part",
         costPrice: 80,
         salePrice: 150,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 5 }),
@@ -106,7 +108,7 @@ describe("RepairNoteService items -> inventory movements", () => {
           model: "A52",
           reportedFailure: "No enciende",
           receivedAt: "2026-01-01",
-        } as any,
+        },
         [{ inventoryItemId: item.id, quantity: 2, unitPrice: 150 }],
       ),
     );
@@ -135,7 +137,7 @@ describe("RepairNoteService items -> inventory movements", () => {
         kind: "part",
         costPrice: 400,
         salePrice: 700,
-      } as any),
+      }),
     );
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 3 }),
@@ -150,7 +152,7 @@ describe("RepairNoteService items -> inventory movements", () => {
           reportedFailure: "Pantalla rota",
           receivedAt: "2026-01-01",
           status: "received",
-        } as any,
+        },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 700 }],
       ),
     );
@@ -173,12 +175,47 @@ describe("RepairNoteService items -> inventory movements", () => {
           reportedFailure: "No enciende",
           receivedAt: "2026-01-01",
           status: "delivered",
-        } as any,
+        },
         [],
       ),
     );
     await expect(runWithTenant(tenantId, () => repairNoteService.cancel(delivered.id))).rejects.toThrow(
       "No se puede cancelar una nota ya entregada",
     );
+  });
+
+  it("notifies order-ready the first time a note moves to done, never again after that", async () => {
+    const notifyOrderReady = vi.fn().mockResolvedValue(null);
+    const serviceWithNotifySpy = new RepairNoteService(
+      new RepairNoteDao(AppDataSource.getRepository(RepairNote)),
+      new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
+      new RepairNoteItemDao(AppDataSource.getRepository(RepairNoteItem)),
+      inventoryService,
+      new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
+      new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
+      { notifyOrderReady } as unknown as WhatsappSendService,
+    );
+
+    const note = await runWithTenant(tenantId, () =>
+      serviceWithNotifySpy.create({
+        customerName: "Cliente Listo",
+        contactNumber: "5215500000000",
+        brand: "Samsung",
+        model: "A52",
+        reportedFailure: "No carga",
+        receivedAt: "2026-01-01",
+        status: "received",
+      }),
+    );
+
+    await runWithTenant(tenantId, () => serviceWithNotifySpy.update(note.id, { status: "done" }));
+    expect(notifyOrderReady).toHaveBeenCalledTimes(1);
+    expect(notifyOrderReady).toHaveBeenCalledWith(expect.objectContaining({ id: note.id, status: "done" }));
+
+    // Guardar la nota otra vez sin salir de "done" no debe volver a avisar.
+    await runWithTenant(tenantId, () =>
+      serviceWithNotifySpy.update(note.id, { technicianNotes: "revisado de nuevo" }),
+    );
+    expect(notifyOrderReady).toHaveBeenCalledTimes(1);
   });
 });

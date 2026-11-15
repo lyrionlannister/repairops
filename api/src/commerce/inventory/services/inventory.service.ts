@@ -1,3 +1,4 @@
+import { singleton, inject } from "tsyringe";
 import { EntityManager } from "typeorm";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -17,9 +18,22 @@ export interface RegisterMovementInput {
   createdByEmployeeId?: string | null;
 }
 
-type CreateItemPayload = Omit<InventoryItem, "id" | "publicId" | "quantityOnHand" | "createdAt" | "updatedAt">;
+// No deriva de InventoryItem via Omit: tenantId lo agrega TenantScopedDao.create
+// (nunca lo manda el caller) y sku/minStock son opcionales en la entrada aunque
+// la entidad los guarde con default -- shape propio en vez de pelear con el de
+// persistencia es lo que permite pasar el DTO ya validado sin castear.
+type CreateItemPayload = {
+  localId: string;
+  name: string;
+  sku?: string | null;
+  kind: InventoryItem["kind"];
+  costPrice: number;
+  salePrice: number;
+  minStock?: number;
+};
 type UpdateItemPayload = Partial<CreateItemPayload>;
 
+@singleton()
 export class InventoryService {
   constructor(
     private itemDao: InventoryItemDao,
@@ -32,6 +46,14 @@ export class InventoryService {
 
   async getById(id: string): Promise<InventoryItem | null> {
     return this.itemDao.findById(id);
+  }
+
+  async getBySku(sku: string): Promise<InventoryItem | null> {
+    return this.itemDao.findBySku(sku);
+  }
+
+  async getLowStock(): Promise<InventoryItem[]> {
+    return this.itemDao.findLowStock();
   }
 
   async create(data: CreateItemPayload): Promise<InventoryItem> {

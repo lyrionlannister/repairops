@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { ServiceTypeService } from "../../../../src/commerce/service-types/services/service-type.service.js";
 import type { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
+import type { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
+import { mockEntity } from "../../../support/mock-entity.js";
 
 function makeDao() {
   return {
@@ -13,7 +15,7 @@ function makeDao() {
 describe("ServiceTypeService", () => {
   it("seeds the 5 historic types plus Software/Sistema when none exist yet", async () => {
     const dao = makeDao();
-    (dao.findByName as any).mockResolvedValue(null);
+    vi.mocked(dao.findByName).mockResolvedValue(null);
 
     const service = new ServiceTypeService(dao);
     await service.seed();
@@ -25,7 +27,7 @@ describe("ServiceTypeService", () => {
 
   it("is idempotent: skips types that already exist", async () => {
     const dao = makeDao();
-    (dao.findByName as any).mockResolvedValue({ id: "existing" });
+    vi.mocked(dao.findByName).mockResolvedValue(mockEntity<ServiceType>({ id: "existing" }));
 
     const service = new ServiceTypeService(dao);
     await service.seed();
@@ -39,7 +41,7 @@ describe("ServiceTypeService", () => {
 
     await expect(service.create("  ")).rejects.toThrow("obligatorio");
 
-    (dao.findByName as any).mockResolvedValue({ id: "t-1", name: "Software" });
+    vi.mocked(dao.findByName).mockResolvedValue(mockEntity<ServiceType>({ id: "t-1", name: "Software" }));
     await expect(service.create("Software")).resolves.toEqual({ id: "t-1", name: "Software" });
     expect(dao.create).not.toHaveBeenCalled();
   });

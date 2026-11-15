@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
-import { authenticatedEventSourceUrl } from "../../../core/common/utils/auth-header";
 
 export interface Conversation {
   sessionId: string;
@@ -38,21 +37,6 @@ export function useConversations() {
 
   useEffect(() => {
     fetchConversations().catch(console.error);
-  }, [fetchConversations]);
-
-  useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
-    const eventSource = new EventSource(authenticatedEventSourceUrl(`${baseUrl}/whatsapp/events`));
-    const refresh = () => {
-      fetchConversations().catch(console.error);
-    };
-
-    eventSource.addEventListener("message_received", refresh);
-    eventSource.addEventListener("ready", refresh);
-    eventSource.addEventListener("disconnected", refresh);
-    eventSource.addEventListener("conversation_transferred", refresh);
-
-    return () => eventSource.close();
   }, [fetchConversations]);
 
   return { conversations, loading, error, refetch: fetchConversations };

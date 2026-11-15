@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { RepairNoteService } from "../services/repair-note.service.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
@@ -6,6 +7,7 @@ import { PdfRendererService } from "../../../reporting/pdf/pdf-renderer.service.
 import { RepairNoteDocument } from "../../../reporting/pdf/documents/repair-note.document.js";
 import { toRepairNotePdfData } from "../../../reporting/pdf/documents/repair-note.pdf-data.js";
 
+@singleton()
 export class RepairNoteController {
   constructor(
     private repairNoteService: RepairNoteService,
@@ -27,6 +29,24 @@ export class RepairNoteController {
     try {
       const id = req.params["id"] as string;
       const note = await this.repairNoteService.getById(id);
+      if (!note) {
+        res.status(404).json({ error: "Nota no encontrada" });
+        return;
+      }
+      res.status(200).json(note);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  getByControlNumber = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const controlNumber = Number(req.params["controlNumber"]);
+      if (!Number.isInteger(controlNumber)) {
+        res.status(400).json({ error: "Número de control inválido" });
+        return;
+      }
+      const note = await this.repairNoteService.getByControlNumber(controlNumber);
       if (!note) {
         res.status(404).json({ error: "Nota no encontrada" });
         return;

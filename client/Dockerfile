@@ -1,4 +1,4 @@
-FROM docker.io/library/node:20-alpine AS builder
+FROM docker.io/library/node:26-alpine AS builder
 WORKDIR /app
 RUN npm install -g pnpm
 ARG VITE_API_BASE_URL

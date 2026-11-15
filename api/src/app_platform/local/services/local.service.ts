@@ -1,7 +1,9 @@
+import { singleton, inject } from "tsyringe";
 import { LocalDao } from "../daos/local.dao.js";
 import { Local } from "../entities/local.entity.js";
 import { rasterizeLogoIfSvg } from "../../../core/common/utils/rasterize-logo.js";
 
+@singleton()
 export class LocalService {
   constructor(private localDao: LocalDao) {}
 
@@ -17,5 +19,9 @@ export class LocalService {
 
   async consumeControlNumber(): Promise<number> {
     return this.localDao.consumeControlNumber();
+  }
+
+  async consumeSaleNumber(): Promise<number> {
+    return this.localDao.consumeSaleNumber();
   }
 }

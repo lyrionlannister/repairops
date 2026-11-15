@@ -36,7 +36,7 @@ describe("InventoryService.registerMovement concurrency", () => {
         kind: "part",
         costPrice: 500,
         salePrice: 900,
-      } as any),
+      }),
     );
 
     // Seed stock a 10 con un movimiento "in".
@@ -110,5 +110,92 @@ describe("InventoryService.bulkImport", () => {
     await expect(runWithTenant(tenantId, () => service.bulkImport("1", []))).rejects.toThrow(
       "No hay filas para importar",
     );
+  });
+});
+
+// Búsqueda por SKU (escáner) y alerta de stock mínimo -- piezas de la
+// Fase 1 (paridad visible: búsqueda por código de barras, alertas de stock).
+describe("InventoryService.getBySku / getLowStock", () => {
+  let service: InventoryService;
+  const tenantId = `${Date.now()}6`;
+
+  beforeAll(async () => {
+    await AppDataSource.initialize();
+    const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
+    const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
+    service = new InventoryService(itemDao, movementDao);
+  });
+
+  afterAll(async () => {
+    await AppDataSource.destroy();
+  });
+
+  it("finds an item by its sku and returns null for an unknown one", async () => {
+    await runWithTenant(tenantId, () =>
+      service.create({
+        localId: "1",
+        name: "Cargador USB-C",
+        sku: "CHG-USBC-01",
+        kind: "accessory",
+        costPrice: 50,
+        salePrice: 120,
+        minStock: 0,
+      }),
+    );
+
+    const found = await runWithTenant(tenantId, () => service.getBySku("CHG-USBC-01"));
+    expect(found?.name).toBe("Cargador USB-C");
+
+    const missing = await runWithTenant(tenantId, () => service.getBySku("NO-EXISTE"));
+    expect(missing).toBeNull();
+  });
+
+  it("only lists items whose stock is at or below their configured minimum", async () => {
+    const low = await runWithTenant(tenantId, () =>
+      service.create({
+        localId: "1",
+        name: "Pantalla con alerta",
+        sku: "LOW-01",
+        kind: "part",
+        costPrice: 400,
+        salePrice: 700,
+        minStock: 3,
+      }),
+    );
+    const healthy = await runWithTenant(tenantId, () =>
+      service.create({
+        localId: "1",
+        name: "Pantalla sin alerta",
+        sku: "LOW-02",
+        kind: "part",
+        costPrice: 400,
+        salePrice: 700,
+        minStock: 3,
+      }),
+    );
+    await runWithTenant(tenantId, () =>
+      service.create({
+        localId: "1",
+        name: "Sin minimo configurado",
+        sku: "LOW-03",
+        kind: "part",
+        costPrice: 400,
+        salePrice: 700,
+        minStock: 0,
+      }),
+    );
+
+    await runWithTenant(tenantId, () =>
+      Promise.all([
+        service.registerMovement({ inventoryItemId: low.id, type: "in", quantity: 2 }),
+        service.registerMovement({ inventoryItemId: healthy.id, type: "in", quantity: 10 }),
+      ]),
+    );
+
+    const lowStock = await runWithTenant(tenantId, () => service.getLowStock());
+    const names = lowStock.map((i) => i.name);
+    expect(names).toContain("Pantalla con alerta");
+    expect(names).not.toContain("Pantalla sin alerta");
+    expect(names).not.toContain("Sin minimo configurado");
   });
 });

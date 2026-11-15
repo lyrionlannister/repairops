@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -9,10 +10,9 @@ import { toQuotePdfData } from "../../../reporting/pdf/documents/quote.pdf-data.
 import { CreateQuoteDto } from "../dtos/create-quote.dto.js";
 import { UpdateQuoteDto } from "../dtos/update-quote.dto.js";
 import { SetQuoteStatusDto } from "../dtos/set-quote-status.dto.js";
+import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
 
-const validationErrors = (errors: { constraints?: Record<string, string> }[]): string[] =>
-  errors.map((e) => Object.values(e.constraints ?? {})).flat();
-
+@singleton()
 export class QuoteController {
   constructor(
     private service: QuoteService,
@@ -58,7 +58,7 @@ export class QuoteController {
         return;
       }
       const { items, ...data } = dto;
-      const quote = await this.service.create(data as any, items);
+      const quote = await this.service.create(data, items);
       res.status(201).json(quote);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

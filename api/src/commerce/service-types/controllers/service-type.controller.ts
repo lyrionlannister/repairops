@@ -1,9 +1,12 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { ServiceTypeService } from "../services/service-type.service.js";
 import { CreateServiceTypeDto } from "../dtos/create-service-type.dto.js";
+import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
+@singleton()
 export class ServiceTypeController {
   constructor(private service: ServiceTypeService) {}
 
@@ -20,7 +23,7 @@ export class ServiceTypeController {
       const dto = plainToInstance(CreateServiceTypeDto, req.body);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       res.status(201).json(await this.service.create(dto.name));

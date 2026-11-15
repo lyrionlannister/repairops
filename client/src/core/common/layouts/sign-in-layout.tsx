@@ -10,16 +10,27 @@ import signInNavbarItems, {
   otherSignInItems,
 } from "../../../config/app/navbar/sign-in-navbar-items";
 import Backdrop from "../components/menu/backdrop";
+import { useCurrentUser } from "../hooks/use-current-user";
+
+// Un técnico no opera caja -- ocultar el ítem de menú es el lado de
+// pantalla de la Regla de permisos por módulo; la API (requireRole en
+// cash.routes.ts) es la que de verdad lo bloquea aunque alguien edite el DOM.
+const hiddenPathsByRole: Partial<Record<string, string[]>> = {
+  technician: ["/admin/cash"],
+};
 
 const LayoutContent: React.FC = () => {
   //   useAuthGuard("/admin/sign-in");
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const currentUser = useCurrentUser();
+  const hiddenPaths = (currentUser && hiddenPathsByRole[currentUser.role]) ?? [];
+  const visibleNavItems = signInNavbarItems.filter((item) => !hiddenPaths.includes(item.path));
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 xl:flex">
       <div>
         <AsideMenu
-          navItems={signInNavbarItems}
+          navItems={visibleNavItems}
           othersItems={otherSignInItems}
         />
         <Backdrop />

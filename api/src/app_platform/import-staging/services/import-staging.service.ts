@@ -1,14 +1,17 @@
+import { singleton, inject } from "tsyringe";
 import { randomUUID } from "node:crypto";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { PriceListDao } from "../../../commerce/price-list/daos/price-list.dao.js";
 import type { PriceListItem } from "../../../commerce/price-list/entities/price-list-item.entity.js";
 import type { RedisLike, StagingRecord, StagingRow } from "../types.js";
+import { REDIS_CLIENT } from "../../../core/di/tokens.js";
 
 const TTL_SECONDS = 3600;
 
+@singleton()
 export class ImportStagingService {
   constructor(
-    private redis: RedisLike,
+    @inject(REDIS_CLIENT) private redis: RedisLike,
     private priceListDao: PriceListDao,
   ) {}
 

@@ -3,6 +3,7 @@ import { MessageTemplateDao } from "../message-templates/daos/message-template.d
 import { PriceListDao } from "../../commerce/price-list/daos/price-list.dao.js";
 import { RepairNoteDao } from "../../commerce/repair-notes/daos/repair-note.dao.js";
 import { runWithTenant } from "../../core/tenancy/tenant-context.js";
+import { env } from "../../core/config/env.js";
 
 /**
  * Endpoints de consumo interno desde n8n, por tenant.
@@ -13,7 +14,7 @@ import { runWithTenant } from "../../core/tenancy/tenant-context.js";
  * red Docker") no estaba garantizado por nada a nivel de nginx/compose.
  */
 export function requireInternalToken(req: any, res: any, next: any): void {
-  const expected = process.env.N8N_INTERNAL_TOKEN;
+  const expected = env("N8N_INTERNAL_TOKEN");
   if (!expected) {
     res.status(500).json({ error: "N8N_INTERNAL_TOKEN no configurado" });
     return;

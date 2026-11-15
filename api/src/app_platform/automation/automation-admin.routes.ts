@@ -2,8 +2,9 @@ import { Router } from "express";
 import { settingsService } from "../../identity/settings/settings.service.js";
 import { authMiddleware } from "../../identity/auth/middlewares/auth.middleware.js";
 import { tenantMiddleware } from "../../core/tenancy/tenant.middleware.js";
+import { optionalEnv } from "../../core/config/env.js";
 
-const allowedDomains = (process.env.AUTOMATION_ALLOWED_DOMAINS ?? "")
+const allowedDomains = optionalEnv("AUTOMATION_ALLOWED_DOMAINS", "")
   .split(",")
   .map((d) => d.trim().toLowerCase())
   .filter(Boolean);

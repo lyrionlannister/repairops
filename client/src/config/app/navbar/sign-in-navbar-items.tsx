@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   MessagesSquare,
-  Settings2,
   Users,
   Wrench,
   Store,
@@ -14,6 +13,7 @@ import {
   Truck,
   Building2,
   Users2,
+  MessageCircle,
 } from "lucide-react";
 
 const signInNavbarItems = [
@@ -88,6 +88,13 @@ const signInNavbarItems = [
     new: false,
   },
   {
+    name: "WhatsApp",
+    icon: <MessageCircle className="w-5 h-5" />,
+    path: "/admin/whatsapp",
+    group: "Administración",
+    new: false,
+  },
+  {
     name: "Proveedores",
     icon: <Truck className="w-5 h-5" />,
     path: "/admin/suppliers",
@@ -112,13 +119,6 @@ const signInNavbarItems = [
     name: "Caja",
     icon: <Wallet className="w-5 h-5" />,
     path: "/admin/cash",
-    group: "Administración",
-    new: false,
-  },
-  {
-    name: "Configuración",
-    icon: <Settings2 className="w-5 h-5" />,
-    path: "/admin/whatsapp",
     group: "Administración",
     new: false,
   },

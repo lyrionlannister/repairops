@@ -1,9 +1,12 @@
 import { Repository } from "typeorm";
+import { singleton, inject } from "tsyringe";
+import { repositoryToken } from "../../../core/di/repository-token.js";
 import { Local } from "../entities/local.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 
+@singleton()
 export class LocalDao extends TenantScopedDao<Local> {
-  constructor(repository: Repository<Local>) {
+  constructor(@inject(repositoryToken(Local)) repository: Repository<Local>) {
     super(repository);
   }
 
@@ -33,8 +36,8 @@ export class LocalDao extends TenantScopedDao<Local> {
     // SELECT-then-INSERT que tenia antes sí corria esa carrera.
     const tenantId = this.currentTenantId();
     const rows = await this.runQuery<Partial<Local>>(
-      `INSERT INTO local_config ("tenant_id", "siguiente_numero_control")
-       VALUES ($1, 1)
+      `INSERT INTO local_config ("tenant_id", "siguiente_numero_control", "tope_descuento_por_rol")
+       VALUES ($1, 1, '{"cashier": 10}'::jsonb)
        ON CONFLICT ("tenant_id") DO UPDATE SET "tenant_id" = EXCLUDED."tenant_id"
        RETURNING
          "id" AS id,
@@ -45,7 +48,14 @@ export class LocalDao extends TenantScopedDao<Local> {
          "telefono" AS phone,
          "logo" AS logo,
          "siguiente_numero_control" AS "nextControlNumber",
+         "siguiente_numero_venta" AS "nextSaleNumber",
          "unidad_redondeo_caja" AS "cashRoundingUnit",
+         "tope_diferencia_caja_sin_autorizar" AS "maxUnauthorizedCashVariance",
+         "moneda" AS "currency",
+         "formato_ticket" AS "defaultTicketSize",
+         "clausula_garantia" AS "warrantyClause",
+         "tasa_impuesto" AS "taxRatePercent",
+         "tope_descuento_por_rol" AS "maxDiscountPercentByRole",
          "fecha_creacion" AS "createdAt",
          "fecha_actualizacion" AS "updatedAt"`,
       [tenantId],
@@ -60,6 +70,20 @@ export class LocalDao extends TenantScopedDao<Local> {
        SET "siguiente_numero_control" = "siguiente_numero_control" + 1
        WHERE "id" = $1
        RETURNING "siguiente_numero_control" - 1 AS number`,
+      [local.id],
+    );
+    return rows[0].number;
+  }
+
+  // Mismo patron atomico que consumeControlNumber -- folio de venta del
+  // POS (cap. 3 del plan: "Venta -- se extiende la actual").
+  async consumeSaleNumber(): Promise<number> {
+    const local = await this.findOrCreate();
+    const rows = await this.runQuery<{ number: number }>(
+      `UPDATE local_config
+       SET "siguiente_numero_venta" = "siguiente_numero_venta" + 1
+       WHERE "id" = $1
+       RETURNING "siguiente_numero_venta" - 1 AS number`,
       [local.id],
     );
     return rows[0].number;

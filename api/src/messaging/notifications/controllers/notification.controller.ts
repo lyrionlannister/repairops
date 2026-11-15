@@ -1,6 +1,8 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { NotificationService } from "../services/notification.service.js";
 
+@singleton()
 export class NotificationController {
   constructor(private service: NotificationService) {}
 

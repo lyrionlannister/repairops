@@ -1,6 +1,9 @@
+import { singleton, inject } from "tsyringe";
+import { Decimal } from "decimal.js";
 import { CashSessionDao } from "../daos/cash-session.dao.js";
 import { CashMovementDao } from "../daos/cash-movement.dao.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
+import { UserDao } from "../../../identity/auth/daos/user.dao.js";
 import { CashSession } from "../entities/cash-session.entity.js";
 import { CashMovement, CashMovementMethod, CashMovementRelatedEntityType, CashMovementType } from "../entities/cash-movement.entity.js";
 import { roundCashAmount } from "../utils/round-cash-amount.js";
@@ -23,11 +26,13 @@ export interface CashSummary {
   byMethod: Record<CashMovementMethod, { income: number; expense: number }>;
 }
 
+@singleton()
 export class CashService {
   constructor(
     private sessionDao: CashSessionDao,
     private movementDao: CashMovementDao,
     private localService: LocalService,
+    private userDao: UserDao,
   ) {}
 
   async getAllSessions(): Promise<CashSession[]> {
@@ -59,15 +64,52 @@ export class CashService {
     } as Partial<CashSession>);
   }
 
-  async closeSession(id: string, closingBalance: number): Promise<CashSession> {
+  // Arqueo ciego: el esperado se calcula aqui, en el momento del cierre,
+  // nunca antes (la pantalla no debe mostrarlo mientras la sesion esta
+  // abierta). Dos puertas bloquean el cierre, en este orden: diferencia sin
+  // motivo, o diferencia sobre el limite del tenant sin un autorizador con
+  // rol owner/admin (SPEC-fase3-pos-dinero.md). Si cualquiera de las dos
+  // truena, la sesion se queda "open" -- mismo criterio que una Sale que no
+  // pasa sus compuertas nunca llega a crearse.
+  async closeSession(
+    id: string,
+    closingBalance: number,
+    reason?: string | null,
+    authorizedByEmployeeId?: string | null,
+  ): Promise<CashSession> {
     const session = await this.sessionDao.findById(id);
     if (!session) throw new Error("Sesión de caja no encontrada");
     if (session.status === "closed") throw new Error("La sesión ya está cerrada");
+
+    const summary = await this.getSummary(id);
+    const expectedCashBalance = new Decimal(session.openingBalance)
+      .plus(summary.byMethod.efectivo.income)
+      .minus(summary.byMethod.efectivo.expense);
+    const variance = new Decimal(closingBalance).minus(expectedCashBalance);
+
+    if (!variance.isZero() && !reason) {
+      throw new Error("Hay una diferencia de caja: se requiere un motivo para cerrar");
+    }
+
+    const local = await this.localService.getConfig();
+    const maxUnauthorized = new Decimal(local.maxUnauthorizedCashVariance);
+    if (variance.abs().greaterThan(maxUnauthorized)) {
+      if (!authorizedByEmployeeId) {
+        throw new Error(`La diferencia supera el límite sin autorizar (${maxUnauthorized.toFixed(2)}): requiere autorización`);
+      }
+      const authorizer = await this.userDao.findById(authorizedByEmployeeId);
+      if (!authorizer || !["owner", "admin"].includes(authorizer.role)) {
+        throw new Error("Quien autoriza la diferencia debe tener rol owner o admin");
+      }
+    }
 
     const updated = await this.sessionDao.update(id, {
       status: "closed",
       closingBalance,
       closedAt: new Date(),
+      variance: variance.toNumber(),
+      varianceReason: variance.isZero() ? null : reason ?? null,
+      varianceAuthorizedByEmployeeId: authorizedByEmployeeId ?? null,
     } as Partial<CashSession>);
     return updated as CashSession;
   }

@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 
+export type TicketSize = "58mm" | "80mm" | "letter";
+
 export interface LocalRecord {
   id: string;
   name?: string;
@@ -9,6 +11,11 @@ export interface LocalRecord {
   logo?: string;
   nextControlNumber: number;
   cashRoundingUnit: number;
+  currency: string;
+  defaultTicketSize: TicketSize;
+  warrantyClause?: string | null;
+  taxRatePercent: number;
+  maxDiscountPercentByRole: Record<string, number>;
   updatedAt: string;
 }
 

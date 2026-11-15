@@ -25,7 +25,7 @@ const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("es-MX", { 
 const CashPage = () => {
   const { local, fetchLocal } = useLocal();
   const { activeBranchId } = useBranch();
-  const { session, movements, summary, loading, saving, error, fetchOpenSession, openSession, closeSession, fetchMovements, fetchSummary, registerMovement, clearError } = useCash();
+  const { session, closedSession, movements, summary, loading, saving, error, fetchOpenSession, openSession, closeSession, fetchMovements, fetchSummary, registerMovement, clearError, clearClosedSession } = useCash();
 
   const {
     openingBalance,
@@ -40,9 +40,17 @@ const CashPage = () => {
     setIsCloseOpen,
     closingBalance,
     setClosingBalance,
+    closeReason,
+    setCloseReason,
+    closeAuthorizedByEmployeeId,
+    setCloseAuthorizedByEmployeeId,
+    showCloseReasonField,
+    showCloseAuthorizerField,
     handleOpen,
     handleRegisterMovement,
     handleClose,
+    handleCancelClose,
+    handleDismissClosedSession,
   } = useCashPage({
     local,
     branchId: activeBranchId,
@@ -56,6 +64,7 @@ const CashPage = () => {
     fetchOpenSession,
     openSession,
     closeSession,
+    clearClosedSession,
     fetchMovements,
     fetchSummary,
     registerMovement,
@@ -75,6 +84,40 @@ const CashPage = () => {
       </div>
 
       {error && <Alert variant="error" title="Error" message={error} />}
+
+      {closedSession && (
+        <div className="relative rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
+          <button
+            type="button"
+            onClick={handleDismissClosedSession}
+            className="absolute right-4 top-4 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            Cerrar
+          </button>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Caja cerrada</p>
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-semibold uppercase text-gray-400">Esperado en caja</p>
+              <p className="mt-1 text-lg font-bold text-gray-800 dark:text-white/90">
+                {formatMoney(Number(closedSession.closingBalance ?? 0) - Number(closedSession.variance ?? 0))}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase text-gray-400">Contado</p>
+              <p className="mt-1 text-lg font-bold text-gray-800 dark:text-white/90">{formatMoney(closedSession.closingBalance ?? 0)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase text-gray-400">Diferencia</p>
+              <p className={`mt-1 text-lg font-bold ${Number(closedSession.variance ?? 0) === 0 ? "text-gray-800 dark:text-white/90" : "text-red-500 dark:text-red-400"}`}>
+                {formatMoney(closedSession.variance ?? 0)}
+              </p>
+            </div>
+          </div>
+          {closedSession.varianceReason && (
+            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">Motivo: {closedSession.varianceReason}</p>
+          )}
+        </div>
+      )}
 
       {!session ? (
         <div className="max-w-md space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
@@ -96,7 +139,7 @@ const CashPage = () => {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
               <p className="text-xs font-semibold uppercase text-gray-400">Saldo de apertura</p>
               <p className="mt-1 text-xl font-bold text-gray-800 dark:text-white/90">{formatMoney(session.openingBalance)}</p>
@@ -108,12 +151,6 @@ const CashPage = () => {
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
               <p className="text-xs font-semibold uppercase text-gray-400">Egresos</p>
               <p className="mt-1 text-xl font-bold text-red-500 dark:text-red-400">{formatMoney(summary?.totalExpense ?? 0)}</p>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
-              <p className="text-xs font-semibold uppercase text-gray-400">Esperado en caja</p>
-              <p className="mt-1 text-xl font-bold text-brand-600 dark:text-brand-400">
-                {formatMoney(Number(session.openingBalance) + (summary?.byMethod.efectivo.income ?? 0) - (summary?.byMethod.efectivo.expense ?? 0))}
-              </p>
             </div>
           </div>
 
@@ -215,15 +252,27 @@ const CashPage = () => {
         </form>
       </Modal>
 
-      <Modal isOpen={isCloseOpen} onClose={() => setIsCloseOpen(false)} className="max-w-md p-6 sm:p-8 mx-4">
+      <Modal isOpen={isCloseOpen} onClose={handleCancelClose} className="max-w-md p-6 sm:p-8 mx-4">
         <h2 className="mb-5 text-lg font-semibold text-gray-800 dark:text-gray-100">Cerrar caja</h2>
         <form onSubmit={handleClose} className="space-y-4">
           <div>
             <Label className="text-gray-500">Saldo de cierre (conteo físico)</Label>
             <Input type="number" min="0" step="0.01" value={closingBalance} onChange={(event) => setClosingBalance(event.target.value)} required disabled={saving} />
           </div>
+          {showCloseReasonField && (
+            <div>
+              <Label className="text-gray-500">Motivo de la diferencia</Label>
+              <Input placeholder="¿Por qué no cuadra la caja?" value={closeReason} onChange={(event) => setCloseReason(event.target.value)} required disabled={saving} />
+            </div>
+          )}
+          {showCloseAuthorizerField && (
+            <div>
+              <Label className="text-gray-500">Autorizado por (owner/admin)</Label>
+              <EmployeeSelect value={closeAuthorizedByEmployeeId} onChange={setCloseAuthorizedByEmployeeId} disabled={saving} />
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={() => setIsCloseOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={handleCancelClose} disabled={saving}>Cancelar</Button>
             <Button type="submit" variant="primary" disabled={saving}>{saving ? "Cerrando..." : "Cerrar caja"}</Button>
           </div>
         </form>

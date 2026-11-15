@@ -1,6 +1,8 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { PriceListService } from "../services/price-list.service.js";
 
+@singleton()
 export class PriceListController {
   constructor(private service: PriceListService) {}
 

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
 
-export type UserRole = "owner" | "admin" | "employee";
+export type UserRole = "owner" | "admin" | "employee" | "technician" | "cashier";
 export type PayCycle = "weekly" | "biweekly" | "monthly";
 
 export interface UserRecord {

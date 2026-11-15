@@ -1,16 +1,19 @@
+import { singleton, inject } from "tsyringe";
 import { Repository } from "typeorm";
 import {
   ChatHistoryDao,
   ConversationCountPoint,
 } from "../daos/chat-history.dao.js";
 import { ContactName } from "../entities/contact-name.entity.js";
+import { repositoryToken } from "../../../core/di/repository-token.js";
 import { toConversationDto, toMessageDto } from "../helpers/chats.helpers.js";
 import { ConversationDto, MessageDto } from "../types/chats.types.js";
 
+@singleton()
 export class ChatsService {
   constructor(
     private chatHistoryDao: ChatHistoryDao,
-    private contactNameRepository: Repository<ContactName>,
+    @inject(repositoryToken(ContactName)) private contactNameRepository: Repository<ContactName>,
   ) {}
 
   async getConversations(): Promise<ConversationDto[]> {
@@ -40,5 +43,9 @@ export class ChatsService {
 
   async getLastInteractionAt(): Promise<string | null> {
     return this.chatHistoryDao.getLastInteractionAt();
+  }
+
+  async getLastHumanMessageAt(sessionId: string): Promise<Date | null> {
+    return this.chatHistoryDao.findLastHumanMessageAt(sessionId);
   }
 }

@@ -1,4 +1,3 @@
-import WhatsAppAdminPage from "../messaging/whatsapp/pages/whatsapp-admin-page";
 import ChatsPage from "../messaging/chats/pages/chats-page";
 import AuthPage from "../identity/auth/pages/auth-page";
 import RegisterPage from "../identity/auth/pages/register-page";
@@ -10,6 +9,7 @@ import RepairNotesPage from "../commerce/repair-notes/pages/repair-notes-page";
 import RepairNoteFormPage from "../commerce/repair-notes/pages/repair-note-form-page";
 import RepairNotePrintPage from "../commerce/repair-notes/pages/repair-note-print-page";
 import MessageTemplatesPage from "../messaging/message-templates/pages/message-templates-page";
+import WhatsappOfficialPage from "../messaging/whatsapp-official/pages/whatsapp-official-page";
 import PriceListPage from "../commerce/price-list/pages/price-list-page";
 import ImportPriceListPage from "../commerce/price-list/pages/import-price-list-page";
 import InventoryPage from "../commerce/inventory/pages/inventory-page";
@@ -43,10 +43,6 @@ export const protectedRoutes = [
     element: <DashboardPage />,
   },
   {
-    path: "/admin/whatsapp",
-    element: <WhatsAppAdminPage />,
-  },
-  {
     path: "/admin/chats",
     element: <ChatsPage />,
   },
@@ -77,6 +73,10 @@ export const protectedRoutes = [
   {
     path: "/admin/templates",
     element: <MessageTemplatesPage />,
+  },
+  {
+    path: "/admin/whatsapp",
+    element: <WhatsappOfficialPage />,
   },
   {
     path: "/admin/suppliers",

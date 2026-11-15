@@ -1,6 +1,8 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { LocalService } from "../services/local.service.js";
 
+@singleton()
 export class LocalController {
   constructor(private localService: LocalService) {}
 

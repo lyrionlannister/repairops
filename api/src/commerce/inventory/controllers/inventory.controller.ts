@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -5,13 +6,36 @@ import { InventoryService } from "../services/inventory.service.js";
 import { CreateInventoryItemDto } from "../dtos/create-inventory-item.dto.js";
 import { RegisterMovementDto } from "../dtos/register-movement.dto.js";
 import { parseInventoryImportFile } from "../utils/inventory-import-parser.js";
+import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
+@singleton()
 export class InventoryController {
   constructor(private service: InventoryService) {}
 
   getAll = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getAll());
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  getBySku = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const item = await this.service.getBySku(req.params["sku"] as string);
+      if (!item) {
+        res.status(404).json({ error: "Item no encontrado" });
+        return;
+      }
+      res.status(200).json(item);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  getLowStock = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.service.getLowStock());
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -35,10 +59,10 @@ export class InventoryController {
       const dto = plainToInstance(CreateInventoryItemDto, req.body);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
-      res.status(201).json(await this.service.create(dto as any));
+      res.status(201).json(await this.service.create(dto));
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
@@ -111,7 +135,7 @@ export class InventoryController {
       const dto = plainToInstance(RegisterMovementDto, req.body);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       const movement = await this.service.registerMovement({

@@ -27,16 +27,19 @@ describe("QuoteService", () => {
   });
 
   it("rejects creating a quote with no items", async () => {
+    const payload = { localId: "1", customerName: "Sin items" };
     await expect(
-      runWithTenant(tenantId, () =>
-        service.create({ localId: "1", customerName: "Sin items" } as any, []),
-      ),
+      runWithTenant(tenantId, () => service.create(payload, [])),
     ).rejects.toThrow("al menos un item");
   });
 
   it("computes totalValue from the items, ignoring any client-sent value", async () => {
+    // totalValue no es un campo de CreatePayload -- se manda igual (como
+    // haria un cliente malicioso o un bug de UI) para probar que el service
+    // lo ignora por completo y siempre recalcula desde los items.
+    const payload = { localId: "1", customerName: "Juan", totalValue: 999 };
     const quote = await runWithTenant(tenantId, () =>
-      service.create({ localId: "1", customerName: "Juan", totalValue: 999 } as any, [
+      service.create(payload, [
         { description: "Pantalla", quantity: 1, unitPrice: 500 },
         { description: "Mano de obra", quantity: 2, unitPrice: 50 },
       ]),
@@ -51,7 +54,7 @@ describe("QuoteService", () => {
 
   it("update replaces items and recalculates totalValue", async () => {
     const quote = await runWithTenant(tenantId, () =>
-      service.create({ localId: "1", customerName: "Ana" } as any, [
+      service.create({ localId: "1", customerName: "Ana" }, [
         { description: "Item inicial", quantity: 1, unitPrice: 100 },
       ]),
     );
@@ -67,7 +70,7 @@ describe("QuoteService", () => {
 
   it("setStatus transitions a quote without touching its items or total", async () => {
     const quote = await runWithTenant(tenantId, () =>
-      service.create({ localId: "1", customerName: "Carlos" } as any, [
+      service.create({ localId: "1", customerName: "Carlos" }, [
         { description: "Item", quantity: 1, unitPrice: 10 },
       ]),
     );

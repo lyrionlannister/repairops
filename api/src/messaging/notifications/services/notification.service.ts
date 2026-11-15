@@ -1,6 +1,8 @@
+import { singleton, inject } from "tsyringe";
 import { NotificationDao } from "../daos/notification.dao.js";
 import { Notification, NotificationType } from "../entities/notification.entity.js";
 
+@singleton()
 export class NotificationService {
   constructor(private dao: NotificationDao) {}
 

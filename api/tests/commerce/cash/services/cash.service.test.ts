@@ -9,6 +9,8 @@ import { CashService } from "../../../../src/commerce/cash/services/cash.service
 import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
 import { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
+import { User } from "../../../../src/identity/auth/entities/user.entity.js";
+import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 // Integration test against a real Postgres (same reasoning as
@@ -17,6 +19,7 @@ import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 describe("CashService", () => {
   let service: CashService;
   let localService: LocalService;
+  let userDao: UserDao;
   const tenantId = `${Date.now()}4`;
 
   beforeAll(async () => {
@@ -24,7 +27,8 @@ describe("CashService", () => {
     const sessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
     const movementDao = new CashMovementDao(AppDataSource.getRepository(CashMovement));
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
-    service = new CashService(sessionDao, movementDao, localService);
+    userDao = new UserDao(AppDataSource.getRepository(User));
+    service = new CashService(sessionDao, movementDao, localService, userDao);
   });
 
   afterAll(async () => {
@@ -101,14 +105,55 @@ describe("CashService", () => {
     expect(summary.byMethod.tarjeta).toEqual({ income: 200, expense: 0 });
   });
 
-  it("closeSession persists the closing balance and status", async () => {
+  it("closeSession persists the closing balance and status when the balance matches exactly", async () => {
     const closeTenant = `${tenantId}5`;
     const session = await runWithTenant(closeTenant, () => service.openSession("1", 500));
 
-    const closed = await runWithTenant(closeTenant, () => service.closeSession(session.id, 480));
+    const closed = await runWithTenant(closeTenant, () => service.closeSession(session.id, 500));
 
     expect(closed.status).toBe("closed");
-    expect(Number(closed.closingBalance)).toBe(480);
+    expect(Number(closed.closingBalance)).toBe(500);
+    expect(Number(closed.variance)).toBe(0);
     expect(closed.closedAt).not.toBeNull();
+  });
+
+  it("rejects closing with a non-zero variance and no reason", async () => {
+    const varianceTenant = `${tenantId}6`;
+    const session = await runWithTenant(varianceTenant, () => service.openSession("1", 500));
+
+    await expect(runWithTenant(varianceTenant, () => service.closeSession(session.id, 480))).rejects.toThrow(
+      "se requiere un motivo",
+    );
+  });
+
+  it("rejects closing with a variance over the tenant's unauthorized limit and no authorizer", async () => {
+    const bigVarianceTenant = `${tenantId}7`;
+    const session = await runWithTenant(bigVarianceTenant, () => service.openSession("1", 500));
+
+    await expect(
+      runWithTenant(bigVarianceTenant, () => service.closeSession(session.id, 300, "Faltante grande")),
+    ).rejects.toThrow("requiere autorización");
+  });
+
+  it("closes with a large variance when authorized by an owner/admin", async () => {
+    const authorizedTenant = `${tenantId}8`;
+    const authorizer = await runWithTenant(authorizedTenant, () =>
+      userDao.create({
+        firstName: "Due",
+        lastName: "Ño",
+        email: `owner.${authorizedTenant}@test.local`,
+        password: "x",
+        role: "owner",
+      } as Partial<User>),
+    );
+    const session = await runWithTenant(authorizedTenant, () => service.openSession("1", 500));
+
+    const closed = await runWithTenant(authorizedTenant, () =>
+      service.closeSession(session.id, 300, "Faltante grande", authorizer.id),
+    );
+
+    expect(closed.status).toBe("closed");
+    expect(Number(closed.variance)).toBe(-200);
+    expect(closed.varianceAuthorizedByEmployeeId).toBe(authorizer.id);
   });
 });

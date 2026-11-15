@@ -26,4 +26,9 @@ export class CreateInventoryItemDto {
   @IsNumber({}, { message: "Precio de venta debe ser numérico" })
   @Min(0)
   salePrice!: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: "Stock mínimo debe ser numérico" })
+  @Min(0)
+  minStock?: number;
 }

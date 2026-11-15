@@ -1,5 +1,4 @@
 import { useApiClient } from "@common/hooks/use-api-client";
-import { authenticatedEventSourceUrl } from "@common/utils/auth-header";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { buildDailyBusinessSeries, buildMonthlyBusinessSeries, summarizeDashboardMetrics } from "../utils/dashboard-metrics";
@@ -76,22 +75,6 @@ export const useDashboardPage = () => {
   useEffect(() => {
     loadStats().catch(console.error);
     loadBusinessStats().catch(console.error);
-  }, [loadBusinessStats, loadStats]);
-
-  useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
-    const eventSource = new EventSource(authenticatedEventSourceUrl(`${baseUrl}/whatsapp/events`));
-
-    const refresh = () => {
-      loadStats().catch(console.error);
-      loadBusinessStats().catch(console.error);
-    };
-
-    eventSource.addEventListener("message_received", refresh);
-    eventSource.addEventListener("ready", refresh);
-    eventSource.addEventListener("disconnected", refresh);
-
-    return () => eventSource.close();
   }, [loadBusinessStats, loadStats]);
 
   const totalYear = useMemo(() => monthly.reduce((sum, point) => sum + point.count, 0), [monthly]);

@@ -1,3 +1,5 @@
+import { singleton, inject } from "tsyringe";
+import type { FindOptionsWhere } from "typeorm";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { QuoteDao } from "../daos/quote.dao.js";
@@ -12,15 +14,20 @@ export interface QuoteItemInput {
   unitPrice: number;
 }
 
+// tenantId se excluye: AppDataSource.transaction de create() lo agrega desde
+// el contexto (nunca lo manda el caller), igual criterio que InventoryService.
 type CreatePayload = Omit<
   Quote,
-  "id" | "publicId" | "totalValue" | "status" | "createdAt" | "updatedAt"
+  "id" | "publicId" | "tenantId" | "totalValue" | "status" | "createdAt" | "updatedAt"
 >;
-type UpdatePayload = Partial<Omit<Quote, "id" | "publicId" | "totalValue" | "createdAt" | "updatedAt">>;
+type UpdatePayload = Partial<
+  Omit<Quote, "id" | "publicId" | "tenantId" | "totalValue" | "createdAt" | "updatedAt">
+>;
 
 const sumItems = (items: QuoteItemInput[]): number =>
   items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
+@singleton()
 export class QuoteService {
   constructor(
     private quoteDao: QuoteDao,
@@ -86,10 +93,13 @@ export class QuoteService {
     const totalValue = sumItems(items);
 
     return AppDataSource.transaction(async (manager) => {
-      const quote = await manager.findOneBy(Quote, { id, tenantId } as any);
+      const quote = await manager.findOneBy(
+        Quote,
+        { id, tenantId } as unknown as FindOptionsWhere<Quote>,
+      );
       if (!quote) return null;
 
-      await manager.delete(QuoteItem, { quoteId: id, tenantId } as any);
+      await manager.delete(QuoteItem, { quoteId: id, tenantId } as unknown as FindOptionsWhere<QuoteItem>);
 
       Object.assign(quote, data, { totalValue });
       const savedQuote = await manager.save(quote);

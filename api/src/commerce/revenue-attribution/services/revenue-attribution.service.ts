@@ -1,6 +1,8 @@
+import { singleton, inject } from "tsyringe";
 import { RevenueAttributionSettingDao } from "../daos/revenue-attribution-setting.dao.js";
 import { AttributionBasis, RevenueAttributionSetting } from "../entities/revenue-attribution-setting.entity.js";
 
+@singleton()
 export class RevenueAttributionService {
   constructor(private dao: RevenueAttributionSettingDao) {}
 

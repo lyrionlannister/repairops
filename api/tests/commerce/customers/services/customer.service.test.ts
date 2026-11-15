@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import { CustomerService } from "../../../../src/commerce/customers/services/customer.service.js";
 import type { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import type { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
+import type { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
+import type { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
+import { mockEntity } from "../../../support/mock-entity.js";
 
 function makeDao() {
   return {
@@ -24,17 +27,17 @@ describe("CustomerService", () => {
     const dao = makeDao();
     const service = new CustomerService(dao, makeRepairNoteDao());
 
-    await expect(service.create({ name: "  ", phone: "555" } as any)).rejects.toThrow("nombre");
-    await expect(service.create({ name: "Juan", phone: "  " } as any)).rejects.toThrow("teléfono");
+    await expect(service.create({ name: "  ", phone: "555" })).rejects.toThrow("nombre");
+    await expect(service.create({ name: "Juan", phone: "  " })).rejects.toThrow("teléfono");
     expect(dao.create).not.toHaveBeenCalled();
   });
 
   it("create trims fields and treats email as optional", async () => {
     const dao = makeDao();
-    (dao.create as any).mockResolvedValue({ id: "c-1" });
+    vi.mocked(dao.create).mockResolvedValue(mockEntity<Customer>({ id: "c-1" }));
     const service = new CustomerService(dao, makeRepairNoteDao());
 
-    await service.create({ name: " Juan Pérez ", phone: " 5551234567 " } as any);
+    await service.create({ name: " Juan Pérez ", phone: " 5551234567 " });
 
     expect(dao.create).toHaveBeenCalledWith({
       name: "Juan Pérez",
@@ -45,10 +48,10 @@ describe("CustomerService", () => {
 
   it("getDeviceHistory dedupes by brand+model, keeps the most recent date, and counts notes", async () => {
     const repairNoteDao = makeRepairNoteDao();
-    (repairNoteDao.findByCustomerId as any).mockResolvedValue([
-      { brand: "Samsung", model: "A15", receivedAt: "2026-01-10", controlNumber: 10 },
-      { brand: "samsung", model: "a15", receivedAt: "2026-03-05", controlNumber: 22 },
-      { brand: "Apple", model: "iPhone 12", receivedAt: "2026-02-01", controlNumber: 15 },
+    vi.mocked(repairNoteDao.findByCustomerId).mockResolvedValue([
+      mockEntity<RepairNote>({ brand: "Samsung", model: "A15", receivedAt: "2026-01-10", controlNumber: 10 }),
+      mockEntity<RepairNote>({ brand: "samsung", model: "a15", receivedAt: "2026-03-05", controlNumber: 22 }),
+      mockEntity<RepairNote>({ brand: "Apple", model: "iPhone 12", receivedAt: "2026-02-01", controlNumber: 15 }),
     ]);
     const service = new CustomerService(makeDao(), repairNoteDao);
 
@@ -67,7 +70,7 @@ describe("CustomerService", () => {
 
   it("getDeviceHistory returns an empty list when the customer has no notes", async () => {
     const repairNoteDao = makeRepairNoteDao();
-    (repairNoteDao.findByCustomerId as any).mockResolvedValue([]);
+    vi.mocked(repairNoteDao.findByCustomerId).mockResolvedValue([]);
     const service = new CustomerService(makeDao(), repairNoteDao);
 
     expect(await service.getDeviceHistory("c-1")).toEqual([]);

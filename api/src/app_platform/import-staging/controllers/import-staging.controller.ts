@@ -1,3 +1,4 @@
+import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -5,7 +6,9 @@ import { ImportStagingService } from "../services/import-staging.service.js";
 import { triggerImportStagingWorkflow } from "../trigger-workflow.js";
 import { UpdateStagingRowsDto } from "../dtos/update-staging-rows.dto.js";
 import { ImportStagingCallbackDto } from "../dtos/import-staging-callback.dto.js";
+import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
+@singleton()
 export class ImportStagingController {
   constructor(private service: ImportStagingService) {}
 
@@ -54,7 +57,7 @@ export class ImportStagingController {
       const dto = plainToInstance(UpdateStagingRowsDto, req.body);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       const record = await this.service.updateRows(req.params["importId"] as string, dto.rows);
@@ -91,7 +94,7 @@ export class ImportStagingController {
       const dto = plainToInstance(ImportStagingCallbackDto, req.body);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.map((e) => Object.values(e.constraints ?? {})).flat() });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       if (!dto.rows && !dto.error) {

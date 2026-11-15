@@ -1,7 +1,7 @@
 import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, MinLength } from "class-validator";
 import { PayCycle, UserRole } from "../entities/user.entity.js";
 
-const ROLES: UserRole[] = ["owner", "admin", "employee"];
+const ROLES: UserRole[] = ["owner", "admin", "employee", "technician", "cashier"];
 const PAY_CYCLES: PayCycle[] = ["weekly", "biweekly", "monthly"];
 
 export class CreateEmployeeDto {

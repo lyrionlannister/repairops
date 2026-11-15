@@ -1,6 +1,7 @@
 import AppDataSource from "../../core/config/data-source.js";
 import { WhatsappSettings } from "../../messaging/whatsapp-admin/entities/whatsapp-settings.entity.js";
 import { getCurrentTenantId } from "../../core/tenancy/tenant-context.js";
+import { optionalEnv, optionalEnvNumber } from "../../core/config/env.js";
 
 type CacheEntry = {
   value: string;
@@ -9,9 +10,7 @@ type CacheEntry = {
 
 export class SettingsService {
   private static instance: SettingsService;
-  private static readonly CACHE_TTL_MS = Number(
-    process.env.AUTOMATION_URL_CACHE_TTL_MS ?? 10_000,
-  );
+  private static readonly CACHE_TTL_MS = optionalEnvNumber("AUTOMATION_URL_CACHE_TTL_MS", 10_000);
 
   // Cacheado por tenant: una sola instancia de SettingsService sirve a todos
   // los tenants del proceso, asi que la cache no puede ser un solo valor.
@@ -26,8 +25,9 @@ export class SettingsService {
   }
 
   private getFallbackAutomationUrl(): string {
-    return (
-      process.env.AUTOMATION_URL ?? "http://n8n:5678/webhook/customer-service"
+    return optionalEnv(
+      "AUTOMATION_URL",
+      "http://n8n:5678/webhook/97c71c06-20b2-4c12-a8be-16442536f909",
     );
   }
 

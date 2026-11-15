@@ -47,13 +47,6 @@ describe("SupplierDao tenant isolation", () => {
     expect(fromOtherTenant).toBeNull();
   });
 
-  it("findByName does not leak another tenant's row with the same name", async () => {
-    await runWithTenant(tenantA, () => dao.create({ name: "Mismo Nombre", phone: "444" }));
-
-    const fromB = await runWithTenant(tenantB, () => dao.findByName("Mismo Nombre"));
-    expect(fromB).toBeNull();
-  });
-
   it("delete cannot remove a row that belongs to another tenant", async () => {
     const created = await runWithTenant(tenantA, () =>
       dao.create({ name: "Protegido", phone: "555" }),

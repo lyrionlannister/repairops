@@ -1,9 +1,11 @@
+import { singleton, inject } from "tsyringe";
 import { PriceListDao } from "../daos/price-list.dao.js";
 import { PriceListItem } from "../entities/price-list-item.entity.js";
 
 type CreatePayload = Omit<PriceListItem, "id" | "createdAt" | "updatedAt" | "supplier">;
 type UpdatePayload = Partial<CreatePayload>;
 
+@singleton()
 export class PriceListService {
   constructor(private dao: PriceListDao) {}
 
