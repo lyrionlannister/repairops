@@ -13,6 +13,8 @@ import { WhatsappAccountController } from "../../messaging/whatsapp-official/con
 import { createWhatsappAccountRouter } from "../../messaging/whatsapp-official/routes/whatsapp-account.routes.js";
 import { WhatsappWebhookController } from "../../messaging/whatsapp-official/controllers/whatsapp-webhook.controller.js";
 import { createWhatsappWebhookRouter } from "../../messaging/whatsapp-official/routes/whatsapp-webhook.routes.js";
+import { WhatsappTemplateCatalogController } from "../../messaging/whatsapp-official/controllers/whatsapp-template-catalog.controller.js";
+import { createWhatsappTemplateCatalogRouter } from "../../messaging/whatsapp-official/routes/whatsapp-template-catalog.routes.js";
 import { RepairNoteController } from "../../commerce/repair-notes/controllers/repair-note.controller.js";
 import { createRepairNoteRouter } from "../../commerce/repair-notes/routes/repair-note.routes.js";
 import { MessageTemplateController } from "../../messaging/message-templates/controllers/message-template.controller.js";
@@ -69,6 +71,10 @@ export function registerRoutes(app: Express): void {
   app.use(
     "/api/v1/whatsapp-official",
     createWhatsappAccountRouter(container.resolve(WhatsappAccountController)),
+  );
+  app.use(
+    "/api/v1/whatsapp-official/catalog",
+    createWhatsappTemplateCatalogRouter(container.resolve(WhatsappTemplateCatalogController)),
   );
   app.use("/api/v1/repair-notes", createRepairNoteRouter(container.resolve(RepairNoteController)));
   app.use(

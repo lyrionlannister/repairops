@@ -1,9 +1,9 @@
 import { singleton } from "tsyringe";
 import { WhatsappOutboundMessageDao } from "../daos/whatsapp-outbound-message.dao.js";
 import { WhatsappTemplateStatusDao } from "../daos/whatsapp-template-status.dao.js";
+import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catalog-entry.dao.js";
 import { WhatsappAccountService } from "./whatsapp-account.service.js";
 import { WhatsappOutboundMessage } from "../entities/whatsapp-outbound-message.entity.js";
-import { templateCatalog } from "../templates/catalog.js";
 import { sendTemplateMessage, sendTextMessage } from "../clients/whatsapp-graph.client.js";
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
@@ -30,13 +30,17 @@ export class WhatsappSendService {
   constructor(
     private whatsappOutboundMessageDao: WhatsappOutboundMessageDao,
     private whatsappTemplateStatusDao: WhatsappTemplateStatusDao,
+    private whatsappTemplateCatalogEntryDao: WhatsappTemplateCatalogEntryDao,
     private whatsappAccountService: WhatsappAccountService,
   ) {}
 
   // Idempotente por `idempotencyKey`: una causa que dispara el mismo envío
   // dos veces (ej. guardar la nota otra vez) encuentra la fila existente y
   // nunca vuelve a llamar a Meta. Si la plantilla no está APPROVED todavía,
-  // la fila queda `blocked_not_approved` en vez de intentar el envío a medias.
+  // la fila queda `blocked_not_approved`; si el admin borró la entrada del
+  // catálogo que un disparador automático (ej. order_ready) intenta usar,
+  // queda `blocked_catalog_missing` -- nunca lanza, nunca tumba a quien
+  // llamó (ver plan Fase 4, Checkpoint 7).
   async sendTemplate(
     accountId: string,
     accessToken: string,
@@ -49,10 +53,21 @@ export class WhatsappSendService {
     const existing = await this.whatsappOutboundMessageDao.findByIdempotencyKey(idempotencyKey);
     if (existing) return existing;
 
-    const entry = templateCatalog.find((candidate) => candidate.key === catalogKey);
-    if (!entry) throw new Error(`Plantilla desconocida en el catálogo: ${catalogKey}`);
+    const entry = await this.whatsappTemplateCatalogEntryDao.findByKeyForTenant(catalogKey);
+    if (!entry) {
+      return this.whatsappOutboundMessageDao.create({
+        accountId,
+        catalogKey,
+        to,
+        variables,
+        idempotencyKey,
+        status: "blocked_catalog_missing",
+        metaMessageId: null,
+        errorMessage: null,
+      });
+    }
 
-    const templateStatus = await this.whatsappTemplateStatusDao.findByCatalogKey(catalogKey);
+    const templateStatus = await this.whatsappTemplateStatusDao.findByCatalogEntryId(entry.id);
     if (templateStatus?.status !== "APPROVED") {
       return this.whatsappOutboundMessageDao.create({
         accountId,

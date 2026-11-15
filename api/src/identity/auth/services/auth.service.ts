@@ -140,7 +140,13 @@ export class AuthService {
       }
 
       const token = sign(
-        { id: user.id, email: user.email, tenantId: user.tenantId, role: user.role },
+        {
+          id: user.id,
+          email: user.email,
+          tenantId: user.tenantId,
+          role: user.role,
+          isPlatformAdmin: user.isPlatformAdmin,
+        },
         requireJwtSecret(),
         { expiresIn: "24h" },
       );

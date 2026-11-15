@@ -10,8 +10,8 @@ export class WhatsappTemplateStatusDao extends TenantScopedDao<WhatsappTemplateS
     super(repository);
   }
 
-  async findByCatalogKey(catalogKey: string): Promise<WhatsappTemplateStatus | null> {
-    return this.findOne({ catalogKey } as Partial<WhatsappTemplateStatus>);
+  async findByCatalogEntryId(catalogEntryId: string): Promise<WhatsappTemplateStatus | null> {
+    return this.findOne({ catalogEntryId } as Partial<WhatsappTemplateStatus>);
   }
 
   async findAllForTenant(): Promise<WhatsappTemplateStatus[]> {

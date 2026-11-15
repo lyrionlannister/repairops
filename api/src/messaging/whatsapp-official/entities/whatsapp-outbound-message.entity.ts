@@ -7,7 +7,7 @@ import {
 } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
-export type WhatsappOutboundMessageStatus = "sent" | "failed" | "blocked_not_approved";
+export type WhatsappOutboundMessageStatus = "sent" | "failed" | "blocked_not_approved" | "blocked_catalog_missing";
 
 // Una fila por intento de envío de una plantilla proactiva (Checkpoint 3 del
 // plan Fase 4). `idempotencyKey` es propia de este módulo -- nunca la de
@@ -22,6 +22,9 @@ export class WhatsappOutboundMessage extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "account_id" })
   accountId!: string;
 
+  // Snapshot del `key` al momento del intento, no FK -- es un log de lo que
+  // se intentó enviar; borrar la entrada del catálogo despues no debe borrar
+  // ni invalidar este historial (ver plan Fase 4, Checkpoint 7).
   @Column({ type: "varchar", length: 100, nullable: false, name: "catalog_key" })
   catalogKey!: string;
 

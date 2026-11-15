@@ -5,13 +5,26 @@ import {
 } from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
 import type { WhatsappOutboundMessageDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-outbound-message.dao.js";
 import type { WhatsappTemplateStatusDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-template-status.dao.js";
+import type { WhatsappTemplateCatalogEntryDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-template-catalog-entry.dao.js";
 import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
 import type { WhatsappOutboundMessage } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-outbound-message.entity.js";
 import type { WhatsappTemplateStatus } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
+import type { WhatsappTemplateCatalogEntry } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-template-catalog-entry.entity.js";
 import { mockEntity } from "../../../support/mock-entity.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+const orderReadyEntry = mockEntity<WhatsappTemplateCatalogEntry>({
+  id: "entry-1",
+  key: "order_ready",
+  metaName: "orden_lista_recoger",
+  category: "UTILITY",
+  language: "es_MX",
+  text: "Hola {{nombre}}, tu equipo {{modelo}} ya está listo para recoger en nuestra sucursal.",
+  variables: ["nombre", "modelo"],
+  enabled: true,
 });
 
 function makeDaos() {
@@ -20,19 +33,22 @@ function makeDaos() {
     create: vi.fn(),
   } as unknown as WhatsappOutboundMessageDao;
   const templateStatusDao = {
-    findByCatalogKey: vi.fn(),
+    findByCatalogEntryId: vi.fn(),
   } as unknown as WhatsappTemplateStatusDao;
+  const catalogEntryDao = {
+    findByKeyForTenant: vi.fn().mockResolvedValue(orderReadyEntry),
+  } as unknown as WhatsappTemplateCatalogEntryDao;
   const accountService = {
     getOrCreateForTenant: vi.fn(),
   } as unknown as WhatsappAccountService;
-  return { outboundDao, templateStatusDao, accountService };
+  return { outboundDao, templateStatusDao, catalogEntryDao, accountService };
 }
 
 describe("WhatsappSendService.sendTemplate", () => {
   it("blocks without calling Meta when the template is not APPROVED", async () => {
-    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const { outboundDao, templateStatusDao, catalogEntryDao, accountService } = makeDaos();
     vi.mocked(outboundDao.findByIdempotencyKey).mockResolvedValue(null);
-    vi.mocked(templateStatusDao.findByCatalogKey).mockResolvedValue(
+    vi.mocked(templateStatusDao.findByCatalogEntryId).mockResolvedValue(
       mockEntity<WhatsappTemplateStatus>({ status: "PENDING" }),
     );
     vi.mocked(outboundDao.create).mockResolvedValue(
@@ -41,7 +57,7 @@ describe("WhatsappSendService.sendTemplate", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
-    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, catalogEntryDao, accountService);
     const result = await service.sendTemplate(
       "acc-1",
       "token-1",
@@ -60,9 +76,9 @@ describe("WhatsappSendService.sendTemplate", () => {
   });
 
   it("sends via Graph API and stores the message id when the template is APPROVED", async () => {
-    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const { outboundDao, templateStatusDao, catalogEntryDao, accountService } = makeDaos();
     vi.mocked(outboundDao.findByIdempotencyKey).mockResolvedValue(null);
-    vi.mocked(templateStatusDao.findByCatalogKey).mockResolvedValue(
+    vi.mocked(templateStatusDao.findByCatalogEntryId).mockResolvedValue(
       mockEntity<WhatsappTemplateStatus>({ status: "APPROVED" }),
     );
     vi.mocked(outboundDao.create).mockResolvedValue(
@@ -73,7 +89,7 @@ describe("WhatsappSendService.sendTemplate", () => {
       vi.fn().mockResolvedValue({ ok: true, json: async () => ({ messages: [{ id: "wamid-1" }] }) }),
     );
 
-    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, catalogEntryDao, accountService);
     const result = await service.sendTemplate(
       "acc-1",
       "token-1",
@@ -90,15 +106,44 @@ describe("WhatsappSendService.sendTemplate", () => {
     expect(result.metaMessageId).toBe("wamid-1");
   });
 
+  it("blocks without calling Meta when the catalog entry no longer exists", async () => {
+    const { outboundDao, templateStatusDao, catalogEntryDao, accountService } = makeDaos();
+    vi.mocked(outboundDao.findByIdempotencyKey).mockResolvedValue(null);
+    vi.mocked(catalogEntryDao.findByKeyForTenant).mockResolvedValue(null);
+    vi.mocked(outboundDao.create).mockResolvedValue(
+      mockEntity<WhatsappOutboundMessage>({ status: "blocked_catalog_missing" }),
+    );
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, catalogEntryDao, accountService);
+    const result = await service.sendTemplate(
+      "acc-1",
+      "token-1",
+      "phone-1",
+      "order_ready",
+      "5215500000000",
+      { nombre: "Ana", modelo: "A52" },
+      "order-ready:note-1",
+    );
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(templateStatusDao.findByCatalogEntryId).not.toHaveBeenCalled();
+    expect(outboundDao.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "blocked_catalog_missing" }),
+    );
+    expect(result.status).toBe("blocked_catalog_missing");
+  });
+
   it("does not resend when the idempotency key already has a row", async () => {
-    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const { outboundDao, templateStatusDao, catalogEntryDao, accountService } = makeDaos();
     vi.mocked(outboundDao.findByIdempotencyKey).mockResolvedValue(
       mockEntity<WhatsappOutboundMessage>({ status: "sent" }),
     );
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
-    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, catalogEntryDao, accountService);
     const result = await service.sendTemplate(
       "acc-1",
       "token-1",
@@ -117,11 +162,11 @@ describe("WhatsappSendService.sendTemplate", () => {
 
 describe("WhatsappSendService.sendFreeText", () => {
   it("sends via Graph API when the last inbound message was within 24h", async () => {
-    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const { outboundDao, templateStatusDao, catalogEntryDao, accountService } = makeDaos();
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ messages: [{ id: "wamid-2" }] }) });
     vi.stubGlobal("fetch", fetchMock);
 
-    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, catalogEntryDao, accountService);
     const lastInboundAt = new Date(Date.now() - 60_000);
 
     await service.sendFreeText("phone-1", "token-1", "5215500000000", "hola", lastInboundAt);
@@ -133,11 +178,11 @@ describe("WhatsappSendService.sendFreeText", () => {
   });
 
   it("rejects without calling Meta when the window is closed", async () => {
-    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const { outboundDao, templateStatusDao, catalogEntryDao, accountService } = makeDaos();
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, catalogEntryDao, accountService);
     const lastInboundAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
 
     await expect(
@@ -147,11 +192,11 @@ describe("WhatsappSendService.sendFreeText", () => {
   });
 
   it("rejects without calling Meta when there is no prior inbound message", async () => {
-    const { outboundDao, templateStatusDao, accountService } = makeDaos();
+    const { outboundDao, templateStatusDao, catalogEntryDao, accountService } = makeDaos();
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, catalogEntryDao, accountService);
 
     await expect(
       service.sendFreeText("phone-1", "token-1", "5215500000000", "hola", null),
@@ -162,8 +207,8 @@ describe("WhatsappSendService.sendFreeText", () => {
 
 describe("WhatsappSendService.notifyOrderReady", () => {
   it("does nothing when the note has no contact number", async () => {
-    const { outboundDao, templateStatusDao, accountService } = makeDaos();
-    const service = new WhatsappSendService(outboundDao, templateStatusDao, accountService);
+    const { outboundDao, templateStatusDao, catalogEntryDao, accountService } = makeDaos();
+    const service = new WhatsappSendService(outboundDao, templateStatusDao, catalogEntryDao, accountService);
 
     const result = await service.notifyOrderReady({
       id: "note-1",

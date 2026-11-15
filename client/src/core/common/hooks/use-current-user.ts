@@ -6,6 +6,7 @@ export interface CurrentUser {
   firstName: string;
   lastName: string;
   email: string;
+  isPlatformAdmin: boolean;
 }
 
 // Lee el usuario que use-login.ts ya guarda en sessionStorage al iniciar

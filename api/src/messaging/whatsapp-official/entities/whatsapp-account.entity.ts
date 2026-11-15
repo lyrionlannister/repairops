@@ -11,8 +11,10 @@ export type WhatsappAccountStatus = "connected" | "disconnected";
 
 // Una fila por tenant -- reemplaza al status en memoria de whatsapp-web.js
 // (ver plan Fase 4, Checkpoint 1). Etapa 1: todas las filas apuntan a la
-// misma cuenta piloto (ownedByPlatform: true); Etapa 2 (Embedded Signup)
-// agrega filas con credenciales propias por taller sin cambiar esta forma.
+// misma cuenta piloto (ownedByPlatform: true); Etapa 2 agrega filas con
+// credenciales propias por taller capturadas a mano (no Embedded Signup --
+// requiere status de Meta Tech Provider, que aun no se tiene) sin cambiar
+// esta forma.
 @Entity("whatsapp_accounts")
 export class WhatsappAccount extends BaseEntity {
   @Column({ type: "bigint", nullable: false, unique: true, name: "tenant_id" })
@@ -33,7 +35,7 @@ export class WhatsappAccount extends BaseEntity {
   accessToken!: string;
 
   // true = cuenta piloto compartida de la plataforma (Etapa 1); false =
-  // cuenta propia del taller conectada vía Embedded Signup (Etapa 2).
+  // cuenta propia del taller, credenciales cifradas capturadas a mano (Etapa 2).
   @Column({ type: "boolean", default: true, name: "owned_by_platform" })
   ownedByPlatform!: boolean;
 

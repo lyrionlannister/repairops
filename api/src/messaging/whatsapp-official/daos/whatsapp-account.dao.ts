@@ -21,6 +21,26 @@ export class WhatsappAccountDao extends TenantScopedDao<WhatsappAccount> {
     return this.repository.findOneBy({ phoneNumberId });
   }
 
+  async connectOwnAccount(
+    credentials: Pick<WhatsappAccount, "wabaId" | "phoneNumberId" | "accessToken">,
+  ): Promise<WhatsappAccount> {
+    // Reemplaza las credenciales de la fila existente del tenant -- nunca
+    // inserta una segunda, tenant_id es unique (ver plan Fase 4, Checkpoint 6).
+    const existing = await this.findByTenant();
+    if (!existing) {
+      throw new Error("No existe cuenta de WhatsApp para este tenant todavía");
+    }
+    const updated = await this.update(existing.id, {
+      ...credentials,
+      ownedByPlatform: false,
+      status: "connected",
+    } as Partial<WhatsappAccount>);
+    if (!updated) {
+      throw new Error("No se pudo actualizar la cuenta de WhatsApp");
+    }
+    return updated;
+  }
+
   async getOrCreateForTenant(
     seed: Pick<WhatsappAccount, "wabaId" | "phoneNumberId" | "accessToken" | "ownedByPlatform">,
   ): Promise<WhatsappAccount> {

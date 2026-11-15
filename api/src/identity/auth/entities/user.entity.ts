@@ -38,6 +38,14 @@ export class User extends BaseEntity {
   @Column({ type: "boolean", default: true, name: "activo" })
   isActive!: boolean;
 
+  // Ortogonal a `role`: un owner/admin de cualquier tenant puede ademas ser
+  // platform admin. Administra configuracion de la plataforma misma (ej.
+  // catalogo de plantillas "de sistema", ver plan Fase 4 Checkpoint 7), no
+  // datos de ningun tenant -- por eso no es un UserRole mas. Sin flujo propio
+  // de alta todavia (se otorga a mano en DB, decision consciente).
+  @Column({ type: "boolean", default: false, name: "es_platform_admin" })
+  isPlatformAdmin!: boolean;
+
   @CreateDateColumn({
     name: "fecha_creacion",
     default: () => "CURRENT_TIMESTAMP",

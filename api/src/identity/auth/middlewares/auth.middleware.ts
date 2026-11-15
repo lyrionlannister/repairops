@@ -6,7 +6,7 @@ import { UserRole } from "../entities/user.entity.js";
 const { verify } = jwt;
 
 export interface AuthenticatedRequest extends Request {
-  user?: { id: string; email: string; tenantId: string; role: UserRole };
+  user?: { id: string; email: string; tenantId: string; role: UserRole; isPlatformAdmin?: boolean };
 }
 
 export const authMiddleware = (
@@ -27,7 +27,7 @@ export const authMiddleware = (
 
   try {
     const decoded = verify(token, requireJwtSecret());
-    req.user = decoded as { id: string; email: string; tenantId: string; role: UserRole };
+    req.user = decoded as { id: string; email: string; tenantId: string; role: UserRole; isPlatformAdmin?: boolean };
     next();
   } catch (error: any) {
     if (error.name === "TokenExpiredError") {
