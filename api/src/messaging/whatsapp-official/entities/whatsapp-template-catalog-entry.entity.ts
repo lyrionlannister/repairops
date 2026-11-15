@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   Unique,
   UpdateDateColumn,
 } from "typeorm";
@@ -20,6 +21,8 @@ export type WhatsappTemplateCategory = "UTILITY" | "MARKETING" | "AUTHENTICATION
 @Entity("whatsapp_template_catalog_entries")
 @Unique(["tenantId", "key"])
 @Unique(["tenantId", "metaName"])
+@Index("UQ_wa_template_catalog_system_key", ["key"], { unique: true, where: '"tenant_id" IS NULL' })
+@Index("UQ_wa_template_catalog_system_meta_name", ["metaName"], { unique: true, where: '"tenant_id" IS NULL' })
 export class WhatsappTemplateCatalogEntry extends BaseEntity {
   @Column({ type: "bigint", nullable: true, name: "tenant_id" })
   tenantId!: string | null;
