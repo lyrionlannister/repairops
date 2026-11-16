@@ -1,4 +1,4 @@
-export default interface SidebarContextType {
+export interface SidebarContextType {
   isExpanded: boolean;
   isMobileOpen: boolean;
   isHovered: boolean;

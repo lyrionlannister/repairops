@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { MessageSquareText, Plus, Pencil, Search, Trash2 } from "lucide-react";
 
@@ -9,30 +9,21 @@ import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { PageShell } from "@common/components/page-shell/page-shell";
-import usePaginatedList from "@common/hooks/use-paginated-list";
+import { usePaginatedList } from "@common/hooks/use-paginated-list";
 
 import { useMessageTemplates } from "../hooks/use-message-templates";
+import { useMessageTemplatesPage } from "../hooks/use-message-templates-page";
 
 export const MessageTemplatesPage = () => {
   const navigate = useNavigate();
   const { templates, loading, saving, error, fetchAll, remove } = useMessageTemplates();
-  const [search, setSearch] = useState("");
+  const { search, setSearch, filteredTemplates } = useMessageTemplatesPage(templates);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
-
-  const filteredTemplates = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return templates;
-    return templates.filter(
-      (template) =>
-        template.key.toLowerCase().includes(term) ||
-        (template.description ?? "").toLowerCase().includes(term),
-    );
-  }, [search, templates]);
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
     usePaginatedList(filteredTemplates);
@@ -51,7 +42,7 @@ export const MessageTemplatesPage = () => {
       title="Templates de Mensajes"
       description="Mensajes predefinidos que usa el agente de WhatsApp."
       action={
-        <Button variant="primary" onClick={() => navigate("/admin/templates/new")}>
+        <Button variant="primary" onClick={() => navigate("/app/templates/new")}>
           <Plus className="mr-1.5 size-4" />
           Nuevo template
         </Button>
@@ -118,7 +109,7 @@ export const MessageTemplatesPage = () => {
                   <td className="px-4 py-4 align-top text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => navigate(`/admin/templates/${template.id}/edit`)}
+                        onClick={() => navigate(`/app/templates/${template.id}/edit`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                         title="Editar"
                       >

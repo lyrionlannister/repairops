@@ -44,8 +44,8 @@ export const otherSignInItems = [
     icon: <GridIcon />,
     name: "Sistema",
     subItems: [
-      { name: "Estado", path: "/admin/system-status", pro: false },
-      { name: "Base de Datos", path: "/admin/database-status", pro: false },
+      { name: "Estado", path: "/app/system-status", pro: false },
+      { name: "Base de Datos", path: "/app/database-status", pro: false },
       { name: "Disco", path: "/disk-status", pro: false },
       { name: "Memoria", path: "/memory-status", pro: false },
       { name: "Cache", path: "/cache-status", pro: false },

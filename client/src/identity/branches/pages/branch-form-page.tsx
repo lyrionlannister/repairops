@@ -50,7 +50,7 @@ export const BranchFormPage: React.FC = () => {
     const ok = isEdit && id ? await update(id, form) : await create(form);
     if (ok) {
       await refreshBranches();
-      navigate("/admin/branches");
+      navigate("/app/branches");
     }
   };
 
@@ -75,7 +75,7 @@ export const BranchFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={() => navigate("/admin/branches")}>
+        <Button type="button" variant="outline" onClick={() => navigate("/app/branches")}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving}>

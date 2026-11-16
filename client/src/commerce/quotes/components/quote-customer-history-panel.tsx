@@ -1,13 +1,5 @@
 import type { QuoteStatus } from "../hooks/use-quotes";
-
-const QUOTE_STATUS_LABEL: Record<QuoteStatus, string> = {
-  pending: "Pendiente",
-  accepted: "Aceptada",
-  rejected: "Rechazada",
-};
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
+import { QUOTE_STATUS_LABEL, formatCurrency } from "../utils/format";
 
 interface QuoteCustomerHistoryPanelProps {
   otherQuotes: { id: string; status: QuoteStatus; totalValue: number }[];

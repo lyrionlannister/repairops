@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import DropdownItemProps from "@/core/common/types/interfaces/props/dropdown-item-props";
+import type { DropdownItemProps } from "@/core/common/types/interfaces/props/dropdown-item-props";
 
 export const DropdownItem: React.FC<DropdownItemProps> = ({
   to,

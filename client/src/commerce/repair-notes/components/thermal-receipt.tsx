@@ -1,8 +1,7 @@
 import Barcode from "react-barcode";
-import type { RepairNoteRecord } from "../types/repair-note.types";
+import type { RepairNoteRecord } from "../hooks/use-repair-notes";
 import type { LocalRecord } from "../../../app_platform/local/hooks/use-local";
-
-const fmtCurrency = (value?: number) => (value != null ? `$${Number(value).toFixed(2)}` : "—");
+import { fmtCurrency } from "../utils/format";
 
 export interface ThermalReceiptProps {
   note: RepairNoteRecord;

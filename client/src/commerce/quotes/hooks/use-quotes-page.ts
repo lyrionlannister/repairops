@@ -2,19 +2,21 @@ import { useMemo, useState } from "react";
 
 import type { QuoteStatus } from "./use-quotes";
 
+export type QuoteListItem = {
+  id: string;
+  customerName: string;
+  contactNumber: string | null;
+  status: QuoteStatus;
+  validUntil: string | null;
+  totalValue: number;
+};
+
 export const useQuotesPage = ({
   quotes,
   deleteQuote,
   setStatus,
 }: {
-  quotes: Array<{
-    id: string;
-    customerName: string;
-    contactNumber: string | null;
-    status: QuoteStatus;
-    validUntil: string | null;
-    totalValue: number;
-  }>;
+  quotes: QuoteListItem[];
   deleteQuote: (id: string) => Promise<boolean>;
   setStatus: (id: string, status: QuoteStatus) => Promise<boolean>;
 }) => {

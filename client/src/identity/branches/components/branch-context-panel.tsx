@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import { Package, Receipt, Wrench, Wallet } from "lucide-react";
-
-const formatMoney = (value: number) => `$${value.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+import { formatMoney } from "../utils/format";
 
 interface BranchContextPanelProps {
   skuCount: number;

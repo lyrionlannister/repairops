@@ -3,7 +3,7 @@ interface Images {
   alt: string;
 }
 
-export default interface ColumnImageGridProps {
+export interface ColumnImageGridProps {
   cols: number;
   images: Images[];
 }

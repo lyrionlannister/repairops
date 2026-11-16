@@ -1,4 +1,5 @@
-import { STATUS_CONFIG, type RepairNoteStatus } from "../types/repair-note.types";
+import { STATUS_CONFIG, type RepairNoteStatus } from "../hooks/use-repair-notes";
+import { formatCurrency, formatDate } from "../utils/format";
 
 interface HistoryEntry {
   id: string;
@@ -12,16 +13,6 @@ interface HistoryEntry {
 interface RepairNoteCustomerHistoryPanelProps {
   otherNotes: HistoryEntry[];
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
-
-// Mismo formato que repair-notes-page.tsx para el panel de historial.
-const formatDate = (value?: string) => {
-  if (!value) return "—";
-  const [y, m, d] = value.split("-");
-  return `${d}/${m}/${y}`;
-};
 
 export const RepairNoteCustomerHistoryPanel: React.FC<RepairNoteCustomerHistoryPanelProps> = ({ otherNotes }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">

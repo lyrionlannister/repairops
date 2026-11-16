@@ -1,14 +1,6 @@
 import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import type { InventoryMovement } from "../hooks/use-inventory";
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-
-const MOVEMENT_LABELS: Record<InventoryMovement["type"], string> = {
-  in: "Entrada",
-  out: "Salida",
-  adjustment: "Ajuste",
-};
+import { formatDate, MOVEMENT_LABELS } from "../utils/format";
 
 interface InventoryItemContextPanelProps {
   movements: InventoryMovement[];

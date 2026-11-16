@@ -47,7 +47,7 @@ export const SupplierFormPage: React.FC = () => {
     const ok = isEdit && id
       ? await update(id, { name: form.name, phone: form.phone })
       : await create({ name: form.name, phone: form.phone });
-    if (ok) navigate("/admin/suppliers");
+    if (ok) navigate("/app/suppliers");
   };
 
   return (
@@ -76,7 +76,7 @@ export const SupplierFormPage: React.FC = () => {
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={() => navigate("/admin/suppliers")}>
+            <Button type="button" variant="outline" onClick={() => navigate("/app/suppliers")}>
               Cancelar
             </Button>
             <Button type="submit" variant="primary" disabled={saving}>

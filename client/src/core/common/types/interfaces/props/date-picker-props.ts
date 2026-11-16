@@ -1,4 +1,4 @@
-export default interface DatePickerProps {
+export interface DatePickerProps {
   id?: string;
   value?: string;
   onChange?: (value: string) => void;

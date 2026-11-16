@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FC } from "react";
 import { useCustomers, type Customer } from "@commerce/customers/hooks/use-customers";
+import { labelFor } from "@commerce/customers/utils/format";
 
 interface CustomerSelectProps {
   value: string;
@@ -8,8 +9,6 @@ interface CustomerSelectProps {
   disabled?: boolean;
   className?: string;
 }
-
-const labelFor = (c: Customer) => `${c.name} · ${c.phone}`;
 
 // Selector de cliente existente -- al elegir uno, el caller decide si
 // autollena nombre/telefono (ver repair-note-form-page / quote-form-page).

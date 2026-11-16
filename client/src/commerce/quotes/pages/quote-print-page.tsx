@@ -2,25 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Download } from "lucide-react";
 import { useQuotes } from "../hooks/use-quotes";
-import { useApiClient } from "@common/hooks/use-api-client";
+import { usePdfDownload } from "@common/hooks/use-pdf-download";
 import { PageMeta } from "@common/pages/page-meta";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
-
-const formatDate = (dateStr?: string | null) => {
-  if (!dateStr) return "—";
-  const [y, m, d] = dateStr.split("-");
-  return `${d}/${m}/${y}`;
-};
+import { formatCurrency, formatDate } from "../utils/format";
 
 export const QuotePrintPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { quote, loading, fetchQuote, fetchQuoteItems } = useQuotes();
-  const { apiClient } = useApiClient();
+  const { downloading, download } = usePdfDownload();
   const [items, setItems] = useState<Awaited<ReturnType<typeof fetchQuoteItems>>>([]);
-  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -28,22 +19,9 @@ export const QuotePrintPage: React.FC = () => {
     fetchQuoteItems(id).then(setItems);
   }, [id, fetchQuote, fetchQuoteItems]);
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!id || !quote) return;
-    setDownloading(true);
-    try {
-      const res = await apiClient(`/quotes/${id}/pdf`);
-      if (!res.ok) throw new Error("No se pudo generar el PDF");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `cotizacion-${id}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setDownloading(false);
-    }
+    download(`/quotes/${id}/pdf`, `cotizacion-${id}.pdf`);
   };
 
   if (loading) {
@@ -58,7 +36,7 @@ export const QuotePrintPage: React.FC = () => {
       <PageMeta title="Cotización" description="Vista previa de cotización" />
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate("/admin/quotes")}
+          onClick={() => navigate("/app/quotes")}
           className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
         >
           <ArrowLeft className="size-5" />

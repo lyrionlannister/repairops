@@ -56,7 +56,7 @@ export const PriceListItemFormPage: React.FC = () => {
       supplierId: form.supplierId,
     };
     const ok = isEdit && id ? await update(id, payload) : await create(payload);
-    if (ok) navigate("/admin/price-list");
+    if (ok) navigate("/app/price-list");
   };
 
   return (
@@ -67,7 +67,7 @@ export const PriceListItemFormPage: React.FC = () => {
       />
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate("/admin/price-list")}
+          onClick={() => navigate("/app/price-list")}
           className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
         >
           <ArrowLeft className="size-5" />
@@ -122,7 +122,7 @@ export const PriceListItemFormPage: React.FC = () => {
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/price-list")}>
+          <Button type="button" variant="outline" onClick={() => navigate("/app/price-list")}>
             Cancelar
           </Button>
           <Button type="submit" variant="primary" disabled={saving}>

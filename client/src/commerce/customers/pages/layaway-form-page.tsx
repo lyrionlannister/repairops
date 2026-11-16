@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
 import { useLayaways, type LayawayMethod } from "../hooks/use-layaways";
 import { useCustomers } from "../hooks/use-customers";
 import { useCustomerContext } from "../hooks/use-customer-context";
+import { useLayawayItemLines } from "../hooks/use-layaway-item-lines";
 import { CustomerContextPanel } from "../components/customer-context-panel";
-import { useInventory } from "@commerce/inventory/hooks/use-inventory";
+import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useBranch } from "@common/hooks/use-branch";
 import { Button } from "@ui/button/button";
@@ -15,38 +16,26 @@ import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
+import { METHOD_LABELS, formatMoney } from "../utils/format";
 
 const FORM_CARD_CLASS = "space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3";
-
-const METHOD_LABELS: Record<LayawayMethod, string> = {
-  efectivo: "Efectivo",
-  tarjeta: "Tarjeta",
-  transferencia: "Transferencia",
-};
-
-type LineDraft = { inventoryItemId: string; quantity: string; unitPrice: string };
-
-const formatMoney = (v: number) => `$${v.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
 export const LayawayFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { saving, error, open } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
-  const { items: allInventoryItems, fetchAll: fetchInventory } = useInventory();
   const { activeBranchId } = useBranch();
   // Solo items de la sucursal activa -- un apartado reserva stock fisico,
   // no tiene sentido reservar de una sucursal que el cajero no ve.
-  const inventoryItems = useMemo(
-    () => (activeBranchId ? allInventoryItems.filter((item) => item.localId === activeBranchId) : allInventoryItems),
-    [allInventoryItems, activeBranchId],
-  );
+  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(activeBranchId);
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
 
   const [customerId, setCustomerId] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [depositMethod, setDepositMethod] = useState<LayawayMethod>("efectivo");
-  const [lines, setLines] = useState<LineDraft[]>([{ inventoryItemId: "", quantity: "1", unitPrice: "" }]);
+  const { lines, updateLine, handleItemChange, addLine, totalValue, buildItemsPayload } =
+    useLayawayItemLines(inventoryItems);
 
   useEffect(() => {
     fetchCustomers();
@@ -61,18 +50,11 @@ export const LayawayFormPage: React.FC = () => {
     customerId || null,
   );
 
-  const updateLine = (index: number, patch: Partial<LineDraft>) => {
-    setLines((prev) => prev.map((l, i) => (i === index ? { ...l, ...patch } : l)));
-  };
-  const addLine = () => setLines((prev) => [...prev, { inventoryItemId: "", quantity: "1", unitPrice: "" }]);
-
-  const totalValue = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0), 0);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cashSession || !customerId || !expiresAt) return;
-    const validLines = lines.filter((l) => l.inventoryItemId && Number(l.quantity) > 0);
-    if (validLines.length === 0) return;
+    const items = buildItemsPayload();
+    if (items.length === 0) return;
 
     const created = await open({
       customerId,
@@ -80,14 +62,10 @@ export const LayawayFormPage: React.FC = () => {
       depositAmount: Number(depositAmount) || 0,
       depositMethod,
       expiresAt,
-      items: validLines.map((l) => ({
-        inventoryItemId: l.inventoryItemId,
-        quantity: Number(l.quantity),
-        unitPrice: Number(l.unitPrice),
-      })),
+      items,
     });
 
-    if (created) navigate("/admin/layaways");
+    if (created) navigate("/app/layaways");
   };
 
   const hasContext = Boolean(customerId);
@@ -119,10 +97,7 @@ export const LayawayFormPage: React.FC = () => {
             <div className="flex-1">
               <Select
                 value={line.inventoryItemId}
-                onChange={(value) => {
-                  const item = inventoryItems.find((i) => i.id === value);
-                  updateLine(index, { inventoryItemId: value, unitPrice: item ? String(item.salePrice) : "" });
-                }}
+                onChange={(value) => handleItemChange(index, value)}
                 placeholder="Selecciona un item"
                 options={inventoryItems.map((i) => ({ value: i.id, label: `${i.name} (disponible: ${i.available})` }))}
               />
@@ -162,7 +137,7 @@ export const LayawayFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => navigate("/admin/layaways")} disabled={saving}>
+        <Button type="button" variant="outline" onClick={() => navigate("/app/layaways")} disabled={saving}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving || !cashSession}>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApiClient } from "./use-api-client";
 
-interface LoginPayload {
+export interface LoginPayload {
   email: string;
   password: string;
 }

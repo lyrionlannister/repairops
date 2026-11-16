@@ -10,19 +10,7 @@ import { Label } from "@ui/inputs/label";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
 import { useReports } from "../hooks/use-reports";
-
-const STATUS_LABELS: Record<string, string> = {
-  received: "Recibido",
-  in_repair: "En reparación",
-  done: "Terminado",
-  delivered: "Entregado",
-  cancelled: "Cancelado",
-};
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
-
-const formatMoney = (value: number, currency: string) =>
-  `${value.toLocaleString("es-MX", { minimumFractionDigits: 2 })} ${currency}`;
+import { STATUS_LABELS, todayIso, formatMoney } from "../utils/format";
 
 export const ReportsPage = () => {
   const { local, fetchLocal } = useLocal();

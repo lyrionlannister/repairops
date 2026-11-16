@@ -7,7 +7,7 @@
  * @property linkHref - URL del enlace.
  * @property linkText - Texto del enlace.
  */
-export default interface AlertProps {
+export interface AlertProps {
   variant: "success" | "error" | "warning" | "info";
   title: string;
   message: string;

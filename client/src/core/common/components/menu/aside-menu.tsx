@@ -2,7 +2,7 @@ import { useSidebar } from "../../hooks/use-sidebar";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import type NavItem from "../../../../config/app/navbar/types/nav-item";
+import type { NavItem } from "../../../../config/app/navbar/types/nav-item";
 
 import { Smartphone } from "lucide-react";
 import { ChevronDownIcon, HorizontaLDots } from "../../icons";
@@ -81,7 +81,7 @@ export const AsideMenu: React.FC<{
 
   const handleLogout = () => {
     sessionStorage.clear();
-    navigate("/admin/sign-in", { replace: true });
+    navigate("/app/sign-in", { replace: true });
   };
 
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (

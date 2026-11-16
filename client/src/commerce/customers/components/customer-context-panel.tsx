@@ -2,8 +2,7 @@ import { Wallet, TrendingUp, Smartphone, ShoppingBag } from "lucide-react";
 
 import type { CustomerDeviceHistoryEntry } from "../hooks/use-customers";
 import type { LayawayRecord } from "../hooks/use-layaways";
-
-const formatMoney = (v: number) => `$${v.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+import { formatMoney } from "../utils/format";
 
 interface CustomerContextPanelProps {
   creditLimit: number;

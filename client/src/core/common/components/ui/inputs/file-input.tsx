@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import FileInputProps from "../../../types/interfaces/props/file-input-props";
+import type { FileInputProps } from "../../../types/interfaces/props/file-input-props";
 
 export const FileInput: FC<FileInputProps> = ({ className, onChange }) => {
   return (

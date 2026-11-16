@@ -1,4 +1,4 @@
-import ColumnImageGridProps from "@/core/common/types/interfaces/props/column-image-grid-props";
+import type { ColumnImageGridProps } from "@/core/common/types/interfaces/props/column-image-grid-props";
 
 export const ColumnImageGrid: React.FC<ColumnImageGridProps> = ({ cols, images }) => {
   return (

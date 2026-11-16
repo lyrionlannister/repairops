@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import DropdownProps from "@/core/common/types/interfaces/props/dropdown-props";
+import type { DropdownProps } from "@/core/common/types/interfaces/props/dropdown-props";
 
 export const Dropdown: React.FC<DropdownProps> = ({
   isOpen,

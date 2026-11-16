@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Pencil, Search, Store } from "lucide-react";
 
@@ -9,32 +9,22 @@ import { Toggle } from "@ui/toggle/toggle";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { PageShell } from "@common/components/page-shell/page-shell";
-import usePaginatedList from "@common/hooks/use-paginated-list";
+import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useBranch } from "@common/hooks/use-branch";
 
 import { useBranches, type Branch } from "../hooks/use-branches";
+import { useBranchesPage } from "../hooks/use-branches-page";
 
 export const BranchesPage = () => {
   const navigate = useNavigate();
   const { branches, loading, error, fetchAll, setActive } = useBranches();
   const { refreshBranches } = useBranch();
-  const [search, setSearch] = useState("");
+  const { search, setSearch, filteredBranches } = useBranchesPage(branches);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
-
-  const filteredBranches = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return branches;
-    return branches.filter(
-      (branch) =>
-        branch.name.toLowerCase().includes(term) ||
-        (branch.phone ?? "").toLowerCase().includes(term) ||
-        (branch.address ?? "").toLowerCase().includes(term),
-    );
-  }, [search, branches]);
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
     usePaginatedList(filteredBranches);
@@ -53,7 +43,7 @@ export const BranchesPage = () => {
       title="Sucursales"
       description="Administra las sucursales disponibles y cuál está activa en el selector de arriba."
       action={
-        <Button variant="primary" onClick={() => navigate("/admin/branches/new")}>
+        <Button variant="primary" onClick={() => navigate("/app/branches/new")}>
           <Plus className="mr-1.5 size-4" />
           Nueva sucursal
         </Button>
@@ -118,7 +108,7 @@ export const BranchesPage = () => {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <button
-                      onClick={() => navigate(`/admin/branches/${branch.id}/edit`)}
+                      onClick={() => navigate(`/app/branches/${branch.id}/edit`)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                       title="Editar"
                     >

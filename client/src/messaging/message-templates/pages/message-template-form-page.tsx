@@ -47,7 +47,7 @@ export const MessageTemplateFormPage: React.FC = () => {
     const ok = isEdit && id
       ? await update(id, { text: form.text, description: form.description })
       : await create({ key: form.key, text: form.text, description: form.description });
-    if (ok) navigate("/admin/templates");
+    if (ok) navigate("/app/templates");
   };
 
   return (
@@ -58,7 +58,7 @@ export const MessageTemplateFormPage: React.FC = () => {
       />
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate("/admin/templates")}
+          onClick={() => navigate("/app/templates")}
           className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
         >
           <ArrowLeft className="size-5" />
@@ -118,7 +118,7 @@ export const MessageTemplateFormPage: React.FC = () => {
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/templates")}>
+          <Button type="button" variant="outline" onClick={() => navigate("/app/templates")}>
             Cancelar
           </Button>
           <Button type="submit" variant="primary" disabled={saving}>

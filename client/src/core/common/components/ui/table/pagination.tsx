@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import PaginationProps from "../../../types/interfaces/props/pagination-props";
+import type { PaginationProps } from "../../../types/interfaces/props/pagination-props";
 
 export const Pagination: FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
   const goTo = (page: number) => {

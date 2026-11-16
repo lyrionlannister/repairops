@@ -9,7 +9,7 @@ export type BadgeColor =
   | "light"
   | "dark";
 
-export default interface BadgeProps {
+export interface BadgeProps {
   variant?: BadgeVariant;
   size?: BadgeSize;
   color?: BadgeColor;

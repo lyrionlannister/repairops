@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 // contra totalPages en cada render (nunca con useEffect) para que, si una
 // busqueda reduce el total y la pagina actual queda fuera de rango, se
 // vea la ultima pagina valida sin un render de mas mostrando una lista vacia.
-export default function usePaginatedList<T>(items: T[], initialPageSize = 10) {
+export const usePaginatedList = <T,>(items: T[], initialPageSize = 10) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSizeState] = useState(initialPageSize);
 
@@ -24,4 +24,4 @@ export default function usePaginatedList<T>(items: T[], initialPageSize = 10) {
   };
 
   return { page: currentPage, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems };
-}
+};

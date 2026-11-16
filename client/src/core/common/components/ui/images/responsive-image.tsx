@@ -1,4 +1,4 @@
-import ImageProps from "@/core/common/types/interfaces/props/responsive-image-props";
+import type { ImageProps } from "@/core/common/types/interfaces/props/responsive-image-props";
 
 export const Image: React.FC<ImageProps> = ({ src }) => {
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useRepairNotes } from "./use-repair-notes";
-import type { RepairNoteStatus } from "../types/repair-note.types";
+import type { RepairNoteStatus } from "./use-repair-notes";
 
 export type RepairNoteHistoryEntry = {
   id: string;

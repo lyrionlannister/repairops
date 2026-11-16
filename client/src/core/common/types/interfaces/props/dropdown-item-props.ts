@@ -1,4 +1,4 @@
-export default interface DropdownItemProps {
+export interface DropdownItemProps {
   tag?: "a" | "button";
   to?: string;
   onClick?: () => void;

@@ -1,41 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { UserPlus, Pencil, Search } from "lucide-react";
 import { useUsers, ROLE_LABELS } from "../hooks/use-users";
+import { useUsersPage } from "../hooks/use-users-page";
 import { Toggle } from "@ui/toggle/toggle";
 import { Input } from "@ui/inputs/input";
 import { Button } from "@ui/button/button";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
-import usePaginatedList from "@common/hooks/use-paginated-list";
+import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { PageShell } from "@common/components/page-shell/page-shell";
-
-const formatDate = (dateStr: string) => {
-  const d = new Date(dateStr);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-};
+import { formatDate } from "../utils/format";
 
 export const UsersPage: React.FC = () => {
   const navigate = useNavigate();
   const { users, loading, error, fetchUsers, toggleUserStatus, togglingId } = useUsers();
-  const [search, setSearch] = useState("");
+  const { search, setSearch, filteredUsers } = useUsersPage(users);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
-
-  const filteredUsers = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return users;
-    return users.filter(
-      (user) =>
-        `${user.firstName} ${user.lastName}`.toLowerCase().includes(term) ||
-        user.email.toLowerCase().includes(term),
-    );
-  }, [search, users]);
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
     usePaginatedList(filteredUsers);
@@ -48,7 +32,7 @@ export const UsersPage: React.FC = () => {
         <Button
           variant="primary"
           startIcon={<UserPlus className="size-4" />}
-          onClick={() => navigate("/admin/users/new")}
+          onClick={() => navigate("/app/users/new")}
         >
           Nuevo usuario
         </Button>
@@ -82,7 +66,7 @@ export const UsersPage: React.FC = () => {
           <div className="flex flex-col items-center justify-center gap-4 p-10 text-center">
             <p className="text-base font-semibold text-gray-700 dark:text-gray-200">No hay usuarios registrados.</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Crea el primer usuario para comenzar.</p>
-            <Button variant="primary" startIcon={<UserPlus className="size-4" />} onClick={() => navigate("/admin/users/new")}>
+            <Button variant="primary" startIcon={<UserPlus className="size-4" />} onClick={() => navigate("/app/users/new")}>
               Nuevo usuario
             </Button>
           </div>
@@ -130,7 +114,7 @@ export const UsersPage: React.FC = () => {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <button
-                      onClick={() => navigate(`/admin/users/${user.id}/edit`)}
+                      onClick={() => navigate(`/app/users/${user.id}/edit`)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                       title="Editar"
                     >

@@ -1,4 +1,4 @@
-import BadgeProps from "@/core/common/types/interfaces/props/badge-props";
+import type { BadgeProps } from "@/core/common/types/interfaces/props/badge-props";
 import {
   baseStyles,
   variants,

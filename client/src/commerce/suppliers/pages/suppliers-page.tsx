@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 
@@ -9,29 +9,21 @@ import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { PageShell } from "@common/components/page-shell/page-shell";
-import usePaginatedList from "@common/hooks/use-paginated-list";
+import { usePaginatedList } from "@common/hooks/use-paginated-list";
 
 import { useSuppliers } from "../hooks/use-suppliers";
+import { useSuppliersPage } from "../hooks/use-suppliers-page";
 
 export const SuppliersPage = () => {
   const navigate = useNavigate();
   const { suppliers, loading, saving, error, fetchAll, remove } = useSuppliers();
-  const [search, setSearch] = useState("");
+  const { search, setSearch, filteredSuppliers } = useSuppliersPage(suppliers);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
-
-  const filteredSuppliers = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return suppliers;
-    return suppliers.filter(
-      (supplier) =>
-        supplier.name.toLowerCase().includes(term) || supplier.phone.toLowerCase().includes(term),
-    );
-  }, [search, suppliers]);
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
     usePaginatedList(filteredSuppliers);
@@ -50,7 +42,7 @@ export const SuppliersPage = () => {
       title="Proveedores"
       description="Gestiona el catálogo de proveedores disponible para cada tenant."
       action={
-        <Button variant="primary" onClick={() => navigate("/admin/suppliers/new")}>
+        <Button variant="primary" onClick={() => navigate("/app/suppliers/new")}>
           <Plus className="mr-1.5 size-4" />
           Nuevo proveedor
         </Button>
@@ -108,7 +100,7 @@ export const SuppliersPage = () => {
                   <td className="px-4 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => navigate(`/admin/suppliers/${supplier.id}/edit`)}
+                        onClick={() => navigate(`/app/suppliers/${supplier.id}/edit`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                         title="Editar"
                       >

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { Link } from "react-router";
-import AlertProps from "@/core/common/types/interfaces/props/alert-props";
+import type { AlertProps } from "@/core/common/types/interfaces/props/alert-props";
 import { variantClasses, icons } from "@/core/common/utils/alert-utils";
 
 export const Alert: FC<AlertProps> = ({

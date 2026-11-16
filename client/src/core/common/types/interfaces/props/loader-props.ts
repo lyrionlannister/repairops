@@ -1,3 +1,3 @@
-export default interface LoaderProps {
+export interface LoaderProps {
   loaderText?: string;
 }

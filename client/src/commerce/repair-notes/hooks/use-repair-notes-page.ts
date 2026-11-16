@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import type { RepairNoteRecord, RepairNoteStatus } from "../types/repair-note.types";
+import type { RepairNoteRecord, RepairNoteStatus } from "./use-repair-notes";
 
 export const useRepairNotesPage = ({
   notes,

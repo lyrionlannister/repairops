@@ -14,27 +14,8 @@ import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { PageShell } from "@common/components/page-shell/page-shell";
-import usePaginatedList from "@common/hooks/use-paginated-list";
-
-const METHOD_LABELS: Record<LayawayMethod, string> = {
-  efectivo: "Efectivo",
-  tarjeta: "Tarjeta",
-  transferencia: "Transferencia",
-};
-
-const STATUS_LABELS: Record<LayawayRecord["status"], string> = {
-  open: "Abierto",
-  completed: "Completado",
-  cancelled: "Cancelado",
-  expired: "Vencido",
-};
-
-const formatMoney = (v: number) => `$${v.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
-
-const daysUntil = (dateStr: string) => {
-  const diff = new Date(dateStr).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-};
+import { usePaginatedList } from "@common/hooks/use-paginated-list";
+import { METHOD_LABELS, STATUS_LABELS, formatMoney, daysUntil } from "../utils/format";
 
 export const LayawaysPage: React.FC = () => {
   const navigate = useNavigate();
@@ -89,7 +70,7 @@ export const LayawaysPage: React.FC = () => {
       title="Apartados"
       description="Reserva productos para un cliente con un anticipo. El stock físico solo baja al completar."
       action={
-        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/admin/layaways/new")}>
+        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/app/layaways/new")}>
           Nuevo apartado
         </Button>
       }

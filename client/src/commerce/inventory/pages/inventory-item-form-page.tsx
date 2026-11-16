@@ -101,7 +101,7 @@ export const InventoryItemFormPage: React.FC = () => {
     };
 
     const ok = isEdit && id ? await update(id, payload) : await create(payload);
-    if (ok) navigate("/admin/inventory");
+    if (ok) navigate("/app/inventory");
   };
 
   const hasPanel = isEdit && Boolean(id);
@@ -159,7 +159,7 @@ export const InventoryItemFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={() => navigate("/admin/inventory")}>
+        <Button type="button" variant="outline" onClick={() => navigate("/app/inventory")}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving}>
