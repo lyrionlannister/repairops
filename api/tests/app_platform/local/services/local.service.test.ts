@@ -26,6 +26,16 @@ describe("LocalService.updateConfig", () => {
   });
 });
 
+describe("LocalService.updateConfig name validation", () => {
+  it("rejects a blank name without touching the dao", async () => {
+    const dao = makeDao();
+    const service = new LocalService(dao);
+
+    await expect(service.updateConfig({ name: "   " })).rejects.toThrow("El nombre del local es obligatorio");
+    expect(dao.update).not.toHaveBeenCalled();
+  });
+});
+
 describe("LocalService.consumeControlNumber", () => {
   it("delegates straight to the dao", async () => {
     const dao = makeDao();
