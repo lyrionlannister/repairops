@@ -27,7 +27,7 @@ export const DashboardConversationStats: FC<DashboardConversationStatsProps> = (
   <div>
     <div className="mb-4 flex items-center justify-between gap-3">
       <h2 className="text-base font-semibold text-gray-800 dark:text-white/90">Mensajería</h2>
-      <div className="w-24 shrink-0">
+      <div className="w-28 shrink-0">
         <Select
           value={String(year)}
           onChange={(value) => onYearChange(Number(value))}

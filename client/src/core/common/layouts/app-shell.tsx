@@ -28,7 +28,7 @@ const LayoutContent: React.FC = () => {
   const visibleNavItems = signInNavbarItems.filter((item) => !item.path || !hiddenPaths.includes(item.path));
 
   return (
-    <div className="h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 xl:flex">
+    <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <div>
         <AsideMenu
           navItems={visibleNavItems}
