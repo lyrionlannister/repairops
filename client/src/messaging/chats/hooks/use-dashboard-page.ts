@@ -5,6 +5,39 @@ import { buildDailyBusinessSeries, buildMonthlyBusinessSeries, summarizeDashboar
 
 export type Point = { bucket: string; count: number };
 
+export type Trend = { pct: number; up: boolean };
+
+export type ActivityItem = {
+  id: string;
+  kind: "sale" | "repair";
+  title: string;
+  subtitle: string;
+  amount: number;
+  date: string;
+};
+
+const REPAIR_STATUS_LABELS: Record<string, string> = {
+  received: "Recibido",
+  in_repair: "En reparación",
+  done: "Listo",
+  delivered: "Entregado",
+  cancelled: "Cancelado",
+};
+
+const toStr = (value: unknown): string => (typeof value === "string" ? value : "");
+const toNum = (value: unknown): number => {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+// shortcut: pct de cambio no definido cuando el periodo previo es 0 (division
+// por cero); en ese caso se omite el badge en vez de mostrar un % inventado.
+const computeTrend = (current: number, previous: number): Trend | null => {
+  if (!previous) return null;
+  const pct = ((current - previous) / previous) * 100;
+  return { pct: Math.round(Math.abs(pct)), up: current >= previous };
+};
+
 const MONTH_LABELS = [
   "ene",
   "feb",
@@ -121,6 +154,50 @@ export const useDashboardPage = () => {
     [repairNotes, sales, year],
   );
 
+  // Hoy vs. ayer: siempre comparable, dailyBusinessSeries trae 30 dias fijos.
+  const todayDelta = useMemo(() => {
+    if (dailyBusinessSeries.length < 2) return null;
+    const today = dailyBusinessSeries[dailyBusinessSeries.length - 1];
+    const yesterday = dailyBusinessSeries[dailyBusinessSeries.length - 2];
+    return computeTrend(today.sales + today.repairs, yesterday.sales + yesterday.repairs);
+  }, [dailyBusinessSeries]);
+
+  // Este mes vs. mes anterior: solo si el filtro de año es el actual y no es
+  // enero (el mes anterior caeria en otro anio, fuera de monthlyBusinessSeries).
+  const monthDelta = useMemo(() => {
+    const now = new Date();
+    if (year !== now.getFullYear()) return null;
+    const monthIndex = now.getMonth();
+    if (monthIndex === 0) return null;
+    const current = monthlyBusinessSeries.salesData[monthIndex] + monthlyBusinessSeries.repairsData[monthIndex];
+    const previous = monthlyBusinessSeries.salesData[monthIndex - 1] + monthlyBusinessSeries.repairsData[monthIndex - 1];
+    return computeTrend(current, previous);
+  }, [year, monthlyBusinessSeries]);
+
+  const recentActivity = useMemo<ActivityItem[]>(() => {
+    const saleItems: ActivityItem[] = sales.map((sale) => ({
+      id: toStr(sale.id) || `sale-${toStr(sale.saleNumber)}`,
+      kind: "sale",
+      title: toStr(sale.customerName) || `Venta #${toStr(sale.saleNumber)}`,
+      subtitle: "Venta",
+      amount: toNum(sale.totalValue),
+      date: toStr(sale.createdAt),
+    }));
+    const repairItems: ActivityItem[] = repairNotes.map((note) => ({
+      id: toStr(note.id) || `repair-${toStr(note.controlNumber)}`,
+      kind: "repair",
+      title: toStr(note.customerName) || `Nota #${toStr(note.controlNumber)}`,
+      subtitle: REPAIR_STATUS_LABELS[toStr(note.status)] ?? toStr(note.status),
+      amount: toNum(note.totalValue),
+      date: toStr(note.receivedAt) || toStr(note.createdAt),
+    }));
+
+    return [...saleItems, ...repairItems]
+      .filter((item) => item.date)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 8);
+  }, [sales, repairNotes]);
+
   return {
     daily,
     monthly,
@@ -137,5 +214,8 @@ export const useDashboardPage = () => {
     dailyBusinessSeries,
     dailyBusinessCategories,
     monthlyBusinessSeries,
+    todayDelta,
+    monthDelta,
+    recentActivity,
   };
 };
