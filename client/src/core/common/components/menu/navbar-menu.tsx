@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from "react";
+import { Check, ChevronDown } from "lucide-react";
 
 import useSidebar from "../../hooks/use-sidebar";
 import useBranch from "../../hooks/use-branch";
 import UserDropdown from "./user-dropdown";
 import ThemeToggleButton from "./theme-toggle-button";
+import Dropdown from "../ui/dropdown/dropdown";
 
 const NavbarMenu: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
+  const [isBranchMenuOpen, setBranchMenuOpen] = useState(false);
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const { branches, activeBranchId, setActiveBranchId } = useBranch();
+  const activeBranchName = branches.find((b) => b.id === activeBranchId)?.name ?? branches[0]?.name ?? "Sucursal principal";
 
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {
@@ -107,23 +111,45 @@ const NavbarMenu: React.FC = () => {
             isApplicationMenuOpen ? "flex" : "hidden"
           } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
         >
-          <div className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 lg:flex">
-            <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+          <div className="relative hidden lg:flex">
             {branches.length > 1 ? (
-              <select
-                value={activeBranchId}
-                onChange={(e) => setActiveBranchId(e.target.value)}
-                className="bg-transparent text-sm text-gray-600 focus:outline-none dark:text-gray-300"
-                aria-label="Sucursal activa"
-              >
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setBranchMenuOpen((prev) => !prev)}
+                  aria-label="Sucursal activa"
+                  className="dropdown-toggle flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                  {activeBranchName}
+                  <ChevronDown className={`size-4 text-gray-400 transition-transform duration-200 ${isBranchMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+                <Dropdown
+                  isOpen={isBranchMenuOpen}
+                  onClose={() => setBranchMenuOpen(false)}
+                  className="max-h-80 w-56 overflow-y-auto p-1.5"
+                >
+                  {branches.map((branch) => (
+                    <button
+                      key={branch.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveBranchId(branch.id);
+                        setBranchMenuOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                    >
+                      {branch.name}
+                      {branch.id === activeBranchId && <Check className="size-4 text-brand-500" />}
+                    </button>
+                  ))}
+                </Dropdown>
+              </>
             ) : (
-              <span>{branches[0]?.name ?? "Sucursal principal"}</span>
+              <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300">
+                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                {activeBranchName}
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2 2xsm:gap-3">
