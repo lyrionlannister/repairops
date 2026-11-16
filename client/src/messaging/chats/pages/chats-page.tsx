@@ -195,15 +195,15 @@ const ChatsPage: React.FC = () => {
   const avatarColor = selectedConversation ? getAvatarColor(selectedConversation.sessionId) : "";
 
   return (
-    <div className="flex h-[calc(100vh-152px)] min-h-[500px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-soft dark:border-gray-700 dark:bg-[#111B21]">
+    <div className="flex h-[calc(100vh-152px)] min-h-125 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-soft dark:border-gray-700 dark:bg-[#111B21]">
       <PageMeta title="Chats" description="Conversaciones de WhatsApp" />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Panel izquierdo */}
-        <div className="flex w-[340px] shrink-0 flex-col border-r border-gray-200 dark:border-gray-700">
+        <div className="flex w-85 shrink-0 flex-col border-r border-gray-200 dark:border-gray-700">
 
           {/* Header izquierdo */}
-          <div className="flex min-h-[61px] items-center justify-between bg-[#f0f2f5] px-4 py-2.5 dark:bg-[#1F2C33]">
+          <div className="flex min-h-15.25 items-center justify-between bg-[#f0f2f5] px-4 py-2.5 dark:bg-[#1F2C33]">
             <span className="text-base font-semibold text-gray-800 dark:text-white">Conversaciones</span>
             {!loadingConversations && (
               <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -227,7 +227,7 @@ const ChatsPage: React.FC = () => {
           </div>
 
           {/* Lista */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="custom-scrollbar flex-1 overflow-y-auto">
             {loadingConversations ? (
               <div className="flex flex-col py-2">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -304,7 +304,7 @@ const ChatsPage: React.FC = () => {
           ) : null}
 
           {/* Área de mensajes */}
-          <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4 bg-[#efeae2] dark:bg-[#0D1418]">
+          <div className="custom-scrollbar flex flex-1 flex-col gap-2 overflow-y-auto p-4 bg-[#efeae2] dark:bg-[#0D1418]">
             {!selectedSessionId ? (
               <NoConversationSelected />
             ) : loadingMessages ? (

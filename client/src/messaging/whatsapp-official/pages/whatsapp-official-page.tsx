@@ -16,9 +16,10 @@ import Button from "@ui/button/button";
 import Input from "@ui/inputs/input";
 import Label from "@ui/inputs/label";
 import Select from "@ui/select/select";
+import TextArea from "@ui/textarea/textarea";
 import Modal from "@ui/modal/modal";
 import ConfirmModal from "@ui/modal/confirm-modal";
-import PageMeta from "@common/pages/page-meta";
+import PageShell from "@common/components/page-shell/page-shell";
 
 const EMPTY_CONNECT_FORM = { wabaId: "", phoneNumberId: "", accessToken: "" };
 
@@ -139,15 +140,15 @@ const TemplateCatalogSection = ({ scope, title, description, statusByEntryId }: 
         <table className="w-full text-sm">
           <thead className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-white/2">
             <tr>
-              <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Plantilla</th>
-              <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Categoría</th>
+              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Plantilla</th>
+              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Categoría</th>
               {statusByEntryId && (
                 <>
-                  <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Status en Meta</th>
-                  <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Última sincronización</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Status en Meta</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Última sincronización</th>
                 </>
               )}
-              <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -249,13 +250,12 @@ const TemplateCatalogSection = ({ scope, title, description, statusByEntryId }: 
           </div>
           <div>
             <Label className="text-gray-500">Texto</Label>
-            <textarea
+            <TextArea
               value={form.text}
               onChange={(event) => setForm((prev) => ({ ...prev, text: event.target.value }))}
               rows={3}
               disabled={saving}
               required
-              className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 shadow-theme-xs transition-colors duration-200 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
             />
           </div>
           <div>
@@ -329,21 +329,16 @@ const WhatsappOfficialPage = () => {
   const statusByEntryId = new Map(templates.map((t) => [t.catalogEntryId, { status: t.status, lastSyncedAt: t.lastSyncedAt }]));
 
   return (
-    <div className="space-y-6">
-      <PageMeta title="WhatsApp" description="Estado de la cuenta oficial y catálogo de plantillas" />
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">WhatsApp</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Cuenta oficial (Graph API) y plantillas proactivas aprobadas por Meta.
-          </p>
-        </div>
+    <PageShell
+      title="WhatsApp"
+      description="Cuenta oficial (Graph API) y plantillas proactivas aprobadas por Meta."
+      action={
         <Button variant="outline" onClick={sync} disabled={templatesLoading}>
           <RefreshCw className={`mr-1.5 size-4 ${templatesLoading ? "animate-spin" : ""}`} />
           {templatesLoading ? "Sincronizando..." : "Sincronizar con Meta"}
         </Button>
-      </div>
-
+      }
+    >
       {accountError && <Alert variant="error" title="Error" message={accountError} />}
       {templatesError && <Alert variant="error" title="Error al sincronizar" message={templatesError} />}
 
@@ -443,7 +438,7 @@ const WhatsappOfficialPage = () => {
           description="Configuración de la plataforma misma, no de ningún taller -- todavía sin sincronizar con Meta."
         />
       )}
-    </div>
+    </PageShell>
   );
 };
 

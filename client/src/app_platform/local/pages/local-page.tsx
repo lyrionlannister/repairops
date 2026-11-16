@@ -5,7 +5,8 @@ import Alert from "@ui/alert/alert";
 import Button from "@ui/button/button";
 import Input from "@ui/inputs/input";
 import Label from "@ui/inputs/label";
-import PageMeta from "@common/pages/page-meta";
+import TextArea from "@ui/textarea/textarea";
+import PageShell from "@common/components/page-shell/page-shell";
 
 import { useLocal } from "../hooks/use-local";
 import { useLocalPage } from "../hooks/use-local-page";
@@ -40,15 +41,7 @@ const LocalPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <PageMeta title="Mi Local" description="Configuración del local" />
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">Configuración del Local</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Datos que aparecerán en las notas de reparación impresas.
-        </p>
-      </div>
-
+    <PageShell title="Configuración del Local" description="Datos que aparecerán en las notas de reparación impresas.">
       {error && <Alert variant="error" title="Error" message={error} />}
       {saveSuccess && <Alert variant="success" title="Guardado" message="Configuración actualizada correctamente." />}
 
@@ -146,14 +139,14 @@ const LocalPage = () => {
             </div>
             <div className="sm:col-span-2">
               <Label className="text-gray-500">Cláusula de garantía (aparece impresa en el ticket)</Label>
-              <textarea
+              <TextArea
                 name="warrantyClause"
                 rows={3}
                 placeholder="Ej. Garantía de 30 días en mano de obra, no cubre daño por líquidos."
                 value={form.warrantyClause}
                 onChange={handleChange}
                 disabled={saving}
-                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                className="mt-1"
               />
             </div>
           </div>
@@ -183,7 +176,7 @@ const LocalPage = () => {
           </div>
         </div>
       </form>
-    </div>
+    </PageShell>
   );
 };
 

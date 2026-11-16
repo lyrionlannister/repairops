@@ -11,7 +11,8 @@ import Input from "@ui/inputs/input";
 import Label from "@ui/inputs/label";
 import Select from "@ui/select/select";
 import Modal from "@ui/modal/modal";
-import PageMeta from "@common/pages/page-meta";
+import PageShell from "@common/components/page-shell/page-shell";
+import ScrollTable from "@ui/table/scroll-table";
 
 const METHOD_LABELS: Record<"efectivo" | "tarjeta" | "transferencia", string> = {
   efectivo: "Efectivo",
@@ -76,17 +77,11 @@ const CashPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <PageMeta title="Caja" description="Control de caja del local" />
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">Caja</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Apertura, movimientos y cierre de caja del local.</p>
-      </div>
-
+    <PageShell title="Caja" description="Apertura, movimientos y cierre de caja del local.">
       {error && <Alert variant="error" title="Error" message={error} />}
 
       {closedSession && (
-        <div className="relative rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
+        <div className="relative shrink-0 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
           <button
             type="button"
             onClick={handleDismissClosedSession}
@@ -139,7 +134,7 @@ const CashPage = () => {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid shrink-0 gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
               <p className="text-xs font-semibold uppercase text-gray-400">Saldo de apertura</p>
               <p className="mt-1 text-xl font-bold text-gray-800 dark:text-white/90">{formatMoney(session.openingBalance)}</p>
@@ -154,7 +149,7 @@ const CashPage = () => {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex shrink-0 gap-3">
             <Button variant="primary" onClick={() => setIsMovementOpen(true)}>
               <Plus className="mr-1.5 size-4" />
               Registrar movimiento
@@ -165,23 +160,33 @@ const CashPage = () => {
             </Button>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
+          <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
             {movements.length === 0 ? (
               <div className="flex flex-col items-center gap-3 p-12 text-center text-gray-400">
                 <Wallet className="size-10 opacity-40" />
                 <p className="text-sm">Sin movimientos registrados todavía.</p>
               </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">
+              <ScrollTable
+                colgroup={
+                  <colgroup>
+                    <col className="w-24" />
+                    <col className="w-28" />
+                    <col className="w-32" />
+                    <col />
+                    <col className="w-32" />
+                  </colgroup>
+                }
+                header={
                   <tr>
-                    <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Hora</th>
-                    <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Tipo</th>
-                    <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Método</th>
-                    <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Nota</th>
-                    <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Monto</th>
+                    <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Hora</th>
+                    <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Tipo</th>
+                    <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Método</th>
+                    <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Nota</th>
+                    <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Monto</th>
                   </tr>
-                </thead>
+                }
+              >
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {movements.map((movement) => (
                     <tr key={movement.id}>
@@ -201,7 +206,7 @@ const CashPage = () => {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </ScrollTable>
             )}
           </div>
         </>
@@ -277,7 +282,7 @@ const CashPage = () => {
           </div>
         </form>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 

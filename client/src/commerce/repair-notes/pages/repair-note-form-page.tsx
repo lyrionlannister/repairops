@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useRepairNotes, type RepairNoteItemInput } from "../hooks/use-repair-notes";
@@ -14,11 +14,14 @@ import {
   type RepairNoteStatus,
 } from "../types/repair-note.types";
 import Input from "@ui/inputs/input";
+import DatePicker from "@ui/date-picker/date-picker";
 import Label from "@ui/inputs/label";
 import Button from "@ui/button/button";
 import Alert from "@ui/alert/alert";
 import Toggle from "@ui/toggle/toggle";
 import Select from "@ui/select/select";
+import Combobox from "@ui/combobox/combobox";
+import TextArea from "@ui/textarea/textarea";
 import EmployeeSelect from "@common/components/employee-select";
 import CustomerSelect from "@common/components/customer-select";
 import ServiceTypeMultiSelect from "@common/components/service-type-multi-select";
@@ -80,9 +83,11 @@ const RepairNoteFormPage: React.FC = () => {
 
   const {
     note,
+    notes,
     loading,
     saving,
     error,
+    fetchNotes,
     fetchNote,
     fetchNoteItems,
     fetchNoteServiceTypeIds,
@@ -90,7 +95,13 @@ const RepairNoteFormPage: React.FC = () => {
     updateNote,
     clearError,
   } = useRepairNotes();
-  const { items: inventoryItems, fetchAll: fetchInventory } = useInventory();
+  // Marcas ya usadas en otras notas -- sugerencia, nunca restringe a una
+  // marca nueva que el cliente trae por primera vez.
+  const knownBrands = useMemo(
+    () => Array.from(new Set(notes.map((n) => n.brand).filter(Boolean))).sort(),
+    [notes],
+  );
+  const { items: allInventoryItems, fetchAll: fetchInventory } = useInventory();
   const { activeBranchId } = useBranch();
   const {
     session: cashSession,
@@ -109,9 +120,19 @@ const RepairNoteFormPage: React.FC = () => {
   const [cashMethod, setCashMethod] = useState<CashMovementMethod>("efectivo");
   const [cashEmployeeId, setCashEmployeeId] = useState("");
 
+  // La nota pertenece a form.localId (su propia sucursal, no necesariamente
+  // la activa en el header al editar una nota de otra sucursal) -- las
+  // refacciones a reservar deben salir del stock de esa misma sucursal.
+  const noteLocalId = form.localId || activeBranchId;
+  const inventoryItems = useMemo(
+    () => (noteLocalId ? allInventoryItems.filter((item) => item.localId === noteLocalId) : allInventoryItems),
+    [allInventoryItems, noteLocalId],
+  );
+
   useEffect(() => {
     fetchInventory();
-  }, [fetchInventory]);
+    fetchNotes();
+  }, [fetchInventory, fetchNotes]);
 
   useEffect(() => {
     if (!isEdit && activeBranchId) {
@@ -292,11 +313,12 @@ const RepairNoteFormPage: React.FC = () => {
               <Label className="text-gray-500">
                 Marca <span className="text-red-500">*</span>
               </Label>
-              <Input
+              <Combobox
                 required
                 placeholder="Ej. Samsung"
                 value={form.brand}
-                onChange={(e) => set("brand", e.target.value)}
+                onChange={(value) => set("brand", value)}
+                options={knownBrands}
                 disabled={saving}
               />
             </div>
@@ -316,14 +338,14 @@ const RepairNoteFormPage: React.FC = () => {
               <Label className="text-gray-500">
                 Falla reportada <span className="text-red-500">*</span>
               </Label>
-              <textarea
+              <TextArea
                 required
                 rows={3}
                 placeholder="Describe la falla reportada por el cliente..."
                 value={form.reportedFailure}
                 onChange={(e) => set("reportedFailure", e.target.value)}
                 disabled={saving}
-                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-gray-500"
+                className="mt-1.5"
               />
             </div>
           </div>
@@ -353,20 +375,18 @@ const RepairNoteFormPage: React.FC = () => {
               <Label className="text-gray-500">
                 Fecha de recibido <span className="text-red-500">*</span>
               </Label>
-              <Input
-                type="date"
+              <DatePicker
                 required
                 value={form.receivedAt}
-                onChange={(e) => set("receivedAt", e.target.value)}
+                onChange={(date) => set("receivedAt", date)}
                 disabled={saving}
               />
             </div>
             <div>
               <Label className="text-gray-500">Fecha de entrega estimada</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={form.deliveryDate}
-                onChange={(e) => set("deliveryDate", e.target.value)}
+                onChange={(date) => set("deliveryDate", date)}
                 disabled={saving}
               />
             </div>
@@ -381,13 +401,13 @@ const RepairNoteFormPage: React.FC = () => {
             </div>
             <div className="sm:col-span-2 lg:col-span-3">
               <Label className="text-gray-500">Notas del técnico</Label>
-              <textarea
+              <TextArea
                 rows={2}
                 placeholder="Observaciones internas del técnico..."
                 value={form.technicianNotes}
                 onChange={(e) => set("technicianNotes", e.target.value)}
                 disabled={saving}
-                className="mt-1.5 w-full rounded-xl border border-gray-200 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-gray-500"
+                className="mt-1.5"
               />
             </div>
             {isEdit && (
@@ -396,13 +416,12 @@ const RepairNoteFormPage: React.FC = () => {
                 <p className="mb-1.5 text-xs text-gray-400">
                   Fallas nuevas encontradas durante el servicio, distintas a la falla reportada por el cliente.
                 </p>
-                <textarea
+                <TextArea
                   rows={2}
                   placeholder="Ej. batería inflada, encontrada al abrir el equipo..."
                   value={form.additionalFindings}
                   onChange={(e) => set("additionalFindings", e.target.value)}
                   disabled={saving}
-                  className="w-full rounded-xl border border-gray-200 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-gray-500"
                 />
               </div>
             )}
@@ -426,7 +445,10 @@ const RepairNoteFormPage: React.FC = () => {
                     disabled={saving}
                     options={inventoryItems.map((i) => ({
                       value: i.id,
-                      label: `${i.name} (stock: ${i.quantityOnHand})`,
+                      // "Disponible", no quantityOnHand bruto -- resta lo ya
+                      // reservado en otras notas (Fase 5, Pieza 3) para no
+                      // prometer dos veces la misma refaccion.
+                      label: `${i.name} (disponible: ${i.available})`,
                     }))}
                   />
                 </div>
@@ -483,7 +505,7 @@ const RepairNoteFormPage: React.FC = () => {
             </div>
             <div>
               <Label className="text-gray-500">Requiere anticipo</Label>
-              <div className="mt-1.5 flex h-[42px] items-center">
+              <div className="mt-1.5 flex h-10.5 items-center">
                 <Toggle
                   checked={form.requiresAdvance}
                   onChange={() => set("requiresAdvance", !form.requiresAdvance)}
@@ -514,7 +536,7 @@ const RepairNoteFormPage: React.FC = () => {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <Label className="text-gray-500">Con garantía</Label>
-              <div className="mt-1.5 flex h-[42px] items-center">
+              <div className="mt-1.5 flex h-10.5 items-center">
                 <Toggle
                   checked={form.hasWarranty}
                   onChange={() => set("hasWarranty", !form.hasWarranty)}
@@ -524,7 +546,7 @@ const RepairNoteFormPage: React.FC = () => {
             </div>
             <div>
               <Label className="text-gray-500">Garantía extendida</Label>
-              <div className="mt-1.5 flex h-[42px] items-center">
+              <div className="mt-1.5 flex h-10.5 items-center">
                 <Toggle
                   checked={form.hasExtendedWarranty}
                   onChange={() => set("hasExtendedWarranty", !form.hasExtendedWarranty)}
