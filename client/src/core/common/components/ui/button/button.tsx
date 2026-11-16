@@ -5,7 +5,7 @@ import {
   variantClasses,
 } from "@/core/common/utils/button-utils";
 
-const Button: FC<ButtonProps> = ({
+export const Button: FC<ButtonProps> = ({
   children,
   size = "md",
   variant = "primary",
@@ -34,4 +34,3 @@ const Button: FC<ButtonProps> = ({
   );
 };
 
-export default Button;

@@ -8,8 +8,8 @@ import { useLocal } from "../../../app_platform/local/hooks/use-local";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { RepairNoteRecord } from "../types/repair-note.types";
 import type { LocalRecord, TicketSize } from "../../../app_platform/local/hooks/use-local";
-import PageMeta from "@common/pages/page-meta";
-import ThermalReceipt from "../components/thermal-receipt";
+import { PageMeta } from "@common/pages/page-meta";
+import { ThermalReceipt } from "../components/thermal-receipt";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BLUE = "#1e40af";
@@ -511,7 +511,7 @@ const Receipt: React.FC<{ note: RepairNoteRecord; local: LocalRecord | null }> =
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-const RepairNotePrintPage: React.FC = () => {
+export const RepairNotePrintPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { note, loading: loadingNote, fetchNote, fetchNoteServiceTypeIds } = useRepairNotes();
@@ -653,4 +653,3 @@ const RepairNotePrintPage: React.FC = () => {
   );
 };
 
-export default RepairNotePrintPage;

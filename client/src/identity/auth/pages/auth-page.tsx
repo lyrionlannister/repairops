@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 
-import AuthForm from "../components/auth-form";
-import AuthLayout from "../components/auth-layout";
-import PageMeta from "../../../core/common/pages/page-meta";
-import Loader from "@/core/common/components/ui/loader/loader";
+import { AuthForm } from "../components/auth-form";
+import { AuthLayout } from "../components/auth-layout";
+import { PageMeta } from "../../../core/common/pages/page-meta";
+import { Loader } from "@/core/common/components/ui/loader/loader";
 
-const AuthPage: React.FC = () => {
+export const AuthPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -35,4 +35,3 @@ const AuthPage: React.FC = () => {
   );
 };
 
-export default AuthPage;

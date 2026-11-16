@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "../../hooks/use-api-client";
-import BranchContext, { type BranchRecord } from "../branch-context";
+import { BranchContext, type BranchRecord } from "../branch-context";
 
 const STORAGE_KEY = "activeBranchId";
 
-const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { apiClient } = useApiClient();
   const [branches, setBranches] = useState<BranchRecord[]>([]);
   const [activeBranchId, setActiveBranchIdState] = useState<string>(
@@ -45,4 +45,3 @@ const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
   );
 };
 
-export default BranchProvider;

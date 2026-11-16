@@ -14,7 +14,7 @@ interface SelectProps {
   className?: string;
 }
 
-const Select: FC<SelectProps> = ({
+export const Select: FC<SelectProps> = ({
   value,
   onChange,
   options,
@@ -37,4 +37,3 @@ const Select: FC<SelectProps> = ({
   </select>
 );
 
-export default Select;

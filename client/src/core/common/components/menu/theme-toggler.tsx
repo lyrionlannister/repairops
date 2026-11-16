@@ -1,6 +1,6 @@
-import useTheme from "../../hooks/use-theme";
+import { useTheme } from "../../hooks/use-theme";
 
-const ThemeToggler: React.FC = () => {
+export const ThemeToggler: React.FC = () => {
   const { toggleTheme } = useTheme();
   return (
     <button
@@ -39,4 +39,3 @@ const ThemeToggler: React.FC = () => {
   );
 };
 
-export default ThemeToggler;

@@ -1,17 +1,17 @@
 import { Store } from "lucide-react";
 
 import { useApiClient } from "@common/hooks/use-api-client";
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import TextArea from "@ui/textarea/textarea";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { TextArea } from "@ui/textarea/textarea";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 import { useLocal } from "../hooks/use-local";
 import { useLocalPage } from "../hooks/use-local-page";
 
-const LocalPage = () => {
+export const LocalPage = () => {
   const { apiClient } = useApiClient();
   const { local, loading, saving, saveSuccess, error, fetchLocal, updateLocal } = useLocal();
   const {
@@ -180,4 +180,3 @@ const LocalPage = () => {
   );
 };
 
-export default LocalPage;

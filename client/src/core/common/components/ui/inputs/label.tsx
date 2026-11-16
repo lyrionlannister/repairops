@@ -3,7 +3,7 @@ import { twMerge } from "tailwind-merge";
 import type { FC } from "react";
 import LabelProps from "../../../types/interfaces/props/label-props";
 
-const Label: FC<LabelProps> = ({ htmlFor, children, className }) => {
+export const Label: FC<LabelProps> = ({ htmlFor, children, className }) => {
   return (
     <label
       htmlFor={htmlFor}
@@ -19,4 +19,3 @@ const Label: FC<LabelProps> = ({ htmlFor, children, className }) => {
   );
 };
 
-export default Label;

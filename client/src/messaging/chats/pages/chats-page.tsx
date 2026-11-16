@@ -3,7 +3,7 @@ import { Search, Send, Bot, User, ArrowLeftRight } from "lucide-react";
 import { useConversations, type Conversation } from "../hooks/use-conversations";
 import { useMessages } from "../hooks/use-messages";
 import { useHumanMode } from "../hooks/use-human-mode";
-import PageMeta from "@common/pages/page-meta";
+import { PageMeta } from "@common/pages/page-meta";
 
 function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
@@ -160,7 +160,7 @@ function ManualReplyInput({
   );
 }
 
-const ChatsPage: React.FC = () => {
+export const ChatsPage: React.FC = () => {
   const { conversations, loading: loadingConversations, error: convError } = useConversations();
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -335,4 +335,3 @@ const ChatsPage: React.FC = () => {
   );
 };
 
-export default ChatsPage;

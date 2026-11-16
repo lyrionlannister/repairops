@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import { EyeIcon, EyeCloseIcon } from "@common/icons";
 
 import { useUsers, ROLE_LABELS, PAY_CYCLE_LABELS, type PayCycle, type UserRole } from "../hooks/use-users";
 import { useEmployeeContext } from "../hooks/use-employee-context";
-import EmployeeContextPanel from "../components/employee-context-panel";
+import { EmployeeContextPanel } from "../components/employee-context-panel";
 
 interface UserFormState {
   firstName: string;
@@ -33,7 +33,7 @@ const emptyForm: UserFormState = {
   payCycle: "",
 };
 
-const UserFormPage: React.FC = () => {
+export const UserFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
@@ -230,4 +230,3 @@ const UserFormPage: React.FC = () => {
   );
 };
 
-export default UserFormPage;

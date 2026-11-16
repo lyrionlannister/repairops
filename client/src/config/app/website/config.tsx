@@ -1,6 +1,6 @@
 import { GridIcon } from "../../../core/common/icons";
 
-const signInNavbarItems = [
+export const signInNavbarItems = [
   {
     name: "Dashboard",
     icon: <GridIcon />,
@@ -58,4 +58,3 @@ export const otherSignInItems = [
   },
 ];
 
-export default signInNavbarItems;

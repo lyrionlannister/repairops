@@ -3,12 +3,12 @@ import { useNavigate } from "react-router";
 import { Plus, FileText, Pencil, Trash2, Check, X, Search } from "lucide-react";
 import { useQuotes, type QuoteStatus } from "../hooks/use-quotes";
 import { useQuotesPage } from "../hooks/use-quotes-page";
-import Button from "@ui/button/button";
+import { Button } from "@ui/button/button";
 import { TableBody, TableRow, TableCell } from "@ui/table/table";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import ConfirmModal from "@ui/modal/confirm-modal";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 
 const STATUS_CONFIG: Record<QuoteStatus, { label: string; className: string }> = {
@@ -26,7 +26,7 @@ const formatDate = (dateStr?: string | null) => {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
 
-const QuotesPage: React.FC = () => {
+export const QuotesPage: React.FC = () => {
   const navigate = useNavigate();
   const { quotes, loading, error, fetchQuotes, deleteQuote, setStatus } = useQuotes();
   const { search, setSearch, statusFilter, setStatusFilter, deletingId, filteredQuotes, handleDelete, handleStatusChange } =
@@ -222,4 +222,3 @@ const QuotesPage: React.FC = () => {
   );
 };
 
-export default QuotesPage;

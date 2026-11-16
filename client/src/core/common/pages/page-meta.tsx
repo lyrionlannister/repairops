@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 
-const PageMeta = ({
+export const PageMeta = ({
   title,
   description,
 }: {
@@ -13,4 +13,3 @@ const PageMeta = ({
   </Helmet>
 );
 
-export default PageMeta;

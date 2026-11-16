@@ -5,18 +5,18 @@ import { Tags, Upload, Plus, Pencil, Trash2, Search, PackagePlus } from "lucide-
 import { usePriceList } from "../hooks/use-price-list";
 import { usePriceListPage } from "../hooks/use-price-list-page";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import ConfirmModal from "@ui/modal/confirm-modal";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import Select from "@ui/select/select";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { Select } from "@ui/select/select";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 
 const formatPrice = (value: number) => `$${Number(value).toLocaleString("es-MX", { minimumFractionDigits: 0 })}`;
 
-const PriceListPage = () => {
+export const PriceListPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { items, loading, saving, error, fetchAll, remove } = usePriceList();
@@ -219,4 +219,3 @@ const PriceListPage = () => {
   );
 };
 
-export default PriceListPage;

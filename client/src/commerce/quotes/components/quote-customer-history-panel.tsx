@@ -30,5 +30,3 @@ export const QuoteCustomerHistoryPanel: React.FC<QuoteCustomerHistoryPanelProps>
     )}
   </div>
 );
-
-export default QuoteCustomerHistoryPanel;

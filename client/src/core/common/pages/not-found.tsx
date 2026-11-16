@@ -1,9 +1,9 @@
 import { Link } from "react-router";
 
-import PageMeta from "./page-meta";
-import useGoBack from "../hooks/use-go-back";
+import { PageMeta } from "./page-meta";
+import { useGoBack } from "../hooks/use-go-back";
 
-const NotFound: React.FC = () => {
+export const NotFound: React.FC = () => {
   const goBack = useGoBack();
   return (
     <>
@@ -38,4 +38,3 @@ const NotFound: React.FC = () => {
   );
 };
 
-export default NotFound;

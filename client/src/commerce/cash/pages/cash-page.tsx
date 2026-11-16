@@ -1,19 +1,19 @@
 import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Lock } from "lucide-react";
 
 import { useLocal } from "@app-platform/local/hooks/use-local";
-import useBranch from "@common/hooks/use-branch";
+import { useBranch } from "@common/hooks/use-branch";
 import { useCash } from "../hooks/use-cash";
 import { useCashPage } from "../hooks/use-cash-page";
-import EmployeeSelect from "@common/components/employee-select";
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Modal from "@ui/modal/modal";
-import PageShell from "@common/components/page-shell/page-shell";
-import ScrollTable from "@ui/table/scroll-table";
-import Pagination from "@ui/table/pagination";
+import { EmployeeSelect } from "@common/components/employee-select";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Modal } from "@ui/modal/modal";
+import { PageShell } from "@common/components/page-shell/page-shell";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { Pagination } from "@ui/table/pagination";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 
 const METHOD_LABELS: Record<"efectivo" | "tarjeta" | "transferencia", string> = {
@@ -25,7 +25,7 @@ const METHOD_LABELS: Record<"efectivo" | "tarjeta" | "transferencia", string> = 
 const formatMoney = (value: number) => `$${Number(value).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
 
-const CashPage = () => {
+export const CashPage = () => {
   const { local, fetchLocal } = useLocal();
   const { activeBranchId } = useBranch();
   const { session, closedSession, movements, summary, loading, saving, error, fetchOpenSession, openSession, closeSession, fetchMovements, fetchSummary, registerMovement, clearError, clearClosedSession } = useCash();
@@ -312,4 +312,3 @@ const CashPage = () => {
   );
 };
 
-export default CashPage;

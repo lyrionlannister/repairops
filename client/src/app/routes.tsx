@@ -1,38 +1,38 @@
-import ChatsPage from "../messaging/chats/pages/chats-page";
-import AuthPage from "../identity/auth/pages/auth-page";
-import RegisterPage from "../identity/auth/pages/register-page";
-import NotFound from "../core/common/pages/not-found";
-import DashboardPage from "../messaging/chats/pages/dashboard-page";
-import UsersPage from "../identity/users/pages/users-page";
-import UserFormPage from "../identity/users/pages/user-form-page";
-import LocalPage from "../app_platform/local/pages/local-page";
-import RepairNotesPage from "../commerce/repair-notes/pages/repair-notes-page";
-import RepairNoteFormPage from "../commerce/repair-notes/pages/repair-note-form-page";
-import RepairNotePrintPage from "../commerce/repair-notes/pages/repair-note-print-page";
-import MessageTemplatesPage from "../messaging/message-templates/pages/message-templates-page";
-import MessageTemplateFormPage from "../messaging/message-templates/pages/message-template-form-page";
-import WhatsappOfficialPage from "../messaging/whatsapp-official/pages/whatsapp-official-page";
-import PriceListPage from "../commerce/price-list/pages/price-list-page";
-import PriceListItemFormPage from "../commerce/price-list/pages/price-list-item-form-page";
-import ImportPriceListPage from "../commerce/price-list/pages/import-price-list-page";
-import InventoryPage from "../commerce/inventory/pages/inventory-page";
-import InventoryItemFormPage from "../commerce/inventory/pages/inventory-item-form-page";
-import QuickSalePage from "../commerce/inventory/pages/quick-sale-page";
-import ReturnPage from "../commerce/returns/pages/return-page";
-import InventoryTransfersPage from "../commerce/inventory/pages/inventory-transfers-page";
-import InventoryCountPage from "../commerce/inventory/pages/inventory-count-page";
-import LayawaysPage from "../commerce/customers/pages/layaways-page";
-import LayawayFormPage from "../commerce/customers/pages/layaway-form-page";
-import QuotesPage from "../commerce/quotes/pages/quotes-page";
-import QuoteFormPage from "../commerce/quotes/pages/quote-form-page";
-import QuotePrintPage from "../commerce/quotes/pages/quote-print-page";
-import CashPage from "../commerce/cash/pages/cash-page";
-import SuppliersPage from "../commerce/suppliers/pages/suppliers-page";
-import SupplierFormPage from "../commerce/suppliers/pages/supplier-form-page";
-import BranchesPage from "../identity/branches/pages/branches-page";
-import BranchFormPage from "../identity/branches/pages/branch-form-page";
-import CustomersPage from "../commerce/customers/pages/customers-page";
-import CustomerFormPage from "../commerce/customers/pages/customer-form-page";
+import { ChatsPage } from "../messaging/chats/pages/chats-page";
+import { AuthPage } from "../identity/auth/pages/auth-page";
+import { RegisterPage } from "../identity/auth/pages/register-page";
+import { NotFound } from "../core/common/pages/not-found";
+import { DashboardPage } from "../messaging/chats/pages/dashboard-page";
+import { UsersPage } from "../identity/users/pages/users-page";
+import { UserFormPage } from "../identity/users/pages/user-form-page";
+import { LocalPage } from "../app_platform/local/pages/local-page";
+import { RepairNotesPage } from "../commerce/repair-notes/pages/repair-notes-page";
+import { RepairNoteFormPage } from "../commerce/repair-notes/pages/repair-note-form-page";
+import { RepairNotePrintPage } from "../commerce/repair-notes/pages/repair-note-print-page";
+import { MessageTemplatesPage } from "../messaging/message-templates/pages/message-templates-page";
+import { MessageTemplateFormPage } from "../messaging/message-templates/pages/message-template-form-page";
+import { WhatsappOfficialPage } from "../messaging/whatsapp-official/pages/whatsapp-official-page";
+import { PriceListPage } from "../commerce/price-list/pages/price-list-page";
+import { PriceListItemFormPage } from "../commerce/price-list/pages/price-list-item-form-page";
+import { ImportPriceListPage } from "../commerce/price-list/pages/import-price-list-page";
+import { InventoryPage } from "../commerce/inventory/pages/inventory-page";
+import { InventoryItemFormPage } from "../commerce/inventory/pages/inventory-item-form-page";
+import { QuickSalePage } from "../commerce/inventory/pages/quick-sale-page";
+import { ReturnPage } from "../commerce/returns/pages/return-page";
+import { InventoryTransfersPage } from "../commerce/inventory/pages/inventory-transfers-page";
+import { InventoryCountPage } from "../commerce/inventory/pages/inventory-count-page";
+import { LayawaysPage } from "../commerce/customers/pages/layaways-page";
+import { LayawayFormPage } from "../commerce/customers/pages/layaway-form-page";
+import { QuotesPage } from "../commerce/quotes/pages/quotes-page";
+import { QuoteFormPage } from "../commerce/quotes/pages/quote-form-page";
+import { QuotePrintPage } from "../commerce/quotes/pages/quote-print-page";
+import { CashPage } from "../commerce/cash/pages/cash-page";
+import { SuppliersPage } from "../commerce/suppliers/pages/suppliers-page";
+import { SupplierFormPage } from "../commerce/suppliers/pages/supplier-form-page";
+import { BranchesPage } from "../identity/branches/pages/branches-page";
+import { BranchFormPage } from "../identity/branches/pages/branch-form-page";
+import { CustomersPage } from "../commerce/customers/pages/customers-page";
+import { CustomerFormPage } from "../commerce/customers/pages/customer-form-page";
 
 export const publicRoutes = [
   {
@@ -215,5 +215,3 @@ export const protectedRoutes = [
     element: <CashPage />,
   },
 ];
-
-export default publicRoutes;

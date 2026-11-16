@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { UserPlus, Pencil, Search } from "lucide-react";
 import { useUsers, ROLE_LABELS } from "../hooks/use-users";
-import Toggle from "@ui/toggle/toggle";
-import Input from "@ui/inputs/input";
-import Button from "@ui/button/button";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
+import { Toggle } from "@ui/toggle/toggle";
+import { Input } from "@ui/inputs/input";
+import { Button } from "@ui/button/button";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
 import usePaginatedList from "@common/hooks/use-paginated-list";
-import PageShell from "@common/components/page-shell/page-shell";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 const formatDate = (dateStr: string) => {
   const d = new Date(dateStr);
@@ -18,7 +18,7 @@ const formatDate = (dateStr: string) => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
-const UsersPage: React.FC = () => {
+export const UsersPage: React.FC = () => {
   const navigate = useNavigate();
   const { users, loading, error, fetchUsers, toggleUserStatus, togglingId } = useUsers();
   const [search, setSearch] = useState("");
@@ -168,4 +168,3 @@ const UsersPage: React.FC = () => {
   );
 };
 
-export default UsersPage;

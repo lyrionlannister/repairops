@@ -1,14 +1,14 @@
 import { Plus, Pencil, Search, Trash2, Smartphone, Users } from "lucide-react";
 import { useNavigate } from "react-router";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Modal from "@ui/modal/modal";
-import ConfirmModal from "@ui/modal/confirm-modal";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Modal } from "@ui/modal/modal";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 
 import { useCustomers } from "../hooks/use-customers";
@@ -19,7 +19,7 @@ const formatDate = (dateStr: string) => {
   return `${d}/${m}/${y}`;
 };
 
-const CustomersPage = () => {
+export const CustomersPage = () => {
   const navigate = useNavigate();
   const { customers, devices, loading, saving, error, fetchAll, fetchDevices, remove } = useCustomers();
 
@@ -205,4 +205,3 @@ const CustomersPage = () => {
   );
 };
 
-export default CustomersPage;

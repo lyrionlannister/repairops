@@ -15,6 +15,5 @@ export type BranchContextType = {
   refreshBranches: () => Promise<void>;
 };
 
-const BranchContext = createContext<BranchContextType | undefined>(undefined);
+export const BranchContext = createContext<BranchContextType | undefined>(undefined);
 
-export default BranchContext;

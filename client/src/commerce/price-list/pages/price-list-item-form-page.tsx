@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft } from "lucide-react";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import PageMeta from "@common/pages/page-meta";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { PageMeta } from "@common/pages/page-meta";
 
 import { usePriceList } from "../hooks/use-price-list";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
@@ -20,7 +20,7 @@ interface PriceListItemFormState {
 
 const emptyForm: PriceListItemFormState = { brand: "", model: "", price: "", supplierId: "" };
 
-const PriceListItemFormPage: React.FC = () => {
+export const PriceListItemFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
@@ -134,4 +134,3 @@ const PriceListItemFormPage: React.FC = () => {
   );
 };
 
-export default PriceListItemFormPage;

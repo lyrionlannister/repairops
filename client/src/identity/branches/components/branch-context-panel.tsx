@@ -13,7 +13,7 @@ interface BranchContextPanelProps {
   cashSessionOpen: boolean;
 }
 
-const BranchContextPanel = ({
+export const BranchContextPanel = ({
   skuCount,
   stockValue,
   criticalCount,
@@ -82,4 +82,3 @@ const BranchContextPanel = ({
   </Fragment>
 );
 
-export default BranchContextPanel;

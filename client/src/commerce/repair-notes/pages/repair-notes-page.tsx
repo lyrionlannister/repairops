@@ -5,11 +5,11 @@ import { useRepairNotes } from "../hooks/use-repair-notes";
 import { useRepairNotesPage } from "../hooks/use-repair-notes-page";
 import { STATUS_CONFIG } from "../types/repair-note.types";
 import type { RepairNoteStatus } from "../types/repair-note.types";
-import Button from "@ui/button/button";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import PageShell from "@common/components/page-shell/page-shell";
-import ConfirmModal from "@ui/modal/confirm-modal";
+import { Button } from "@ui/button/button";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { PageShell } from "@common/components/page-shell/page-shell";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 import { useCurrentUser } from "@common/hooks/use-current-user";
 
@@ -22,7 +22,7 @@ const formatDate = (dateStr?: string) => {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
 
-const RepairNotesPage: React.FC = () => {
+export const RepairNotesPage: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
   // Un cajero no edita diagnósticos de reparación, ni por pantalla ni por
@@ -277,4 +277,3 @@ const RepairNotesPage: React.FC = () => {
   );
 };
 
-export default RepairNotesPage;

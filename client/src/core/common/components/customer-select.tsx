@@ -17,7 +17,7 @@ const labelFor = (c: Customer) => `${c.name} · ${c.phone}`;
 // texto libre para clientes de paso.
 // El texto se escribe sin lag, pero la lista solo refiltra 350ms despues de
 // la ultima tecla -- evita recalcular el filtro en cada pulsacion.
-const CustomerSelect: FC<CustomerSelectProps> = ({
+export const CustomerSelect: FC<CustomerSelectProps> = ({
   value,
   onChange,
   placeholder = "Cliente existente (opcional)",
@@ -100,4 +100,3 @@ const CustomerSelect: FC<CustomerSelectProps> = ({
   );
 };
 
-export default CustomerSelect;

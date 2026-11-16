@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft } from "lucide-react";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import TextArea from "@ui/textarea/textarea";
-import PageMeta from "@common/pages/page-meta";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { TextArea } from "@ui/textarea/textarea";
+import { PageMeta } from "@common/pages/page-meta";
 
 import { useMessageTemplates } from "../hooks/use-message-templates";
 
@@ -19,7 +19,7 @@ interface MessageTemplateFormState {
 
 const emptyForm: MessageTemplateFormState = { key: "", text: "", description: "" };
 
-const MessageTemplateFormPage: React.FC = () => {
+export const MessageTemplateFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
@@ -130,4 +130,3 @@ const MessageTemplateFormPage: React.FC = () => {
   );
 };
 
-export default MessageTemplateFormPage;

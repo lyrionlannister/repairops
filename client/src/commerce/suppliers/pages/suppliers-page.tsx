@@ -2,18 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import ConfirmModal from "@ui/modal/confirm-modal";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 
 import { useSuppliers } from "../hooks/use-suppliers";
 
-const SuppliersPage = () => {
+export const SuppliersPage = () => {
   const navigate = useNavigate();
   const { suppliers, loading, saving, error, fetchAll, remove } = useSuppliers();
   const [search, setSearch] = useState("");
@@ -164,4 +164,3 @@ const SuppliersPage = () => {
   );
 };
 
-export default SuppliersPage;

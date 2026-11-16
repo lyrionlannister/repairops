@@ -6,14 +6,14 @@ import { useInventory } from "../hooks/use-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useLocal } from "@app-platform/local/hooks/use-local";
 import { useCustomers } from "@commerce/customers/hooks/use-customers";
-import useBranch from "@common/hooks/use-branch";
-import EmployeeSelect from "@common/components/employee-select";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Alert from "@ui/alert/alert";
-import PageShell from "@common/components/page-shell/page-shell";
+import { useBranch } from "@common/hooks/use-branch";
+import { EmployeeSelect } from "@common/components/employee-select";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Alert } from "@ui/alert/alert";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   efectivo: "Efectivo",
@@ -41,7 +41,7 @@ const round2 = (v: number) => Math.round(v * 100) / 100;
 const newIdempotencyKey = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 
-const QuickSalePage: React.FC = () => {
+export const QuickSalePage: React.FC = () => {
   const { queue: offlineQueue, isOnline, syncing, submitOrQueue, sync } = useOfflineSalesQueue();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -385,4 +385,3 @@ const QuickSalePage: React.FC = () => {
   );
 };
 
-export default QuickSalePage;

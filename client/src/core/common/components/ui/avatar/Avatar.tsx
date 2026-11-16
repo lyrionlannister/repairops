@@ -6,7 +6,7 @@ import {
   statusColorClasses,
 } from "@/core/common/utils/avatar-utils";
 
-const Avatar: React.FC<AvatarProps> = ({
+export const Avatar: React.FC<AvatarProps> = ({
   src,
   alt = "User Avatar",
   size = "medium",
@@ -26,4 +26,3 @@ const Avatar: React.FC<AvatarProps> = ({
   );
 };
 
-export default Avatar;

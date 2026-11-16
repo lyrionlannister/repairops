@@ -7,7 +7,7 @@ interface SupplierContextPanelProps {
   criticalItems: SupplierCriticalItem[];
 }
 
-const SupplierContextPanel: React.FC<SupplierContextPanelProps> = ({
+export const SupplierContextPanel: React.FC<SupplierContextPanelProps> = ({
   skuCount,
   stockValueAtCost,
   criticalItems,
@@ -58,4 +58,3 @@ const SupplierContextPanel: React.FC<SupplierContextPanelProps> = ({
   </div>
 );
 
-export default SupplierContextPanel;

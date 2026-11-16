@@ -14,8 +14,8 @@ import {
   ArrowDownRight,
   Wrench,
 } from "lucide-react";
-import Input from "@ui/inputs/input";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Input } from "@ui/inputs/input";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import { useDashboardPage } from "../hooks/use-dashboard-page";
 import type { Trend } from "../hooks/use-dashboard-page";
 
@@ -51,7 +51,7 @@ const formatRelativeTime = (dateValue: string): string => {
   return date.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
 };
 
-const DashboardPage: React.FC = () => {
+export const DashboardPage: React.FC = () => {
   const {
     daily,
     monthly,
@@ -485,4 +485,3 @@ const DashboardPage: React.FC = () => {
   );
 };
 
-export default DashboardPage;

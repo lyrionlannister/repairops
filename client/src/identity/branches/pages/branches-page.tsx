@@ -2,19 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Pencil, Search, Store } from "lucide-react";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Toggle from "@ui/toggle/toggle";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Toggle } from "@ui/toggle/toggle";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import usePaginatedList from "@common/hooks/use-paginated-list";
-import useBranch from "@common/hooks/use-branch";
+import { useBranch } from "@common/hooks/use-branch";
 
 import { useBranches, type Branch } from "../hooks/use-branches";
 
-const BranchesPage = () => {
+export const BranchesPage = () => {
   const navigate = useNavigate();
   const { branches, loading, error, fetchAll, setActive } = useBranches();
   const { refreshBranches } = useBranch();
@@ -156,4 +156,3 @@ const BranchesPage = () => {
   );
 };
 
-export default BranchesPage;

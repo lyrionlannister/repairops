@@ -4,17 +4,17 @@ import { Plus } from "lucide-react";
 import { useLayaways, type LayawayMethod } from "../hooks/use-layaways";
 import { useCustomers } from "../hooks/use-customers";
 import { useCustomerContext } from "../hooks/use-customer-context";
-import CustomerContextPanel from "../components/customer-context-panel";
+import { CustomerContextPanel } from "../components/customer-context-panel";
 import { useInventory } from "@commerce/inventory/hooks/use-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
-import useBranch from "@common/hooks/use-branch";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import DatePicker from "@ui/date-picker/date-picker";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Alert from "@ui/alert/alert";
-import PageShell from "@common/components/page-shell/page-shell";
+import { useBranch } from "@common/hooks/use-branch";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { DatePicker } from "@ui/date-picker/date-picker";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Alert } from "@ui/alert/alert";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 const FORM_CARD_CLASS = "space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3";
 
@@ -28,7 +28,7 @@ type LineDraft = { inventoryItemId: string; quantity: string; unitPrice: string 
 
 const formatMoney = (v: number) => `$${v.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
-const LayawayFormPage: React.FC = () => {
+export const LayawayFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { saving, error, open } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
@@ -198,4 +198,3 @@ const LayawayFormPage: React.FC = () => {
   );
 };
 
-export default LayawayFormPage;

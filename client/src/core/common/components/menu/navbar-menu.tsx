@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
-import useSidebar from "../../hooks/use-sidebar";
-import useBranch from "../../hooks/use-branch";
-import UserDropdown from "./user-dropdown";
-import ThemeToggleButton from "./theme-toggle-button";
-import Dropdown from "../ui/dropdown/dropdown";
+import { useSidebar } from "../../hooks/use-sidebar";
+import { useBranch } from "../../hooks/use-branch";
+import { UserDropdown } from "./user-dropdown";
+import { ThemeToggleButton } from "./theme-toggle-button";
+import { Dropdown } from "../ui/dropdown/dropdown";
 
-const NavbarMenu: React.FC = () => {
+export const NavbarMenu: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
   const [isBranchMenuOpen, setBranchMenuOpen] = useState(false);
 
@@ -162,4 +162,3 @@ const NavbarMenu: React.FC = () => {
   );
 };
 
-export default NavbarMenu;

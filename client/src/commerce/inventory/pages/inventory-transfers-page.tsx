@@ -3,14 +3,14 @@ import { ArrowRightLeft } from "lucide-react";
 import { useInventory } from "../hooks/use-inventory";
 import { useInventoryTransfers } from "../hooks/use-inventory-transfers";
 import { useBranches } from "@identity/branches/hooks/use-branches";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Alert from "@ui/alert/alert";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Alert } from "@ui/alert/alert";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
-const InventoryTransfersPage: React.FC = () => {
+export const InventoryTransfersPage: React.FC = () => {
   const { items, fetchAll: fetchItems } = useInventory();
   const { branches, fetchAll: fetchBranches } = useBranches();
   const { transfers, creating, error, fetchAll: fetchTransfers, create } = useInventoryTransfers();
@@ -138,4 +138,3 @@ const InventoryTransfersPage: React.FC = () => {
   );
 };
 
-export default InventoryTransfersPage;

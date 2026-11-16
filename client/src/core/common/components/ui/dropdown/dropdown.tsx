@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import DropdownProps from "@/core/common/types/interfaces/props/dropdown-props";
 
-const Dropdown: React.FC<DropdownProps> = ({
+export const Dropdown: React.FC<DropdownProps> = ({
   isOpen,
   onClose,
   children,
@@ -40,4 +40,3 @@ const Dropdown: React.FC<DropdownProps> = ({
   );
 };
 
-export default Dropdown;

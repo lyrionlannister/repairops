@@ -13,7 +13,7 @@ interface ComboboxProps {
 // Input de texto libre con sugerencias filtradas -- a diferencia de Select,
 // nunca restringe a un valor del catalogo (ej. una marca nueva que aun no
 // aparece en ninguna nota existente).
-const Combobox: FC<ComboboxProps> = ({ value, onChange, options, placeholder, disabled, required, className = "" }) => {
+export const Combobox: FC<ComboboxProps> = ({ value, onChange, options, placeholder, disabled, required, className = "" }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -67,4 +67,3 @@ const Combobox: FC<ComboboxProps> = ({ value, onChange, options, placeholder, di
   );
 };
 
-export default Combobox;

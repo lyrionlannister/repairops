@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 
 import ModalProps from "@/core/common/types/interfaces/props/modal-props";
 
-const Modal: React.FC<ModalProps> = ({
+export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   children,
@@ -86,4 +86,3 @@ const Modal: React.FC<ModalProps> = ({
   );
 };
 
-export default Modal;

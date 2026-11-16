@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import PageShell from "@common/components/page-shell/page-shell";
-import useBranch from "@common/hooks/use-branch";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { PageShell } from "@common/components/page-shell/page-shell";
+import { useBranch } from "@common/hooks/use-branch";
 
 import { useInventory, type InventoryItemKind } from "../hooks/use-inventory";
 import { useInventoryItemContext } from "../hooks/use-inventory-item-context";
-import InventoryItemContextPanel from "../components/inventory-item-context-panel";
+import { InventoryItemContextPanel } from "../components/inventory-item-context-panel";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
 
 interface InventoryPrefillState {
@@ -43,7 +43,7 @@ const emptyForm: InventoryFormState = {
   supplierId: "",
 };
 
-const InventoryItemFormPage: React.FC = () => {
+export const InventoryItemFormPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
@@ -189,4 +189,3 @@ const InventoryItemFormPage: React.FC = () => {
   );
 };
 
-export default InventoryItemFormPage;

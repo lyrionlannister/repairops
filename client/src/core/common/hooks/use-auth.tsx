@@ -1,3 +1,2 @@
-const UseAuth = () => {};
+export const UseAuth = () => {};
 
-export default UseAuth;

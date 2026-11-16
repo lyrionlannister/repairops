@@ -21,7 +21,7 @@ interface ScrollTableProps {
 // (siempre un min-w-*, para una tabla con mas columnas de las que caben) --
 // dejarlo siempre encendido le agrega una barra horizontal fantasma a tablas
 // angostas por puro redondeo de table-fixed, aunque nunca haya overflow real.
-const ScrollTable: FC<ScrollTableProps> = ({ colgroup, header, children, className = "" }) => (
+export const ScrollTable: FC<ScrollTableProps> = ({ colgroup, header, children, className = "" }) => (
   <div className={`custom-scrollbar flex flex-1 min-h-0 flex-col ${className ? "overflow-x-auto" : "overflow-hidden"}`}>
     <table className={`w-full table-fixed text-sm ${className}`}>
       {colgroup}
@@ -38,4 +38,3 @@ const ScrollTable: FC<ScrollTableProps> = ({ colgroup, header, children, classNa
   </div>
 );
 
-export default ScrollTable;

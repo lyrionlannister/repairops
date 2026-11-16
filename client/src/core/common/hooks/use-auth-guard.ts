@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 
-const useAuthGuard = (redirectTo: string = "/admin/sign-in") => {
+export const useAuthGuard = (redirectTo: string = "/admin/sign-in") => {
     const navigate = useNavigate();
     useEffect(() => {
         const token = sessionStorage.getItem("accessToken");
@@ -13,4 +13,3 @@ const useAuthGuard = (redirectTo: string = "/admin/sign-in") => {
     }, [navigate, redirectTo]);
 };
 
-export default useAuthGuard;

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { BarChart3 } from "lucide-react";
 
-import useBranch from "@common/hooks/use-branch";
+import { useBranch } from "@common/hooks/use-branch";
 import { useLocal } from "@app-platform/local/hooks/use-local";
 import { useCash } from "@commerce/cash/hooks/use-cash";
-import Alert from "@ui/alert/alert";
-import DatePicker from "@ui/date-picker/date-picker";
-import Label from "@ui/inputs/label";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { DatePicker } from "@ui/date-picker/date-picker";
+import { Label } from "@ui/inputs/label";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 import { useReports } from "../hooks/use-reports";
 
@@ -24,7 +24,7 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 const formatMoney = (value: number, currency: string) =>
   `${value.toLocaleString("es-MX", { minimumFractionDigits: 2 })} ${currency}`;
 
-const ReportsPage = () => {
+export const ReportsPage = () => {
   const { local, fetchLocal } = useLocal();
   const { activeBranchId } = useBranch();
   const { session, summary, fetchOpenSession, fetchSummary } = useCash();
@@ -221,4 +221,3 @@ const ReportsPage = () => {
   );
 };
 
-export default ReportsPage;

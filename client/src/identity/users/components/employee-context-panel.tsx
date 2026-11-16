@@ -7,7 +7,7 @@ interface EmployeeContextPanelProps {
   notesOpenCount: number;
 }
 
-const EmployeeContextPanel: React.FC<EmployeeContextPanelProps> = ({
+export const EmployeeContextPanel: React.FC<EmployeeContextPanelProps> = ({
   salesCount,
   salesTotal,
   notesTotal,
@@ -46,4 +46,3 @@ const EmployeeContextPanel: React.FC<EmployeeContextPanelProps> = ({
   );
 };
 
-export default EmployeeContextPanel;

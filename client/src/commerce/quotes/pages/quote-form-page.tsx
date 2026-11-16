@@ -5,16 +5,16 @@ import { useQuotes, type QuoteFormData, type QuoteItemInput } from "../hooks/use
 import { useQuoteCustomerHistory } from "../hooks/use-quote-customer-history";
 import { QuoteCustomerHistoryPanel } from "../components/quote-customer-history-panel";
 import { useInventory } from "@commerce/inventory/hooks/use-inventory";
-import useBranch from "@common/hooks/use-branch";
-import EmployeeSelect from "@common/components/employee-select";
-import CustomerSelect from "@common/components/customer-select";
-import Input from "@ui/inputs/input";
-import DatePicker from "@ui/date-picker/date-picker";
-import Label from "@ui/inputs/label";
-import Button from "@ui/button/button";
-import Alert from "@ui/alert/alert";
-import Select from "@ui/select/select";
-import PageShell from "@common/components/page-shell/page-shell";
+import { useBranch } from "@common/hooks/use-branch";
+import { EmployeeSelect } from "@common/components/employee-select";
+import { CustomerSelect } from "@common/components/customer-select";
+import { Input } from "@ui/inputs/input";
+import { DatePicker } from "@ui/date-picker/date-picker";
+import { Label } from "@ui/inputs/label";
+import { Button } from "@ui/button/button";
+import { Alert } from "@ui/alert/alert";
+import { Select } from "@ui/select/select";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 type ItemLine = { inventoryItemId: string; description: string; quantity: string; unitPrice: string };
 const emptyItemLine: ItemLine = { inventoryItemId: "", description: "", quantity: "1", unitPrice: "" };
@@ -28,7 +28,7 @@ const INITIAL_FORM: QuoteFormData = {
   createdByEmployeeId: "",
 };
 
-const QuoteFormPage: React.FC = () => {
+export const QuoteFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
@@ -290,4 +290,3 @@ const QuoteFormPage: React.FC = () => {
   );
 };
 
-export default QuoteFormPage;

@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import InputProps from "../../../types/interfaces/props/input-props";
 
-const Input: FC<InputProps> = ({
+export const Input: FC<InputProps> = ({
   type = "text",
   id,
   name,
@@ -64,4 +64,3 @@ const Input: FC<InputProps> = ({
   );
 };
 
-export default Input;

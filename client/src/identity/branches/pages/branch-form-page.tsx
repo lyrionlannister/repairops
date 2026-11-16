@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import PageShell from "@common/components/page-shell/page-shell";
-import useBranch from "@common/hooks/use-branch";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { PageShell } from "@common/components/page-shell/page-shell";
+import { useBranch } from "@common/hooks/use-branch";
 
 import { useBranches } from "../hooks/use-branches";
 import { useBranchContext } from "../hooks/use-branch-context";
-import BranchContextPanel from "../components/branch-context-panel";
+import { BranchContextPanel } from "../components/branch-context-panel";
 
 interface BranchFormState {
   name: string;
@@ -20,7 +20,7 @@ interface BranchFormState {
 
 const emptyForm: BranchFormState = { name: "", address: "", phone: "" };
 
-const BranchFormPage: React.FC = () => {
+export const BranchFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
@@ -106,4 +106,3 @@ const BranchFormPage: React.FC = () => {
   );
 };
 
-export default BranchFormPage;

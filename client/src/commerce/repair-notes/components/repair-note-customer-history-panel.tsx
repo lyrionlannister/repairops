@@ -23,7 +23,7 @@ const formatDate = (value?: string) => {
   return `${d}/${m}/${y}`;
 };
 
-const RepairNoteCustomerHistoryPanel: React.FC<RepairNoteCustomerHistoryPanelProps> = ({ otherNotes }) => (
+export const RepairNoteCustomerHistoryPanel: React.FC<RepairNoteCustomerHistoryPanelProps> = ({ otherNotes }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
     <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Historial del cliente</p>
     {otherNotes.length === 0 ? (
@@ -50,4 +50,3 @@ const RepairNoteCustomerHistoryPanel: React.FC<RepairNoteCustomerHistoryPanelPro
   </div>
 );
 
-export default RepairNoteCustomerHistoryPanel;

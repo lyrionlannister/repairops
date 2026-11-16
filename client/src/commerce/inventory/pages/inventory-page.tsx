@@ -2,22 +2,22 @@ import { Boxes, Plus, Pencil, Trash2, ArrowUpDown, Upload, FileSpreadsheet } fro
 
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
-import useBranch from "@common/hooks/use-branch";
+import { useBranch } from "@common/hooks/use-branch";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 import { useInventory } from "../hooks/use-inventory";
 import { useInventoryPage } from "../hooks/use-inventory-page";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
-import EmployeeSelect from "@common/components/employee-select";
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Modal from "@ui/modal/modal";
-import ConfirmModal from "@ui/modal/confirm-modal";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import PageShell from "@common/components/page-shell/page-shell";
+import { EmployeeSelect } from "@common/components/employee-select";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Modal } from "@ui/modal/modal";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 const KIND_LABELS: Record<"accessory" | "part", string> = {
   accessory: "Accesorio",
@@ -26,7 +26,7 @@ const KIND_LABELS: Record<"accessory" | "part", string> = {
 
 const formatMoney = (value: number) => `$${Number(value).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
-const InventoryPage = () => {
+export const InventoryPage = () => {
   const { items: allItems, loading, saving, error, fetchAll, remove, bulkImport, registerMovement } = useInventory();
   const { activeBranchId } = useBranch();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
@@ -267,4 +267,3 @@ const InventoryPage = () => {
   );
 };
 
-export default InventoryPage;

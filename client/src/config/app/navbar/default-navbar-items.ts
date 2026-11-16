@@ -1,4 +1,4 @@
-const defaultNavbarItems = [
+export const defaultNavbarItems = [
   {
     name: "",
     icon: "",
@@ -37,4 +37,3 @@ const defaultNavbarItems = [
   },
 ];
 
-export default defaultNavbarItems;

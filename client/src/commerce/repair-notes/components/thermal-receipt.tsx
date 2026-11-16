@@ -16,7 +16,7 @@ export interface ThermalReceiptProps {
 // pocos adornos -- una impresora térmica no tiene la resolución de un PDF
 // carta. El código de barras codifica el número de control para que el
 // mismo ticket se pueda localizar escaneándolo (GET /repair-notes/by-control-number/:n).
-const ThermalReceipt: React.FC<ThermalReceiptProps> = ({ note, local, serviceTypeNames, widthMm }) => {
+export const ThermalReceipt: React.FC<ThermalReceiptProps> = ({ note, local, serviceTypeNames, widthMm }) => {
   const total = Number(note.totalValue);
   const advance = note.requiresAdvance ? Number(note.advanceValue ?? 0) : 0;
   const balance = total - advance;
@@ -98,4 +98,3 @@ const ThermalReceipt: React.FC<ThermalReceiptProps> = ({ note, local, serviceTyp
   );
 };
 
-export default ThermalReceipt;

@@ -1,7 +1,6 @@
-import AppProviders from "./app/providers";
+import { AppProviders } from "./app/providers";
 
-const App = () => {
+export const App = () => {
   return <AppProviders />;
 };
 
-export default App;

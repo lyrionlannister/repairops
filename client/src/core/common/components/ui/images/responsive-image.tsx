@@ -1,6 +1,6 @@
 import ImageProps from "@/core/common/types/interfaces/props/responsive-image-props";
 
-const Image: React.FC<ImageProps> = ({ src }) => {
+export const Image: React.FC<ImageProps> = ({ src }) => {
   return (
     <div className="relative">
       <div className="overflow-hidden">
@@ -14,4 +14,3 @@ const Image: React.FC<ImageProps> = ({ src }) => {
   );
 };
 
-export default Image;

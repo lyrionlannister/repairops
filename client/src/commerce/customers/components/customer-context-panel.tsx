@@ -14,7 +14,7 @@ interface CustomerContextPanelProps {
   activeLayaways: LayawayRecord[];
 }
 
-const CustomerContextPanel: React.FC<CustomerContextPanelProps> = ({
+export const CustomerContextPanel: React.FC<CustomerContextPanelProps> = ({
   creditLimit,
   creditBalance,
   creditAvailable,
@@ -100,4 +100,3 @@ const CustomerContextPanel: React.FC<CustomerContextPanelProps> = ({
   </div>
 );
 
-export default CustomerContextPanel;

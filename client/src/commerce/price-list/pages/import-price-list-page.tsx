@@ -3,17 +3,17 @@ import { useNavigate } from "react-router";
 import { Upload, FileText, X, Loader2, Plus, Trash2 } from "lucide-react";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
 import { useImportStaging, type StagingRow } from "../hooks/use-import-staging";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Alert from "@ui/alert/alert";
-import PageMeta from "@common/pages/page-meta";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Alert } from "@ui/alert/alert";
+import { PageMeta } from "@common/pages/page-meta";
 
 type Step = "select" | "processing" | "preview";
 
 const POLL_INTERVAL_MS = 2500;
 
-const ImportPriceListPage: React.FC = () => {
+export const ImportPriceListPage: React.FC = () => {
   const navigate = useNavigate();
   const { suppliers, loading: loadingSuppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const { uploading, saving, error, upload, fetchById, updateRows, commit, discard } =
@@ -306,4 +306,3 @@ const ImportPriceListPage: React.FC = () => {
   );
 };
 
-export default ImportPriceListPage;

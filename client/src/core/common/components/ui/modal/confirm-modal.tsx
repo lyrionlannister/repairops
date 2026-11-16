@@ -1,5 +1,5 @@
-import Modal from "./modal";
-import Button from "@ui/button/button";
+import { Modal } from "./modal";
+import { Button } from "@ui/button/button";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface ConfirmModalProps {
   onClose: () => void;
 }
 
-const ConfirmModal: React.FC<ConfirmModalProps> = ({
+export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   isOpen,
   title,
   message,
@@ -43,4 +43,3 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   </Modal>
 );
 
-export default ConfirmModal;

@@ -13,7 +13,7 @@ import {
   Users2,
 } from "lucide-react";
 
-const signInNavbarItems = [
+export const signInNavbarItems = [
   {
     name: "Dashboard",
     icon: <LayoutDashboard className="w-5 h-5" />,
@@ -115,4 +115,3 @@ const signInNavbarItems = [
 
 export const otherSignInItems = [];
 
-export default signInNavbarItems;

@@ -10,16 +10,16 @@ import {
   type WhatsappTemplateCategory,
 } from "../hooks/use-whatsapp-template-catalog";
 import { useCurrentUser } from "@common/hooks/use-current-user";
-import Alert from "@ui/alert/alert";
-import Badge from "@ui/badge/badge";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import TextArea from "@ui/textarea/textarea";
-import Modal from "@ui/modal/modal";
-import ConfirmModal from "@ui/modal/confirm-modal";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Badge } from "@ui/badge/badge";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { TextArea } from "@ui/textarea/textarea";
+import { Modal } from "@ui/modal/modal";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 const EMPTY_CONNECT_FORM = { wabaId: "", phoneNumberId: "", accessToken: "" };
 
@@ -295,7 +295,7 @@ const TemplateCatalogSection = ({ scope, title, description, statusByEntryId }: 
   );
 };
 
-const WhatsappOfficialPage = () => {
+export const WhatsappOfficialPage = () => {
   const currentUser = useCurrentUser();
   const {
     account,
@@ -442,4 +442,3 @@ const WhatsappOfficialPage = () => {
   );
 };
 
-export default WhatsappOfficialPage;

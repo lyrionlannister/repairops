@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 import { useSuppliers } from "../hooks/use-suppliers";
 import { useSupplierContext } from "../hooks/use-supplier-context";
-import SupplierContextPanel from "../components/supplier-context-panel";
+import { SupplierContextPanel } from "../components/supplier-context-panel";
 
 interface SupplierFormState {
   name: string;
@@ -18,7 +18,7 @@ interface SupplierFormState {
 
 const emptyForm: SupplierFormState = { name: "", phone: "" };
 
-const SupplierFormPage: React.FC = () => {
+export const SupplierFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
@@ -91,4 +91,3 @@ const SupplierFormPage: React.FC = () => {
   );
 };
 
-export default SupplierFormPage;

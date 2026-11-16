@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 import { useCustomers } from "../hooks/use-customers";
 import { useCustomerContext } from "../hooks/use-customer-context";
-import CustomerContextPanel from "../components/customer-context-panel";
+import { CustomerContextPanel } from "../components/customer-context-panel";
 
 interface CustomerFormState {
   name: string;
@@ -20,7 +20,7 @@ interface CustomerFormState {
 
 const emptyForm: CustomerFormState = { name: "", phone: "", email: "", creditLimit: "0" };
 
-const CustomerFormPage: React.FC = () => {
+export const CustomerFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
@@ -120,4 +120,3 @@ const CustomerFormPage: React.FC = () => {
   );
 };
 
-export default CustomerFormPage;

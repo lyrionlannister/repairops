@@ -4,16 +4,16 @@ import { Plus, PackageCheck, Ban } from "lucide-react";
 import { useLayaways, type LayawayMethod, type LayawayRecord } from "../hooks/use-layaways";
 import { useCustomers } from "../hooks/use-customers";
 import { useCash } from "@commerce/cash/hooks/use-cash";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Alert from "@ui/alert/alert";
-import Modal from "@ui/modal/modal";
-import ConfirmModal from "@ui/modal/confirm-modal";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Alert } from "@ui/alert/alert";
+import { Modal } from "@ui/modal/modal";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 
 const METHOD_LABELS: Record<LayawayMethod, string> = {
@@ -36,7 +36,7 @@ const daysUntil = (dateStr: string) => {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 
-const LayawaysPage: React.FC = () => {
+export const LayawaysPage: React.FC = () => {
   const navigate = useNavigate();
   const { layaways, saving, error, fetchAll, complete, cancel } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
@@ -209,4 +209,3 @@ const LayawaysPage: React.FC = () => {
   );
 };
 
-export default LayawaysPage;

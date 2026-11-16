@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { RotateCcw, Search } from "lucide-react";
 import { useReturns, type SaleWithItems, type SaleListItem, type RefundMethod } from "../hooks/use-returns";
 import { useCash } from "@commerce/cash/hooks/use-cash";
-import useBranch from "@common/hooks/use-branch";
-import CustomerSelect from "@common/components/customer-select";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Alert from "@ui/alert/alert";
+import { useBranch } from "@common/hooks/use-branch";
+import { CustomerSelect } from "@common/components/customer-select";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Alert } from "@ui/alert/alert";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@ui/table/table";
-import PageShell from "@common/components/page-shell/page-shell";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 const PAYMENT_LABELS: Record<RefundMethod, string> = {
   efectivo: "Efectivo",
@@ -26,7 +26,7 @@ const round2 = (v: number) => Math.round(v * 100) / 100;
 const newIdempotencyKey = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 
-const ReturnPage: React.FC = () => {
+export const ReturnPage: React.FC = () => {
   const { searching, searchError, saving, error, findSaleByNumber, findSaleById, listSalesByCustomer, getReturnedQuantities, create } =
     useReturns();
   const { activeBranchId } = useBranch();
@@ -305,4 +305,3 @@ const ReturnPage: React.FC = () => {
   );
 };
 
-export default ReturnPage;

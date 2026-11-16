@@ -8,7 +8,7 @@ interface TextAreaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>
 
 // Mismo esqueleto visual que Input.tsx -- antes cada page tenia su propio
 // <textarea> con clases ligeramente distintas (rounded-xl sin shadow-theme-xs).
-const TextArea: FC<TextAreaProps> = ({ className = "", disabled, error = false, hint, rows = 3, ...rest }) => {
+export const TextArea: FC<TextAreaProps> = ({ className = "", disabled, error = false, hint, rows = 3, ...rest }) => {
   let textareaClasses = `w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 transition-colors duration-200 focus:outline-hidden dark:placeholder:text-gray-500 ${className}`;
 
   if (disabled) {
@@ -29,4 +29,3 @@ const TextArea: FC<TextAreaProps> = ({ className = "", disabled, error = false, 
   );
 };
 
-export default TextArea;

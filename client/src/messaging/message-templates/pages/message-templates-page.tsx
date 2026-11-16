@@ -2,18 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { MessageSquareText, Plus, Pencil, Search, Trash2 } from "lucide-react";
 
-import Alert from "@ui/alert/alert";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import ConfirmModal from "@ui/modal/confirm-modal";
-import Pagination from "@ui/table/pagination";
-import ScrollTable from "@ui/table/scroll-table";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Alert } from "@ui/alert/alert";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { Pagination } from "@ui/table/pagination";
+import { ScrollTable } from "@ui/table/scroll-table";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 
 import { useMessageTemplates } from "../hooks/use-message-templates";
 
-const MessageTemplatesPage = () => {
+export const MessageTemplatesPage = () => {
   const navigate = useNavigate();
   const { templates, loading, saving, error, fetchAll, remove } = useMessageTemplates();
   const [search, setSearch] = useState("");
@@ -174,4 +174,3 @@ const MessageTemplatesPage = () => {
   );
 };
 
-export default MessageTemplatesPage;

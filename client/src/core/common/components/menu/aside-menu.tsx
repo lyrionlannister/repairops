@@ -1,4 +1,4 @@
-import useSidebar from "../../hooks/use-sidebar";
+import { useSidebar } from "../../hooks/use-sidebar";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -7,7 +7,7 @@ import type NavItem from "../../../../config/app/navbar/types/nav-item";
 import { Smartphone } from "lucide-react";
 import { ChevronDownIcon, HorizontaLDots } from "../../icons";
 
-const AsideMenu: React.FC<{
+export const AsideMenu: React.FC<{
   navItems?: NavItem[];
   othersItems?: NavItem[];
 }> = ({ navItems = [], othersItems = [] }) => {
@@ -353,4 +353,3 @@ const AsideMenu: React.FC<{
   );
 };
 
-export default AsideMenu;

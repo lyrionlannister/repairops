@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Download } from "lucide-react";
 import { useQuotes } from "../hooks/use-quotes";
 import { useApiClient } from "@common/hooks/use-api-client";
-import PageMeta from "@common/pages/page-meta";
+import { PageMeta } from "@common/pages/page-meta";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
@@ -14,7 +14,7 @@ const formatDate = (dateStr?: string | null) => {
   return `${d}/${m}/${y}`;
 };
 
-const QuotePrintPage: React.FC = () => {
+export const QuotePrintPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { quote, loading, fetchQuote, fetchQuoteItems } = useQuotes();
@@ -128,4 +128,3 @@ const QuotePrintPage: React.FC = () => {
   );
 };
 
-export default QuotePrintPage;

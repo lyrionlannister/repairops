@@ -4,8 +4,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { useRepairNotes, type RepairNoteItemInput } from "../hooks/use-repair-notes";
 import { useInventory } from "@commerce/inventory/hooks/use-inventory";
 import { useCash, type CashMovementMethod } from "@commerce/cash/hooks/use-cash";
-import useBranch from "@common/hooks/use-branch";
-import Modal from "@ui/modal/modal";
+import { useBranch } from "@common/hooks/use-branch";
+import { Modal } from "@ui/modal/modal";
 import {
   INITIAL_FORM,
   STATUS_CONFIG,
@@ -13,21 +13,21 @@ import {
   type RepairNoteRecord,
   type RepairNoteStatus,
 } from "../types/repair-note.types";
-import Input from "@ui/inputs/input";
-import DatePicker from "@ui/date-picker/date-picker";
-import Label from "@ui/inputs/label";
-import Button from "@ui/button/button";
-import Alert from "@ui/alert/alert";
-import Toggle from "@ui/toggle/toggle";
-import Select from "@ui/select/select";
-import Combobox from "@ui/combobox/combobox";
-import TextArea from "@ui/textarea/textarea";
-import EmployeeSelect from "@common/components/employee-select";
-import CustomerSelect from "@common/components/customer-select";
-import ServiceTypeMultiSelect from "@common/components/service-type-multi-select";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Input } from "@ui/inputs/input";
+import { DatePicker } from "@ui/date-picker/date-picker";
+import { Label } from "@ui/inputs/label";
+import { Button } from "@ui/button/button";
+import { Alert } from "@ui/alert/alert";
+import { Toggle } from "@ui/toggle/toggle";
+import { Select } from "@ui/select/select";
+import { Combobox } from "@ui/combobox/combobox";
+import { TextArea } from "@ui/textarea/textarea";
+import { EmployeeSelect } from "@common/components/employee-select";
+import { CustomerSelect } from "@common/components/customer-select";
+import { ServiceTypeMultiSelect } from "@common/components/service-type-multi-select";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import { useRepairNoteCustomerHistory } from "../hooks/use-repair-note-customer-history";
-import RepairNoteCustomerHistoryPanel from "../components/repair-note-customer-history-panel";
+import { RepairNoteCustomerHistoryPanel } from "../components/repair-note-customer-history-panel";
 
 type ItemLine = { inventoryItemId: string; quantity: string; unitPrice: string };
 const emptyItemLine: ItemLine = { inventoryItemId: "", quantity: "1", unitPrice: "" };
@@ -78,7 +78,7 @@ const noteToForm = (n: RepairNoteRecord): RepairNoteFormData => ({
   extendedWarrantyDays: n.extendedWarrantyDays != null ? String(n.extendedWarrantyDays) : "",
 });
 
-const RepairNoteFormPage: React.FC = () => {
+export const RepairNoteFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
@@ -690,4 +690,3 @@ const RepairNoteFormPage: React.FC = () => {
   );
 };
 
-export default RepairNoteFormPage;

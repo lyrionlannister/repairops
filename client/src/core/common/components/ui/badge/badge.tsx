@@ -5,7 +5,7 @@ import {
   sizeStyles,
 } from "@/core/common/utils/badge-utils";
 
-const Badge: React.FC<BadgeProps> = ({
+export const Badge: React.FC<BadgeProps> = ({
   variant = "light",
   color = "primary",
   size = "md",
@@ -25,4 +25,3 @@ const Badge: React.FC<BadgeProps> = ({
   );
 };
 
-export default Badge;

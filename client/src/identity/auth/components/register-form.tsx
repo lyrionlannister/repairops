@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useRegister } from "../../../core/common/hooks/use-register";
-import Input from "../../../core/common/components/ui/inputs/input";
-import Label from "../../../core/common/components/ui/inputs/label";
-import Button from "../../../core/common/components/ui/button/button";
-import Alert from "../../../core/common/components/ui/alert/alert";
+import { Input } from "../../../core/common/components/ui/inputs/input";
+import { Label } from "../../../core/common/components/ui/inputs/label";
+import { Button } from "../../../core/common/components/ui/button/button";
+import { Alert } from "../../../core/common/components/ui/alert/alert";
 import { EyeCloseIcon, EyeIcon } from "../../../core/common/icons";
 import {
   INITIAL_REGISTER_FORM_DATA,
@@ -13,7 +13,7 @@ import {
 import { updateRegisterFormField } from "../helpers/auth-form.helpers";
 import type { RegisterFormData } from "../types/auth-form.types";
 
-const RegisterForm: React.FC = () => {
+export const RegisterForm: React.FC = () => {
   const { register, loading, error, success, clearError, clearSuccess } =
     useRegister();
   const navigate = useNavigate();
@@ -169,4 +169,3 @@ const RegisterForm: React.FC = () => {
   );
 };
 
-export default RegisterForm;

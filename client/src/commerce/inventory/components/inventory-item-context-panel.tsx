@@ -15,7 +15,7 @@ interface InventoryItemContextPanelProps {
   marginPercent: number | null;
 }
 
-const InventoryItemContextPanel: React.FC<InventoryItemContextPanelProps> = ({ movements, marginPercent }) => (
+export const InventoryItemContextPanel: React.FC<InventoryItemContextPanelProps> = ({ movements, marginPercent }) => (
   <div className="space-y-4">
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
       <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-white/90">Historial de movimientos</h3>
@@ -50,4 +50,3 @@ const InventoryItemContextPanel: React.FC<InventoryItemContextPanelProps> = ({ m
   </div>
 );
 
-export default InventoryItemContextPanel;

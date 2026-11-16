@@ -1,15 +1,16 @@
 import { Outlet } from "react-router";
 
-import useSidebar from "../hooks/use-sidebar";
-// import useAuthGuard from "../hooks/use-auth-guard";
-import AsideMenu from "../components/menu/aside-menu";
-import NavbarMenu from "../components/menu/navbar-menu";
-import SidebarProvider from "../contexts/providers/sidebar-provider";
-import BranchProvider from "../contexts/providers/branch-provider";
-import signInNavbarItems, {
+import { useSidebar } from "../hooks/use-sidebar";
+// import { useAuthGuard } from "../hooks/use-auth-guard";
+import { AsideMenu } from "../components/menu/aside-menu";
+import { NavbarMenu } from "../components/menu/navbar-menu";
+import { SidebarProvider } from "../contexts/providers/sidebar-provider";
+import { BranchProvider } from "../contexts/providers/branch-provider";
+import {
+  signInNavbarItems,
   otherSignInItems,
 } from "../../../config/app/navbar/sign-in-navbar-items";
-import Backdrop from "../components/menu/backdrop";
+import { Backdrop } from "../components/menu/backdrop";
 import { useCurrentUser } from "../hooks/use-current-user";
 
 // Un técnico no opera caja -- ocultar el ítem de menú es el lado de
@@ -49,7 +50,7 @@ const LayoutContent: React.FC = () => {
   );
 };
 
-const SignInLayout: React.FC = () => {
+export const SignInLayout: React.FC = () => {
   return (
     <SidebarProvider>
       <BranchProvider>
@@ -59,4 +60,3 @@ const SignInLayout: React.FC = () => {
   );
 };
 
-export default SignInLayout;

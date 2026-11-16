@@ -2,9 +2,9 @@ import { useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 
 import User from "../../types/auth/user";
-import Dropdown from "../ui/dropdown/dropdown";
+import { Dropdown } from "../ui/dropdown/dropdown";
 
-const UserDropdown: React.FC = () => {
+export const UserDropdown: React.FC = () => {
   const onLogout = () => {
     sessionStorage.clear();
   };
@@ -108,4 +108,3 @@ const UserDropdown: React.FC = () => {
   );
 };
 
-export default UserDropdown;
