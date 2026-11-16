@@ -5,6 +5,8 @@ import { InventoryItem } from "../../../../src/commerce/inventory/entities/inven
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
+import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
+import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
 import { InventoryService } from "../../../../src/commerce/inventory/services/inventory.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
@@ -20,7 +22,8 @@ describe("InventoryService.registerMovement concurrency", () => {
     await AppDataSource.initialize();
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
-    service = new InventoryService(itemDao, movementDao);
+    const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    service = new InventoryService(itemDao, movementDao, reservationDao);
   });
 
   afterAll(async () => {
@@ -78,7 +81,8 @@ describe("InventoryService.bulkImport", () => {
     await AppDataSource.initialize();
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
-    service = new InventoryService(itemDao, movementDao);
+    const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    service = new InventoryService(itemDao, movementDao, reservationDao);
   });
 
   afterAll(async () => {
@@ -123,7 +127,8 @@ describe("InventoryService.getBySku / getLowStock", () => {
     await AppDataSource.initialize();
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
-    service = new InventoryService(itemDao, movementDao);
+    const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    service = new InventoryService(itemDao, movementDao, reservationDao);
   });
 
   afterAll(async () => {

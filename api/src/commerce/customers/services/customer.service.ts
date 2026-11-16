@@ -2,8 +2,15 @@ import { singleton, inject } from "tsyringe";
 import { CustomerDao } from "../daos/customer.dao.js";
 import { Customer } from "../entities/customer.entity.js";
 import { RepairNoteDao } from "../../repair-notes/daos/repair-note.dao.js";
+import { SalePaymentDao } from "../../payments/daos/sale-payment.dao.js";
 
-type CreatePayload = Pick<Customer, "name" | "phone" | "email">;
+export interface CustomerCreditBalance {
+  creditLimit: number;
+  balance: number;
+  available: number;
+}
+
+type CreatePayload = Pick<Customer, "name" | "phone" | "email" | "creditLimit">;
 type UpdatePayload = Partial<CreatePayload>;
 
 export interface CustomerDeviceHistoryEntry {
@@ -19,6 +26,7 @@ export class CustomerService {
   constructor(
     private dao: CustomerDao,
     private repairNoteDao: RepairNoteDao,
+    private salePaymentDao: SalePaymentDao,
   ) {}
 
   async getAll(): Promise<Customer[]> {
@@ -39,6 +47,7 @@ export class CustomerService {
       name,
       phone,
       email: data.email?.trim() || undefined,
+      creditLimit: data.creditLimit,
     } as Partial<Customer>);
   }
 
@@ -56,12 +65,22 @@ export class CustomerService {
       payload.phone = phone;
     }
     if (data.email !== undefined) payload.email = data.email?.trim() || undefined;
+    if (data.creditLimit !== undefined) payload.creditLimit = data.creditLimit;
 
     return this.dao.update(id, payload);
   }
 
   async delete(id: string): Promise<boolean> {
     return this.dao.delete(id);
+  }
+
+  // Saldo nunca cacheado (ver SalePaymentDao.sumCreditoForCustomer) -- se
+  // recalcula en cada lectura, igual que "disponible para prometer".
+  async getCreditBalance(customerId: string): Promise<CustomerCreditBalance | null> {
+    const customer = await this.dao.findById(customerId);
+    if (!customer) return null;
+    const balance = await this.salePaymentDao.sumCreditoForCustomer(customerId);
+    return { creditLimit: Number(customer.creditLimit), balance, available: Number(customer.creditLimit) - balance };
   }
 
   // No hay tabla de dispositivos propia: el historial se deriva de las notas

@@ -14,7 +14,7 @@ export class InventoryController {
 
   getAll = async (_req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getAll());
+      res.status(200).json(await this.service.getAllWithAvailability());
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -77,7 +77,7 @@ export class InventoryController {
       }
       res.status(200).json(item);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   };
 

@@ -18,6 +18,10 @@ export class InventoryItemDao extends TenantScopedDao<InventoryItem> {
     return this.scoped().andWhere("entity.sku = :sku", { sku }).getOne();
   }
 
+  async findByLocalId(localId: string): Promise<InventoryItem[]> {
+    return this.scoped().andWhere("entity.localId = :localId", { localId }).orderBy("entity.name", "ASC").getMany();
+  }
+
   async findLowStock(): Promise<InventoryItem[]> {
     return this.scoped()
       .andWhere("entity.minStock > 0")

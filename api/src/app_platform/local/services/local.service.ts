@@ -24,4 +24,8 @@ export class LocalService {
   async consumeSaleNumber(): Promise<number> {
     return this.localDao.consumeSaleNumber();
   }
+
+  async consumeReturnNumber(): Promise<number> {
+    return this.localDao.consumeReturnNumber();
+  }
 }

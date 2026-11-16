@@ -1,7 +1,7 @@
 import { Entity, Column } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
-export type SalePaymentMethod = "efectivo" | "tarjeta" | "transferencia";
+export type SalePaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "credito";
 
 // Fuente de verdad del metodo de pago de una venta -- Sale nunca tiene
 // columna paymentMethod (ver SPEC-pos-sale-cycle.md, seccion "Pago"). Fase 2

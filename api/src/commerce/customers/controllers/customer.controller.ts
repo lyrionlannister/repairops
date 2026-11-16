@@ -35,6 +35,19 @@ export class CustomerController {
     }
   };
 
+  getCreditBalance = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const balance = await this.service.getCreditBalance(req.params["id"] as string);
+      if (!balance) {
+        res.status(404).json({ error: "Cliente no encontrado" });
+        return;
+      }
+      res.status(200).json(balance);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
   create = async (req: Request, res: Response): Promise<void> => {
     try {
       const customer = await this.service.create(req.body);

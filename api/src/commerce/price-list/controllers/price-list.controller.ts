@@ -38,7 +38,7 @@ export class PriceListController {
       }
       res.status(200).json(item);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   };
 

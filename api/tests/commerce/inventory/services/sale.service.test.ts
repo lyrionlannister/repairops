@@ -7,6 +7,8 @@ import { Sale } from "../../../../src/commerce/inventory/entities/sale.entity.js
 import { SaleItem } from "../../../../src/commerce/inventory/entities/sale-item.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
+import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
+import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
 import { SaleDao } from "../../../../src/commerce/inventory/daos/sale.dao.js";
 import { SaleItemDao } from "../../../../src/commerce/inventory/daos/sale-item.dao.js";
 import { SalePayment } from "../../../../src/commerce/payments/entities/sale-payment.entity.js";
@@ -25,6 +27,8 @@ import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
+import { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
+import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 describe("SaleService.create", () => {
@@ -40,7 +44,8 @@ describe("SaleService.create", () => {
     await AppDataSource.initialize();
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
-    inventoryService = new InventoryService(itemDao, movementDao);
+    const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
     cashService = new CashService(
@@ -59,6 +64,7 @@ describe("SaleService.create", () => {
       localService,
       cashSessionDao,
       serviceTypeDao,
+      new CustomerDao(AppDataSource.getRepository(Customer)),
     );
 
     // Tasa de impuesto en 0 para que estas pruebas se centren en atomicidad

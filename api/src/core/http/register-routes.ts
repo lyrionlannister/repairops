@@ -31,6 +31,10 @@ import { ServiceTypeController } from "../../commerce/service-types/controllers/
 import { createServiceTypeRouter } from "../../commerce/service-types/routes/service-type.routes.js";
 import { InventoryController } from "../../commerce/inventory/controllers/inventory.controller.js";
 import { createInventoryRouter } from "../../commerce/inventory/routes/inventory.routes.js";
+import { InventoryTransferController } from "../../commerce/inventory/controllers/inventory-transfer.controller.js";
+import { createInventoryTransferRouter } from "../../commerce/inventory/routes/inventory-transfer.routes.js";
+import { InventoryCountController } from "../../commerce/inventory/controllers/inventory-count.controller.js";
+import { createInventoryCountRouter } from "../../commerce/inventory/routes/inventory-count.routes.js";
 import { SaleController } from "../../commerce/inventory/controllers/sale.controller.js";
 import { createSaleRouter } from "../../commerce/inventory/routes/sale.routes.js";
 import { createN8nPublicRouter } from "../../messaging/n8n/n8n-public.routes.js";
@@ -49,6 +53,10 @@ import { BranchController } from "../../identity/branches/controllers/branch.con
 import { createBranchRouter } from "../../identity/branches/routes/branch.routes.js";
 import { CustomerController } from "../../commerce/customers/controllers/customer.controller.js";
 import { createCustomerRouter } from "../../commerce/customers/routes/customer.routes.js";
+import { ReturnController } from "../../commerce/returns/controllers/return.controller.js";
+import { createReturnRouter } from "../../commerce/returns/routes/return.routes.js";
+import { LayawayController } from "../../commerce/customers/controllers/layaway.controller.js";
+import { createLayawayRouter } from "../../commerce/customers/routes/layaway.routes.js";
 
 // Monta todas las rutas de /api/v1/* -- requiere que registerRepositories()
 // ya haya corrido (cada controller/dao se resuelve del contenedor aqui).
@@ -88,6 +96,17 @@ export function registerRoutes(app: Express): void {
     createImportStagingRouter(container.resolve(ImportStagingController)),
   );
   app.use("/api/v1/notifications", createNotificationRouter(container.resolve(NotificationController)));
+  // Montado ANTES de "/api/v1/inventory": ese router tiene "/:id" (GET), que
+  // matchearía "transfers" como id si este fuera segundo -- mismo criterio
+  // de orden que el webhook de WhatsApp vs su router protegido.
+  app.use(
+    "/api/v1/inventory/transfers",
+    createInventoryTransferRouter(container.resolve(InventoryTransferController)),
+  );
+  app.use(
+    "/api/v1/inventory/counts",
+    createInventoryCountRouter(container.resolve(InventoryCountController)),
+  );
   app.use("/api/v1/inventory", createInventoryRouter(container.resolve(InventoryController)));
   app.use("/api/v1/sales", createSaleRouter(container.resolve(SaleController)));
   app.use("/api/v1/quotes", createQuoteRouter(container.resolve(QuoteController)));
@@ -100,6 +119,8 @@ export function registerRoutes(app: Express): void {
   app.use("/api/v1/service-types", createServiceTypeRouter(container.resolve(ServiceTypeController)));
   app.use("/api/v1/branches", createBranchRouter(container.resolve(BranchController)));
   app.use("/api/v1/customers", createCustomerRouter(container.resolve(CustomerController)));
+  app.use("/api/v1/returns", createReturnRouter(container.resolve(ReturnController)));
+  app.use("/api/v1/layaways", createLayawayRouter(container.resolve(LayawayController)));
   app.use(
     "/api/v1/n8n",
     createN8nPublicRouter(

@@ -30,6 +30,14 @@ import { WhatsappAccount } from "../../messaging/whatsapp-official/entities/what
 import { WhatsappTemplateStatus } from "../../messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
 import { WhatsappOutboundMessage } from "../../messaging/whatsapp-official/entities/whatsapp-outbound-message.entity.js";
 import { WhatsappTemplateCatalogEntry } from "../../messaging/whatsapp-official/entities/whatsapp-template-catalog-entry.entity.js";
+import { Return } from "../../commerce/returns/entities/return.entity.js";
+import { ReturnItem } from "../../commerce/returns/entities/return-item.entity.js";
+import { InventoryTransfer } from "../../commerce/inventory/entities/inventory-transfer.entity.js";
+import { InventoryCount } from "../../commerce/inventory/entities/inventory-count.entity.js";
+import { InventoryCountItem } from "../../commerce/inventory/entities/inventory-count-item.entity.js";
+import { InventoryReservation } from "../../commerce/inventory/entities/inventory-reservation.entity.js";
+import { Layaway } from "../../commerce/customers/entities/layaway.entity.js";
+import { LayawayItem } from "../../commerce/customers/entities/layaway-item.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
@@ -76,6 +84,14 @@ export const appDataSourceOptions: DataSourceOptions = {
     WhatsappTemplateStatus,
     WhatsappOutboundMessage,
     WhatsappTemplateCatalogEntry,
+    Return,
+    ReturnItem,
+    InventoryTransfer,
+    InventoryCount,
+    InventoryCountItem,
+    InventoryReservation,
+    Layaway,
+    LayawayItem,
   ],
 };
 

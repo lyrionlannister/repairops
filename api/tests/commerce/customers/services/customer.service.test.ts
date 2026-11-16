@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CustomerService } from "../../../../src/commerce/customers/services/customer.service.js";
 import type { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import type { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
+import type { SalePaymentDao } from "../../../../src/commerce/payments/daos/sale-payment.dao.js";
 import type { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
 import type { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
 import { mockEntity } from "../../../support/mock-entity.js";
@@ -22,10 +23,16 @@ function makeRepairNoteDao() {
   } as unknown as RepairNoteDao;
 }
 
+function makeSalePaymentDao() {
+  return {
+    sumCreditoForCustomer: vi.fn(),
+  } as unknown as SalePaymentDao;
+}
+
 describe("CustomerService", () => {
   it("create rejects a blank name or phone", async () => {
     const dao = makeDao();
-    const service = new CustomerService(dao, makeRepairNoteDao());
+    const service = new CustomerService(dao, makeRepairNoteDao(), makeSalePaymentDao());
 
     await expect(service.create({ name: "  ", phone: "555" })).rejects.toThrow("nombre");
     await expect(service.create({ name: "Juan", phone: "  " })).rejects.toThrow("teléfono");
@@ -35,7 +42,7 @@ describe("CustomerService", () => {
   it("create trims fields and treats email as optional", async () => {
     const dao = makeDao();
     vi.mocked(dao.create).mockResolvedValue(mockEntity<Customer>({ id: "c-1" }));
-    const service = new CustomerService(dao, makeRepairNoteDao());
+    const service = new CustomerService(dao, makeRepairNoteDao(), makeSalePaymentDao());
 
     await service.create({ name: " Juan Pérez ", phone: " 5551234567 " });
 
@@ -53,7 +60,7 @@ describe("CustomerService", () => {
       mockEntity<RepairNote>({ brand: "samsung", model: "a15", receivedAt: "2026-03-05", controlNumber: 22 }),
       mockEntity<RepairNote>({ brand: "Apple", model: "iPhone 12", receivedAt: "2026-02-01", controlNumber: 15 }),
     ]);
-    const service = new CustomerService(makeDao(), repairNoteDao);
+    const service = new CustomerService(makeDao(), repairNoteDao, makeSalePaymentDao());
 
     const history = await service.getDeviceHistory("c-1");
 
@@ -71,7 +78,7 @@ describe("CustomerService", () => {
   it("getDeviceHistory returns an empty list when the customer has no notes", async () => {
     const repairNoteDao = makeRepairNoteDao();
     vi.mocked(repairNoteDao.findByCustomerId).mockResolvedValue([]);
-    const service = new CustomerService(makeDao(), repairNoteDao);
+    const service = new CustomerService(makeDao(), repairNoteDao, makeSalePaymentDao());
 
     expect(await service.getDeviceHistory("c-1")).toEqual([]);
   });

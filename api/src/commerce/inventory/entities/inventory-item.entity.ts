@@ -1,5 +1,6 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Supplier } from "../../suppliers/entities/supplier.entity.js";
 
 export type InventoryItemKind = "accessory" | "part";
 
@@ -16,6 +17,17 @@ export class InventoryItem extends BaseEntity {
 
   @Column({ type: "varchar", length: 100, nullable: true, name: "sku" })
   sku!: string | null;
+
+  // Opcional: no todo item tiene un proveedor conocido (ej. ajustes manuales
+  // de inventario). SET NULL en vez de CASCADE -- a diferencia de
+  // PriceListItem, un item de inventario sigue teniendo sentido sin
+  // proveedor asociado.
+  @Column({ type: "bigint", nullable: true, name: "id_proveedor" })
+  supplierId!: string | null;
+
+  @ManyToOne(() => Supplier, { nullable: true, onDelete: "SET NULL", eager: false })
+  @JoinColumn({ name: "id_proveedor" })
+  supplier?: Supplier | null;
 
   @Column({ type: "varchar", length: 20, default: "accessory", name: "tipo" })
   kind!: InventoryItemKind;

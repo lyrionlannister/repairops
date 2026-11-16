@@ -14,6 +14,9 @@ import { InventoryItemDao } from "../commerce/inventory/daos/inventory-item.dao.
 import { InventoryMovement } from "../commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryMovementDao } from "../commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryService } from "../commerce/inventory/services/inventory.service.js";
+import { InventoryReservation } from "../commerce/inventory/entities/inventory-reservation.entity.js";
+import { InventoryReservationDao } from "../commerce/inventory/daos/inventory-reservation.dao.js";
+import { InventoryReservationService } from "../commerce/inventory/services/inventory-reservation.service.js";
 import { RepairNote } from "../commerce/repair-notes/entities/repair-note.entity.js";
 import { RepairNoteDao } from "../commerce/repair-notes/daos/repair-note.dao.js";
 import { RepairNoteItem } from "../commerce/repair-notes/entities/repair-note-item.entity.js";
@@ -29,6 +32,8 @@ import { CashMovementDao } from "../commerce/cash/daos/cash-movement.dao.js";
 import { CashService } from "../commerce/cash/services/cash.service.js";
 import { User } from "../identity/auth/entities/user.entity.js";
 import { UserDao } from "../identity/auth/daos/user.dao.js";
+import { Supplier } from "../commerce/suppliers/entities/supplier.entity.js";
+import { SupplierDao } from "../commerce/suppliers/daos/supplier.dao.js";
 
 // Script manual, nunca enganchado al boot del server (pnpm seed:demo). Taller
 // de demostración repetible: clientes, refacciones, servicios, órdenes y
@@ -62,6 +67,12 @@ async function seedDemoShop(tenantId: string): Promise<void> {
     const inventoryService = new InventoryService(
       new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),
       new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement)),
+      new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation)),
+      new SupplierDao(AppDataSource.getRepository(Supplier)),
+    );
+    const inventoryReservationService = new InventoryReservationService(
+      new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation)),
+      inventoryService,
     );
     const partsAndAccessories: Array<[string, InventoryItem["kind"], number, number, number]> = [
       ["Pantalla iPhone 11", "part", 850, 1400, 5],
@@ -98,6 +109,7 @@ async function seedDemoShop(tenantId: string): Promise<void> {
       new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
       serviceTypeDao,
       { notifyOrderReady: async () => null } as unknown as WhatsappSendService,
+      inventoryReservationService,
     );
     await repairNoteService.create(
       {

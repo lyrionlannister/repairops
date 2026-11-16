@@ -4,6 +4,8 @@ import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { InventoryItemDao } from "../daos/inventory-item.dao.js";
 import { InventoryMovementDao } from "../daos/inventory-movement.dao.js";
+import { InventoryReservationDao } from "../daos/inventory-reservation.dao.js";
+import { SupplierDao } from "../../suppliers/daos/supplier.dao.js";
 import { InventoryItem } from "../entities/inventory-item.entity.js";
 import { InventoryMovement, MovementType, RelatedEntityType } from "../entities/inventory-movement.entity.js";
 import type { InventoryImportRow } from "../utils/inventory-import-parser.js";
@@ -30,6 +32,7 @@ type CreateItemPayload = {
   costPrice: number;
   salePrice: number;
   minStock?: number;
+  supplierId?: string | null;
 };
 type UpdateItemPayload = Partial<CreateItemPayload>;
 
@@ -38,14 +41,45 @@ export class InventoryService {
   constructor(
     private itemDao: InventoryItemDao,
     private movementDao: InventoryMovementDao,
+    private reservationDao: InventoryReservationDao,
+    private supplierDao: SupplierDao,
   ) {}
+
+  // supplierId llega del cliente -- igual que cualquier ID ajeno, se resuelve
+  // con el Dao tenant-scoped antes de guardarlo (ver skill tenant-isolation),
+  // nunca se confia en que exista solo porque el tenant actual es valido.
+  private async assertSupplierBelongsToTenant(supplierId: string): Promise<void> {
+    const supplier = await this.supplierDao.findById(supplierId);
+    if (!supplier) throw new Error("Proveedor no encontrado");
+  }
 
   async getAll(): Promise<InventoryItem[]> {
     return this.itemDao.findAllOrdered();
   }
 
+  // "Disponible" por item, calculado en una sola consulta agrupada (ver
+  // InventoryReservationDao.sumActiveQuantityByItemForTenant) -- nunca
+  // cacheado en la entidad.
+  async getAllWithAvailability(): Promise<Array<InventoryItem & { available: number }>> {
+    const [items, reservedByItem] = await Promise.all([
+      this.itemDao.findAllOrdered(),
+      this.reservationDao.sumActiveQuantityByItemForTenant(),
+    ]);
+    return items.map((item) => ({ ...item, available: item.quantityOnHand - (reservedByItem.get(item.id) ?? 0) }));
+  }
+
   async getById(id: string): Promise<InventoryItem | null> {
     return this.itemDao.findById(id);
+  }
+
+  // "Disponible para prometer" -- nunca se cachea (ver SPEC-fase5-pos-total.md,
+  // Pieza 3 de Inventario vivo), siempre quantityOnHand menos reservas
+  // activas calculado en cada lectura.
+  async getAvailableQuantity(inventoryItemId: string): Promise<number> {
+    const item = await this.itemDao.findById(inventoryItemId);
+    if (!item) throw new Error("Item no encontrado");
+    const reserved = await this.reservationDao.sumActiveQuantityForItem(inventoryItemId);
+    return item.quantityOnHand - reserved;
   }
 
   async getBySku(sku: string): Promise<InventoryItem | null> {
@@ -57,10 +91,12 @@ export class InventoryService {
   }
 
   async create(data: CreateItemPayload): Promise<InventoryItem> {
+    if (data.supplierId) await this.assertSupplierBelongsToTenant(data.supplierId);
     return this.itemDao.create({ ...data, quantityOnHand: 0 } as Partial<InventoryItem>);
   }
 
   async update(id: string, data: UpdateItemPayload): Promise<InventoryItem | null> {
+    if (data.supplierId) await this.assertSupplierBelongsToTenant(data.supplierId);
     return this.itemDao.update(id, data as Partial<InventoryItem>);
   }
 

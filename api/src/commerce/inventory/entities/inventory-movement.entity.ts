@@ -2,7 +2,7 @@ import { Entity, Column, CreateDateColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
 export type MovementType = "in" | "out" | "adjustment";
-export type RelatedEntityType = "sale" | "repair_note" | "manual";
+export type RelatedEntityType = "sale" | "repair_note" | "return" | "transfer" | "count" | "layaway" | "manual";
 
 @Entity("inventory_movements")
 export class InventoryMovement extends BaseEntity {

@@ -3,7 +3,7 @@ import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
 export type CashMovementType = "income" | "expense";
 export type CashMovementMethod = "efectivo" | "tarjeta" | "transferencia";
-export type CashMovementRelatedEntityType = "repair_note" | "quote" | "sale" | "manual";
+export type CashMovementRelatedEntityType = "repair_note" | "quote" | "sale" | "return" | "layaway" | "manual";
 
 @Entity("cash_movements")
 export class CashMovement extends BaseEntity {

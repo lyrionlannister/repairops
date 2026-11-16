@@ -19,163 +19,139 @@ import { InventoryMovement } from "../../../../src/commerce/inventory/entities/i
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryService } from "../../../../src/commerce/inventory/services/inventory.service.js";
+import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
+import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
+import { InventoryReservationService } from "../../../../src/commerce/inventory/services/inventory-reservation.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
-// Integration test against a real Postgres. Proves the "si se usa un
-// accesorio/parte en una nota, se registra el movimiento" rule: crear o
-// editar una nota con items decrementa quantityOnHand correctamente y
-// nunca a mano / por fuera de InventoryService.
-describe("RepairNoteService items -> inventory movements", () => {
+// Integration test against a real Postgres. Fase 5, Pieza 3 (Inventario
+// vivo): agregar una refaccion a una nota RESERVA (no descuenta stock real)
+// hasta que la nota pasa a "done" por primera vez -- ahi la reserva se
+// consume con un movimiento real. Antes de eso, cualquier edicion/cancelacion
+// libera la reserva sin tocar quantityOnHand. Una vez "done", el
+// comportamiento vuelve a ser el de siempre (movimiento real directo).
+describe("RepairNoteService: reserva antes de 'done', consumo real al completar", () => {
   let repairNoteService: RepairNoteService;
   let inventoryService: InventoryService;
+  let reservationDao: InventoryReservationDao;
   const tenantId = `${Date.now()}3`;
 
-  beforeAll(async () => {
-    await AppDataSource.initialize();
-    const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
-    const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
-    const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
-    inventoryService = new InventoryService(itemDao, movementDao);
-    repairNoteService = new RepairNoteService(
+  const buildRepairNoteService = (whatsappSendService: WhatsappSendService) => {
+    const inventoryReservationService = new InventoryReservationService(reservationDao, inventoryService);
+    return new RepairNoteService(
       new RepairNoteDao(AppDataSource.getRepository(RepairNote)),
-      localService,
+      new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
       new RepairNoteItemDao(AppDataSource.getRepository(RepairNoteItem)),
       inventoryService,
       new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
       new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
-      { notifyOrderReady: async () => null } as unknown as WhatsappSendService,
+      whatsappSendService,
+      inventoryReservationService,
     );
+  };
+
+  beforeAll(async () => {
+    await AppDataSource.initialize();
+    const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
+    const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
+    reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
+    repairNoteService = buildRepairNoteService({ notifyOrderReady: async () => null } as unknown as WhatsappSendService);
   });
 
   afterAll(async () => {
     await AppDataSource.destroy();
   });
 
-  it("decrements stock when the note is created with items", async () => {
+  it("reserves stock (never decrements quantityOnHand) when the note is created with items", async () => {
     const item = await runWithTenant(tenantId, () =>
-      inventoryService.create({
-        localId: "1",
-        name: "Bateria A52",
-        sku: "A52-BAT",
-        kind: "part",
-        costPrice: 150,
-        salePrice: 300,
-      }),
+      inventoryService.create({ localId: "1", name: "Bateria A52", sku: "A52-BAT", kind: "part", costPrice: 150, salePrice: 300 }),
     );
-    await runWithTenant(tenantId, () =>
-      inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 4 }),
-    );
+    await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 4 }));
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        {
-          customerName: "Cliente Items",
-          brand: "Samsung",
-          model: "A52",
-          reportedFailure: "No carga",
-          receivedAt: "2026-01-01",
-        },
+        { customerName: "Cliente Items", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01" },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 300 }],
       ),
     );
 
     const stock = await runWithTenant(tenantId, () => inventoryService.getById(item.id));
-    expect(stock?.quantityOnHand).toBe(3);
+    expect(stock?.quantityOnHand).toBe(4); // nunca se descuenta todavia
+    const available = await runWithTenant(tenantId, () => inventoryService.getAvailableQuantity(item.id));
+    expect(available).toBe(3); // 4 fisico - 1 reservado
+
     const items = await runWithTenant(tenantId, () => repairNoteService.getItems(note.id));
     expect(items).toHaveLength(1);
+    const reservation = await runWithTenant(tenantId, () => reservationDao.findByRelatedEntity("repair_note_item", items[0].id));
+    expect(reservation?.status).toBe("active");
+    expect(reservation?.quantity).toBe(1);
   });
 
-  it("reverses the old item and applies the new one when items are replaced on update", async () => {
+  it("releases the old reservation and creates a new one on update, never touching quantityOnHand before done", async () => {
     const item = await runWithTenant(tenantId, () =>
-      inventoryService.create({
-        localId: "1",
-        name: "Flex A52",
-        sku: "A52-FLEX",
-        kind: "part",
-        costPrice: 80,
-        salePrice: 150,
-      }),
+      inventoryService.create({ localId: "1", name: "Flex A52", sku: "A52-FLEX", kind: "part", costPrice: 80, salePrice: 150 }),
     );
-    await runWithTenant(tenantId, () =>
-      inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 5 }),
-    );
+    await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 5 }));
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        {
-          customerName: "Cliente Edicion",
-          brand: "Samsung",
-          model: "A52",
-          reportedFailure: "No enciende",
-          receivedAt: "2026-01-01",
-        },
+        { customerName: "Cliente Edicion", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01" },
         [{ inventoryItemId: item.id, quantity: 2, unitPrice: 150 }],
       ),
     );
-    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3);
+    const [firstItem] = await runWithTenant(tenantId, () => repairNoteService.getItems(note.id));
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(5);
 
-    // Editar la nota reemplazando items por una cantidad menor: 5 - 1 = 4,
-    // no 5 - 2 + 1 = 4 por casualidad -- se revierte el 2 anterior (vuelve a
-    // 5) y se vuelve a descontar 1 (queda en 4).
     await runWithTenant(tenantId, () =>
       repairNoteService.update(note.id, {}, [{ inventoryItemId: item.id, quantity: 1, unitPrice: 150 }]),
     );
 
-    const stock = await runWithTenant(tenantId, () => inventoryService.getById(item.id));
-    expect(stock?.quantityOnHand).toBe(4);
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(5); // fisico intacto
     const items = await runWithTenant(tenantId, () => repairNoteService.getItems(note.id));
     expect(items).toHaveLength(1);
     expect(items[0].quantity).toBe(1);
+
+    // La reserva vieja se libera (status "released") -- el discriminador
+    // relatedEntityType/Id ya no es una FK real (puede apuntar a dos tablas
+    // distintas), asi que ya no hay cascada que la borre junto con la linea;
+    // queda como historial, igual que cualquier fila "released".
+    const oldReservation = await runWithTenant(tenantId, () => reservationDao.findByRelatedEntity("repair_note_item", firstItem.id));
+    expect(oldReservation?.status).toBe("released");
+    const newReservation = await runWithTenant(tenantId, () => reservationDao.findByRelatedEntity("repair_note_item", items[0].id));
+    expect(newReservation?.status).toBe("active");
+    expect(newReservation?.quantity).toBe(1);
+
+    const available = await runWithTenant(tenantId, () => inventoryService.getAvailableQuantity(item.id));
+    expect(available).toBe(4); // 5 - 1 reservado
   });
 
-  it("cancels a note, reverses its item stock, and rejects a second cancel or a delivered note", async () => {
+  it("cancels a note before done: releases the reservation without touching stock, and rejects a second cancel or a delivered note", async () => {
     const item = await runWithTenant(tenantId, () =>
-      inventoryService.create({
-        localId: "1",
-        name: "Pantalla A52",
-        sku: "A52-SCR",
-        kind: "part",
-        costPrice: 400,
-        salePrice: 700,
-      }),
+      inventoryService.create({ localId: "1", name: "Pantalla A52", sku: "A52-SCR", kind: "part", costPrice: 400, salePrice: 700 }),
     );
-    await runWithTenant(tenantId, () =>
-      inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 3 }),
-    );
+    await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 3 }));
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        {
-          customerName: "Cliente Cancela",
-          brand: "Samsung",
-          model: "A52",
-          reportedFailure: "Pantalla rota",
-          receivedAt: "2026-01-01",
-          status: "received",
-        },
+        { customerName: "Cliente Cancela", brand: "Samsung", model: "A52", reportedFailure: "Pantalla rota", receivedAt: "2026-01-01", status: "received" },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 700 }],
       ),
     );
-    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(2);
+    const [noteItem] = await runWithTenant(tenantId, () => repairNoteService.getItems(note.id));
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3);
 
     const cancelled = await runWithTenant(tenantId, () => repairNoteService.cancel(note.id));
     expect(cancelled.status).toBe("cancelled");
-    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3);
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3); // nunca se toco
+    const reservation = await runWithTenant(tenantId, () => reservationDao.findByRelatedEntity("repair_note_item", noteItem.id));
+    expect(reservation?.status).toBe("released");
 
-    await expect(runWithTenant(tenantId, () => repairNoteService.cancel(note.id))).rejects.toThrow(
-      "La nota ya está cancelada",
-    );
+    await expect(runWithTenant(tenantId, () => repairNoteService.cancel(note.id))).rejects.toThrow("La nota ya está cancelada");
 
     const delivered = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        {
-          customerName: "Cliente Entregado",
-          brand: "Samsung",
-          model: "A52",
-          reportedFailure: "No enciende",
-          receivedAt: "2026-01-01",
-          status: "delivered",
-        },
+        { customerName: "Cliente Entregado", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01", status: "delivered" },
         [],
       ),
     );
@@ -184,38 +160,86 @@ describe("RepairNoteService items -> inventory movements", () => {
     );
   });
 
-  it("notifies order-ready the first time a note moves to done, never again after that", async () => {
+  it("consumes the active reservation into a real stock movement the first time the note moves to done, never again after that", async () => {
     const notifyOrderReady = vi.fn().mockResolvedValue(null);
-    const serviceWithNotifySpy = new RepairNoteService(
-      new RepairNoteDao(AppDataSource.getRepository(RepairNote)),
-      new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
-      new RepairNoteItemDao(AppDataSource.getRepository(RepairNoteItem)),
-      inventoryService,
-      new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
-      new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
-      { notifyOrderReady } as unknown as WhatsappSendService,
+    const serviceWithNotifySpy = buildRepairNoteService({ notifyOrderReady } as unknown as WhatsappSendService);
+
+    const item = await runWithTenant(tenantId, () =>
+      inventoryService.create({ localId: "1", name: "Bateria Done", sku: "A52-BAT-DONE", kind: "part", costPrice: 150, salePrice: 300 }),
     );
+    await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 4 }));
 
     const note = await runWithTenant(tenantId, () =>
-      serviceWithNotifySpy.create({
-        customerName: "Cliente Listo",
-        contactNumber: "5215500000000",
-        brand: "Samsung",
-        model: "A52",
-        reportedFailure: "No carga",
-        receivedAt: "2026-01-01",
-        status: "received",
-      }),
+      serviceWithNotifySpy.create(
+        {
+          customerName: "Cliente Listo",
+          contactNumber: "5215500000000",
+          brand: "Samsung",
+          model: "A52",
+          reportedFailure: "No carga",
+          receivedAt: "2026-01-01",
+          status: "received",
+        },
+        [{ inventoryItemId: item.id, quantity: 1, unitPrice: 300 }],
+      ),
     );
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(4); // reservado, no descontado
 
     await runWithTenant(tenantId, () => serviceWithNotifySpy.update(note.id, { status: "done" }));
     expect(notifyOrderReady).toHaveBeenCalledTimes(1);
     expect(notifyOrderReady).toHaveBeenCalledWith(expect.objectContaining({ id: note.id, status: "done" }));
 
-    // Guardar la nota otra vez sin salir de "done" no debe volver a avisar.
-    await runWithTenant(tenantId, () =>
-      serviceWithNotifySpy.update(note.id, { technicianNotes: "revisado de nuevo" }),
-    );
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3); // ahora si, consumido real
+    const [noteItem] = await runWithTenant(tenantId, () => serviceWithNotifySpy.getItems(note.id));
+    const reservation = await runWithTenant(tenantId, () => reservationDao.findByRelatedEntity("repair_note_item", noteItem.id));
+    expect(reservation?.status).toBe("consumed");
+    expect(reservation?.consumedMovementId).not.toBeNull();
+
+    // Guardar la nota otra vez sin salir de "done" no debe volver a avisar
+    // ni a consumir una segunda vez.
+    await runWithTenant(tenantId, () => serviceWithNotifySpy.update(note.id, { technicianNotes: "revisado de nuevo" }));
     expect(notifyOrderReady).toHaveBeenCalledTimes(1);
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3);
+  });
+
+  it("once a note is done, editing its items moves real stock directly (not a reservation)", async () => {
+    const item = await runWithTenant(tenantId, () =>
+      inventoryService.create({ localId: "1", name: "Mica Done", sku: "MICA-DONE", kind: "accessory", costPrice: 10, salePrice: 20 }),
+    );
+    await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 10 }));
+
+    const note = await runWithTenant(tenantId, () =>
+      repairNoteService.create(
+        { customerName: "Cliente Post-Done", brand: "Samsung", model: "A52", reportedFailure: "Rayones", receivedAt: "2026-01-01", status: "done" },
+        [{ inventoryItemId: item.id, quantity: 2, unitPrice: 20 }],
+      ),
+    );
+    // Nacio ya "done": consumo directo, nunca paso por reserva.
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(8);
+
+    await runWithTenant(tenantId, () =>
+      repairNoteService.update(note.id, {}, [{ inventoryItemId: item.id, quantity: 3, unitPrice: 20 }]),
+    );
+    // Revierte 2 (vuelve a 10) y descuenta 3 real de inmediato (queda en 7).
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(7);
+  });
+
+  it("cancelling an already-done note reverts the real stock movement directly", async () => {
+    const item = await runWithTenant(tenantId, () =>
+      inventoryService.create({ localId: "1", name: "Cargador Done", sku: "CARG-DONE", kind: "accessory", costPrice: 5, salePrice: 15 }),
+    );
+    await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 5 }));
+
+    const note = await runWithTenant(tenantId, () =>
+      repairNoteService.create(
+        { customerName: "Cliente Cancela Done", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01", status: "done" },
+        [{ inventoryItemId: item.id, quantity: 1, unitPrice: 15 }],
+      ),
+    );
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(4);
+
+    const cancelled = await runWithTenant(tenantId, () => repairNoteService.cancel(note.id));
+    expect(cancelled.status).toBe("cancelled");
+    expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(5); // revertido real
   });
 });
