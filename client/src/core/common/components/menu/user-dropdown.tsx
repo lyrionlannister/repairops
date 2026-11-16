@@ -32,7 +32,7 @@ export const UserDropdown: React.FC = () => {
         </span>
 
         {fullName && (
-          <span className="block mr-1 font-medium text-theme-sm">{fullName}</span>
+          <span className="block mr-1 font-medium text-theme-sm whitespace-nowrap">{fullName}</span>
         )}
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${

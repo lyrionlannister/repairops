@@ -98,7 +98,7 @@ export const PriceListPage = () => {
             <button
               key={brand}
               onClick={() => { setActiveBrand(brand); setPage(1); }}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full px-3 py-3 text-xs md:py-1 font-medium transition-colors ${
                 activeBrand === brand
                   ? "bg-brand-600 text-white dark:bg-brand-500"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -190,7 +190,7 @@ export const PriceListPage = () => {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
                 {[10, 25, 50].map((size) => (
                   <option key={size} value={size}>{size}</option>

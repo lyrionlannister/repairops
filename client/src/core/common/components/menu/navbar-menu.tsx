@@ -49,7 +49,7 @@ export const NavbarMenu: React.FC = () => {
       <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
         <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
           <button
-            className="items-center justify-center w-10 h-10 text-gray-300 border-gray-200 rounded-lg z-99999 dark:border-gray-800 lg:flex dark:text-gray-400 lg:h-11 lg:w-11 lg:border"
+            className="items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg z-99999 dark:border-gray-800 lg:flex dark:text-gray-400 lg:h-11 lg:w-11 lg:border"
             onClick={handleToggle}
             aria-label="Toggle Sidebar"
           >
@@ -93,7 +93,7 @@ export const NavbarMenu: React.FC = () => {
                   type="button"
                   onClick={() => setBranchMenuOpen((prev) => !prev)}
                   aria-label="Sucursal activa"
-                  className="dropdown-toggle flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-800"
+                  className="dropdown-toggle flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                   <span className="truncate max-w-[120px]">{activeBranchName}</span>
@@ -124,7 +124,7 @@ export const NavbarMenu: React.FC = () => {
               <button
                 type="button"
                 disabled
-                className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-600 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 cursor-default"
+                className="flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-600 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 cursor-default"
               >
                 <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                 <span className="truncate">{activeBranchName}</span>
@@ -164,7 +164,7 @@ export const NavbarMenu: React.FC = () => {
                   type="button"
                   onClick={() => setBranchMenuOpen((prev) => !prev)}
                   aria-label="Sucursal activa"
-                  className="dropdown-toggle flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-800"
+                  className="dropdown-toggle flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm whitespace-nowrap text-gray-600 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
                   {activeBranchName}
@@ -195,7 +195,7 @@ export const NavbarMenu: React.FC = () => {
               <button
                 type="button"
                 disabled
-                className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 cursor-default"
+                className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm whitespace-nowrap text-gray-600 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300 cursor-default"
               >
                 <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
                 {activeBranchName}

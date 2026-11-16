@@ -59,7 +59,7 @@ export const MessageTemplateFormPage: React.FC = () => {
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate("/app/templates")}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
+          className="rounded-lg p-2.5 text-gray-400 hover:bg-gray-100 md:p-1.5 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
         >
           <ArrowLeft className="size-5" />
         </button>

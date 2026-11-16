@@ -82,7 +82,7 @@ export const RepairNotePrintPage: React.FC = () => {
       <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3 print:hidden">
         <button
           onClick={() => navigate("/app/repair-notes")}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
+          className="rounded-lg p-2.5 text-gray-400 hover:bg-gray-100 md:p-1.5 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
         >
           <ArrowLeft className="size-5" />
         </button>
@@ -102,7 +102,7 @@ export const RepairNotePrintPage: React.FC = () => {
         {isThermal ? (
           <button
             onClick={handlePrint}
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+            className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
           >
             <Printer className="size-4" />
             Imprimir
@@ -111,7 +111,7 @@ export const RepairNotePrintPage: React.FC = () => {
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+            className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
           >
             <Download className="size-4" />
             {downloading ? "Generando..." : "Descargar PDF"}

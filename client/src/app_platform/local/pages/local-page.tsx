@@ -117,7 +117,7 @@ export const LocalPage = () => {
                 value={form.currency}
                 onChange={handleChange}
                 disabled={saving}
-                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
               >
                 <option value="MXN">Peso mexicano (MXN)</option>
                 <option value="USD">Dólar estadounidense (USD)</option>
@@ -130,7 +130,7 @@ export const LocalPage = () => {
                 value={form.defaultTicketSize}
                 onChange={handleChange}
                 disabled={saving}
-                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
               >
                 <option value="58mm">Térmico 58mm</option>
                 <option value="80mm">Térmico 80mm</option>
@@ -159,7 +159,7 @@ export const LocalPage = () => {
               value={attributionBasis}
               onChange={handleAttributionBasisChange}
               disabled={attributionSaving}
-              className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
             >
               <option value="total_value">Total cobrado</option>
               <option value="margin">Margen (ingreso - costo de los items)</option>
