@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import type NavItem from "../../../../config/app/navbar/types/nav-item";
 
+import { Smartphone } from "lucide-react";
 import { ChevronDownIcon, HorizontaLDots } from "../../icons";
 
 const AsideMenu: React.FC<{
@@ -16,7 +17,7 @@ const AsideMenu: React.FC<{
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
-    index: number;
+    name: string;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
     {},
@@ -32,13 +33,13 @@ const AsideMenu: React.FC<{
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
       const items = menuType === "main" ? navItems : othersItems;
-      items.forEach((nav, index) => {
+      items.forEach((nav) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
             if (isActive(subItem.path)) {
               setOpenSubmenu({
                 type: menuType as "main" | "others",
-                index,
+                name: nav.name,
               });
               submenuMatched = true;
             }
@@ -54,7 +55,7 @@ const AsideMenu: React.FC<{
 
   useEffect(() => {
     if (openSubmenu !== null) {
-      const key = `${openSubmenu.type}-${openSubmenu.index}`;
+      const key = `${openSubmenu.type}-${openSubmenu.name}`;
       if (subMenuRefs.current[key]) {
         setSubMenuHeight((prevHeights) => ({
           ...prevHeights,
@@ -64,17 +65,17 @@ const AsideMenu: React.FC<{
     }
   }, [openSubmenu]);
 
-  const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
+  const handleSubmenuToggle = (name: string, menuType: "main" | "others") => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (
         prevOpenSubmenu &&
         prevOpenSubmenu.type === menuType &&
-        prevOpenSubmenu.index === index
+        prevOpenSubmenu.name === name
       ) {
         return null;
       }
 
-      return { type: menuType, index };
+      return { type: menuType, name };
     });
   };
 
@@ -85,13 +86,13 @@ const AsideMenu: React.FC<{
 
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
     <ul className="flex flex-col gap-4">
-      {items.map((nav, index) => (
+      {items.map((nav) => (
         <li key={nav.name}>
           {nav.subItems ? (
             <button
-              onClick={() => handleSubmenuToggle(index, menuType)}
+              onClick={() => handleSubmenuToggle(nav.name, menuType)}
               className={`menu-item group text-gray-500 ${
-                openSubmenu?.type === menuType && openSubmenu?.index === index
+                openSubmenu?.type === menuType && openSubmenu?.name === nav.name
                   ? "menu-item-active"
                   : "menu-item-inactive"
               } cursor-pointer ${
@@ -102,7 +103,7 @@ const AsideMenu: React.FC<{
             >
               <span
                 className={`menu-item-icon-size text-gray-500  ${
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
+                  openSubmenu?.type === menuType && openSubmenu?.name === nav.name
                     ? "menu-item-icon-active"
                     : "menu-item-icon-inactive"
                 }`}
@@ -116,7 +117,7 @@ const AsideMenu: React.FC<{
                 <ChevronDownIcon
                   className={`ml-auto w-5 h-5 transition-transform duration-200 ${
                     openSubmenu?.type === menuType &&
-                    openSubmenu?.index === index
+                    openSubmenu?.name === nav.name
                       ? "rotate-180 text-brand-500"
                       : ""
                   }`}
@@ -149,13 +150,13 @@ const AsideMenu: React.FC<{
           {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
             <div
               ref={(el) => {
-                subMenuRefs.current[`${menuType}-${index}`] = el;
+                subMenuRefs.current[`${menuType}-${nav.name}`] = el;
               }}
               className="overflow-hidden transition-all duration-300"
               style={{
                 height:
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? `${subMenuHeight[`${menuType}-${index}`]}px`
+                  openSubmenu?.type === menuType && openSubmenu?.name === nav.name
+                    ? `${subMenuHeight[`${menuType}-${nav.name}`]}px`
                     : "0px",
               }}
             >
@@ -230,13 +231,16 @@ const AsideMenu: React.FC<{
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`py-8 flex ${
+        className={`py-8 flex items-center gap-2.5 ${
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <span className="text-2xl font-bold text-brand-600 dark:text-brand-400">
-          {isExpanded || isHovered || isMobileOpen ? "CS" : "C"}
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white dark:bg-brand-500">
+          <Smartphone className="size-5" />
         </span>
+        {(isExpanded || isHovered || isMobileOpen) && (
+          <span className="text-xl font-bold text-brand-600 dark:text-brand-400">RepairOps</span>
+        )}
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">

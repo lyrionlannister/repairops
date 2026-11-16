@@ -264,20 +264,33 @@ layer(base);
   scrollbar-width: none; /* Firefox */
 }
 @utility custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd2e0 transparent;
+
   &::-webkit-scrollbar {
-    @apply size-1.5;
+    @apply size-2;
   }
 
   &::-webkit-scrollbar-track {
-    @apply rounded-full;
+    @apply my-1 rounded-full bg-transparent;
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply bg-gray-200 rounded-full dark:bg-gray-700;
+    @apply rounded-full border-2 border-solid border-transparent bg-gray-300 bg-clip-padding transition-colors duration-150 dark:bg-gray-600;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
   }
 }
+.dark .custom-scrollbar {
+  scrollbar-color: #4b5565 transparent;
+}
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #344054;
+  background-color: #4b5565;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7686;
 }
 
 @layer utilities {
@@ -545,7 +558,7 @@ span.flatpickr-weekday,
   @apply max-w-full overflow-x-auto custom-scrollbar;
 }
 .fc-dayGridMonth-view.fc-view.fc-daygrid {
-  @apply min-w-[718px];
+  @apply min-w-179.5;
 }
 .fc .fc-scrollgrid-section > * {
   border-right-width: 0;

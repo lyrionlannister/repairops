@@ -21,7 +21,7 @@ const RegisterPage: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Sign Up" description="Regístrate en Sofia" />
+      <PageMeta title="Crear cuenta" description="Regístrate para empezar a usar tu cuenta" />
       {loading ? (
         <div className="flex items-center justify-center w-full h-screen">
           <Loader />

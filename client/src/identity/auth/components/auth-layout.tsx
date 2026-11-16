@@ -1,3 +1,4 @@
+import { Smartphone } from "lucide-react";
 import type { AuthLayoutProps } from "../types/auth-form.types";
 import ThemeToggler from "../../../core/common/components/menu/theme-toggler";
 
@@ -8,10 +9,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         {children}
         <div className="items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid">
           <div className="relative flex items-center justify-center z-1">
-            <div className="flex flex-col items-center max-w-xs">
-              <p className="text-center text-gray-400 dark:text-white/60">
-                sofIA
-              </p>
+            <div className="flex flex-col items-center max-w-xs gap-3">
+              <span className="flex size-14 items-center justify-center rounded-2xl bg-brand-600 text-white">
+                <Smartphone className="size-7" />
+              </span>
+              <p className="text-center text-xl font-bold text-white">RepairOps</p>
             </div>
           </div>
         </div>
