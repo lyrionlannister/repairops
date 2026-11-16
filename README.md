@@ -27,7 +27,7 @@ Sistema POS multi-tenant para talleres de reparación. Monorepo con API REST (No
 **Infraestructura** (`docker-compose.yaml`)
 - `postgres` (17-alpine)
 - `redis`
-- `n8n` (automatizaciones, comparte Postgres con la API)
+- `automation` (n8n, automatizaciones, comparte Postgres con la API)
 - `nginx` (reverse proxy, enrutamiento por dominio)
 - `api` y `client` (builds propios vía Dockerfile)
 
@@ -70,7 +70,7 @@ pnpm schema:check         # falla si el esquema diverge de las entidades (gate d
 
 - Raíz (`.env.example`): puertos publicados al host (`APP_PORT`, `N8N_PORT`, `POSTGRES_PORT`, `REDIS_PORT`) y `VITE_API_BASE_URL` (build-arg del cliente).
 - `api/.env.example`: credenciales de Postgres/Redis, `JWT_SECRET`, `N8N_INTERNAL_TOKEN`, `ENCRYPTION_KEY` (AES-256-GCM, cifrado de credenciales de WhatsApp), variables de la cuenta piloto de WhatsApp, `WHATSAPP_APP_SECRET`/`WHATSAPP_WEBHOOK_VERIFY_TOKEN`, `STRIPE_PUBLIC_KEY`/`STRIPE_PRIVATE_KEY`.
-- Cada servicio (`n8n/`, `database/`, `database/redis/`) trae su propio `.env` inyectado vía `env_file`.
+- Cada servicio (`automation/`, `infra/database/`, `infra/redis/`) trae su propio `.env` inyectado vía `env_file`.
 
 ## Desarrollo local
 

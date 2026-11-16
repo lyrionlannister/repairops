@@ -6,11 +6,11 @@ services:
       - "${NGINX_HTTP_PORT:-8080}:80"
       - "${NGINX_HTTPS_PORT:-8443}:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./infra/nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - api
-      - n8n
+      - automation
       - client
 
   client:
@@ -43,37 +43,37 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      n8n:
+      automation:
         condition: service_started
 
-  n8n:
+  automation:
     build:
-      context: ./n8n
+      context: ./automation
       dockerfile: Dockerfile
-    image: repairops-n8n
-    container_name: repairops-n8n
+    image: repairops-automation
+    container_name: repairops-automation
     env_file:
-      - ./n8n/.env
+      - ./automation/.env
     ports:
       - "${N8N_PORT:?N8N_PORT is required}:${N8N_PORT:?N8N_PORT is required}"
     volumes:
-      - n8n_data:/home/node/.n8n
+      - automation_data:/home/node/.n8n
     depends_on:
       postgres:
         condition: service_healthy
 
   postgres:
     build:
-      context: ./database
+      context: ./infra/database
       dockerfile: Dockerfile
     container_name: repairops-postgres
     env_file:
-      - ./database/.env
+      - ./infra/database/.env
     ports:
       - "${POSTGRES_PORT:?POSTGRES_PORT is required}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./infra/database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       # $$ (no ${...}) -- se resuelve en el shell DEL CONTENEDOR via env_file,
       # no en la sustitucion de Compose (que no tiene por que conocer POSTGRES_USER).
@@ -84,10 +84,10 @@ services:
 
   redis:
     build:
-      context: ./database/redis
+      context: ./infra/redis
     container_name: repairops-redis
     env_file:
-      - ./database/redis/.env
+      - ./infra/redis/.env
     ports:
       - "${REDIS_PORT:?REDIS_PORT is required}:6379"
     volumes:
@@ -102,5 +102,5 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  n8n_data:
+  automation_data:
 
