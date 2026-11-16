@@ -89,7 +89,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
+    <div className="shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
         <div>
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h2>
@@ -132,12 +132,14 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
               return (
                 <tr key={entry.id}>
                   <td className="px-5 py-4 text-gray-700 dark:text-gray-300">
+                    <div className="min-w-0 text-right xl:text-left">
                     <div className="font-medium">{entry.key}</div>
                     <div className="text-xs text-gray-400">{entry.metaName}</div>
                     {entry.triggerEvent && (
                       <div className="mt-0.5 text-xs text-gray-400">Disparador automático: {entry.triggerEvent}</div>
                     )}
                     {!entry.enabled && <Badge color="error">Deshabilitada</Badge>}
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{entry.category}</td>
                   {statusByEntryId && (

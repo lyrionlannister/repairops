@@ -21,6 +21,14 @@ const SUCCESS_TITLE: Record<string, string> = {
 const SPECIFIC_TITLE: Array<[RegExp, string]> = [
   [/^\/cash\/sessions\/[^/]+\/close/, "Caja cerrada"],
   [/^\/cash\/sessions(\?|$)/, "Caja abierta"],
+  [/^\/inventory\/counts\/[^/]+\/close/, "Conteo cerrado"],
+  [/^\/inventory\/counts(\?|$)/, "Conteo abierto"],
+  [/^\/inventory\/transfers/, "Transferencia registrada"],
+  [/^\/layaways\/[^/]+\/complete/, "Apartado completado"],
+  [/^\/layaways\/[^/]+\/cancel/, "Apartado cancelado"],
+  [/^\/repair-notes\/[^/]+\/cancel/, "Nota cancelada"],
+  [/^\/sales(\?|$)/, "Venta registrada"],
+  [/^\/import-staging\/[^/]+\/commit/, "Importación confirmada"],
 ];
 
 export const useApiClient = () => {

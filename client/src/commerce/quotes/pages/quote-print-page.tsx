@@ -4,7 +4,7 @@ import { ArrowLeft, Download } from "lucide-react";
 import { useQuotes } from "../hooks/use-quotes";
 import { usePdfDownload } from "@common/hooks/use-pdf-download";
 import { PageMeta } from "@common/pages/page-meta";
-import { formatCurrency, formatDate } from "../utils/format";
+import { QUOTE_STATUS_LABEL, formatCurrency, formatDate } from "../utils/format";
 
 export const QuotePrintPage: React.FC = () => {
   const navigate = useNavigate();
@@ -66,7 +66,7 @@ export const QuotePrintPage: React.FC = () => {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase text-gray-400">Estado</p>
-            <p className="text-gray-800 dark:text-white/90">{quote.status}</p>
+            <p className="text-gray-800 dark:text-white/90">{QUOTE_STATUS_LABEL[quote.status] ?? quote.status}</p>
           </div>
         </div>
 
