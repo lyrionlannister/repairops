@@ -22,6 +22,7 @@ import ReturnPage from "../commerce/returns/pages/return-page";
 import InventoryTransfersPage from "../commerce/inventory/pages/inventory-transfers-page";
 import InventoryCountPage from "../commerce/inventory/pages/inventory-count-page";
 import LayawaysPage from "../commerce/customers/pages/layaways-page";
+import LayawayFormPage from "../commerce/customers/pages/layaway-form-page";
 import QuotesPage from "../commerce/quotes/pages/quotes-page";
 import QuoteFormPage from "../commerce/quotes/pages/quote-form-page";
 import QuotePrintPage from "../commerce/quotes/pages/quote-print-page";
@@ -188,6 +189,10 @@ export const protectedRoutes = [
   {
     path: "/admin/layaways",
     element: <LayawaysPage />,
+  },
+  {
+    path: "/admin/layaways/new",
+    element: <LayawayFormPage />,
   },
   {
     path: "/admin/quotes",
