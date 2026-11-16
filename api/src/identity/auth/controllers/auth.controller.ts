@@ -9,6 +9,7 @@ import { RegisterUserDto } from "../dtos/register-user.dto.js";
 import { LoginUserDto } from "../dtos/login-user.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
 import { UpdateEmployeeDto } from "../dtos/update-employee.dto.js";
+import type { AuthenticatedRequest } from "../middlewares/auth.middleware.js";
 
 @singleton()
 export class AuthController {
@@ -86,6 +87,19 @@ export class AuthController {
       res.status(200).json(user);
     } catch (error: any) {
       res.status(400).json({ error: error.message || AUTH_MESSAGES.REGISTER_ERROR });
+    }
+  };
+
+  getMe = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const user = await this.authService.getMe(req.user!.id);
+      if (!user) {
+        res.status(404).json({ error: "Usuario no encontrado" });
+        return;
+      }
+      res.status(200).json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || AUTH_MESSAGES.REGISTER_ERROR });
     }
   };
 
