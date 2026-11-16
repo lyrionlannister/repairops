@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 
-import RegisterForm from "../components/register-form";
-import AuthLayout from "../components/auth-layout";
-import PageMeta from "../../../core/common/pages/page-meta";
-import Loader from "@/core/common/components/ui/loader/loader";
+import { RegisterForm } from "../components/register-form";
+import { AuthLayout } from "../components/auth-layout";
+import { PageMeta } from "../../../core/common/pages/page-meta";
+import { Loader } from "@/core/common/components/ui/loader/loader";
 
-const RegisterPage: React.FC = () => {
+export const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkLogin = sessionStorage.getItem("accessToken");
+    const checkLogin = sessionStorage.getItem("user");
     if (checkLogin) {
-      navigate("/admin/dashboard", { replace: true });
+      navigate("/app/dashboard", { replace: true });
     } else {
       setLoading(false);
     }
@@ -35,4 +35,3 @@ const RegisterPage: React.FC = () => {
   );
 };
 
-export default RegisterPage;

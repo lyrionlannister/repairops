@@ -6,11 +6,6 @@ export interface ServiceTypeOption {
   name: string;
 }
 
-const getAuthHeader = (): Record<string, string> => {
-  const token = sessionStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 // Tipos de servicio: configurables por tenant (regla transversal #1 — se
 // seleccionan por id, nunca texto libre). Sembrados con defaults al crear
 // el tenant; el tenant puede agregar los suyos via create().
@@ -24,7 +19,7 @@ export const useServiceTypes = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/service-types", { headers: getAuthHeader() });
+      const res = await apiClient("/service-types");
       if (!res.ok) throw new Error("Error al cargar tipos de servicio");
       setServiceTypes(await res.json());
     } catch (err) {
@@ -39,7 +34,7 @@ export const useServiceTypes = () => {
       try {
         const res = await apiClient("/service-types", {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...getAuthHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name }),
         });
         if (!res.ok) {

@@ -1,25 +1,24 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { useRegister } from "../../../core/common/hooks/use-register";
-import Input from "../../../core/common/components/ui/inputs/input";
-import Label from "../../../core/common/components/ui/inputs/label";
-import Button from "../../../core/common/components/ui/button/button";
-import Alert from "../../../core/common/components/ui/alert/alert";
+import { useRegister, type RegisterPayload } from "../../../core/common/hooks/use-register";
+import { Input } from "../../../core/common/components/ui/inputs/input";
+import { Label } from "../../../core/common/components/ui/inputs/label";
+import { Button } from "../../../core/common/components/ui/button/button";
+import { Alert } from "../../../core/common/components/ui/alert/alert";
 import { EyeCloseIcon, EyeIcon } from "../../../core/common/icons";
 import {
   INITIAL_REGISTER_FORM_DATA,
   REGISTER_REDIRECT_DELAY_MS,
 } from "../constants/auth.constants";
 import { updateRegisterFormField } from "../helpers/auth-form.helpers";
-import type { RegisterFormData } from "../types/auth-form.types";
 
-const RegisterForm: React.FC = () => {
+export const RegisterForm: React.FC = () => {
   const { register, loading, error, success, clearError, clearSuccess } =
     useRegister();
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState<RegisterFormData>(
+  const [formData, setFormData] = useState<RegisterPayload>(
     INITIAL_REGISTER_FORM_DATA,
   );
 
@@ -37,7 +36,7 @@ const RegisterForm: React.FC = () => {
     if (result) {
       // Registro exitoso, redirigir a login o dashboard
       setTimeout(() => {
-        navigate("/admin/sign-in", { replace: true });
+        navigate("/app/sign-in", { replace: true });
       }, REGISTER_REDIRECT_DELAY_MS);
     }
   };
@@ -156,7 +155,7 @@ const RegisterForm: React.FC = () => {
             <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
               ¿Ya tienes cuenta?{" "}
               <Link
-                to="/admin/sign-in"
+                to="/app/sign-in"
                 className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
               >
                 Inicia sesión aquí
@@ -169,4 +168,3 @@ const RegisterForm: React.FC = () => {
   );
 };
 
-export default RegisterForm;

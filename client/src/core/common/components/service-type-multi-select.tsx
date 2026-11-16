@@ -1,8 +1,8 @@
 import { useEffect, useState, type FC } from "react";
 import { Plus } from "lucide-react";
 import { useServiceTypes } from "@common/hooks/use-service-types";
-import Input from "./ui/inputs/input";
-import Button from "./ui/button/button";
+import { Input } from "./ui/inputs/input";
+import { Button } from "./ui/button/button";
 
 interface ServiceTypeMultiSelectProps {
   value: string[];
@@ -13,7 +13,7 @@ interface ServiceTypeMultiSelectProps {
 // Checkboxes de tipo de servicio: la lista viene del tenant (defaults
 // sembrados + los que el tenant haya creado), nunca hardcodeada en el
 // cliente -- regla transversal #1 (se referencia por id).
-const ServiceTypeMultiSelect: FC<ServiceTypeMultiSelectProps> = ({ value, onChange, disabled }) => {
+export const ServiceTypeMultiSelect: FC<ServiceTypeMultiSelectProps> = ({ value, onChange, disabled }) => {
   const { serviceTypes, loading, fetchAll, create } = useServiceTypes();
   const [newTypeName, setNewTypeName] = useState("");
   const [adding, setAdding] = useState(false);
@@ -73,4 +73,3 @@ const ServiceTypeMultiSelect: FC<ServiceTypeMultiSelectProps> = ({ value, onChan
   );
 };
 
-export default ServiceTypeMultiSelect;

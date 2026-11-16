@@ -1,6 +1,6 @@
-import ColumnImageGridProps from "@/core/common/types/interfaces/props/column-image-grid-props";
+import type { ColumnImageGridProps } from "@/core/common/types/interfaces/props/column-image-grid-props";
 
-const ColumnImageGrid: React.FC<ColumnImageGridProps> = ({ cols, images }) => {
+export const ColumnImageGrid: React.FC<ColumnImageGridProps> = ({ cols, images }) => {
   return (
     <div
       className={`grid grid-cols-1 gap-5 sm:grid-cols-2 
@@ -18,4 +18,3 @@ const ColumnImageGrid: React.FC<ColumnImageGridProps> = ({ cols, images }) => {
     </div>
   );
 };
-export default ColumnImageGrid;

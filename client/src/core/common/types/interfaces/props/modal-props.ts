@@ -7,7 +7,7 @@
  * @property showCloseButton - Muestra un botón de cierre en la esquina superior.
  * @property isFullscreen - Define si el modal ocupa toda la pantalla.
  */
-export default interface ModalProps {
+export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   className?: string;

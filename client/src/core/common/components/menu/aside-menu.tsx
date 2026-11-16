@@ -1,19 +1,19 @@
-import useSidebar from "../../hooks/use-sidebar";
+import { useSidebar } from "../../hooks/use-sidebar";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
-import type NavItem from "../../../../config/app/navbar/types/nav-item";
+import { Link, useLocation } from "react-router";
+import type { NavItem } from "../../../../config/app/navbar/types/nav-item";
 
 import { Smartphone } from "lucide-react";
 import { ChevronDownIcon, HorizontaLDots } from "../../icons";
+import { useLogout } from "../../hooks/use-logout";
 
-const AsideMenu: React.FC<{
+export const AsideMenu: React.FC<{
   navItems?: NavItem[];
   othersItems?: NavItem[];
 }> = ({ navItems = [], othersItems = [] }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -79,10 +79,7 @@ const AsideMenu: React.FC<{
     });
   };
 
-  const handleLogout = () => {
-    sessionStorage.clear();
-    navigate("/admin/sign-in", { replace: true });
-  };
+  const handleLogout = useLogout();
 
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
     <ul className="flex flex-col gap-4">
@@ -353,4 +350,3 @@ const AsideMenu: React.FC<{
   );
 };
 
-export default AsideMenu;

@@ -13,6 +13,7 @@ export interface InventoryItem {
   salePrice: number;
   supplierId: string | null;
   quantityOnHand: number;
+  minStock: number;
   // Fase 5, Pieza 3: quantityOnHand menos reservas activas (refacciones ya
   // comprometidas en notas de reparación que aún no se completan).
   available: number;

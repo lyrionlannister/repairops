@@ -1,4 +1,4 @@
-export default interface InputProps {
+export interface InputProps {
   type?: "text" | "number" | "email" | "password" | "date" | "time" | string;
   id?: string;
   name?: string;

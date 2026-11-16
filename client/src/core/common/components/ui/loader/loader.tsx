@@ -1,6 +1,6 @@
-import LoaderProps from "@/core/common/types/interfaces/props/loader-props";
+import type { LoaderProps } from "@/core/common/types/interfaces/props/loader-props";
 
-const Loader: React.FC<LoaderProps> = ({ loaderText = "Cargando..." }) => {
+export const Loader: React.FC<LoaderProps> = ({ loaderText = "Cargando..." }) => {
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
       <div className="relative flex justify-center items-center">
@@ -13,4 +13,3 @@ const Loader: React.FC<LoaderProps> = ({ loaderText = "Cargando..." }) => {
   );
 };
 
-export default Loader;

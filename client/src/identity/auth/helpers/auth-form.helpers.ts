@@ -1,10 +1,11 @@
-import type { AuthFormData, RegisterFormData } from "../types/auth-form.types";
+import type { LoginPayload } from "../../../core/common/hooks/use-login";
+import type { RegisterPayload } from "../../../core/common/hooks/use-register";
 
 export function updateAuthFormField(
-  prev: AuthFormData,
+  prev: LoginPayload,
   name: string,
   value: string,
-): AuthFormData {
+): LoginPayload {
   return {
     ...prev,
     [name]: value,
@@ -12,10 +13,10 @@ export function updateAuthFormField(
 }
 
 export function updateRegisterFormField(
-  prev: RegisterFormData,
+  prev: RegisterPayload,
   name: string,
   value: string,
-): RegisterFormData {
+): RegisterPayload {
   return {
     ...prev,
     [name]: value,

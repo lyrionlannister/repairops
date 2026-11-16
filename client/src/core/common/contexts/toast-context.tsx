@@ -13,6 +13,5 @@ export type ToastContextType = {
   showToast: (toast: ToastInput) => void;
 };
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+export const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export default ToastContext;

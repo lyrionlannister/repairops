@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FC } from "react";
 import { useCustomers, type Customer } from "@commerce/customers/hooks/use-customers";
+import { labelFor } from "@commerce/customers/utils/format";
 
 interface CustomerSelectProps {
   value: string;
@@ -9,15 +10,13 @@ interface CustomerSelectProps {
   className?: string;
 }
 
-const labelFor = (c: Customer) => `${c.name} · ${c.phone}`;
-
 // Selector de cliente existente -- al elegir uno, el caller decide si
 // autollena nombre/telefono (ver repair-note-form-page / quote-form-page).
 // Nunca obliga a tener cliente guardado: el caller conserva los campos de
 // texto libre para clientes de paso.
 // El texto se escribe sin lag, pero la lista solo refiltra 350ms despues de
 // la ultima tecla -- evita recalcular el filtro en cada pulsacion.
-const CustomerSelect: FC<CustomerSelectProps> = ({
+export const CustomerSelect: FC<CustomerSelectProps> = ({
   value,
   onChange,
   placeholder = "Cliente existente (opcional)",
@@ -100,4 +99,3 @@ const CustomerSelect: FC<CustomerSelectProps> = ({
   );
 };
 
-export default CustomerSelect;

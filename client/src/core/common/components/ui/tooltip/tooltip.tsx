@@ -3,7 +3,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-const Tooltip: React.FC<Props> = ({ text, children }) => (
+export const Tooltip: React.FC<Props> = ({ text, children }) => (
   <div className="group relative inline-flex">
     {children}
     <div
@@ -16,4 +16,3 @@ const Tooltip: React.FC<Props> = ({ text, children }) => (
   </div>
 );
 
-export default Tooltip;

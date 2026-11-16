@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import PageMeta from "@common/pages/page-meta";
+import { PageMeta } from "@common/pages/page-meta";
 
 type PageShellProps = {
   title: string;
@@ -9,7 +9,7 @@ type PageShellProps = {
   children: ReactNode;
 };
 
-const PageShell = ({
+export const PageShell = ({
   title,
   description,
   action,
@@ -37,4 +37,3 @@ const PageShell = ({
   );
 };
 
-export default PageShell;

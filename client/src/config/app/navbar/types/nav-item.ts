@@ -1,4 +1,4 @@
-export default interface NavItem {
+export interface NavItem {
   name: string;
   icon: React.ReactNode;
   path?: string;

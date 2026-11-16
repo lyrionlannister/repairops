@@ -1,11 +1,11 @@
 import type { FC } from "react";
-import ButtonProps from "@/core/common/types/interfaces/props/button-props";
+import type { ButtonProps } from "@/core/common/types/interfaces/props/button-props";
 import {
   sizeClasses,
   variantClasses,
 } from "@/core/common/utils/button-utils";
 
-const Button: FC<ButtonProps> = ({
+export const Button: FC<ButtonProps> = ({
   children,
   size = "md",
   variant = "primary",
@@ -34,4 +34,3 @@ const Button: FC<ButtonProps> = ({
   );
 };
 
-export default Button;

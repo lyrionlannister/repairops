@@ -4,7 +4,7 @@ type Props = {
   disabled?: boolean;
 };
 
-const Toggle: React.FC<Props> = ({ checked, onChange, disabled = false }) => (
+export const Toggle: React.FC<Props> = ({ checked, onChange, disabled = false }) => (
   <button
     type="button"
     role="switch"
@@ -23,4 +23,3 @@ const Toggle: React.FC<Props> = ({ checked, onChange, disabled = false }) => (
   </button>
 );
 
-export default Toggle;

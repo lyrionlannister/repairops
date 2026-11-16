@@ -1,7 +1,7 @@
 import { useContext } from "react";
-import BranchContext from "../contexts/branch-context";
+import { BranchContext } from "../contexts/branch-context";
 
-const useBranch = () => {
+export const useBranch = () => {
   const context = useContext(BranchContext);
   if (!context) {
     throw new Error("useBranch must be used within a BranchProvider");
@@ -9,4 +9,3 @@ const useBranch = () => {
   return context;
 };
 
-export default useBranch;

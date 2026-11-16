@@ -3,16 +3,16 @@ import { ClipboardCheck, Lock } from "lucide-react";
 import { useInventory } from "../hooks/use-inventory";
 import { useInventoryCounts } from "../hooks/use-inventory-counts";
 import { useBranches } from "@identity/branches/hooks/use-branches";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Alert from "@ui/alert/alert";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Alert } from "@ui/alert/alert";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 type LineDraft = { countedQuantity: string; reason: string };
 
-const InventoryCountPage: React.FC = () => {
+export const InventoryCountPage: React.FC = () => {
   const { items, fetchAll: fetchItems } = useInventory();
   const { branches, fetchAll: fetchBranches } = useBranches();
   const { count, saving, error, missingReasonItemIds, open, setCounted, close } = useInventoryCounts();
@@ -145,4 +145,3 @@ const InventoryCountPage: React.FC = () => {
   );
 };
 
-export default InventoryCountPage;

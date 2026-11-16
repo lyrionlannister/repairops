@@ -10,11 +10,6 @@ export interface MessageTemplate {
   updatedAt: string;
 }
 
-const authHeader = (): Record<string, string> => {
-  const token = sessionStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const useMessageTemplates = () => {
   const { apiClient } = useApiClient();
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
@@ -26,7 +21,7 @@ export const useMessageTemplates = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/message-templates", { headers: authHeader() });
+      const res = await apiClient("/message-templates");
       if (!res.ok) throw new Error("Error al cargar templates");
       setTemplates(await res.json());
     } catch (err) {
@@ -43,7 +38,7 @@ export const useMessageTemplates = () => {
       try {
         const res = await apiClient("/message-templates", {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
         if (!res.ok) {
@@ -70,7 +65,7 @@ export const useMessageTemplates = () => {
       try {
         const res = await apiClient(`/message-templates/${id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", ...authHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
         if (!res.ok) throw new Error("Error al actualizar template");
@@ -93,7 +88,6 @@ export const useMessageTemplates = () => {
       try {
         const res = await apiClient(`/message-templates/${id}`, {
           method: "DELETE",
-          headers: authHeader(),
         });
         if (!res.ok) throw new Error("Error al eliminar template");
         setTemplates((prev) => prev.filter((t) => t.id !== id));

@@ -5,9 +5,9 @@ import flatpickr from "flatpickr";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import "flatpickr/dist/flatpickr.css";
 import { Calendar } from "lucide-react";
-import DatePickerProps from "../../../types/interfaces/props/date-picker-props";
+import type { DatePickerProps } from "../../../types/interfaces/props/date-picker-props";
 
-const DatePicker: FC<DatePickerProps> = ({
+export const DatePicker: FC<DatePickerProps> = ({
   id,
   value,
   onChange,
@@ -63,4 +63,3 @@ const DatePicker: FC<DatePickerProps> = ({
   );
 };
 
-export default DatePicker;

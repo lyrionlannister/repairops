@@ -1,0 +1,25 @@
+import type { RepairNoteFormData, RepairNoteRecord, RepairNoteStatus } from "../hooks/use-repair-notes";
+
+export const noteToForm = (n: RepairNoteRecord): RepairNoteFormData => ({
+  customerName: n.customerName,
+  contactNumber: n.contactNumber ?? "",
+  brand: n.brand,
+  model: n.model,
+  reportedFailure: n.reportedFailure,
+  totalValue: String(n.totalValue),
+  status: n.status as RepairNoteStatus,
+  requiresAdvance: n.requiresAdvance,
+  advanceValue: n.advanceValue != null ? String(n.advanceValue) : "",
+  receivedAt: n.receivedAt,
+  deliveryDate: n.deliveryDate ?? "",
+  technicianNotes: n.technicianNotes ?? "",
+  additionalFindings: n.additionalFindings ?? "",
+  assignedEmployeeId: n.assignedEmployeeId ?? "",
+  localId: n.localId ?? "",
+  customerId: n.customerId ?? "",
+  serviceTypeIds: [],
+  deviceOff: n.deviceOff,
+  hasWarranty: n.hasWarranty,
+  hasExtendedWarranty: n.hasExtendedWarranty,
+  extendedWarrantyDays: n.extendedWarrantyDays != null ? String(n.extendedWarrantyDays) : "",
+});

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import ToastContext, {
+import {
+  ToastContext,
   type ToastInput,
   type ToastVariant,
 } from "../toast-context";

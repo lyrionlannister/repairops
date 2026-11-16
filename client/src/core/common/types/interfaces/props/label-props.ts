@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export default interface LabelProps {
+export interface LabelProps {
   htmlFor?: string;
   children: ReactNode;
   className?: string;

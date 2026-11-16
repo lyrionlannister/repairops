@@ -136,6 +136,17 @@ export class AuthService {
     return user ? `${user.firstName} ${user.lastName}`.trim() : null;
   }
 
+  // Perfil del propio usuario autenticado -- a diferencia del JWT (que trae
+  // el estado al momento del login), esto siempre lee la fila actual, asi
+  // que recoge cambios de rol/nombre hechos por un admin despues de que el
+  // usuario inicio sesion.
+  async getMe(id: string): Promise<Omit<User, "password"> | null> {
+    const user = await this.userDao.findById(id);
+    if (!user) return null;
+    const { password, ...rest } = user;
+    return rest;
+  }
+
   async toggleUserStatus(id: string): Promise<Omit<User, "password"> | null> {
     const user = await this.userDao.toggleStatus(id);
     if (!user) return null;

@@ -1,4 +1,4 @@
-export default interface DefaultLayoutProps {
+export interface DefaultLayoutProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;

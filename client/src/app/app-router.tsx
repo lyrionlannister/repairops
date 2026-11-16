@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
-import SignInLayout from "../core/common/layouts/sign-in-layout";
+import { AppShell } from "../core/common/layouts/app-shell";
 import { LoginOnlyWhenLoggedOut, ProtectedRoute } from "./auth-guards";
 import { protectedRoutes, publicRoutes } from "./routes";
 
@@ -8,11 +8,11 @@ export const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
 
         {publicRoutes.map((route, index) => {
           const isAuthRoute =
-            route.path === "/admin/sign-in" || route.path === "/owner/sign-up";
+            route.path === "/app/sign-in" || route.path === "/owner/sign-up";
 
           return (
             <Route
@@ -32,10 +32,10 @@ export const AppRouter = () => {
         })}
 
         <Route
-          path="/admin"
+          path="/app"
           element={
             <ProtectedRoute>
-              <SignInLayout />
+              <AppShell />
             </ProtectedRoute>
           }
         >
@@ -43,7 +43,7 @@ export const AppRouter = () => {
           {protectedRoutes.map((route, index) => (
             <Route
               key={`protected-${index}`}
-              path={route.path.replace("/admin/", "")}
+              path={route.path.replace("/app/", "")}
               element={route.element}
             />
           ))}
@@ -52,5 +52,3 @@ export const AppRouter = () => {
     </BrowserRouter>
   );
 };
-
-export default AppRouter;

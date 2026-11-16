@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { ArrowRightLeft } from "lucide-react";
 import { useInventory } from "../hooks/use-inventory";
 import { useInventoryTransfers } from "../hooks/use-inventory-transfers";
+import { useInventoryTransferLabels } from "../hooks/use-inventory-transfer-labels";
 import { useBranches } from "@identity/branches/hooks/use-branches";
-import Button from "@ui/button/button";
-import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
-import Select from "@ui/select/select";
-import Alert from "@ui/alert/alert";
-import PageShell from "@common/components/page-shell/page-shell";
+import { Button } from "@ui/button/button";
+import { Input } from "@ui/inputs/input";
+import { Label } from "@ui/inputs/label";
+import { Select } from "@ui/select/select";
+import { Alert } from "@ui/alert/alert";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
-const InventoryTransfersPage: React.FC = () => {
+export const InventoryTransfersPage: React.FC = () => {
   const { items, fetchAll: fetchItems } = useInventory();
   const { branches, fetchAll: fetchBranches } = useBranches();
   const { transfers, creating, error, fetchAll: fetchTransfers, create } = useInventoryTransfers();
@@ -27,13 +28,7 @@ const InventoryTransfersPage: React.FC = () => {
     fetchTransfers();
   }, [fetchItems, fetchBranches, fetchTransfers]);
 
-  const branchName = (branchId: string) => branches.find((b) => b.id === branchId)?.name ?? `Sucursal ${branchId}`;
-  const itemLabel = (item: (typeof items)[number]) =>
-    `${item.name} (${branchName(item.localId)}, stock: ${item.quantityOnHand})`;
-  const itemNameById = (itemId: string) => {
-    const item = items.find((i) => i.id === itemId);
-    return item ? `${item.name} (${branchName(item.localId)})` : `Item ${itemId}`;
-  };
+  const { itemLabel, itemNameById } = useInventoryTransferLabels(items, branches);
 
   const fromItem = items.find((i) => i.id === fromItemId);
   const toItem = items.find((i) => i.id === toItemId);
@@ -138,4 +133,3 @@ const InventoryTransfersPage: React.FC = () => {
   );
 };
 
-export default InventoryTransfersPage;

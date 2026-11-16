@@ -1,3 +1,2 @@
-const defaultHeaderItems: never[] = [];
+export const defaultHeaderItems: never[] = [];
 
-export default defaultHeaderItems;

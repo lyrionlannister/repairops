@@ -1,9 +1,8 @@
 import React from "react";
 
-import DefaultLayoutProps from "../types/interfaces/layouts/default-layout-props";
+import type { DefaultLayoutProps } from "../types/interfaces/layouts/default-layout-props";
 
-const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children }) => {
+export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children }) => {
   return <>{children}</>;
 };
 
-export default DefaultLayout;

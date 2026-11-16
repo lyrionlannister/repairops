@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import SidebarContext from "../sidebar-context";
+import { SidebarContext } from "../sidebar-context";
 
-const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
+export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -60,4 +60,3 @@ const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-export default SidebarProvider;

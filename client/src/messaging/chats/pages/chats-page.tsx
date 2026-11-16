@@ -1,169 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, Send, Bot, User, ArrowLeftRight } from "lucide-react";
-import { useConversations, type Conversation } from "../hooks/use-conversations";
+import { Search, Bot, User, ArrowLeftRight } from "lucide-react";
+import { useConversations } from "../hooks/use-conversations";
 import { useMessages } from "../hooks/use-messages";
 import { useHumanMode } from "../hooks/use-human-mode";
-import PageMeta from "@common/pages/page-meta";
+import { useChatsPage } from "../hooks/use-chats-page";
+import { PageMeta } from "@common/pages/page-meta";
+import { formatPhone, getInitials, getAvatarColor } from "../utils/contact-display";
+import { ConversationItem } from "../components/conversation-item";
+import { MessageBubble } from "../components/message-bubble";
+import { NoConversationSelected } from "../components/no-conversation-selected";
+import { ManualReplyInput } from "../components/manual-reply-input";
 
-function formatPhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length >= 10) {
-    return `+${digits.slice(0, -10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`;
-  }
-  return `+${digits}`;
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
-
-function getAvatarColor(seed: string): string {
-  const colors = [
-    "bg-[#e17055] text-white",
-    "bg-[#00b894] text-white",
-    "bg-[#0984e3] text-white",
-    "bg-[#6c5ce7] text-white",
-    "bg-[#fdcb6e] text-gray-800",
-    "bg-[#e84393] text-white",
-    "bg-[#00cec9] text-white",
-  ];
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash += seed.charCodeAt(i);
-  return colors[hash % colors.length];
-}
-
-function ConversationItem({
-  conversation,
-  selected,
-  onClick,
-}: {
-  conversation: Conversation;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  const displayName = conversation.contactName ?? formatPhone(conversation.phone);
-  const avatarLabel = conversation.contactName
-    ? getInitials(conversation.contactName)
-    : conversation.phone.replace(/\D/g, "").slice(-2);
-  const avatarColor = getAvatarColor(conversation.sessionId);
-  const isBot = conversation.lastType === "ai";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-gray-100 dark:border-gray-800 ${
-        selected
-          ? "bg-[#f0f2f5] dark:bg-[#2a3942]"
-          : "hover:bg-[#f5f6f6] dark:hover:bg-[#1f2c33]"
-      }`}
-    >
-      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold ${avatarColor}`}>
-        {avatarLabel}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between">
-          <p className="truncate text-[15px] font-medium text-gray-900 dark:text-white">
-            {displayName}
-          </p>
-          <span className="ml-2 shrink-0 text-xs text-gray-400 dark:text-gray-500">
-            {conversation.messageCount} msgs
-          </span>
-        </div>
-        <p className="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">
-          {isBot && (
-            <span className="text-gray-400 dark:text-gray-500">🤖 </span>
-          )}
-          {conversation.lastContent || "Sin mensajes"}
-        </p>
-      </div>
-    </button>
-  );
-}
-
-function MessageBubble({ content, fromMe }: { content: string; fromMe: boolean }) {
-  return (
-    <div className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`relative max-w-[65%] px-3 py-2 text-sm leading-relaxed shadow-sm ${
-          fromMe
-            ? "rounded-lg rounded-tr-none bg-[#DCF8C6] text-gray-900 dark:bg-[#005C4B] dark:text-white"
-            : "rounded-lg rounded-tl-none bg-white text-gray-900 dark:bg-[#1F2C33] dark:text-white"
-        }`}
-      >
-        {content}
-      </div>
-    </div>
-  );
-}
-
-function NoConversationSelected() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-500">
-      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      </div>
-      <div className="text-center">
-        <p className="text-lg font-medium text-gray-600 dark:text-gray-300">Bienvenido a Chats</p>
-        <p className="mt-1 text-sm">Selecciona una conversación para ver los mensajes</p>
-      </div>
-    </div>
-  );
-}
-
-function ManualReplyInput({
-  onSend,
-  sending,
-}: {
-  onSend: (body: string) => Promise<boolean>;
-  sending: boolean;
-}) {
-  const [text, setText] = useState("");
-
-  const handleSend = async () => {
-    if (!text.trim() || sending) return;
-    const ok = await onSend(text.trim());
-    if (ok) setText("");
-  };
-
-  return (
-    <div className="flex items-end gap-2 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-[#1F2C33]">
-      <textarea
-        rows={1}
-        placeholder="Escribe un mensaje..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSend().catch(console.error);
-          }
-        }}
-        className="flex-1 resize-none rounded-lg bg-[#f0f2f5] px-3 py-2 text-sm text-gray-800 placeholder-gray-400 outline-none dark:bg-[#2A3942] dark:text-white dark:placeholder-gray-500"
-      />
-      <button
-        type="button"
-        onClick={() => handleSend().catch(console.error)}
-        disabled={!text.trim() || sending}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white transition-opacity disabled:opacity-40 dark:bg-[#00a884]"
-      >
-        <Send className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
-
-const ChatsPage: React.FC = () => {
+export const ChatsPage: React.FC = () => {
   const { conversations, loading: loadingConversations, error: convError } = useConversations();
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const { search, setSearch, filtered } = useChatsPage(conversations);
   const { messages, loading: loadingMessages } = useMessages(selectedSessionId);
   const { isHumanMode, toggling, sending, activate, deactivate, sendMessage } =
     useHumanMode(selectedSessionId);
@@ -174,15 +25,6 @@ const ChatsPage: React.FC = () => {
   }, [messages]);
 
   const selectedConversation = conversations.find((c) => c.sessionId === selectedSessionId);
-
-  const filtered = conversations.filter((c) => {
-    const q = search.toLowerCase();
-    return (
-      c.sessionId.toLowerCase().includes(q) ||
-      (c.contactName?.toLowerCase().includes(q) ?? false) ||
-      c.phone.includes(q)
-    );
-  });
 
   const displayName = selectedConversation
     ? (selectedConversation.contactName ?? formatPhone(selectedConversation.phone))
@@ -335,4 +177,3 @@ const ChatsPage: React.FC = () => {
   );
 };
 
-export default ChatsPage;

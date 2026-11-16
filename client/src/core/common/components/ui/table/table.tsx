@@ -1,4 +1,5 @@
-import TableProps, {
+import type {
+  TableProps,
   TableHeaderProps,
   TableBodyProps,
   TableRowProps,

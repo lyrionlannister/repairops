@@ -1,11 +1,11 @@
-import BadgeProps from "@/core/common/types/interfaces/props/badge-props";
+import type { BadgeProps } from "@/core/common/types/interfaces/props/badge-props";
 import {
   baseStyles,
   variants,
   sizeStyles,
 } from "@/core/common/utils/badge-utils";
 
-const Badge: React.FC<BadgeProps> = ({
+export const Badge: React.FC<BadgeProps> = ({
   variant = "light",
   color = "primary",
   size = "md",
@@ -25,4 +25,3 @@ const Badge: React.FC<BadgeProps> = ({
   );
 };
 
-export default Badge;

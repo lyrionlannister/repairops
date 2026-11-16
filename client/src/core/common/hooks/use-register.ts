@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApiClient } from "./use-api-client";
 
-interface RegisterPayload {
+export interface RegisterPayload {
   firstName: string;
   lastName: string;
   email: string;

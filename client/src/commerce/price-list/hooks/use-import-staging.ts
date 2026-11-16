@@ -19,11 +19,6 @@ export interface StagingRecord {
   createdAt: string;
 }
 
-const authHeader = (): Record<string, string> => {
-  const token = sessionStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const useImportStaging = () => {
   const { apiClient } = useApiClient();
   const [uploading, setUploading] = useState(false);
@@ -40,7 +35,7 @@ export const useImportStaging = () => {
           `/import-staging/upload?supplierId=${encodeURIComponent(supplierId)}&fileName=${encodeURIComponent(file.name)}`,
           {
             method: "POST",
-            headers: { "Content-Type": file.type || "application/octet-stream", ...authHeader() },
+            headers: { "Content-Type": file.type || "application/octet-stream" },
             body: buffer,
           },
         );
@@ -63,7 +58,7 @@ export const useImportStaging = () => {
   const fetchById = useCallback(
     async (importId: string): Promise<StagingRecord | null> => {
       try {
-        const res = await apiClient(`/import-staging/${importId}`, { headers: authHeader() });
+        const res = await apiClient(`/import-staging/${importId}`);
         if (!res.ok) return null;
         return (await res.json()) as StagingRecord;
       } catch {
@@ -80,7 +75,7 @@ export const useImportStaging = () => {
       try {
         const res = await apiClient(`/import-staging/${importId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", ...authHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ rows }),
         });
         if (!res.ok) throw new Error("Error al guardar los cambios");
@@ -102,7 +97,6 @@ export const useImportStaging = () => {
       try {
         const res = await apiClient(`/import-staging/${importId}/commit`, {
           method: "POST",
-          headers: authHeader(),
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
@@ -124,7 +118,6 @@ export const useImportStaging = () => {
       try {
         const res = await apiClient(`/import-staging/${importId}`, {
           method: "DELETE",
-          headers: authHeader(),
         });
         return res.ok;
       } catch {
