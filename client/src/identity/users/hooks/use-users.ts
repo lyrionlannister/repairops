@@ -4,6 +4,20 @@ import { useApiClient } from "../../../core/common/hooks/use-api-client";
 export type UserRole = "owner" | "admin" | "employee" | "technician" | "cashier";
 export type PayCycle = "weekly" | "biweekly" | "monthly";
 
+export const ROLE_LABELS: Record<UserRole, string> = {
+  owner: "Dueño",
+  admin: "Administrador",
+  employee: "Empleado",
+  technician: "Técnico",
+  cashier: "Cajero",
+};
+
+export const PAY_CYCLE_LABELS: Record<PayCycle, string> = {
+  weekly: "Semanal",
+  biweekly: "Quincenal",
+  monthly: "Mensual",
+};
+
 export interface UserRecord {
   id: string;
   firstName: string;
@@ -27,6 +41,17 @@ interface CreateUserPayload {
   payCycle?: PayCycle;
 }
 
+// password es opcional: si se omite, el backend debe conservar la contraseña actual.
+interface UpdateUserPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password?: string;
+  role: UserRole;
+  salaryAmount?: number;
+  payCycle?: PayCycle;
+}
+
 export const useUsers = () => {
   const { apiClient } = useApiClient();
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -35,6 +60,8 @@ export const useUsers = () => {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
@@ -83,6 +110,29 @@ export const useUsers = () => {
     }
   }, [apiClient]);
 
+  const updateUser = useCallback(async (id: string, payload: UpdateUserPayload): Promise<UserRecord | null> => {
+    setUpdating(true);
+    setUpdateError(null);
+    try {
+      const response = await apiClient(`/auth/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(data?.error || "Error al actualizar usuario");
+      }
+      const data = await response.json() as UserRecord;
+      return data;
+    } catch (err) {
+      setUpdateError(err instanceof Error ? err.message : "Error desconocido");
+      return null;
+    } finally {
+      setUpdating(false);
+    }
+  }, [apiClient]);
+
   const toggleUserStatus = useCallback(async (id: string): Promise<void> => {
     setTogglingId(id);
     try {
@@ -111,6 +161,10 @@ export const useUsers = () => {
     createSuccess,
     clearCreateError: () => setCreateError(null),
     clearCreateSuccess: () => setCreateSuccess(false),
+    updateUser,
+    updating,
+    updateError,
+    clearUpdateError: () => setUpdateError(null),
     toggleUserStatus,
     togglingId,
   };
