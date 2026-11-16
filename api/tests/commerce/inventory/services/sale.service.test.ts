@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import Decimal from "decimal.js";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
@@ -36,6 +37,7 @@ describe("SaleService.create", () => {
   let saleService: SaleService;
   let localService: LocalService;
   let cashService: CashService;
+  let cashSessionDao: CashSessionDao;
   let serviceTypeDao: ServiceTypeDao;
   let salePaymentDao: SalePaymentDao;
   const tenantId = `${Date.now()}2`;
@@ -47,7 +49,7 @@ describe("SaleService.create", () => {
     const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
     inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
-    const cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
+    cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
     cashService = new CashService(
       cashSessionDao,
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
@@ -85,7 +87,15 @@ describe("SaleService.create", () => {
   // tenant, mismo local, por simplicidad de la configuración de impuesto/
   // descuento compartida en beforeAll).
   const openSession = () => runWithTenant(tenantId, () => cashService.openSession("1", 0));
-  const closeSession = (id: string) => runWithTenant(tenantId, () => cashService.closeSession(id, 0));
+  const closeSession = (id: string) =>
+    runWithTenant(tenantId, async () => {
+      const session = await cashSessionDao.findById(id);
+      const summary = await cashService.getSummary(id);
+      const expectedCashBalance = new Decimal(session!.openingBalance)
+        .plus(summary.byMethod.efectivo.income)
+        .minus(summary.byMethod.efectivo.expense);
+      return cashService.closeSession(id, expectedCashBalance.toNumber());
+    });
 
   it("rolls back the whole sale when one item lacks stock", async () => {
     const session = await openSession();
