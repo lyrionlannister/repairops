@@ -96,7 +96,7 @@ export const InventoryTable: FC<InventoryTableProps> = ({
                     <button onClick={() => onOpenMovement(item)} title="Registrar movimiento" className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30">
                       <ArrowUpDown className="size-4" />
                     </button>
-                    <button onClick={() => navigate(`/app/inventory/${item.id}/edit`)} className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30">
+                    <button onClick={() => navigate(`/commerce/inventory/${item.id}/edit`)} className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30">
                       <Pencil className="size-4" />
                     </button>
                     <button onClick={() => onRequestDelete(item.id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30">

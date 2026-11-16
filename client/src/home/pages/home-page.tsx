@@ -8,7 +8,7 @@ import { DashboardConversationStats } from "../components/dashboard-conversation
 import { DashboardMainChart } from "../components/dashboard-main-chart";
 import { DashboardSecondaryCharts } from "../components/dashboard-secondary-charts";
 
-export const DashboardPage: React.FC = () => {
+export const HomePage: React.FC = () => {
   const {
     daily,
     monthly,

@@ -13,7 +13,7 @@ export const AuthPage: React.FC = () => {
   useEffect(() => {
     const checkLogin = sessionStorage.getItem("user");
     if (checkLogin) {
-      navigate("/app/whatsapp", { replace: true });
+      navigate("/messaging/whatsapp", { replace: true });
     } else {
       setLoading(false);
     }

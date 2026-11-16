@@ -7,7 +7,7 @@ import { useApiClient } from "./use-api-client";
 // restaurada) y seguiriamos mostrando la app como si hubiera sesion. Por
 // eso esto valida contra la API en cada guard, no solo contra el storage
 // local.
-export const useAuthGuard = (redirectTo: string = "/app/sign-in") => {
+export const useAuthGuard = (redirectTo: string = "/identity/sign-in") => {
   const navigate = useNavigate();
   const { apiClient } = useApiClient();
 

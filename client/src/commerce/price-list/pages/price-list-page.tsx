@@ -55,11 +55,11 @@ export const PriceListPage = () => {
       description={items.length > 0 ? `${items.length} items en total.` : "Sin items cargados."}
       action={
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" onClick={() => navigate("/app/price-list/import")}>
+          <Button variant="outline" onClick={() => navigate("/commerce/price-list/import")}>
             <Upload className="mr-1.5 size-4" />
             Importar PDF
           </Button>
-          <Button variant="primary" onClick={() => navigate("/app/price-list/new")}>
+          <Button variant="primary" onClick={() => navigate("/commerce/price-list/new")}>
             <Plus className="mr-1.5 size-4" />
             Nuevo item
           </Button>
@@ -150,7 +150,7 @@ export const PriceListPage = () => {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() =>
-                          navigate("/app/inventory/new", {
+                          navigate("/commerce/inventory/new", {
                             state: {
                               prefillFromPriceList: {
                                 name: `${item.brand} ${item.model}`,
@@ -165,7 +165,7 @@ export const PriceListPage = () => {
                       >
                         <PackagePlus className="size-4" />
                       </button>
-                      <button onClick={() => navigate(`/app/price-list/${item.id}/edit`)} className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30">
+                      <button onClick={() => navigate(`/commerce/price-list/${item.id}/edit`)} className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30">
                         <Pencil className="size-4" />
                       </button>
                       <button onClick={() => setDeleteConfirmId(item.id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30">

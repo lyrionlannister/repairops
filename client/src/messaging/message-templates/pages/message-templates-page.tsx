@@ -36,7 +36,7 @@ export const MessageTemplatesPage = () => {
       title="Templates de Mensajes"
       description="Mensajes predefinidos que usa el agente de WhatsApp."
       action={
-        <Button variant="primary" onClick={() => navigate("/app/templates/new")}>
+        <Button variant="primary" onClick={() => navigate("/messaging/message-templates/new")}>
           <Plus className="mr-1.5 size-4" />
           Nuevo template
         </Button>
@@ -102,7 +102,7 @@ export const MessageTemplatesPage = () => {
                   <td className="px-4 py-4 align-top text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => navigate(`/app/templates/${template.id}/edit`)}
+                        onClick={() => navigate(`/messaging/message-templates/${template.id}/edit`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                         title="Editar"
                       >

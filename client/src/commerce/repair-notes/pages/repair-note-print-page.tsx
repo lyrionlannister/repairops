@@ -81,7 +81,7 @@ export const RepairNotePrintPage: React.FC = () => {
       {/* Controls */}
       <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3 print:hidden">
         <button
-          onClick={() => navigate("/app/repair-notes")}
+          onClick={() => navigate("/commerce/repair-notes")}
           className="rounded-lg p-2.5 text-gray-400 hover:bg-gray-100 md:p-1.5 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
         >
           <ArrowLeft className="size-5" />

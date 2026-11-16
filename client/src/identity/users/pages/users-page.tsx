@@ -32,7 +32,7 @@ export const UsersPage: React.FC = () => {
         <Button
           variant="primary"
           startIcon={<UserPlus className="size-4" />}
-          onClick={() => navigate("/app/users/new")}
+          onClick={() => navigate("/identity/users/new")}
         >
           Nuevo usuario
         </Button>
@@ -66,7 +66,7 @@ export const UsersPage: React.FC = () => {
           <div className="flex flex-col items-center justify-center gap-4 p-10 text-center">
             <p className="text-base font-semibold text-gray-700 dark:text-gray-200">No hay usuarios registrados.</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Crea el primer usuario para comenzar.</p>
-            <Button variant="primary" startIcon={<UserPlus className="size-4" />} onClick={() => navigate("/app/users/new")}>
+            <Button variant="primary" startIcon={<UserPlus className="size-4" />} onClick={() => navigate("/identity/users/new")}>
               Nuevo usuario
             </Button>
           </div>
@@ -115,7 +115,7 @@ export const UsersPage: React.FC = () => {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <button
-                      onClick={() => navigate(`/app/users/${user.id}/edit`)}
+                      onClick={() => navigate(`/identity/users/${user.id}/edit`)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                       title="Editar"
                     >

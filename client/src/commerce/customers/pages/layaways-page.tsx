@@ -74,7 +74,7 @@ export const LayawaysPage: React.FC = () => {
       title="Apartados"
       description="Reserva productos para un cliente con un anticipo. El stock físico solo baja al completar."
       action={
-        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/app/layaways/new")}>
+        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/layaways/new")}>
           Nuevo apartado
         </Button>
       }

@@ -17,11 +17,11 @@ import { useCurrentUser } from "../hooks/use-current-user";
 // pantalla de la Regla de permisos por módulo; la API (requireRole en
 // cash.routes.ts) es la que de verdad lo bloquea aunque alguien edite el DOM.
 const hiddenPathsByRole: Partial<Record<string, string[]>> = {
-  technician: ["/app/cash"],
+  technician: ["/commerce/cash"],
 };
 
 const LayoutContent: React.FC = () => {
-  useAuthGuard("/app/sign-in");
+  useAuthGuard("/identity/sign-in");
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const currentUser = useCurrentUser();
   const hiddenPaths = (currentUser && hiddenPathsByRole[currentUser.role]) ?? [];
@@ -51,9 +51,8 @@ const LayoutContent: React.FC = () => {
 };
 
 // Shell autenticado de la app completa (sidebar + navbar + outlet) -- lo
-// monta toda ruta bajo /app, no solo las de rol admin/owner (antes se
-// llamaba SignInLayout y vivia bajo /admin, lo que sugeria erroneamente
-// que ese prefijo era solo para administradores).
+// monta toda ruta protegida (/<modulo>/<ruta>), no solo las de rol
+// admin/owner.
 export const AppShell: React.FC = () => {
   return (
     <SidebarProvider>

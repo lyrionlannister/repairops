@@ -69,7 +69,7 @@ export const LayawayFormPage: React.FC = () => {
       items,
     });
 
-    if (created) navigate("/app/layaways");
+    if (created) navigate("/commerce/layaways");
   };
 
   const hasContext = Boolean(customerId);
@@ -141,7 +141,7 @@ export const LayawayFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => navigate("/app/layaways")} disabled={saving}>
+        <Button type="button" variant="outline" onClick={() => navigate("/commerce/layaways")} disabled={saving}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving || !cashSession}>

@@ -54,7 +54,7 @@ export const CustomerFormPage: React.FC = () => {
     event.preventDefault();
     const payload = { name: form.name, phone: form.phone, email: form.email || null, creditLimit: Number(form.creditLimit) || 0 };
     const ok = isEdit && id ? await update(id, payload) : Boolean(await create(payload));
-    if (ok) navigate("/app/customers");
+    if (ok) navigate("/commerce/customers");
   };
 
   const formFields = (
@@ -80,7 +80,7 @@ export const CustomerFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={() => navigate("/app/customers")} disabled={saving}>
+        <Button type="button" variant="outline" onClick={() => navigate("/commerce/customers")} disabled={saving}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving}>

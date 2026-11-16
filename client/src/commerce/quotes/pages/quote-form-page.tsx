@@ -84,10 +84,10 @@ export const QuoteFormPage: React.FC = () => {
     const items = buildItemsPayload();
     if (isEdit && id) {
       const result = await updateQuote(id, form, items);
-      if (result) navigate("/app/quotes");
+      if (result) navigate("/commerce/quotes");
     } else {
       const result = await createQuote(form, items);
-      if (result) navigate("/app/quotes");
+      if (result) navigate("/commerce/quotes");
     }
   };
 
@@ -140,7 +140,7 @@ export const QuoteFormPage: React.FC = () => {
           />
 
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate("/app/quotes")} disabled={saving}>
+            <Button type="button" variant="outline" onClick={() => navigate("/commerce/quotes")} disabled={saving}>
               Cancelar
             </Button>
             <Button type="submit" variant="primary" disabled={saving}>

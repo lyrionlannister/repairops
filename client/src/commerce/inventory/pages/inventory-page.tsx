@@ -68,7 +68,7 @@ export const InventoryPage = () => {
             <Upload className="mr-1.5 size-4" />
             Importar CSV/Excel
           </Button>
-          <Button variant="primary" onClick={() => navigate("/app/inventory/new")}>
+          <Button variant="primary" onClick={() => navigate("/commerce/inventory/new")}>
             <Plus className="mr-1.5 size-4" />
             Nuevo item
           </Button>

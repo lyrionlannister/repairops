@@ -11,7 +11,7 @@ export const isAuthenticated = (): boolean => {
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   if (!isAuthenticated()) {
-    return <Navigate to="/app/sign-in" replace />;
+    return <Navigate to="/identity/sign-in" replace />;
   }
 
   return <>{children}</>;
@@ -23,7 +23,7 @@ export const LoginOnlyWhenLoggedOut = ({
   children: ReactNode;
 }) => {
   if (isAuthenticated()) {
-    return <Navigate to="/app/dashboard" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;

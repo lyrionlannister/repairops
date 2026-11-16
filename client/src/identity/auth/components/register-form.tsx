@@ -35,7 +35,7 @@ export const RegisterForm: React.FC = () => {
     if (result) {
       // Registro exitoso, redirigir a login o dashboard
       setTimeout(() => {
-        navigate("/app/sign-in", { replace: true });
+        navigate("/identity/sign-in", { replace: true });
       }, REGISTER_REDIRECT_DELAY_MS);
     }
   };
@@ -139,7 +139,7 @@ export const RegisterForm: React.FC = () => {
             <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
               ¿Ya tienes cuenta?{" "}
               <Link
-                to="/app/sign-in"
+                to="/identity/sign-in"
                 className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
               >
                 Inicia sesión aquí

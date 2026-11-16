@@ -36,7 +36,7 @@ export const CustomersPage = () => {
       title="Clientes"
       description="Gestiona el catálogo de clientes y su historial de equipos."
       action={
-        <Button variant="primary" onClick={() => navigate("/app/customers/new")}>
+        <Button variant="primary" onClick={() => navigate("/commerce/customers/new")}>
           <Plus className="mr-1.5 size-4" />
           Nuevo cliente
         </Button>

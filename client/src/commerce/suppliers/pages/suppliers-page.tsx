@@ -36,7 +36,7 @@ export const SuppliersPage = () => {
       title="Proveedores"
       description="Gestiona el catálogo de proveedores disponible para cada tenant."
       action={
-        <Button variant="primary" onClick={() => navigate("/app/suppliers/new")}>
+        <Button variant="primary" onClick={() => navigate("/commerce/suppliers/new")}>
           <Plus className="mr-1.5 size-4" />
           Nuevo proveedor
         </Button>
@@ -93,7 +93,7 @@ export const SuppliersPage = () => {
                   <td className="px-4 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => navigate(`/app/suppliers/${supplier.id}/edit`)}
+                        onClick={() => navigate(`/commerce/suppliers/${supplier.id}/edit`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                         title="Editar"
                       >

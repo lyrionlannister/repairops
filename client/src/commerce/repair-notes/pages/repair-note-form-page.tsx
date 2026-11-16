@@ -121,17 +121,17 @@ export const RepairNoteFormPage: React.FC = () => {
         setChargeNote(result);
         return;
       }
-      navigate("/app/repair-notes");
+      navigate("/commerce/repair-notes");
     } else {
       const result = await createNote(form, items);
-      if (result) navigate("/app/repair-notes");
+      if (result) navigate("/commerce/repair-notes");
     }
   };
 
   const closeChargeModal = () => {
     setChargeNote(null);
     clearCashError();
-    navigate("/app/repair-notes");
+    navigate("/commerce/repair-notes");
   };
 
   const handleRegisterCharge = async () => {
@@ -263,7 +263,7 @@ export const RepairNoteFormPage: React.FC = () => {
           )}
 
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate("/app/repair-notes")} disabled={saving}>
+            <Button type="button" variant="outline" onClick={() => navigate("/commerce/repair-notes")} disabled={saving}>
               Cancelar
             </Button>
             <Button type="submit" variant="primary" disabled={saving}>

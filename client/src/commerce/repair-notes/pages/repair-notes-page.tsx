@@ -47,7 +47,7 @@ export const RepairNotesPage: React.FC = () => {
       description="Gestiona el taller de reparación de celulares."
       action={
         canEditNotes ? (
-          <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/app/repair-notes/new")}>
+          <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/repair-notes/new")}>
             Nueva nota
           </Button>
         ) : undefined

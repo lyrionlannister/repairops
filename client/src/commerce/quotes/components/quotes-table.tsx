@@ -121,14 +121,14 @@ export const QuotesTable: FC<QuotesTableProps> = ({
                       )}
                       <button
                         title="Ver / Descargar PDF"
-                        onClick={() => navigate(`/app/quotes/${quote.id}/print`)}
+                        onClick={() => navigate(`/commerce/quotes/${quote.id}/print`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <FileText className="size-4" />
                       </button>
                       <button
                         title="Editar"
-                        onClick={() => navigate(`/app/quotes/${quote.id}/edit`)}
+                        onClick={() => navigate(`/commerce/quotes/${quote.id}/edit`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <Pencil className="size-4" />

@@ -74,7 +74,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
             {notes.length === 0 ? "Crea la primera nota para comenzar." : "Prueba con otro cliente, equipo o estado."}
           </p>
           {canEditNotes && (
-            <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/app/repair-notes/new")}>
+            <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/repair-notes/new")}>
               Nueva nota
             </Button>
           )}
@@ -137,7 +137,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         title="Imprimir"
-                        onClick={() => navigate(`/app/repair-notes/${note.id}/print`)}
+                        onClick={() => navigate(`/commerce/repair-notes/${note.id}/print`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <Printer className="size-4" />
@@ -146,7 +146,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                         <>
                           <button
                             title="Editar"
-                            onClick={() => navigate(`/app/repair-notes/${note.id}/edit`)}
+                            onClick={() => navigate(`/commerce/repair-notes/${note.id}/edit`)}
                             className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                           >
                             <Pencil className="size-4" />

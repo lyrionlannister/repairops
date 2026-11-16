@@ -87,7 +87,7 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                       <Smartphone className="size-4" />
                     </button>
                     <button
-                      onClick={() => navigate(`/app/customers/${customer.id}/edit`)}
+                      onClick={() => navigate(`/commerce/customers/${customer.id}/edit`)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                       title="Editar"
                     >

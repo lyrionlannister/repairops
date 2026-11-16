@@ -84,7 +84,7 @@ export const ImportPriceListPage: React.FC = () => {
     if (!ok) return;
     const result = await commit(importId);
     if (!result) return;
-    navigate("/app/price-list", { state: { imported: result.imported } });
+    navigate("/commerce/price-list", { state: { imported: result.imported } });
   };
 
   const handleDiscard = async () => {
@@ -128,7 +128,7 @@ export const ImportPriceListPage: React.FC = () => {
             e.target.value = "";
           }}
           onClearFile={() => setSelectedFile(null)}
-          onCancel={() => navigate("/app/price-list")}
+          onCancel={() => navigate("/commerce/price-list")}
           onUpload={handleUpload}
         />
       )}

@@ -36,7 +36,7 @@ export const QuotePrintPage: React.FC = () => {
       <PageMeta title="Cotización" description="Vista previa de cotización" />
       <div className="flex flex-wrap items-center gap-3">
         <button
-          onClick={() => navigate("/app/quotes")}
+          onClick={() => navigate("/commerce/quotes")}
           className="rounded-lg p-2.5 text-gray-400 hover:bg-gray-100 md:p-1.5 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
         >
           <ArrowLeft className="size-5" />

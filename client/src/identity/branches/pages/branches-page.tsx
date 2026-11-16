@@ -39,7 +39,7 @@ export const BranchesPage = () => {
       title="Sucursales"
       description="Administra las sucursales disponibles y cuál está activa en el selector de arriba."
       action={
-        <Button variant="primary" onClick={() => navigate("/app/branches/new")}>
+        <Button variant="primary" onClick={() => navigate("/identity/branches/new")}>
           <Plus className="mr-1.5 size-4" />
           Nueva sucursal
         </Button>
@@ -103,7 +103,7 @@ export const BranchesPage = () => {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <button
-                      onClick={() => navigate(`/app/branches/${branch.id}/edit`)}
+                      onClick={() => navigate(`/identity/branches/${branch.id}/edit`)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                       title="Editar"
                     >

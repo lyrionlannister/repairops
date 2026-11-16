@@ -88,7 +88,7 @@ export const UserFormPage: React.FC = () => {
       ? await updateUser(id, { ...base, ...(form.password ? { password: form.password } : {}) })
       : await createUser({ ...base, password: form.password });
 
-    if (ok) navigate("/app/users");
+    if (ok) navigate("/identity/users");
   };
 
   const formEl = (
@@ -197,7 +197,7 @@ export const UserFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={() => navigate("/app/users")}>
+        <Button type="button" variant="outline" onClick={() => navigate("/identity/users")}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving}>
