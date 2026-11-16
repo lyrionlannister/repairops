@@ -41,7 +41,7 @@ const LayoutContent: React.FC = () => {
         } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <NavbarMenu />
-        <div className="custom-scrollbar mx-auto flex w-full max-w-(--breakpoint-2xl) flex-1 flex-col overflow-y-auto p-4 md:p-6">
+        <div className="custom-scrollbar flex w-full flex-1 flex-col overflow-y-auto p-4 md:p-6">
           <Outlet />
         </div>
       </div>
