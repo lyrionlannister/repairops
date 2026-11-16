@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useQuotes, type QuoteFormData, type QuoteItemInput } from "../hooks/use-quotes";
+import { useQuoteCustomerHistory } from "../hooks/use-quote-customer-history";
+import { QuoteCustomerHistoryPanel } from "../components/quote-customer-history-panel";
 import { useInventory } from "@commerce/inventory/hooks/use-inventory";
 import useBranch from "@common/hooks/use-branch";
 import EmployeeSelect from "@common/components/employee-select";
@@ -12,7 +14,7 @@ import Label from "@ui/inputs/label";
 import Button from "@ui/button/button";
 import Alert from "@ui/alert/alert";
 import Select from "@ui/select/select";
-import PageMeta from "@common/pages/page-meta";
+import PageShell from "@common/components/page-shell/page-shell";
 
 type ItemLine = { inventoryItemId: string; description: string; quantity: string; unitPrice: string };
 const emptyItemLine: ItemLine = { inventoryItemId: "", description: "", quantity: "1", unitPrice: "" };
@@ -126,33 +128,30 @@ const QuoteFormPage: React.FC = () => {
     }
   };
 
+  // Panel de historial solo aplica editando una cotizacion con cliente real
+  // seleccionado (customerId), nunca en alta ni con solo nombre libre.
+  const showCustomerHistory = isEdit && Boolean(form.customerId);
+  const { otherQuotes } = useQuoteCustomerHistory(showCustomerHistory ? form.customerId : null, id);
+
   if (loading && isEdit) {
     return <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando cotización...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <PageMeta title={isEdit ? "Editar Cotización" : "Nueva Cotización"} description="Cotización para cliente" />
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate("/admin/quotes")}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">
-            {isEdit ? "Editar cotización" : "Nueva cotización"}
-          </h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            {isEdit ? "Modifica los datos de la cotización." : "Genera una cotización para un cliente."}
-          </p>
-        </div>
-      </div>
-
+    <PageShell
+      title={isEdit ? "Editar cotización" : "Nueva cotización"}
+      description={isEdit ? "Modifica los datos de la cotización." : "Genera una cotización para un cliente."}
+    >
       {error && <Alert variant="error" title="Error" message={error} />}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div
+        className={
+          showCustomerHistory
+            ? "grid grid-cols-1 gap-6 lg:grid-cols-3"
+            : "mx-auto w-full max-w-2xl"
+        }
+      >
+        <form onSubmit={handleSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
         <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 space-y-4">
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Datos del cliente</p>
           <div>
@@ -279,8 +278,15 @@ const QuoteFormPage: React.FC = () => {
             {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear cotización"}
           </Button>
         </div>
-      </form>
-    </div>
+        </form>
+
+        {showCustomerHistory && (
+          <div className="lg:col-span-1 space-y-4">
+            <QuoteCustomerHistoryPanel otherQuotes={otherQuotes} />
+          </div>
+        )}
+      </div>
+    </PageShell>
   );
 };
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useRepairNotes, type RepairNoteItemInput } from "../hooks/use-repair-notes";
 import { useInventory } from "@commerce/inventory/hooks/use-inventory";
 import { useCash, type CashMovementMethod } from "@commerce/cash/hooks/use-cash";
@@ -25,7 +25,9 @@ import TextArea from "@ui/textarea/textarea";
 import EmployeeSelect from "@common/components/employee-select";
 import CustomerSelect from "@common/components/customer-select";
 import ServiceTypeMultiSelect from "@common/components/service-type-multi-select";
-import PageMeta from "@common/pages/page-meta";
+import PageShell from "@common/components/page-shell/page-shell";
+import { useRepairNoteCustomerHistory } from "../hooks/use-repair-note-customer-history";
+import RepairNoteCustomerHistoryPanel from "../components/repair-note-customer-history-panel";
 
 type ItemLine = { inventoryItemId: string; quantity: string; unitPrice: string };
 const emptyItemLine: ItemLine = { inventoryItemId: "", quantity: "1", unitPrice: "" };
@@ -226,6 +228,11 @@ const RepairNoteFormPage: React.FC = () => {
     if (ok) closeChargeModal();
   };
 
+  // Panel de historial solo aplica editando una nota con cliente real
+  // seleccionado (customerId), nunca en alta ni con solo nombre libre.
+  const showCustomerHistory = isEdit && Boolean(form.customerId);
+  const { otherNotes } = useRepairNoteCustomerHistory(form.customerId || null, id);
+
   if (loading && isEdit) {
     return (
       <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -235,33 +242,25 @@ const RepairNoteFormPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <PageMeta
-        title={isEdit ? "Editar Reparación" : "Nueva Reparación"}
-        description="Nota de reparación"
-      />
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate("/admin/repair-notes")}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">
-            {isEdit ? `Editar nota #${note?.controlNumber ?? ""}` : "Nueva nota de reparación"}
-          </h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            {isEdit ? "Modifica los datos de la nota." : "Registra un nuevo equipo en el taller."}
-          </p>
-        </div>
-      </div>
-
+    <PageShell
+      title={isEdit ? `Editar nota #${note?.controlNumber ?? ""}` : "Nueva nota de reparación"}
+      description={isEdit ? "Modifica los datos de la nota." : "Registra un nuevo equipo en el taller."}
+    >
       {error && (
         <Alert variant="error" title="Error" message={error} />
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div
+        className={
+          showCustomerHistory
+            ? "grid grid-cols-1 gap-6 lg:grid-cols-3"
+            : "mx-auto w-full max-w-2xl"
+        }
+      >
+      <form
+        onSubmit={handleSubmit}
+        className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}
+      >
         {/* Cliente */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 space-y-4">
           <SectionTitle>Datos del cliente</SectionTitle>
@@ -616,6 +615,13 @@ const RepairNoteFormPage: React.FC = () => {
         </div>
       </form>
 
+      {showCustomerHistory && (
+        <div className="lg:col-span-1 space-y-4">
+          <RepairNoteCustomerHistoryPanel otherNotes={otherNotes} />
+        </div>
+      )}
+      </div>
+
       <Modal isOpen={Boolean(chargeNote)} onClose={closeChargeModal} className="max-w-md p-6">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Cobrar entrega</h3>
         {cashError && <Alert variant="error" title="Error" message={cashError} />}
@@ -680,7 +686,7 @@ const RepairNoteFormPage: React.FC = () => {
           </div>
         )}
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 
