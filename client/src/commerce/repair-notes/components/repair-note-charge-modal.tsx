@@ -55,7 +55,7 @@ export const RepairNoteChargeModal: FC<RepairNoteChargeModalProps> = ({
     ) : (
       <div className="mt-4 space-y-4">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Monto a cobrar por esta nota (puede ser menor al total cotizado si no todo se cobró).
+          Saldo a cobrar (total menos anticipo). Puedes ajustarlo si se cobró distinto.
         </p>
         <div>
           <Label className="text-gray-500">Monto ($)</Label>

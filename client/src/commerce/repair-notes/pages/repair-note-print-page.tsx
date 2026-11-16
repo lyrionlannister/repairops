@@ -92,7 +92,7 @@ export const RepairNotePrintPage: React.FC = () => {
         <select
           value={ticketSize ?? "80mm"}
           onChange={(event) => setTicketSize(event.target.value as TicketSize)}
-          className="shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          className="min-h-11 shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm md:min-h-0 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
         >
           <option value="58mm">Térmico 58mm</option>
           <option value="80mm">Térmico 80mm</option>

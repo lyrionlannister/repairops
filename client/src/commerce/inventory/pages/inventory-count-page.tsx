@@ -8,6 +8,7 @@ import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 import { Alert } from "@ui/alert/alert";
+import { useBranch } from "@common/hooks/use-branch";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
 type LineDraft = { countedQuantity: string; reason: string };
@@ -17,7 +18,9 @@ export const InventoryCountPage: React.FC = () => {
   const { branches, fetchAll: fetchBranches } = useBranches();
   const { count, saving, error, missingReasonItemIds, open, setCounted, close } = useInventoryCounts();
 
-  const [branchId, setBranchId] = useState("");
+  const { activeBranchId } = useBranch();
+  const [pickedBranchId, setBranchId] = useState("");
+  const branchId = pickedBranchId || activeBranchId || "";
   const [drafts, setDrafts] = useState<Record<string, LineDraft>>({});
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -127,7 +130,13 @@ export const InventoryCountPage: React.FC = () => {
                       </Button>
                     </>
                   ) : (
-                    item.reason && <span className="text-sm text-gray-500 dark:text-gray-400">{item.reason}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {item.countedQuantity === null
+                        ? "No contado"
+                        : item.appliedMovementId
+                          ? `Ajustado${item.reason ? ` · ${item.reason}` : ""}`
+                          : "Sin diferencia"}
+                    </span>
                   )}
                 </div>
               );

@@ -117,7 +117,8 @@ export const RepairNoteFormPage: React.FC = () => {
       const turningDelivered = form.status === "delivered" && note?.status !== "delivered";
       if (turningDelivered) {
         await fetchOpenSession(activeBranchId);
-        setCashAmount(String(result.totalValue));
+        // El anticipo ya se cobro al recibir el equipo: aqui solo se cobra el saldo.
+        setCashAmount(String(Math.max(0, Number(result.totalValue) - Number(result.advanceValue ?? 0))));
         setCashEmployeeId(result.assignedEmployeeId ?? "");
         setChargeNote(result);
         return;

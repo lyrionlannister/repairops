@@ -113,7 +113,8 @@ export const useInventoryCounts = () => {
         if (missing) setMissingReasonItemIds(missing);
         throw new Error(message);
       }
-      setCount(await res.json());
+      // El cierre responde sin lineas: se recargan para mostrar el resultado.
+      await fetchById(count.id);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
@@ -121,7 +122,7 @@ export const useInventoryCounts = () => {
     } finally {
       setSaving(false);
     }
-  }, [apiClient, count]);
+  }, [apiClient, count, fetchById]);
 
   return { count, loading, saving, error, missingReasonItemIds, open, fetchById, setCounted, close };
 };

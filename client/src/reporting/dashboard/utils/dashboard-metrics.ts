@@ -50,10 +50,18 @@ const startOfWeek = (date: Date): Date => {
   return start;
 };
 
+// "2026-11-16" (solo fecha) se parsea como medianoche UTC, que en zonas al
+// oeste de UTC cae el dia anterior local -- se arma en hora local para que
+// "hoy" y la semana/mes en curso cuenten el dia correcto.
+const parseLocalDate = (value: string): Date => {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return dateOnly ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3])) : new Date(value);
+};
+
 const isCurrentWeek = (dateValue: string | null | undefined, currentDate: Date): boolean => {
   if (!dateValue) return false;
 
-  const incomingDate = new Date(dateValue);
+  const incomingDate = parseLocalDate(dateValue);
   if (Number.isNaN(incomingDate.getTime())) return false;
 
   const weekStart = startOfWeek(currentDate);
@@ -66,7 +74,7 @@ const isCurrentWeek = (dateValue: string | null | undefined, currentDate: Date):
 const isCurrentMonth = (dateValue: string | null | undefined, currentDate: Date): boolean => {
   if (!dateValue) return false;
 
-  const incomingDate = new Date(dateValue);
+  const incomingDate = parseLocalDate(dateValue);
   if (Number.isNaN(incomingDate.getTime())) return false;
 
   return (
