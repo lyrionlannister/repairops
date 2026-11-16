@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Plus, PackageCheck, Ban } from "lucide-react";
 import { useLayaways, type LayawayMethod, type LayawayRecord } from "../hooks/use-layaways";
 import { useCustomers } from "../hooks/use-customers";
+import { useBranch } from "@common/hooks/use-branch";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
@@ -21,12 +22,14 @@ export const LayawaysPage: React.FC = () => {
   const navigate = useNavigate();
   const { layaways, saving, error, fetchAll, complete, cancel } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
-  const { session: cashSession } = useCash();
+  const { activeBranchId } = useBranch();
+  const { session: cashSession, fetchOpenSession } = useCash();
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [completeAmount, setCompleteAmount] = useState("");
   const [completeMethod, setCompleteMethod] = useState<LayawayMethod>("efectivo");
+  const [noCashError, setNoCashError] = useState(false);
   const [cancelId, setCancelId] = useState<string | null>(null);
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
@@ -37,6 +40,10 @@ export const LayawaysPage: React.FC = () => {
     fetchCustomers();
   }, [fetchAll, fetchCustomers]);
 
+  useEffect(() => {
+    if (activeBranchId) fetchOpenSession(activeBranchId);
+  }, [activeBranchId, fetchOpenSession]);
+
   const customerName = (id: string) => customers.find((c) => c.id === id)?.name ?? `Cliente ${id}`;
 
   const openCompleteModal = (layaway: LayawayRecord) => {
@@ -46,7 +53,13 @@ export const LayawaysPage: React.FC = () => {
   };
 
   const handleComplete = async () => {
-    if (!completingId || !cashSession) return;
+    if (!completingId) return;
+    if (!cashSession) {
+      setCompletingId(null);
+      setNoCashError(true);
+      return;
+    }
+    setNoCashError(false);
     const ok = await complete(completingId, cashSession.id, [{ method: completeMethod, amount: Number(completeAmount) || 0 }]);
     if (ok) {
       setSuccessMsg("Apartado completado.");
@@ -77,6 +90,7 @@ export const LayawaysPage: React.FC = () => {
     >
       {error && <Alert variant="error" title="Error" message={error} />}
       {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
+      {noCashError && <Alert variant="warning" title="Sin sesión de caja" message="Abre una sesión de caja en Caja antes de completar un apartado." />}
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
         {layaways.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay apartados registrados.</div>

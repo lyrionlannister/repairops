@@ -30,6 +30,7 @@ export const LayawayFormPage: React.FC = () => {
   const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(activeBranchId);
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
 
+  const [formError, setFormError] = useState<string | null>(null);
   const [customerId, setCustomerId] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
@@ -52,9 +53,12 @@ export const LayawayFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cashSession || !customerId || !expiresAt) return;
+    setFormError(null);
+    if (!cashSession) return setFormError("Abre una sesión de caja antes de apartar.");
+    if (!customerId) return setFormError("Selecciona un cliente.");
+    if (!expiresAt) return setFormError("Indica la fecha de vencimiento.");
     const items = buildItemsPayload();
-    if (items.length === 0) return;
+    if (items.length === 0) return setFormError("Agrega al menos un item con precio.");
 
     const created = await open({
       customerId,
@@ -149,7 +153,7 @@ export const LayawayFormPage: React.FC = () => {
 
   return (
     <PageShell title="Nuevo apartado" description="Reserva productos para un cliente con un anticipo. El stock físico solo baja al completar.">
-      {error && <Alert variant="error" title="Error" message={error} />}
+      {(formError ?? error) && <Alert variant="error" title="Error" message={(formError ?? error)!} />}
       {!loadingCashSession && !cashSession && (
         <Alert variant="warning" title="Sin sesión de caja" message="Abre una sesión de caja en Caja antes de apartar." />
       )}
