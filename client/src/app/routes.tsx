@@ -6,6 +6,7 @@ import { DashboardPage } from "../messaging/chats/pages/dashboard-page";
 import { UsersPage } from "../identity/users/pages/users-page";
 import { UserFormPage } from "../identity/users/pages/user-form-page";
 import { LocalPage } from "../app_platform/local/pages/local-page";
+import { ProfilePage } from "../identity/auth/pages/profile-page";
 import { RepairNotesPage } from "../commerce/repair-notes/pages/repair-notes-page";
 import { RepairNoteFormPage } from "../commerce/repair-notes/pages/repair-note-form-page";
 import { RepairNotePrintPage } from "../commerce/repair-notes/pages/repair-note-print-page";
@@ -73,6 +74,10 @@ export const protectedRoutes = [
   {
     path: "/admin/local",
     element: <LocalPage />,
+  },
+  {
+    path: "/admin/profile",
+    element: <ProfilePage />,
   },
   {
     path: "/admin/repair-notes",

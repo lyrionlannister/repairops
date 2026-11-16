@@ -21,3 +21,20 @@ export const statusColorClasses = {
   offline: "bg-error-400",
   busy: "bg-warning-500",
 };
+
+export const initialsTextClasses = {
+  xsmall: "text-[10px]",
+  small: "text-xs",
+  medium: "text-sm",
+  large: "text-base",
+  xlarge: "text-lg",
+  xxlarge: "text-xl",
+};
+
+export const initialsFrom = (name: string): string =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
