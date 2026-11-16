@@ -9,7 +9,7 @@ const sendRequest = async (url: string, options: RequestInit = {}) => {
 
 // Endpoints donde el toast generico sobra: auth tiene su propio mensaje inline
 // y chats/notificaciones son acciones de alta frecuencia.
-const SILENT_PREFIXES = ["/auth/login", "/auth/logout", "/auth/register", "/chats", "/notifications"];
+const SILENT_PREFIXES = ["/auth/login", "/auth/logout", "/auth/register", "/chats", "/notifications", "/returns"];
 
 const SUCCESS_TITLE: Record<string, string> = {
   POST: "Creado correctamente",
@@ -17,6 +17,11 @@ const SUCCESS_TITLE: Record<string, string> = {
   PATCH: "Cambios guardados",
   DELETE: "Eliminado correctamente",
 };
+
+const SPECIFIC_TITLE: Array<[RegExp, string]> = [
+  [/^\/cash\/sessions\/[^/]+\/close/, "Caja cerrada"],
+  [/^\/cash\/sessions(\?|$)/, "Caja abierta"],
+];
 
 export const useApiClient = () => {
   const { showToast } = useToast();
@@ -51,7 +56,7 @@ export const useApiClient = () => {
 
       if (notify) {
         if (response.ok) {
-          showToast({ title: SUCCESS_TITLE[method], variant: "success" });
+          showToast({ title: SPECIFIC_TITLE.find(([re]) => re.test(endpoint))?.[1] ?? SUCCESS_TITLE[method], variant: "success" });
         } else if (response.status !== 401) {
           const body = await response.clone().json().catch(() => ({}));
           showToast({
