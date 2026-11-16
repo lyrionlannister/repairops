@@ -1,3 +1,4 @@
+import { ScrollTable } from "@ui/table/scroll-table";
 import { useEffect, useState } from "react";
 import { MessageCircle, Pencil, Trash2 } from "lucide-react";
 import {
@@ -109,8 +110,8 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
           <p className="text-sm">Sin plantillas todavía.</p>
         </div>
       ) : (
-        <table className="w-full text-sm">
-          <thead className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-white/2">
+        <ScrollTable
+          header={
             <tr>
               <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Plantilla</th>
               <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Categoría</th>
@@ -122,7 +123,8 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
               )}
               <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Acciones</th>
             </tr>
-          </thead>
+          }
+        >
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {entries.map((entry) => {
               const liveStatus = statusByEntryId?.get(entry.id);
@@ -153,7 +155,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
                       <button
                         type="button"
                         onClick={() => openEditForm(entry)}
-                        className="text-gray-400 hover:text-brand-500"
+                        className="rounded-lg p-1.5 text-gray-400 hover:text-brand-500"
                         aria-label="Editar"
                       >
                         <Pencil className="size-4" />
@@ -161,7 +163,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
                       <button
                         type="button"
                         onClick={() => setDeletingEntry(entry)}
-                        className="text-gray-400 hover:text-error-500"
+                        className="rounded-lg p-1.5 text-gray-400 hover:text-error-500"
                         aria-label="Borrar"
                       >
                         <Trash2 className="size-4" />
@@ -172,7 +174,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
               );
             })}
           </tbody>
-        </table>
+        </ScrollTable>
       )}
 
       <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} className="max-w-lg p-6 sm:p-8 mx-4">
