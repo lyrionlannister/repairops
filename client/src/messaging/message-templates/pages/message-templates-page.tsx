@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { MessageSquareText, Plus, Pencil, Search, Trash2 } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
@@ -16,10 +15,9 @@ import { useMessageTemplatesPage } from "../hooks/use-message-templates-page";
 
 export const MessageTemplatesPage = () => {
   const navigate = useNavigate();
-  const { templates, loading, saving, error, fetchAll, remove } = useMessageTemplates();
+  const { templates, loading, saving, fetchAll, remove } = useMessageTemplates();
   const { search, setSearch, filteredTemplates } = useMessageTemplatesPage(templates);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -29,11 +27,7 @@ export const MessageTemplatesPage = () => {
     usePaginatedList(filteredTemplates);
 
   const handleDelete = async (id: string) => {
-    const ok = await remove(id);
-    if (ok) {
-      setSuccessMsg("Template eliminado.");
-      window.setTimeout(() => setSuccessMsg(null), 3000);
-    }
+    await remove(id);
     setDeleteConfirmId(null);
   };
 
@@ -48,8 +42,6 @@ export const MessageTemplatesPage = () => {
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">

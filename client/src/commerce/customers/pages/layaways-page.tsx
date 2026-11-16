@@ -20,11 +20,10 @@ import { METHOD_LABELS, STATUS_LABELS, formatMoney, daysUntil } from "../utils/f
 
 export const LayawaysPage: React.FC = () => {
   const navigate = useNavigate();
-  const { layaways, saving, error, fetchAll, complete, cancel } = useLayaways();
+  const { layaways, saving, fetchAll, complete, cancel } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
   const { activeBranchId } = useBranch();
   const { session: cashSession, fetchOpenSession } = useCash();
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [completeAmount, setCompleteAmount] = useState("");
@@ -60,21 +59,13 @@ export const LayawaysPage: React.FC = () => {
       return;
     }
     setNoCashError(false);
-    const ok = await complete(completingId, cashSession.id, [{ method: completeMethod, amount: Number(completeAmount) || 0 }]);
-    if (ok) {
-      setSuccessMsg("Apartado completado.");
-      setTimeout(() => setSuccessMsg(null), 3500);
-    }
+    await complete(completingId, cashSession.id, [{ method: completeMethod, amount: Number(completeAmount) || 0 }]);
     setCompletingId(null);
   };
 
   const handleCancel = async () => {
     if (!cancelId) return;
-    const ok = await cancel(cancelId);
-    if (ok) {
-      setSuccessMsg("Apartado cancelado.");
-      setTimeout(() => setSuccessMsg(null), 3500);
-    }
+    await cancel(cancelId);
     setCancelId(null);
   };
 
@@ -88,8 +79,6 @@ export const LayawaysPage: React.FC = () => {
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
       {noCashError && <Alert variant="warning" title="Sin sesión de caja" message="Abre una sesión de caja en Caja antes de completar un apartado." />}
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
         {layaways.length === 0 ? (

@@ -7,9 +7,11 @@ const sendRequest = async (url: string, options: RequestInit = {}) => {
   return await fetch(url, options);
 };
 
-// Endpoints donde el toast generico sobra: auth tiene su propio mensaje inline
-// y chats/notificaciones son acciones de alta frecuencia.
-const SILENT_PREFIXES = ["/auth/login", "/auth/logout", "/auth/register", "/chats", "/notifications", "/returns"];
+// Todo mensaje de la API se muestra como toast (exito en mutaciones, error en
+// cualquier metodo). Excepciones: chats/notificaciones son alta frecuencia o
+// polling, y logout redirige solo, asi que unicamente avisa errores.
+const SILENT_PREFIXES = ["/chats", "/notifications"];
+const SILENT_SUCCESS_PREFIXES = ["/auth/logout"];
 
 const SUCCESS_TITLE: Record<string, string> = {
   POST: "Creado correctamente",
@@ -19,6 +21,8 @@ const SUCCESS_TITLE: Record<string, string> = {
 };
 
 const SPECIFIC_TITLE: Array<[RegExp, string]> = [
+  [/^\/auth\/login/, "Sesión iniciada"],
+  [/^\/auth\/register/, "Registro completado"],
   [/^\/cash\/sessions\/[^/]+\/close/, "Caja cerrada"],
   [/^\/cash\/sessions(\?|$)/, "Caja abierta"],
   [/^\/inventory\/counts\/[^/]+\/close/, "Conteo cerrado"],
@@ -28,11 +32,29 @@ const SPECIFIC_TITLE: Array<[RegExp, string]> = [
   [/^\/layaways\/[^/]+\/cancel/, "Apartado cancelado"],
   [/^\/repair-notes\/[^/]+\/cancel/, "Nota cancelada"],
   [/^\/sales(\?|$)/, "Venta registrada"],
+  [/^\/returns(\?|$)/, "Devolución registrada"],
   [/^\/import-staging\/[^/]+\/commit/, "Importación confirmada"],
 ];
 
+// Varias peticiones de una misma pantalla pueden fallar a la vez (API caida,
+// por ejemplo): el mismo toast no se repite dentro de la ventana.
+const DEDUPE_WINDOW_MS = 4000;
+let lastToastKey = "";
+let lastToastAt = 0;
+
 export const useApiClient = () => {
-  const { showToast } = useToast();
+  const { showToast: rawShowToast } = useToast();
+  const showToast = useCallback(
+    (toast: Parameters<typeof rawShowToast>[0]) => {
+      const key = `${toast.variant}|${toast.title}|${toast.message ?? ""}`;
+      const now = Date.now();
+      if (key === lastToastKey && now - lastToastAt < DEDUPE_WINDOW_MS) return;
+      lastToastKey = key;
+      lastToastAt = now;
+      rawShowToast(toast);
+    },
+    [rawShowToast],
+  );
 
   const apiClient = useCallback(
     async (endpoint: string, options: RequestInit = {}) => {
@@ -49,7 +71,8 @@ export const useApiClient = () => {
       const url = `${API_BASE_URL}${endpoint}`;
       const method = (options.method ?? "GET").toUpperCase();
       const isMutation = method in SUCCESS_TITLE;
-      const notify = isMutation && !SILENT_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
+      const notify = !SILENT_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
+      const notifySuccess = isMutation && !SILENT_SUCCESS_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
 
       // La sesion viaja en una cookie httpOnly (nunca legible por JS, ver
       // OWASP Session Management Cheat Sheet): no hay header Authorization
@@ -64,12 +87,13 @@ export const useApiClient = () => {
 
       if (notify) {
         if (response.ok) {
-          showToast({ title: SPECIFIC_TITLE.find(([re]) => re.test(endpoint))?.[1] ?? SUCCESS_TITLE[method], variant: "success" });
-        } else if (response.status !== 401) {
+          if (notifySuccess) showToast({ title: SPECIFIC_TITLE.find(([re]) => re.test(endpoint))?.[1] ?? SUCCESS_TITLE[method], variant: "success" });
+        } else if (response.status !== 401 || endpoint.startsWith("/auth/login")) {
+          // 401 en otras rutas = sesion vencida (el guard redirige), no un mensaje.
           const body = await response.clone().json().catch(() => ({}));
           showToast({
             title: "No se pudo completar la acción",
-            message: (body as { error?: string }).error ?? `Error ${response.status}`,
+            message: String((body as { error?: unknown }).error ?? `Error ${response.status}`),
             variant: "error",
           });
         }

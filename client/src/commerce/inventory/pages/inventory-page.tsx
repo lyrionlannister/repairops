@@ -7,7 +7,6 @@ import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useInventoryPage } from "../hooks/use-inventory-page";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
@@ -30,7 +29,6 @@ export const InventoryPage = () => {
   const {
     deleteConfirmId,
     setDeleteConfirmId,
-    successMsg,
     isImportOpen,
     setIsImportOpen,
     importFile,
@@ -77,8 +75,6 @@ export const InventoryPage = () => {
         </div>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <InventoryTable
         loading={loading}

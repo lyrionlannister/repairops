@@ -1,7 +1,6 @@
 import type { FC } from "react";
 import type { CashMovementMethod, CashSessionRecord } from "@commerce/cash/hooks/use-cash";
 import { Modal } from "@ui/modal/modal";
-import { Alert } from "@ui/alert/alert";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
@@ -26,7 +25,6 @@ interface RepairNoteChargeModalProps {
 export const RepairNoteChargeModal: FC<RepairNoteChargeModalProps> = ({
   isOpen,
   cashSession,
-  cashError,
   cashAmount,
   cashMethod,
   cashEmployeeId,
@@ -39,7 +37,6 @@ export const RepairNoteChargeModal: FC<RepairNoteChargeModalProps> = ({
 }) => (
   <Modal isOpen={isOpen} onClose={onClose} className="max-w-md p-6">
     <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Cobrar entrega</h3>
-    {cashError && <Alert variant="error" title="Error" message={cashError} />}
     {isOpen && !cashSession ? (
       <div className="mt-4 space-y-4">
         <p className="text-sm text-gray-500 dark:text-gray-400">

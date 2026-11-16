@@ -9,7 +9,6 @@ import { QuoteItemLinesSection } from "../components/quote-item-lines-section";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useBranch } from "@common/hooks/use-branch";
 import { Button } from "@ui/button/button";
-import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
 const INITIAL_FORM: QuoteFormData = {
@@ -26,7 +25,7 @@ export const QuoteFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { quote, loading, saving, error, fetchQuote, fetchQuoteItems, createQuote, updateQuote, clearError } =
+  const { quote, loading, saving, fetchQuote, fetchQuoteItems, createQuote, updateQuote, clearError } =
     useQuotes();
   const { activeBranchId } = useBranch();
 
@@ -106,7 +105,6 @@ export const QuoteFormPage: React.FC = () => {
       title={isEdit ? "Editar cotización" : "Nueva cotización"}
       description={isEdit ? "Modifica los datos de la cotización." : "Genera una cotización para un cliente."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className={showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"}>
         <form onSubmit={handleSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>

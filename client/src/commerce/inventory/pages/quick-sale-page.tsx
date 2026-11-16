@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
+import { useToast } from "@common/hooks/use-toast";
 import { useOfflineSalesQueue } from "../hooks/use-offline-sales-queue";
 import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useSaleCart } from "../hooks/use-sale-cart";
@@ -18,12 +19,11 @@ import { OfflineSalesQueueBanner } from "../components/offline-sales-queue-banne
 import { SaleCartLinesSection } from "../components/sale-cart-lines-section";
 import { SaleCartTotals } from "../components/sale-cart-totals";
 import { SalePaymentsSection } from "../components/sale-payments-section";
-import { formatMoney } from "../utils/format";
 
 export const QuickSalePage: React.FC = () => {
   const { queue: offlineQueue, isOnline, syncing, submitOrQueue, sync } = useOfflineSalesQueue();
+  const { showToast } = useToast();
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { activeBranchId } = useBranch();
   // Solo items de la sucursal activa -- vender de otra sucursal decrementaria
   // stock que el cajero no puede ver ni reponer desde aqui.
@@ -35,7 +35,6 @@ export const QuickSalePage: React.FC = () => {
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [createdByEmployeeId, setCreatedByEmployeeId] = useState("");
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const taxRate = Number(local?.taxRatePercent ?? 0);
   const {
@@ -103,7 +102,6 @@ export const QuickSalePage: React.FC = () => {
     };
 
     setCreating(true);
-    setError(null);
     // Siempre se intenta el POST real primero -- navigator.onLine no detecta
     // "el server no responde", solo la interfaz de red del sistema. La cola
     // es el resultado de que la llamada de verdad haya fallado por red, no
@@ -112,23 +110,20 @@ export const QuickSalePage: React.FC = () => {
     setCreating(false);
 
     if ("sale" in result) {
-      setSuccessMsg(`Venta #${result.sale.saleNumber} registrada por ${formatMoney(result.sale.totalValue)}.`);
       resetForm();
       fetchInventory();
-      setTimeout(() => setSuccessMsg(null), 3500);
     } else if ("queued" in result) {
-      setSuccessMsg(`Sin conexión: venta guardada como ${result.queued.localFolio}, se sincroniza sola al reconectar.`);
+      showToast({
+        title: "Sin conexión",
+        message: `Venta guardada como ${result.queued.localFolio}; se sincroniza sola al reconectar.`,
+        variant: "info",
+      });
       resetForm();
-      setTimeout(() => setSuccessMsg(null), 4500);
-    } else {
-      setError(result.error);
     }
   };
 
   return (
     <PageShell title="Venta Rápida" description="Venta de mostrador: cada item descuenta su stock automáticamente.">
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
       {!isOnline && (
         <Alert
           variant="warning"

@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Pencil, Search, Store } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Toggle } from "@ui/toggle/toggle";
@@ -17,10 +16,9 @@ import { useBranchesPage } from "../hooks/use-branches-page";
 
 export const BranchesPage = () => {
   const navigate = useNavigate();
-  const { branches, loading, error, fetchAll, setActive } = useBranches();
+  const { branches, loading, fetchAll, setActive } = useBranches();
   const { refreshBranches } = useBranch();
   const { search, setSearch, filteredBranches } = useBranchesPage(branches);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -33,8 +31,6 @@ export const BranchesPage = () => {
     const ok = await setActive(branch.id, !branch.isActive);
     if (ok) {
       await refreshBranches();
-      setSuccessMsg("Sucursal actualizada correctamente.");
-      window.setTimeout(() => setSuccessMsg(null), 3000);
     }
   };
 
@@ -49,8 +45,6 @@ export const BranchesPage = () => {
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">

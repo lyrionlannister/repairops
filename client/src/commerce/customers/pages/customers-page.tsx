@@ -1,7 +1,6 @@
 import { Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
@@ -15,12 +14,11 @@ import { CustomerDeviceHistoryModal } from "../components/customer-device-histor
 
 export const CustomersPage = () => {
   const navigate = useNavigate();
-  const { customers, devices, loading, saving, error, fetchAll, fetchDevices, remove } = useCustomers();
+  const { customers, devices, loading, saving, fetchAll, fetchDevices, remove } = useCustomers();
 
   const {
     deleteConfirmId,
     setDeleteConfirmId,
-    successMsg,
     search,
     setSearch,
     filteredCustomers,
@@ -44,8 +42,6 @@ export const CustomersPage = () => {
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">

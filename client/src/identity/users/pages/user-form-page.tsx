@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -40,8 +39,8 @@ export const UserFormPage: React.FC = () => {
 
   const {
     users, loading, fetchUsers,
-    createUser, creating, createError,
-    updateUser, updating, updateError,
+    createUser, creating,
+    updateUser, updating,
   } = useUsers();
   const context = useEmployeeContext(isEdit ? id ?? null : null);
   const [form, setForm] = useState<UserFormState>(emptyForm);
@@ -72,7 +71,6 @@ export const UserFormPage: React.FC = () => {
   };
 
   const saving = creating || updating;
-  const error = createError || updateError;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -214,7 +212,6 @@ export const UserFormPage: React.FC = () => {
       title={isEdit ? "Editar usuario" : "Nuevo usuario"}
       description={isEdit ? "Modifica los datos del usuario." : "Crea un usuario para el tenant actual."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       {isEdit && id ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

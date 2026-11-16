@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
@@ -16,10 +15,9 @@ import { useSuppliersPage } from "../hooks/use-suppliers-page";
 
 export const SuppliersPage = () => {
   const navigate = useNavigate();
-  const { suppliers, loading, saving, error, fetchAll, remove } = useSuppliers();
+  const { suppliers, loading, saving, fetchAll, remove } = useSuppliers();
   const { search, setSearch, filteredSuppliers } = useSuppliersPage(suppliers);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -29,11 +27,7 @@ export const SuppliersPage = () => {
     usePaginatedList(filteredSuppliers);
 
   const handleDelete = async (id: string) => {
-    const ok = await remove(id);
-    if (ok) {
-      setSuccessMsg("Proveedor eliminado.");
-      window.setTimeout(() => setSuccessMsg(null), 3000);
-    }
+    await remove(id);
     setDeleteConfirmId(null);
   };
 
@@ -48,8 +42,6 @@ export const SuppliersPage = () => {
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">

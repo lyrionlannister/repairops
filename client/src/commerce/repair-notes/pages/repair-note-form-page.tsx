@@ -11,7 +11,6 @@ import {
   type RepairNoteStatus,
 } from "../hooks/use-repair-notes";
 import { Button } from "@ui/button/button";
-import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useRepairNoteCustomerHistory } from "../hooks/use-repair-note-customer-history";
 import { useRepairNoteItemLines } from "../hooks/use-repair-note-item-lines";
@@ -36,7 +35,6 @@ export const RepairNoteFormPage: React.FC = () => {
     notes,
     loading,
     saving,
-    error,
     fetchNotes,
     fetchNote,
     fetchNoteItems,
@@ -167,7 +165,6 @@ export const RepairNoteFormPage: React.FC = () => {
       title={isEdit ? `Editar nota #${note?.controlNumber ?? ""}` : "Nueva nota de reparación"}
       description={isEdit ? "Modifica los datos de la nota." : "Registra un nuevo equipo en el taller."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className={showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"}>
         <form onSubmit={handleSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>

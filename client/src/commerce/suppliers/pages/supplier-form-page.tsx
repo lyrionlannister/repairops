@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -23,7 +22,7 @@ export const SupplierFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { suppliers, loading, saving, error, fetchAll, create, update } = useSuppliers();
+  const { suppliers, loading, saving, fetchAll, create, update } = useSuppliers();
   const [form, setForm] = useState<SupplierFormState>(emptyForm);
   const context = useSupplierContext(isEdit ? id ?? null : null);
 
@@ -55,7 +54,6 @@ export const SupplierFormPage: React.FC = () => {
       title={isEdit ? "Editar proveedor" : "Nuevo proveedor"}
       description={isEdit ? "Modifica los datos del proveedor." : "Registra un nuevo proveedor para el tenant."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className={isEdit ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-xl"}>
         <form

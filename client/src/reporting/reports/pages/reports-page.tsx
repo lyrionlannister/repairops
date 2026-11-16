@@ -4,7 +4,6 @@ import { BarChart3 } from "lucide-react";
 import { useBranch } from "@common/hooks/use-branch";
 import { useLocal } from "@app-platform/local/hooks/use-local";
 import { useCash } from "@commerce/cash/hooks/use-cash";
-import { Alert } from "@ui/alert/alert";
 import { DatePicker } from "@ui/date-picker/date-picker";
 import { Label } from "@ui/inputs/label";
 import { PageShell } from "@common/components/page-shell/page-shell";
@@ -16,7 +15,7 @@ export const ReportsPage = () => {
   const { local, fetchLocal } = useLocal();
   const { activeBranchId } = useBranch();
   const { session, summary, fetchOpenSession, fetchSummary } = useCash();
-  const { employeePerformance, accessorySales, repairNotesByType, loading, error, fetchReports } = useReports();
+  const { employeePerformance, accessorySales, repairNotesByType, loading, fetchReports } = useReports();
 
   const [periodStart, setPeriodStart] = useState(todayIso());
   const [periodEnd, setPeriodEnd] = useState(todayIso());
@@ -48,7 +47,6 @@ export const ReportsPage = () => {
       title="Reportes"
       description="Productividad, ventas de accesorios y notas por tipo en el período seleccionado."
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
         <div>

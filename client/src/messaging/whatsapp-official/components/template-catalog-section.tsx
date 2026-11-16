@@ -8,7 +8,6 @@ import {
   type WhatsappTemplateCategory,
 } from "../hooks/use-whatsapp-template-catalog";
 import type { WhatsappTemplateSyncStatus } from "../hooks/use-whatsapp-templates";
-import { Alert } from "@ui/alert/alert";
 import { Badge } from "@ui/badge/badge";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
@@ -35,7 +34,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
   description,
   statusByEntryId,
 }) => {
-  const { entries, loading, saving, error, fetchEntries, create, update, remove } =
+  const { entries, loading, saving, fetchEntries, create, update, remove } =
     useWhatsappTemplateCatalog(scope);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<WhatsappTemplateCatalogEntryRow | null>(null);
@@ -100,7 +99,6 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
         </Button>
       </div>
 
-      {error && <div className="p-4"><Alert variant="error" title="Error" message={error} /></div>}
 
       {loading && entries.length === 0 ? (
         <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando...</div>

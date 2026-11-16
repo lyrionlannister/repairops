@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -24,7 +23,7 @@ export const MessageTemplateFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { templates, loading, saving, error, fetchAll, create, update } = useMessageTemplates();
+  const { templates, loading, saving, fetchAll, create, update } = useMessageTemplates();
   const [form, setForm] = useState<MessageTemplateFormState>(emptyForm);
 
   useEffect(() => {
@@ -73,7 +72,6 @@ export const MessageTemplateFormPage: React.FC = () => {
         </div>
       </div>
 
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <form
         onSubmit={handleSubmit}

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -25,7 +24,7 @@ export const CustomerFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { customers, loading, saving, error, fetchAll, create, update } = useCustomers();
+  const { customers, loading, saving, fetchAll, create, update } = useCustomers();
   const [form, setForm] = useState<CustomerFormState>(emptyForm);
   const context = useCustomerContext(isEdit ? id ?? null : null);
 
@@ -114,7 +113,6 @@ export const CustomerFormPage: React.FC = () => {
       title={isEdit ? "Editar cliente" : "Nuevo cliente"}
       description={isEdit ? "Modifica los datos del cliente." : "Registra un nuevo cliente para el tenant."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
       {content}
     </PageShell>
   );

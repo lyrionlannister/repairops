@@ -4,7 +4,6 @@ import { useRegister, type RegisterPayload } from "../../../core/common/hooks/us
 import { Input } from "../../../core/common/components/ui/inputs/input";
 import { Label } from "../../../core/common/components/ui/inputs/label";
 import { Button } from "../../../core/common/components/ui/button/button";
-import { Alert } from "../../../core/common/components/ui/alert/alert";
 import { EyeCloseIcon, EyeIcon } from "../../../core/common/icons";
 import {
   INITIAL_REGISTER_FORM_DATA,
@@ -13,7 +12,7 @@ import {
 import { updateRegisterFormField } from "../helpers/auth-form.helpers";
 
 export const RegisterForm: React.FC = () => {
-  const { register, loading, error, success, clearError, clearSuccess } =
+  const { register, loading, clearError, clearSuccess } =
     useRegister();
   const navigate = useNavigate();
 
@@ -54,21 +53,6 @@ export const RegisterForm: React.FC = () => {
             </p>
           </div>
 
-          {error && (
-            <div className="mb-4">
-              <Alert variant="error" title="Error" message={error} />
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4">
-              <Alert
-                variant="success"
-                title="¡Éxito!"
-                message="Registro completado. Serás redirigido a iniciar sesión."
-              />
-            </div>
-          )}
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">

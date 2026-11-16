@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -25,7 +24,7 @@ export const BranchFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { branches, loading, saving, error, fetchAll, create, update } = useBranches();
+  const { branches, loading, saving, fetchAll, create, update } = useBranches();
   const { refreshBranches } = useBranch();
   const [form, setForm] = useState<BranchFormState>(emptyForm);
   const context = useBranchContext(isEdit ? id ?? null : null);
@@ -90,7 +89,6 @@ export const BranchFormPage: React.FC = () => {
       title={isEdit ? "Editar sucursal" : "Nueva sucursal"}
       description={isEdit ? "Modifica los datos de la sucursal." : "Registra una nueva sucursal para el tenant."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       {isEdit && id ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

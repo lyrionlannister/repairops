@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -50,7 +49,7 @@ export const InventoryItemFormPage: React.FC = () => {
   const isEdit = Boolean(id);
   const { activeBranchId } = useBranch();
 
-  const { items, loading, saving, error, fetchAll, create, update } = useInventory();
+  const { items, loading, saving, fetchAll, create, update } = useInventory();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const { movements, marginPercent } = useInventoryItemContext(isEdit ? id ?? null : null);
 
@@ -174,7 +173,6 @@ export const InventoryItemFormPage: React.FC = () => {
       title={isEdit ? "Editar item" : "Nuevo item"}
       description={isEdit ? "Modifica los datos del item de inventario." : "Registra un nuevo item de inventario."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className={hasPanel ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "max-w-xl"}>
         <div className={hasPanel ? "lg:col-span-2" : undefined}>{formCard}</div>

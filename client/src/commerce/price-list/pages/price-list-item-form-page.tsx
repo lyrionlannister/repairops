@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -25,7 +24,7 @@ export const PriceListItemFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { items, loading, saving, error, fetchAll, create, update } = usePriceList();
+  const { items, loading, saving, fetchAll, create, update } = usePriceList();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const [form, setForm] = useState<PriceListItemFormState>(emptyForm);
 
@@ -82,7 +81,6 @@ export const PriceListItemFormPage: React.FC = () => {
         </div>
       </div>
 
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <form
         onSubmit={handleSubmit}

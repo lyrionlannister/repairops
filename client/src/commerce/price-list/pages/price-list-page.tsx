@@ -5,7 +5,6 @@ import { Tags, Upload, Plus, Pencil, Trash2, Search, PackagePlus } from "lucide-
 import { usePriceList } from "../hooks/use-price-list";
 import { usePriceListPage } from "../hooks/use-price-list-page";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { Pagination } from "@ui/table/pagination";
@@ -18,7 +17,7 @@ import { formatPrice } from "../utils/format";
 export const PriceListPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { items, loading, saving, error, fetchAll, remove } = usePriceList();
+  const { items, loading, saving, fetchAll, remove } = usePriceList();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
 
   useEffect(() => {
@@ -32,7 +31,6 @@ export const PriceListPage = () => {
   const {
     deleteConfirmId,
     setDeleteConfirmId,
-    successMsg,
     search,
     setSearch,
     activeBrand,
@@ -68,8 +66,6 @@ export const PriceListPage = () => {
         </div>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
