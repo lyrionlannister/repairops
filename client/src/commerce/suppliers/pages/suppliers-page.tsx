@@ -74,6 +74,7 @@ export const SuppliersPage = () => {
           </div>
         ) : (
           <ScrollTable
+            className="min-w-125"
             colgroup={
               <colgroup>
                 <col />

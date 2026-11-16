@@ -81,6 +81,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
         </div>
       ) : (
         <ScrollTable
+          className="min-w-240"
           colgroup={
             <colgroup>
               <col className="w-16" />

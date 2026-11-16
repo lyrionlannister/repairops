@@ -79,7 +79,7 @@ export const RepairNotePrintPage: React.FC = () => {
       `}</style>
 
       {/* Controls */}
-      <div className="mb-4 flex shrink-0 items-center gap-3 print:hidden">
+      <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3 print:hidden">
         <button
           onClick={() => navigate("/app/repair-notes")}
           className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
@@ -92,7 +92,7 @@ export const RepairNotePrintPage: React.FC = () => {
         <select
           value={ticketSize ?? "80mm"}
           onChange={(event) => setTicketSize(event.target.value as TicketSize)}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          className="shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
         >
           <option value="58mm">Térmico 58mm</option>
           <option value="80mm">Térmico 80mm</option>
@@ -102,7 +102,7 @@ export const RepairNotePrintPage: React.FC = () => {
         {isThermal ? (
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
           >
             <Printer className="size-4" />
             Imprimir
@@ -111,7 +111,7 @@ export const RepairNotePrintPage: React.FC = () => {
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
           >
             <Download className="size-4" />
             {downloading ? "Generando..." : "Descargar PDF"}

@@ -82,6 +82,7 @@ export const LayawaysPage: React.FC = () => {
           <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay apartados registrados.</div>
         ) : (
           <ScrollTable
+            className="min-w-160"
             colgroup={
               <colgroup>
                 <col />

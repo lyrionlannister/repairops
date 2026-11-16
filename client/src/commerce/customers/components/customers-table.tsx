@@ -45,6 +45,7 @@ export const CustomersTable: FC<CustomersTableProps> = ({
         </div>
       ) : (
         <ScrollTable
+          className="min-w-175"
           colgroup={
             <colgroup>
               <col />

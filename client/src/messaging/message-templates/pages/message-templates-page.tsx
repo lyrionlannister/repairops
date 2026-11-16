@@ -74,6 +74,7 @@ export const MessageTemplatesPage = () => {
           </div>
         ) : (
           <ScrollTable
+            className="min-w-150"
             colgroup={
               <colgroup>
                 <col className="w-48" />

@@ -78,6 +78,7 @@ export const CashSessionPanel: FC<CashSessionPanelProps> = ({
         </div>
       ) : (
         <ScrollTable
+          className="min-w-160"
           colgroup={
             <colgroup>
               <col className="w-24" />

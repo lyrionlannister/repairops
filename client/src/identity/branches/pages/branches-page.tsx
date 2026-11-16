@@ -75,6 +75,7 @@ export const BranchesPage = () => {
           </div>
         ) : (
           <ScrollTable
+            className="min-w-160"
             colgroup={
               <colgroup>
                 <col />

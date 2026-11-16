@@ -52,6 +52,7 @@ export const QuotesTable: FC<QuotesTableProps> = ({
         </div>
       ) : (
         <ScrollTable
+          className="min-w-175"
           colgroup={
             <colgroup>
               <col />

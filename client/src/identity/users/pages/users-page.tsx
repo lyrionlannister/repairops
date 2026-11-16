@@ -72,6 +72,7 @@ export const UsersPage: React.FC = () => {
           </div>
         ) : (
           <ScrollTable
+            className="min-w-200"
             colgroup={
               <colgroup>
                 <col />

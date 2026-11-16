@@ -34,7 +34,7 @@ export const QuotePrintPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageMeta title="Cotización" description="Vista previa de cotización" />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={() => navigate("/app/quotes")}
           className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
@@ -47,7 +47,7 @@ export const QuotePrintPage: React.FC = () => {
         <button
           onClick={handleDownload}
           disabled={downloading}
-          className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+          className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
         >
           <Download className="size-4" />
           {downloading ? "Generando..." : "Descargar PDF"}
