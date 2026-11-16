@@ -1,8 +1,8 @@
-import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { User as UserIcon, LogOut } from "lucide-react";
 
 import { useMe } from "@identity/auth/hooks/use-me";
+import { useLogout } from "@common/hooks/use-logout";
 import { Avatar } from "../ui/avatar/Avatar";
 import { Dropdown } from "../ui/dropdown/dropdown";
 import { DropdownItem } from "../ui/dropdown/dropdown-item";
@@ -10,16 +10,11 @@ import { DropdownItem } from "../ui/dropdown/dropdown-item";
 export const UserDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { me, fetchMe } = useMe();
-  const navigate = useNavigate();
+  const handleLogout = useLogout();
 
   useEffect(() => {
     fetchMe();
   }, [fetchMe]);
-
-  const handleLogout = () => {
-    sessionStorage.clear();
-    navigate("/app/sign-in");
-  };
 
   const toggleDropdown = () => setIsOpen((prev) => !prev);
   const closeDropdown = () => setIsOpen(false);

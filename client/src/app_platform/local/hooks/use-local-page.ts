@@ -55,15 +55,8 @@ export const useLocalPage = ({
   const [attributionMessage, setAttributionMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getAuthHeader = useCallback((): Record<string, string> => {
-    const token = sessionStorage.getItem("accessToken");
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }, []);
-
   const fetchAttributionBasis = useCallback(async () => {
-    const response = await apiClient("/settings/revenue-attribution", {
-      headers: getAuthHeader(),
-    });
+    const response = await apiClient("/settings/revenue-attribution");
 
     if (!response.ok) {
       throw new Error("No se pudo cargar la base de atribución");
@@ -71,7 +64,7 @@ export const useLocalPage = ({
 
     const payload = (await response.json()) as { attributionBasis?: AttributionBasis };
     setAttributionBasis(payload.attributionBasis ?? "total_value");
-  }, [apiClient, getAuthHeader]);
+  }, [apiClient]);
 
   useEffect(() => {
     fetchLocal();
@@ -123,7 +116,6 @@ export const useLocalPage = ({
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeader(),
         },
         body: JSON.stringify({ attributionBasis: nextBasis }),
       });

@@ -10,13 +10,15 @@ interface LoginResponse {
   message: string;
   user: {
     id: string;
+    tenantId: string;
+    role: "owner" | "admin" | "employee" | "technician" | "cashier";
+    isPlatformAdmin: boolean;
     firstName: string;
     lastName: string;
     email: string;
     createdAt: string;
     updatedAt: string;
   };
-  token: string;
 }
 
 export const useLogin = () => {
@@ -57,12 +59,14 @@ export const useLogin = () => {
 
       const result = await safeReadJson<LoginResponse>(response);
 
-      if (!result?.token || !result?.user) {
+      if (!result?.user) {
         throw new Error("Respuesta invalida del servidor al iniciar sesion");
       }
 
-      // Guardar token en sessionStorage
-      sessionStorage.setItem("accessToken", result.token);
+      // El token de sesion viaja en una cookie httpOnly (Set-Cookie de la
+      // API) -- nunca llega aqui ni se guarda donde JS pueda leerlo. Esto
+      // solo es el perfil para mostrar en la UI (nombre, rol para ocultar
+      // menus), no la credencial.
       sessionStorage.setItem("user", JSON.stringify(result.user));
 
       setSuccess(true);

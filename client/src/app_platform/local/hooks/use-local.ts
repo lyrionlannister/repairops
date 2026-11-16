@@ -19,11 +19,6 @@ export interface LocalRecord {
   updatedAt: string;
 }
 
-const getAuthHeader = (): Record<string, string> => {
-  const token = sessionStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const useLocal = () => {
   const { apiClient } = useApiClient();
   const [local, setLocal] = useState<LocalRecord | null>(null);
@@ -36,7 +31,7 @@ export const useLocal = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient("/local", { headers: getAuthHeader() });
+      const response = await apiClient("/local");
       if (!response.ok) throw new Error("Error al cargar configuración");
       const data = (await response.json()) as LocalRecord;
       setLocal(data);
@@ -55,7 +50,7 @@ export const useLocal = () => {
       try {
         const response = await apiClient("/local", {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", ...getAuthHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
         if (!response.ok) throw new Error("Error al guardar configuración");

@@ -9,11 +9,6 @@ export interface Supplier {
   updatedAt: string;
 }
 
-const authHeader = (): Record<string, string> => {
-  const token = sessionStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const useSuppliers = () => {
   const { apiClient } = useApiClient();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -25,7 +20,7 @@ export const useSuppliers = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/suppliers", { headers: authHeader() });
+      const res = await apiClient("/suppliers");
       if (!res.ok) throw new Error("Error al cargar proveedores");
       setSuppliers(await res.json());
     } catch (err) {
@@ -42,7 +37,7 @@ export const useSuppliers = () => {
       try {
         const res = await apiClient("/suppliers", {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
         if (!res.ok) {
@@ -69,7 +64,7 @@ export const useSuppliers = () => {
       try {
         const res = await apiClient(`/suppliers/${id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", ...authHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
         if (!res.ok) {
@@ -95,7 +90,6 @@ export const useSuppliers = () => {
       try {
         const res = await apiClient(`/suppliers/${id}`, {
           method: "DELETE",
-          headers: authHeader(),
         });
         if (!res.ok) throw new Error("Error al eliminar proveedor");
         setSuppliers((prev) => prev.filter((supplier) => supplier.id !== id));

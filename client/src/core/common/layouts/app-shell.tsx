@@ -1,7 +1,7 @@
 import { Outlet } from "react-router";
 
 import { useSidebar } from "../hooks/use-sidebar";
-// import { useAuthGuard } from "../hooks/use-auth-guard";
+import { useAuthGuard } from "../hooks/use-auth-guard";
 import { AsideMenu } from "../components/menu/aside-menu";
 import { NavbarMenu } from "../components/menu/navbar-menu";
 import { SidebarProvider } from "../contexts/providers/sidebar-provider";
@@ -21,7 +21,7 @@ const hiddenPathsByRole: Partial<Record<string, string[]>> = {
 };
 
 const LayoutContent: React.FC = () => {
-  //   useAuthGuard("/app/sign-in");
+  useAuthGuard("/app/sign-in");
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const currentUser = useCurrentUser();
   const hiddenPaths = (currentUser && hiddenPathsByRole[currentUser.role]) ?? [];

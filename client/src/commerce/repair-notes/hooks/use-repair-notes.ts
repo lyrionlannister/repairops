@@ -101,11 +101,6 @@ export const STATUS_CONFIG: Record<RepairNoteStatus, { label: string; className:
   },
 };
 
-const getAuthHeader = (): Record<string, string> => {
-  const token = sessionStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export interface RepairNoteItemInput {
   inventoryItemId: string;
   quantity: number;
@@ -144,7 +139,7 @@ export const useRepairNotes = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient("/repair-notes", { headers: getAuthHeader() });
+      const response = await apiClient("/repair-notes");
       if (!response.ok) throw new Error("Error al obtener notas");
       const data = (await response.json()) as RepairNoteRecord[];
       setNotes(data);
@@ -160,9 +155,7 @@ export const useRepairNotes = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiClient(`/repair-notes/${id}`, {
-          headers: getAuthHeader(),
-        });
+        const response = await apiClient(`/repair-notes/${id}`);
         if (!response.ok) throw new Error("Error al obtener nota");
         const data = (await response.json()) as RepairNoteRecord;
         setNote(data);
@@ -184,7 +177,7 @@ export const useRepairNotes = () => {
       try {
         const response = await apiClient("/repair-notes", {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...getAuthHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...toPayload(form), items }),
         });
         if (!response.ok) {
@@ -213,7 +206,7 @@ export const useRepairNotes = () => {
       try {
         const response = await apiClient(`/repair-notes/${id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", ...getAuthHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(items !== undefined ? { ...toPayload(form), items } : toPayload(form)),
         });
         if (!response.ok) {
@@ -234,7 +227,7 @@ export const useRepairNotes = () => {
   const fetchNoteItems = useCallback(
     async (id: string): Promise<RepairNoteItemRecord[]> => {
       try {
-        const response = await apiClient(`/repair-notes/${id}/items`, { headers: getAuthHeader() });
+        const response = await apiClient(`/repair-notes/${id}/items`);
         if (!response.ok) return [];
         return (await response.json()) as RepairNoteItemRecord[];
       } catch {
@@ -247,7 +240,7 @@ export const useRepairNotes = () => {
   const fetchNoteServiceTypeIds = useCallback(
     async (id: string): Promise<string[]> => {
       try {
-        const response = await apiClient(`/repair-notes/${id}/service-types`, { headers: getAuthHeader() });
+        const response = await apiClient(`/repair-notes/${id}/service-types`);
         if (!response.ok) return [];
         return (await response.json()) as string[];
       } catch {
@@ -263,7 +256,6 @@ export const useRepairNotes = () => {
       try {
         const response = await apiClient(`/repair-notes/${id}/cancel`, {
           method: "POST",
-          headers: getAuthHeader(),
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
@@ -285,7 +277,6 @@ export const useRepairNotes = () => {
       try {
         const response = await apiClient(`/repair-notes/${id}`, {
           method: "DELETE",
-          headers: getAuthHeader(),
         });
         if (!response.ok) throw new Error("Error al eliminar nota");
         setNotes((prev) => prev.filter((n) => n.id !== id));

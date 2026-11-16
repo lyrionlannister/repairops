@@ -2,7 +2,12 @@ import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import { AUTH_MESSAGES } from "../constants/auth.constants.js";
+import {
+  AUTH_MESSAGES,
+  ACCESS_TOKEN_COOKIE,
+  ACCESS_TOKEN_COOKIE_OPTIONS,
+  ACCESS_TOKEN_MAX_AGE_MS,
+} from "../constants/auth.constants.js";
 import { getValidationMessages } from "../helpers/auth.helpers.js";
 import { AuthService } from "../services/auth.service.js";
 import { RegisterUserDto } from "../dtos/register-user.dto.js";
@@ -139,14 +144,25 @@ export class AuthController {
 
       const { user, token } = await this.authService.login(dto);
 
+      // httpOnly: el token nunca llega al JSON ni es legible por JS (OWASP
+      // Session Management Cheat Sheet) -- viaja solo por Set-Cookie.
+      res.cookie(ACCESS_TOKEN_COOKIE, token, {
+        ...ACCESS_TOKEN_COOKIE_OPTIONS,
+        maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+      });
+
       res.status(200).json({
         message: AUTH_MESSAGES.LOGIN_SUCCESS,
         user,
-        token,
       });
     } catch (error: any) {
       const message = error.message || AUTH_MESSAGES.LOGIN_ERROR;
       res.status(401).json({ error: message });
     }
+  };
+
+  logout = async (_req: Request, res: Response): Promise<void> => {
+    res.clearCookie(ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE_OPTIONS);
+    res.status(200).json({ message: AUTH_MESSAGES.LOGOUT_SUCCESS });
   };
 }

@@ -1,5 +1,4 @@
 import { useCallback, useMemo } from "react";
-import { authHeader } from "../utils/auth-header";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -21,10 +20,10 @@ export const useApiClient = () => {
       }
 
       const url = `${API_BASE_URL}${endpoint}`;
-      // El token (si hay sesion) siempre viaja — register/login todavia no
-      // tienen uno, authHeader() devuelve {} y no rompe nada.
-      const headers = { ...authHeader(), ...options.headers };
-      return sendRequest(url, { ...options, headers });
+      // La sesion viaja en una cookie httpOnly (nunca legible por JS, ver
+      // OWASP Session Management Cheat Sheet): no hay header Authorization
+      // que armar, solo pedirle al navegador que la mande.
+      return sendRequest(url, { ...options, credentials: "include" });
     },
     [],
   );

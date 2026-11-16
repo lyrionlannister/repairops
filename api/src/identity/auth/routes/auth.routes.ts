@@ -9,6 +9,7 @@ export const createAuthRouter = (authController: AuthController): Router => {
 
   router.post("/register", authController.register);
   router.post("/login", authController.login);
+  router.post("/logout", authController.logout);
   router.get("/users/me", authMiddleware, tenantMiddleware, authController.getMe);
   router.get(
     "/users",

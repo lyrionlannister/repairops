@@ -11,7 +11,7 @@ export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkLogin = sessionStorage.getItem("accessToken");
+    const checkLogin = sessionStorage.getItem("user");
     if (checkLogin) {
       navigate("/app/whatsapp", { replace: true });
     } else {

@@ -18,11 +18,6 @@ export interface PriceListItem {
   updatedAt: string;
 }
 
-const authHeader = (): Record<string, string> => {
-  const token = sessionStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const usePriceList = () => {
   const { apiClient } = useApiClient();
   const [items, setItems] = useState<PriceListItem[]>([]);
@@ -36,7 +31,7 @@ export const usePriceList = () => {
       setError(null);
       try {
         const endpoint = query ? `/price-list?q=${encodeURIComponent(query)}` : "/price-list";
-        const res = await apiClient(endpoint, { headers: authHeader() });
+        const res = await apiClient(endpoint);
         if (!res.ok) throw new Error("Error al cargar lista de precios");
         setItems(await res.json());
       } catch (err) {
@@ -57,7 +52,7 @@ export const usePriceList = () => {
       try {
         const res = await apiClient("/price-list", {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
         if (!res.ok) {
@@ -91,7 +86,7 @@ export const usePriceList = () => {
       try {
         const res = await apiClient(`/price-list/${id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", ...authHeader() },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
         if (!res.ok) throw new Error("Error al actualizar item");
@@ -114,7 +109,6 @@ export const usePriceList = () => {
       try {
         const res = await apiClient(`/price-list/${id}`, {
           method: "DELETE",
-          headers: authHeader(),
         });
         if (!res.ok) throw new Error("Error al eliminar item");
         setItems((prev) => prev.filter((i) => i.id !== id));
