@@ -15,6 +15,8 @@
     "test:unit": "vitest run",
     "test:arch": "depcruise src --config .dependency-cruiser.cjs",
     "seed:demo": "tsx src/scripts/seed-demo.ts",
+    "seed:users": "tsx src/scripts/seed-users.ts",
+    "seed:bulk": "tsx src/scripts/seed-bulk.ts",
     "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate -d src/core/config/migration-data-source.ts",
     "migration:run": "tsx ./node_modules/typeorm/cli.js migration:run -d src/core/config/migration-data-source.ts",
     "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/core/config/migration-data-source.ts",
@@ -25,7 +27,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.33.2",
+  "packageManager": "pnpm@12.21.0",
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
     "bcryptjs": "^3.0.3",
@@ -62,10 +64,5 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^4.1.12"
-  },
-  "pnpm": {
-    "overrides": {
-      "glob": "^14.0.2"
-    }
   }
 }
