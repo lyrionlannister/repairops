@@ -12,6 +12,8 @@ import { Sale, SaleOrigin } from "../entities/sale.entity.js";
 import { SaleItem, SaleItemLineType } from "../entities/sale-item.entity.js";
 import { SalePayment, SalePaymentMethod } from "../../payments/entities/sale-payment.entity.js";
 import { SalePaymentDao } from "../../payments/daos/sale-payment.dao.js";
+import { CashMovement, CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
+import { CustomerDao } from "../../customers/daos/customer.dao.js";
 import { calculateSaleTotals } from "../../pricing/calculate-sale-totals.js";
 import type { UserRole } from "../../../identity/auth/entities/user.entity.js";
 
@@ -52,6 +54,7 @@ export class SaleService {
     private localService: LocalService,
     private cashSessionDao: CashSessionDao,
     private serviceTypeDao: ServiceTypeDao,
+    private customerDao: CustomerDao,
   ) {}
 
   async getAll(): Promise<Sale[]> {
@@ -129,6 +132,26 @@ export class SaleService {
       throw new Error("La suma de los pagos no coincide con el total de la venta");
     }
 
+    // Sexta precondicion (Fase 5, Rama Cliente): credito exige cliente y
+    // respeta su limite. El saldo se recalcula aqui mismo, nunca se confia
+    // en un valor cacheado -- dos ventas a credito seguidas del mismo
+    // cliente deben ver el saldo que la anterior ya dejo.
+    const creditoAmount = data.payments
+      .filter((p) => p.method === "credito")
+      .reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
+    if (creditoAmount.greaterThan(0)) {
+      if (!data.customerId) {
+        throw new Error("Una venta a crédito requiere un cliente");
+      }
+      const customer = await this.customerDao.findById(data.customerId);
+      if (!customer) throw new Error("Cliente no encontrado");
+      const currentBalance = await this.salePaymentDao.sumCreditoForCustomer(data.customerId);
+      const limit = new Decimal(customer.creditLimit);
+      if (new Decimal(currentBalance).plus(creditoAmount).greaterThan(limit)) {
+        throw new Error(`La venta a crédito supera el límite disponible del cliente (límite: ${limit.toFixed(2)}, saldo actual: ${currentBalance})`);
+      }
+    }
+
     const tenantId = getCurrentTenantId();
     const saleNumber = await this.localService.consumeSaleNumber();
 
@@ -163,6 +186,23 @@ export class SaleService {
           providerAuthorizationCode: paymentInput.providerAuthorizationCode ?? null,
         });
         await manager.save(payment);
+
+        // Credito no es dinero en caja -- es una cuenta por cobrar, nunca un
+        // movimiento (igual que ReturnService/LayawayService solo mueven
+        // caja en metodos que sí son efectivo/tarjeta/transferencia).
+        if (paymentInput.method !== "credito") {
+          const cashMovement = manager.create(CashMovement, {
+            tenantId,
+            cashSessionId: data.cashSessionId,
+            type: "income",
+            method: paymentInput.method as CashMovementMethod,
+            amount: paymentInput.amount,
+            relatedEntityType: "sale",
+            relatedEntityId: savedSale.id,
+            createdByEmployeeId: data.createdByEmployeeId ?? null,
+          });
+          await manager.save(cashMovement);
+        }
       }
 
       for (const [index, item] of data.items.entries()) {

@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import Decimal from "decimal.js";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
@@ -7,6 +8,8 @@ import { Sale } from "../../../../src/commerce/inventory/entities/sale.entity.js
 import { SaleItem } from "../../../../src/commerce/inventory/entities/sale-item.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
+import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
+import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
 import { SaleDao } from "../../../../src/commerce/inventory/daos/sale.dao.js";
 import { SaleItemDao } from "../../../../src/commerce/inventory/daos/sale-item.dao.js";
 import { SalePayment } from "../../../../src/commerce/payments/entities/sale-payment.entity.js";
@@ -25,6 +28,8 @@ import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
+import { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
+import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 describe("SaleService.create", () => {
@@ -32,6 +37,7 @@ describe("SaleService.create", () => {
   let saleService: SaleService;
   let localService: LocalService;
   let cashService: CashService;
+  let cashSessionDao: CashSessionDao;
   let serviceTypeDao: ServiceTypeDao;
   let salePaymentDao: SalePaymentDao;
   const tenantId = `${Date.now()}2`;
@@ -40,9 +46,10 @@ describe("SaleService.create", () => {
     await AppDataSource.initialize();
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
-    inventoryService = new InventoryService(itemDao, movementDao);
+    const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
-    const cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
+    cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
     cashService = new CashService(
       cashSessionDao,
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
@@ -59,6 +66,7 @@ describe("SaleService.create", () => {
       localService,
       cashSessionDao,
       serviceTypeDao,
+      new CustomerDao(AppDataSource.getRepository(Customer)),
     );
 
     // Tasa de impuesto en 0 para que estas pruebas se centren en atomicidad
@@ -79,7 +87,15 @@ describe("SaleService.create", () => {
   // tenant, mismo local, por simplicidad de la configuración de impuesto/
   // descuento compartida en beforeAll).
   const openSession = () => runWithTenant(tenantId, () => cashService.openSession("1", 0));
-  const closeSession = (id: string) => runWithTenant(tenantId, () => cashService.closeSession(id, 0));
+  const closeSession = (id: string) =>
+    runWithTenant(tenantId, async () => {
+      const session = await cashSessionDao.findById(id);
+      const summary = await cashService.getSummary(id);
+      const expectedCashBalance = new Decimal(session!.openingBalance)
+        .plus(summary.byMethod.efectivo.income)
+        .minus(summary.byMethod.efectivo.expense);
+      return cashService.closeSession(id, expectedCashBalance.toNumber());
+    });
 
   it("rolls back the whole sale when one item lacks stock", async () => {
     const session = await openSession();

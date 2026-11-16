@@ -1,0 +1,239 @@
+import { singleton } from "tsyringe";
+import type { FindOptionsWhere } from "typeorm";
+import { Decimal } from "decimal.js";
+import AppDataSource from "../../../core/config/data-source.js";
+import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
+import { CustomerDao } from "../daos/customer.dao.js";
+import { CashSessionDao } from "../../cash/daos/cash-session.dao.js";
+import { CashMovement, CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
+import { InventoryItemDao } from "../../inventory/daos/inventory-item.dao.js";
+import { InventoryReservationService } from "../../inventory/services/inventory-reservation.service.js";
+import { LayawayDao } from "../daos/layaway.dao.js";
+import { LayawayItemDao } from "../daos/layaway-item.dao.js";
+import { Layaway } from "../entities/layaway.entity.js";
+import { LayawayItem } from "../entities/layaway-item.entity.js";
+
+export interface LayawayItemInput {
+  inventoryItemId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface OpenLayawayPayload {
+  customerId: string;
+  cashSessionId: string;
+  depositAmount: number;
+  depositMethod: CashMovementMethod;
+  expiresAt: string;
+  createdByEmployeeId?: string | null;
+  items: LayawayItemInput[];
+}
+
+export interface CompletePaymentInput {
+  method: CashMovementMethod;
+  amount: number;
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+@singleton()
+export class LayawayService {
+  constructor(
+    private layawayDao: LayawayDao,
+    private layawayItemDao: LayawayItemDao,
+    private customerDao: CustomerDao,
+    private cashSessionDao: CashSessionDao,
+    private itemDao: InventoryItemDao,
+    private reservationService: InventoryReservationService,
+  ) {}
+
+  async getAll(): Promise<Layaway[]> {
+    return this.layawayDao.findAllOrdered();
+  }
+
+  async getItems(layawayId: string): Promise<LayawayItem[]> {
+    return this.layawayItemDao.findByLayawayId(layawayId);
+  }
+
+  // Lee el apartado y, si vencio sin completarse, lo expira primero (libera
+  // reservas, nunca toca el anticipo ya cobrado) antes de devolverlo --
+  // sin cron en este repo, la expiracion es perezosa: se evalua en cada
+  // lectura/escritura, mismo criterio que el resto del repo para estados
+  // calculados al vuelo.
+  async getById(id: string): Promise<Layaway | null> {
+    const layaway = await this.layawayDao.findById(id);
+    if (!layaway) return null;
+    return this.expireIfDue(layaway);
+  }
+
+  private async expireIfDue(layaway: Layaway): Promise<Layaway> {
+    if (layaway.status !== "open" || layaway.expiresAt >= today()) return layaway;
+
+    const tenantId = getCurrentTenantId();
+    return AppDataSource.transaction(async (manager) => {
+      const items = await manager.find(LayawayItem, {
+        where: { layawayId: layaway.id, tenantId } as Partial<LayawayItem>,
+      });
+      for (const item of items) {
+        await this.reservationService.release(manager, "layaway_item", item.id);
+      }
+      await manager.update(Layaway, layaway.id, { status: "expired", expiredAt: new Date() });
+      return (await manager.findOneBy(Layaway, { id: layaway.id })) as Layaway;
+    });
+  }
+
+  // Todo-o-nada: reserva cada linea (nunca toca quantityOnHand) + registra
+  // el anticipo como CashMovement "income" real -- mismo gate de sesion
+  // abierta que Sale/Return.
+  async open(data: OpenLayawayPayload): Promise<Layaway> {
+    if (data.items.length === 0) {
+      throw new Error("El apartado debe tener al menos un item");
+    }
+    const customer = await this.customerDao.findById(data.customerId);
+    if (!customer) throw new Error("Cliente no encontrado");
+
+    const session = await this.cashSessionDao.findById(data.cashSessionId);
+    if (!session) throw new Error("Sesión de caja no encontrada");
+    if (session.status !== "open") {
+      throw new Error("No se puede abrir el apartado: la sesión de caja está cerrada");
+    }
+
+    for (const item of data.items) {
+      const inventoryItem = await this.itemDao.findById(item.inventoryItemId);
+      if (!inventoryItem) throw new Error("Item de inventario no encontrado");
+    }
+
+    const totalValue = data.items.reduce((sum, item) => sum.plus(new Decimal(item.unitPrice).times(item.quantity)), new Decimal(0));
+    const depositAmount = new Decimal(data.depositAmount);
+    if (depositAmount.lessThanOrEqualTo(0)) {
+      throw new Error("El anticipo debe ser mayor a 0");
+    }
+    if (depositAmount.greaterThan(totalValue)) {
+      throw new Error("El anticipo no puede ser mayor al valor total del apartado");
+    }
+
+    const tenantId = getCurrentTenantId();
+
+    return AppDataSource.transaction(async (manager) => {
+      const layaway = manager.create(Layaway, {
+        tenantId,
+        customerId: data.customerId,
+        status: "open",
+        totalValue: totalValue.toNumber(),
+        depositAmount: depositAmount.toNumber(),
+        depositMethod: data.depositMethod,
+        expiresAt: data.expiresAt,
+        createdByEmployeeId: data.createdByEmployeeId ?? null,
+        completedAt: null,
+        cancelledAt: null,
+        expiredAt: null,
+      });
+      const savedLayaway = await manager.save(layaway);
+
+      for (const item of data.items) {
+        const layawayItem = manager.create(LayawayItem, {
+          tenantId,
+          layawayId: savedLayaway.id,
+          inventoryItemId: item.inventoryItemId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        });
+        const savedItem = await manager.save(layawayItem);
+        await this.reservationService.reserve(manager, {
+          relatedEntityType: "layaway_item",
+          relatedEntityId: savedItem.id,
+          inventoryItemId: item.inventoryItemId,
+          quantity: item.quantity,
+        });
+      }
+
+      const depositMovement = manager.create(CashMovement, {
+        tenantId,
+        cashSessionId: data.cashSessionId,
+        type: "income",
+        method: data.depositMethod,
+        amount: depositAmount.toNumber(),
+        relatedEntityType: "layaway",
+        relatedEntityId: savedLayaway.id,
+        note: "Anticipo de apartado",
+        createdByEmployeeId: data.createdByEmployeeId ?? null,
+      });
+      await manager.save(depositMovement);
+
+      return savedLayaway;
+    });
+  }
+
+  // Paga el saldo restante: consume las reservas (stock real baja) y
+  // registra un segundo CashMovement "income" -- nunca crea una Sale (ver
+  // comentario de la entidad).
+  async complete(layawayId: string, payments: CompletePaymentInput[], cashSessionId: string): Promise<Layaway> {
+    const layaway = await this.getById(layawayId);
+    if (!layaway) throw new Error("Apartado no encontrado");
+    if (layaway.status === "expired") throw new Error("El apartado ya venció");
+    if (layaway.status === "cancelled") throw new Error("El apartado ya está cancelado");
+    if (layaway.status === "completed") throw new Error("El apartado ya está completado");
+    if (payments.length === 0) throw new Error("Se requiere al menos un pago");
+
+    const session = await this.cashSessionDao.findById(cashSessionId);
+    if (!session) throw new Error("Sesión de caja no encontrada");
+    if (session.status !== "open") {
+      throw new Error("No se puede completar el apartado: la sesión de caja está cerrada");
+    }
+
+    const remaining = new Decimal(layaway.totalValue).minus(layaway.depositAmount);
+    const paymentsSum = payments.reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
+    if (!paymentsSum.equals(remaining)) {
+      throw new Error("La suma de los pagos no coincide con el saldo restante del apartado");
+    }
+
+    const tenantId = getCurrentTenantId();
+    const items = await this.layawayItemDao.findByLayawayId(layawayId);
+
+    return AppDataSource.transaction(async (manager) => {
+      for (const item of items) {
+        await this.reservationService.consume(manager, "layaway_item", item.id);
+      }
+
+      for (const payment of payments) {
+        const movement = manager.create(CashMovement, {
+          tenantId,
+          cashSessionId,
+          type: "income",
+          method: payment.method,
+          amount: payment.amount,
+          relatedEntityType: "layaway",
+          relatedEntityId: layawayId,
+          note: "Saldo final de apartado",
+        });
+        await manager.save(movement);
+      }
+
+      await manager.update(Layaway, layawayId, { status: "completed", completedAt: new Date() });
+      return (await manager.findOneBy(Layaway, { id: layawayId })) as Layaway;
+    });
+  }
+
+  // Libera las reservas sin tocar stock -- el anticipo ya cobrado NO se
+  // reembolsa solo (decision explicita del usuario), queda registrado tal
+  // cual en el ledger de caja; devolverlo (si el taller decide hacerlo) es
+  // una Return manual, no un efecto automatico de cancelar.
+  async cancel(layawayId: string): Promise<Layaway> {
+    const layaway = await this.getById(layawayId);
+    if (!layaway) throw new Error("Apartado no encontrado");
+    if (layaway.status === "completed") throw new Error("No se puede cancelar un apartado ya completado");
+    if (layaway.status === "cancelled") throw new Error("El apartado ya está cancelado");
+    if (layaway.status === "expired") throw new Error("El apartado ya venció");
+
+    const tenantId = getCurrentTenantId();
+    const items = await this.layawayItemDao.findByLayawayId(layawayId);
+
+    return AppDataSource.transaction(async (manager) => {
+      for (const item of items) {
+        await this.reservationService.release(manager, "layaway_item", item.id);
+      }
+      await manager.update(Layaway, layawayId, { status: "cancelled", cancelledAt: new Date() });
+      return (await manager.findOneBy(Layaway, { id: layawayId, tenantId } as unknown as FindOptionsWhere<Layaway>)) as Layaway;
+    });
+  }
+}

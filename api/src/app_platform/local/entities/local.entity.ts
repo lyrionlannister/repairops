@@ -31,6 +31,12 @@ export class Local extends BaseEntity {
   @Column({ type: "int", default: 1, name: "siguiente_numero_venta" })
   nextSaleNumber!: number;
 
+  // Folio de devolucion (Fase 5) -- mismo mecanismo atomico que
+  // nextSaleNumber/nextControlNumber (ver LocalDao.consumeReturnNumber),
+  // consecutivo propio, nunca comparte contador con venta.
+  @Column({ type: "int", default: 1, name: "siguiente_numero_devolucion" })
+  nextReturnNumber!: number;
+
   // IVA por defecto 16% (MX, cap. 9/10 del plan). Configurable por tenant,
   // nunca quemado en el motor de calculo (ver commerce/pricing).
   @Column({ type: "decimal", precision: 5, scale: 2, default: 16, name: "tasa_impuesto" })

@@ -1,6 +1,6 @@
 FROM docker.io/library/node:26-alpine AS builder
 WORKDIR /app
-RUN npm install -g pnpm
+RUN npm install -g pnpm@latest
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY package.json pnpm-workspace.yaml ./

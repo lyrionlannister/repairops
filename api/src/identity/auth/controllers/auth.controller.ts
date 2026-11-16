@@ -8,6 +8,7 @@ import { AuthService } from "../services/auth.service.js";
 import { RegisterUserDto } from "../dtos/register-user.dto.js";
 import { LoginUserDto } from "../dtos/login-user.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
+import { UpdateEmployeeDto } from "../dtos/update-employee.dto.js";
 
 @singleton()
 export class AuthController {
@@ -62,6 +63,29 @@ export class AuthController {
     } catch (error: any) {
       const message = error.message || AUTH_MESSAGES.REGISTER_ERROR;
       res.status(400).json({ error: message });
+    }
+  };
+
+  updateEmployee = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const id = req.params["id"] as string;
+      const dto = plainToInstance(UpdateEmployeeDto, req.body);
+      const errors = await validate(dto);
+
+      if (errors.length > 0) {
+        const messages = getValidationMessages(errors);
+        res.status(400).json({ error: messages });
+        return;
+      }
+
+      const user = await this.authService.updateEmployee(id, dto);
+      if (!user) {
+        res.status(404).json({ error: "Usuario no encontrado" });
+        return;
+      }
+      res.status(200).json(user);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || AUTH_MESSAGES.REGISTER_ERROR });
     }
   };
 

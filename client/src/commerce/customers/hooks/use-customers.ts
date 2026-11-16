@@ -6,8 +6,15 @@ export interface Customer {
   name: string;
   phone: string;
   email?: string | null;
+  creditLimit: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CustomerCreditBalance {
+  creditLimit: number;
+  balance: number;
+  available: number;
 }
 
 export interface CustomerDeviceHistoryEntry {
@@ -54,7 +61,7 @@ export const useCustomers = () => {
   );
 
   const create = useCallback(
-    async (data: Pick<Customer, "name" | "phone" | "email">): Promise<Customer | null> => {
+    async (data: Pick<Customer, "name" | "phone" | "email" | "creditLimit">): Promise<Customer | null> => {
       setSaving(true);
       setError(null);
       try {
@@ -81,7 +88,7 @@ export const useCustomers = () => {
   );
 
   const update = useCallback(
-    async (id: string, data: Pick<Customer, "name" | "phone" | "email">): Promise<boolean> => {
+    async (id: string, data: Pick<Customer, "name" | "phone" | "email" | "creditLimit">): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {
@@ -123,5 +130,34 @@ export const useCustomers = () => {
     [apiClient],
   );
 
-  return { customers, devices, loading, saving, error, fetchAll, fetchDevices, create, update, remove };
+  const [creditBalances, setCreditBalances] = useState<Record<string, CustomerCreditBalance>>({});
+
+  const fetchCreditBalance = useCallback(
+    async (customerId: string) => {
+      try {
+        const res = await apiClient(`/customers/${customerId}/credit-balance`);
+        if (!res.ok) return;
+        const balance: CustomerCreditBalance = await res.json();
+        setCreditBalances((prev) => ({ ...prev, [customerId]: balance }));
+      } catch {
+        // noop: la ficha ya tiene el limite configurado como respaldo
+      }
+    },
+    [apiClient],
+  );
+
+  return {
+    customers,
+    devices,
+    creditBalances,
+    loading,
+    saving,
+    error,
+    fetchAll,
+    fetchDevices,
+    fetchCreditBalance,
+    create,
+    update,
+    remove,
+  };
 };

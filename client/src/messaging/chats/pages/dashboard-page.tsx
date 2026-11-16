@@ -297,7 +297,7 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 md:p-6">
+        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg dark:border-gray-800 dark:bg-white/3 md:p-6">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/30">
             <CalendarDays className="size-6 text-orange-500 dark:text-orange-400" />
           </div>

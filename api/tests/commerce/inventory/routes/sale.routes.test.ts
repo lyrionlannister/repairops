@@ -12,6 +12,8 @@ import { InventoryItem } from "../../../../src/commerce/inventory/entities/inven
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
+import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
+import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
 import { InventoryService } from "../../../../src/commerce/inventory/services/inventory.service.js";
 import { Sale } from "../../../../src/commerce/inventory/entities/sale.entity.js";
 import { SaleDao } from "../../../../src/commerce/inventory/daos/sale.dao.js";
@@ -29,6 +31,8 @@ import { CashMovementDao } from "../../../../src/commerce/cash/daos/cash-movemen
 import { CashService } from "../../../../src/commerce/cash/services/cash.service.js";
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
+import { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
+import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { User, type UserRole } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
@@ -58,6 +62,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
     inventoryService = new InventoryService(
       new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),
       new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement)),
+      new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation)),
     );
     const serviceTypeDao = new ServiceTypeDao(AppDataSource.getRepository(ServiceType));
     const saleService = new SaleService(
@@ -68,6 +73,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       localService,
       cashSessionDao,
       serviceTypeDao,
+      new CustomerDao(AppDataSource.getRepository(Customer)),
     );
     const controller = new SaleController(saleService);
 

@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, ShoppingCart } from "lucide-react";
-import { useSales, type PaymentMethod } from "../hooks/use-sales";
+import type { PaymentMethod } from "../hooks/use-sales";
+import { useOfflineSalesQueue } from "../hooks/use-offline-sales-queue";
 import { useInventory } from "../hooks/use-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useLocal } from "@app-platform/local/hooks/use-local";
+import { useCustomers } from "@commerce/customers/hooks/use-customers";
 import useBranch from "@common/hooks/use-branch";
 import EmployeeSelect from "@common/components/employee-select";
 import Button from "@ui/button/button";
@@ -11,12 +13,13 @@ import Input from "@ui/inputs/input";
 import Label from "@ui/inputs/label";
 import Select from "@ui/select/select";
 import Alert from "@ui/alert/alert";
-import PageMeta from "@common/pages/page-meta";
+import PageShell from "@common/components/page-shell/page-shell";
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   efectivo: "Efectivo",
   tarjeta: "Tarjeta",
   transferencia: "Transferencia",
+  credito: "Crédito",
 };
 
 type LineItem = { inventoryItemId: string; quantity: string; unitPrice: string };
@@ -39,12 +42,22 @@ const newIdempotencyKey = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 
 const QuickSalePage: React.FC = () => {
-  const { creating, error, create } = useSales();
-  const { items: inventoryItems, fetchAll: fetchInventory } = useInventory();
+  const { queue: offlineQueue, isOnline, syncing, submitOrQueue, sync } = useOfflineSalesQueue();
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { items: allInventoryItems, fetchAll: fetchInventory } = useInventory();
   const { activeBranchId } = useBranch();
-  const { session: cashSession, fetchOpenSession } = useCash();
+  // Solo items de la sucursal activa -- vender de otra sucursal decrementaria
+  // stock que el cajero no puede ver ni reponer desde aqui.
+  const inventoryItems = useMemo(
+    () => (activeBranchId ? allInventoryItems.filter((item) => item.localId === activeBranchId) : allInventoryItems),
+    [allInventoryItems, activeBranchId],
+  );
+  const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
   const { local, fetchLocal } = useLocal();
+  const { customers, fetchAll: fetchCustomers } = useCustomers();
 
+  const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [createdByEmployeeId, setCreatedByEmployeeId] = useState("");
   const [lines, setLines] = useState<LineItem[]>([{ ...emptyLine }]);
@@ -58,7 +71,8 @@ const QuickSalePage: React.FC = () => {
   useEffect(() => {
     fetchInventory();
     fetchLocal();
-  }, [fetchInventory, fetchLocal]);
+    fetchCustomers();
+  }, [fetchInventory, fetchLocal, fetchCustomers]);
 
   useEffect(() => {
     if (activeBranchId) fetchOpenSession(activeBranchId);
@@ -89,6 +103,9 @@ const QuickSalePage: React.FC = () => {
 
   const paymentsSum = round2(payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0));
   const paymentsMatchTotal = paymentsSum === total;
+  // Credito exige cliente registrado -- no se puede fiar a un cliente
+  // anonimo de mostrador (ver SaleService.create, sexta precondicion).
+  const hasCreditoWithoutCustomer = payments.some((p) => p.method === "credito") && !customerId;
 
   // Con un solo método (el caso común), el monto sigue al total automático
   // -- el cajero solo tiene que pensar en el split cuando de verdad divide
@@ -100,7 +117,17 @@ const QuickSalePage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total, payments.length]);
 
+  // Sin conexion no hay forma de validar tarjeta en terminal ni el limite de
+  // credito del cliente contra el server -- se fuerza efectivo, no queda
+  // como opcion mal elegida (ver plan Fase 5, Rama Venta sin internet).
+  useEffect(() => {
+    if (!isOnline) {
+      setPayments((prev) => prev.map((p) => ({ ...p, method: "efectivo" as const })));
+    }
+  }, [isOnline]);
+
   const resetForm = () => {
+    setCustomerId("");
     setCustomerName("");
     setCreatedByEmployeeId("");
     setLines([{ ...emptyLine }]);
@@ -110,13 +137,14 @@ const QuickSalePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeBranchId || !cashSession || !paymentsMatchTotal) return;
+    if (!activeBranchId || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer) return;
     const validLines = lines.filter((l) => l.inventoryItemId && Number(l.quantity) > 0);
     if (validLines.length === 0) return;
 
-    const sale = await create({
+    const salePayload = {
       localId: activeBranchId,
       cashSessionId: cashSession.id,
+      customerId: customerId || undefined,
       customerName: customerName || undefined,
       createdByEmployeeId: createdByEmployeeId || undefined,
       idempotencyKey,
@@ -127,34 +155,62 @@ const QuickSalePage: React.FC = () => {
         providerAuthorizationCode: p.providerAuthorizationCode || undefined,
       })),
       items: validLines.map((l) => ({
-        lineType: "inventory_item",
+        lineType: "inventory_item" as const,
         referenceId: l.inventoryItemId,
         quantity: Number(l.quantity),
         unitPrice: Number(l.unitPrice),
       })),
-    });
+    };
 
-    if (sale) {
-      setSuccessMsg(`Venta #${sale.saleNumber} registrada por ${formatMoney(sale.totalValue)}.`);
+    setCreating(true);
+    setError(null);
+    // Siempre se intenta el POST real primero -- navigator.onLine no detecta
+    // "el server no responde", solo la interfaz de red del sistema. La cola
+    // es el resultado de que la llamada de verdad haya fallado por red, no
+    // una decision tomada de antemano por isOnline (ver use-offline-sales-queue).
+    const result = await submitOrQueue(salePayload);
+    setCreating(false);
+
+    if ("sale" in result) {
+      setSuccessMsg(`Venta #${result.sale.saleNumber} registrada por ${formatMoney(result.sale.totalValue)}.`);
       resetForm();
       fetchInventory();
       setTimeout(() => setSuccessMsg(null), 3500);
+    } else if ("queued" in result) {
+      setSuccessMsg(`Sin conexión: venta guardada como ${result.queued.localFolio}, se sincroniza sola al reconectar.`);
+      resetForm();
+      setTimeout(() => setSuccessMsg(null), 4500);
+    } else {
+      setError(result.error);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <PageMeta title="Venta Rápida" description="Venta directa de accesorios" />
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">Venta Rápida</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Venta de mostrador: cada item descuenta su stock automáticamente.
-        </p>
-      </div>
-
+    <PageShell
+      title="Venta Rápida"
+      description="Venta de mostrador: cada item descuenta su stock automáticamente."
+    >
       {error && <Alert variant="error" title="Error" message={error} />}
       {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
-      {!cashSession && (
+      {!isOnline && (
+        <Alert
+          variant="warning"
+          title="Sin conexión"
+          message="Solo se puede cobrar en efectivo. Las ventas se guardan en este equipo y se sincronizan solas al reconectar."
+        />
+      )}
+      {offlineQueue.length > 0 && (
+        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900 dark:bg-amber-950/30">
+          <span className="text-amber-700 dark:text-amber-400">
+            {offlineQueue.length} {offlineQueue.length === 1 ? "venta pendiente" : "ventas pendientes"} de sincronizar
+            {offlineQueue.some((q) => q.lastError) && " (una con error, revisa al reconectar)"}
+          </span>
+          <Button type="button" variant="outline" onClick={() => sync()} disabled={!isOnline || syncing}>
+            {syncing ? "Sincronizando..." : "Sincronizar ahora"}
+          </Button>
+        </div>
+      )}
+      {!loadingCashSession && !cashSession && (
         <Alert
           variant="warning"
           title="Sin sesión de caja"
@@ -168,13 +224,23 @@ const QuickSalePage: React.FC = () => {
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label className="text-gray-500">Cliente</Label>
+            <Label className="text-gray-500">Nombre del cliente (opcional, solo para el ticket)</Label>
             <Input placeholder="Opcional" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
           </div>
           <div>
             <Label className="text-gray-500">Empleado</Label>
             <EmployeeSelect value={createdByEmployeeId} onChange={setCreatedByEmployeeId} />
           </div>
+        </div>
+
+        <div>
+          <Label className="text-gray-500">Cliente registrado (requerido para vender a crédito)</Label>
+          <Select
+            value={customerId}
+            onChange={setCustomerId}
+            placeholder="Sin cliente registrado"
+            options={customers.map((c) => ({ value: c.id, label: c.name }))}
+          />
         </div>
 
         <div className="space-y-3">
@@ -251,6 +317,7 @@ const QuickSalePage: React.FC = () => {
                   value={payment.method}
                   onChange={(value) => updatePayment(index, { method: value as PaymentMethod })}
                   options={Object.entries(PAYMENT_LABELS).map(([value, label]) => ({ value, label }))}
+                  disabled={!isOnline}
                 />
               </div>
               <div className="w-full sm:w-32">
@@ -299,19 +366,22 @@ const QuickSalePage: React.FC = () => {
               Los pagos suman {formatMoney(paymentsSum)}, pero el total es {formatMoney(total)}.
             </p>
           )}
+          {hasCreditoWithoutCustomer && (
+            <p className="text-sm text-red-500">Una venta a crédito requiere elegir un cliente registrado.</p>
+          )}
         </div>
 
         <Button
           type="submit"
           variant="primary"
           className="w-full"
-          disabled={creating || !cashSession || !paymentsMatchTotal}
+          disabled={creating || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer}
         >
           <ShoppingCart className="mr-1.5 size-4" />
           {creating ? "Registrando..." : "Registrar venta"}
         </Button>
       </form>
-    </div>
+    </PageShell>
   );
 };
 

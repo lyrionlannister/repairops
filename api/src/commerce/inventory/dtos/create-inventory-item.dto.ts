@@ -16,6 +16,10 @@ export class CreateInventoryItemDto {
   @IsString()
   sku?: string;
 
+  @IsOptional()
+  @IsString()
+  supplierId?: string;
+
   @IsIn(KINDS, { message: "Tipo inválido" })
   kind!: InventoryItemKind;
 

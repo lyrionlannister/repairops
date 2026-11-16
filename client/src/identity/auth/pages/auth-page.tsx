@@ -21,7 +21,7 @@ const AuthPage: React.FC = () => {
 
   return (
     <>
-      <PageMeta title="Sign In" description="Inicia Sesión en Sofia" />
+      <PageMeta title="Iniciar sesión" description="Inicia sesión en tu cuenta" />
       {loading ? (
         <div className="flex items-center justify-center w-full h-screen">
           <Loader />

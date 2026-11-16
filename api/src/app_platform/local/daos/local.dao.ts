@@ -49,6 +49,7 @@ export class LocalDao extends TenantScopedDao<Local> {
          "logo" AS logo,
          "siguiente_numero_control" AS "nextControlNumber",
          "siguiente_numero_venta" AS "nextSaleNumber",
+         "siguiente_numero_devolucion" AS "nextReturnNumber",
          "unidad_redondeo_caja" AS "cashRoundingUnit",
          "tope_diferencia_caja_sin_autorizar" AS "maxUnauthorizedCashVariance",
          "moneda" AS "currency",
@@ -84,6 +85,21 @@ export class LocalDao extends TenantScopedDao<Local> {
        SET "siguiente_numero_venta" = "siguiente_numero_venta" + 1
        WHERE "id" = $1
        RETURNING "siguiente_numero_venta" - 1 AS number`,
+      [local.id],
+    );
+    return rows[0].number;
+  }
+
+  // Mismo patron atomico que consumeSaleNumber -- folio de devolucion
+  // (Fase 5, Rama Devoluciones), consecutivo propio, nunca comparte
+  // contador con venta.
+  async consumeReturnNumber(): Promise<number> {
+    const local = await this.findOrCreate();
+    const rows = await this.runQuery<{ number: number }>(
+      `UPDATE local_config
+       SET "siguiente_numero_devolucion" = "siguiente_numero_devolucion" + 1
+       WHERE "id" = $1
+       RETURNING "siguiente_numero_devolucion" - 1 AS number`,
       [local.id],
     );
     return rows[0].number;

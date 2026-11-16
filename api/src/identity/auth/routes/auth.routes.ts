@@ -23,6 +23,13 @@ export const createAuthRouter = (authController: AuthController): Router => {
     requireRole("owner", "admin"),
     authController.toggleUserStatus,
   );
+  router.patch(
+    "/users/:id",
+    authMiddleware,
+    tenantMiddleware,
+    requireRole("owner", "admin"),
+    authController.updateEmployee,
+  );
   router.get("/employees", authMiddleware, tenantMiddleware, authController.listEmployees);
   router.post(
     "/employees",

@@ -11,7 +11,11 @@ export interface InventoryItem {
   kind: InventoryItemKind;
   costPrice: number;
   salePrice: number;
+  supplierId: string | null;
   quantityOnHand: number;
+  // Fase 5, Pieza 3: quantityOnHand menos reservas activas (refacciones ya
+  // comprometidas en notas de reparación que aún no se completan).
+  available: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,12 +26,12 @@ export interface InventoryMovement {
   type: "in" | "out" | "adjustment";
   quantity: number;
   reason: string | null;
-  relatedEntityType: "sale" | "repair_note" | "manual";
+  relatedEntityType: "sale" | "repair_note" | "return" | "transfer" | "count" | "manual";
   createdByEmployeeId: string | null;
   createdAt: string;
 }
 
-type CreateItemPayload = Omit<InventoryItem, "id" | "quantityOnHand" | "createdAt" | "updatedAt">;
+type CreateItemPayload = Omit<InventoryItem, "id" | "quantityOnHand" | "available" | "createdAt" | "updatedAt">;
 
 export const useInventory = () => {
   const { apiClient } = useApiClient();

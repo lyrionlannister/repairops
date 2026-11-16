@@ -4,8 +4,11 @@ import { Plus, FileText, Pencil, Trash2, Check, X, Search } from "lucide-react";
 import { useQuotes, type QuoteStatus } from "../hooks/use-quotes";
 import { useQuotesPage } from "../hooks/use-quotes-page";
 import Button from "@ui/button/button";
-import { Table, TableHeader, TableBody, TableRow, TableCell } from "@ui/table/table";
+import { TableBody, TableRow, TableCell } from "@ui/table/table";
+import Pagination from "@ui/table/pagination";
+import ScrollTable from "@ui/table/scroll-table";
 import PageShell from "@common/components/page-shell/page-shell";
+import usePaginatedList from "@common/hooks/use-paginated-list";
 
 const STATUS_CONFIG: Record<QuoteStatus, { label: string; className: string }> = {
   pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
@@ -27,6 +30,8 @@ const QuotesPage: React.FC = () => {
   const { quotes, loading, error, fetchQuotes, deleteQuote, setStatus } = useQuotes();
   const { search, setSearch, statusFilter, setStatusFilter, deletingId, filteredQuotes, handleDelete, handleStatusChange } =
     useQuotesPage({ quotes, deleteQuote, setStatus });
+  const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
+    usePaginatedList(filteredQuotes);
 
   useEffect(() => {
     fetchQuotes();
@@ -50,18 +55,18 @@ const QuotesPage: React.FC = () => {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 size-4 text-gray-400" />
           <input
             type="text"
             placeholder="Buscar por cliente..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
           />
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as QuoteStatus | "all")}
+          onChange={(e) => { setStatusFilter(e.target.value as QuoteStatus | "all"); setPage(1); }}
           className="rounded-xl border border-gray-200 bg-white py-2.5 px-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
         >
           <option value="all">Todos los estados</option>
@@ -71,7 +76,7 @@ const QuotesPage: React.FC = () => {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
         {loading ? (
           <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando cotizaciones...</div>
         ) : filteredQuotes.length === 0 ? (
@@ -79,23 +84,32 @@ const QuotesPage: React.FC = () => {
             {quotes.length === 0 ? "No hay cotizaciones registradas." : "Sin resultados para la búsqueda."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-200 dark:border-gray-800">
-                  {["Cliente", "Estado", "Válida hasta", "Total", "Acciones"].map((h) => (
-                    <TableCell
-                      key={h}
-                      isHeader
-                      className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-                    >
-                      {h}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredQuotes.map((quote) => {
+          <ScrollTable
+            colgroup={
+              <colgroup>
+                <col />
+                <col className="w-32" />
+                <col className="w-32" />
+                <col className="w-28" />
+                <col className="w-48" />
+              </colgroup>
+            }
+            header={
+              <TableRow className="border-b border-gray-200 dark:border-gray-800">
+                {["Cliente", "Estado", "Válida hasta", "Total", "Acciones"].map((h) => (
+                  <TableCell
+                    key={h}
+                    isHeader
+                    className="px-4 py-4 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                  >
+                    {h}
+                  </TableCell>
+                ))}
+              </TableRow>
+            }
+          >
+            <TableBody>
+              {pageItems.map((quote) => {
                   const status = STATUS_CONFIG[quote.status];
                   return (
                     <TableRow
@@ -165,7 +179,27 @@ const QuotesPage: React.FC = () => {
                   );
                 })}
               </TableBody>
-            </Table>
+            </ScrollTable>
+        )}
+
+        {!loading && totalItems > 0 && (
+          <div className="flex shrink-0 flex-col gap-3 border-t border-gray-100 px-5 py-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <span>Mostrar</span>
+              <select
+                value={pageSize}
+                onChange={(event) => setPageSize(Number(event.target.value))}
+                className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              >
+                {[10, 25, 50].map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <span>
+                Mostrando {startIndex + 1}–{Math.min(startIndex + pageSize, totalItems)} de {totalItems}
+              </span>
+            </div>
+            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         )}
       </div>

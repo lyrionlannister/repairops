@@ -241,17 +241,17 @@ const ImportPriceListPage: React.FC = () => {
               Agregar fila
             </Button>
           </div>
-          <div className="max-h-[calc(100vh-26rem)] min-h-[240px] overflow-y-auto">
+          <div className="custom-scrollbar max-h-[calc(100vh-26rem)] min-h-60 overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10 border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">
                 <tr>
-                  <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
                     Marca
                   </th>
-                  <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
                     Modelo
                   </th>
-                  <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400 w-36">
+                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400 w-36">
                     Precio
                   </th>
                   <th className="px-5 py-3 w-16" />

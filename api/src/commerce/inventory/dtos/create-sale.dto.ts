@@ -16,7 +16,7 @@ import { SaleOrigin } from "../entities/sale.entity.js";
 import { SaleItemLineType } from "../entities/sale-item.entity.js";
 import { SalePaymentMethod } from "../../payments/entities/sale-payment.entity.js";
 
-const PAYMENT_METHODS: SalePaymentMethod[] = ["efectivo", "tarjeta", "transferencia"];
+const PAYMENT_METHODS: SalePaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "credito"];
 const ORIGINS: SaleOrigin[] = ["counter", "repair_note", "quote"];
 const LINE_TYPES: SaleItemLineType[] = ["inventory_item", "service_type"];
 

@@ -1,38 +1,14 @@
-import { useEffect } from "react";
-import { UserPlus } from "lucide-react";
-import { useUsers, type PayCycle, type UserRole } from "../hooks/use-users";
-import { useUsersPage } from "../hooks/use-users-page";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { UserPlus, Pencil, Search } from "lucide-react";
+import { useUsers, ROLE_LABELS } from "../hooks/use-users";
 import Toggle from "@ui/toggle/toggle";
-import Modal from "@ui/modal/modal";
 import Input from "@ui/inputs/input";
-import Label from "@ui/inputs/label";
 import Button from "@ui/button/button";
-import Alert from "@ui/alert/alert";
-import Select from "@ui/select/select";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "@ui/table/table";
-import { EyeIcon, EyeCloseIcon } from "@common/icons";
+import Pagination from "@ui/table/pagination";
+import ScrollTable from "@ui/table/scroll-table";
+import usePaginatedList from "@common/hooks/use-paginated-list";
 import PageShell from "@common/components/page-shell/page-shell";
-
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  owner: "Dueño",
-  admin: "Administrador",
-  employee: "Empleado",
-  technician: "Técnico",
-  cashier: "Cajero",
-};
-
-const PAY_CYCLE_LABELS: Record<PayCycle, string> = {
-  weekly: "Semanal",
-  biweekly: "Quincenal",
-  monthly: "Mensual",
-};
 
 const formatDate = (dateStr: string) => {
   const d = new Date(dateStr);
@@ -43,45 +19,26 @@ const formatDate = (dateStr: string) => {
 };
 
 const UsersPage: React.FC = () => {
-  const {
-    users,
-    loading,
-    error,
-    fetchUsers,
-    createUser,
-    creating,
-    createError,
-    createSuccess,
-    clearCreateError,
-    clearCreateSuccess,
-    toggleUserStatus,
-    togglingId,
-  } = useUsers();
-
-  const {
-    isModalOpen,
-    formData,
-    showPassword,
-    setIsModalOpen,
-    setShowPassword,
-    updateField,
-    submit,
-    closeModal,
-  } = useUsersPage({
-    createUser,
-    fetchUsers,
-    clearCreateError,
-    clearCreateSuccess,
-  });
+  const navigate = useNavigate();
+  const { users, loading, error, fetchUsers, toggleUserStatus, togglingId } = useUsers();
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await submit();
-  };
+  const filteredUsers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return users;
+    return users.filter(
+      (user) =>
+        `${user.firstName} ${user.lastName}`.toLowerCase().includes(term) ||
+        user.email.toLowerCase().includes(term),
+    );
+  }, [search, users]);
+
+  const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
+    usePaginatedList(filteredUsers);
 
   return (
     <PageShell
@@ -91,13 +48,26 @@ const UsersPage: React.FC = () => {
         <Button
           variant="primary"
           startIcon={<UserPlus className="size-4" />}
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => navigate("/admin/users/new")}
         >
           Nuevo usuario
         </Button>
       }
     >
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            name="search"
+            value={search}
+            onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+            placeholder="Buscar usuario"
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 p-10 text-center">
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
@@ -108,216 +78,92 @@ const UsersPage: React.FC = () => {
             <p className="text-sm text-red-500">{error}</p>
             <Button variant="secondary" onClick={fetchUsers}>Reintentar</Button>
           </div>
-        ) : users.length === 0 ? (
+        ) : pageItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 p-10 text-center">
             <p className="text-base font-semibold text-gray-700 dark:text-gray-200">No hay usuarios registrados.</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Crea el primer usuario para comenzar.</p>
-            <Button variant="primary" startIcon={<UserPlus className="size-4" />} onClick={() => setIsModalOpen(true)}>
+            <Button variant="primary" startIcon={<UserPlus className="size-4" />} onClick={() => navigate("/admin/users/new")}>
               Nuevo usuario
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-200 dark:border-gray-800">
-                  <TableCell
-                    isHeader
-                    className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400"
-                  >
-                    Nombre
-                  </TableCell>
-                  <TableCell
-                    isHeader
-                    className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400"
-                  >
-                    Email
-                  </TableCell>
-                  <TableCell
-                    isHeader
-                    className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400"
-                  >
-                    Rol
-                  </TableCell>
-                  <TableCell
-                    isHeader
-                    className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400"
-                  >
-                    Creado
-                  </TableCell>
-                  <TableCell
-                    isHeader
-                    className="px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400"
-                  >
-                    Estado
-                  </TableCell>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow
-                    key={user.id}
-                    className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50 dark:border-gray-800/50 dark:hover:bg-white/2"
-                  >
-                    <TableCell className="px-6 py-4 text-sm font-medium text-gray-800 dark:text-white/90">
-                      {user.firstName} {user.lastName}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                      {user.email}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                      {ROLE_LABELS[user.role]}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(user.createdAt)}
-                    </TableCell>
-                    <TableCell className="px-6 py-4">
-                      <Toggle
-                        checked={user.isActive}
-                        onChange={() => toggleUserStatus(user.id)}
-                        disabled={togglingId === user.id}
-                      />
-                    </TableCell>
-                  </TableRow>
+          <ScrollTable
+            colgroup={
+              <colgroup>
+                <col />
+                <col />
+                <col />
+                <col />
+                <col />
+                <col className="w-20" />
+              </colgroup>
+            }
+            header={
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Nombre</th>
+                <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Email</th>
+                <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Rol</th>
+                <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Creado</th>
+                <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Estado</th>
+                <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Acciones</th>
+              </tr>
+            }
+          >
+            <tbody>
+              {pageItems.map((user) => (
+                <tr
+                  key={user.id}
+                  className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50 dark:border-gray-800/50 dark:hover:bg-white/2"
+                >
+                  <td className="px-4 py-4 text-sm font-medium text-gray-800 dark:text-white/90">
+                    {user.firstName} {user.lastName}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{user.email}</td>
+                  <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{ROLE_LABELS[user.role]}</td>
+                  <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{formatDate(user.createdAt)}</td>
+                  <td className="px-4 py-4">
+                    <Toggle
+                      checked={user.isActive}
+                      onChange={() => toggleUserStatus(user.id)}
+                      disabled={togglingId === user.id}
+                    />
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <button
+                      onClick={() => navigate(`/admin/users/${user.id}/edit`)}
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
+                      title="Editar"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </ScrollTable>
+        )}
+
+        {!loading && !error && totalItems > 0 && (
+          <div className="flex shrink-0 flex-col gap-3 border-t border-gray-100 px-5 py-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <span>Mostrar</span>
+              <select
+                value={pageSize}
+                onChange={(event) => setPageSize(Number(event.target.value))}
+                className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              >
+                {[10, 25, 50].map((size) => (
+                  <option key={size} value={size}>{size}</option>
                 ))}
-              </TableBody>
-            </Table>
+              </select>
+              <span>
+                Mostrando {startIndex + 1}–{Math.min(startIndex + pageSize, totalItems)} de {totalItems}
+              </span>
+            </div>
+            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         )}
       </div>
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        className="max-w-md p-6 sm:p-8"
-      >
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-            Nuevo usuario
-          </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Completa los datos para crear un usuario.
-          </p>
-        </div>
-
-        {createError && (
-          <div className="mb-4">
-            <Alert variant="error" title="Error" message={createError} />
-          </div>
-        )}
-
-        {createSuccess && (
-          <div className="mb-4">
-            <Alert
-              variant="success"
-              title="¡Listo!"
-              message="Usuario creado correctamente."
-            />
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-5">
-            <div>
-              <Label className="text-gray-500">
-                Nombre <span className="text-error-500">*</span>
-              </Label>
-              <Input
-                placeholder="Nombre"
-                name="firstName"
-                value={formData.firstName}
-                onChange={(event) => updateField("firstName", event.target.value)}
-                disabled={creating}
-              />
-            </div>
-            <div>
-              <Label className="text-gray-500">
-                Apellido <span className="text-error-500">*</span>
-              </Label>
-              <Input
-                placeholder="Apellido"
-                name="lastName"
-                value={formData.lastName}
-                onChange={(event) => updateField("lastName", event.target.value)}
-                disabled={creating}
-              />
-            </div>
-            <div>
-              <Label className="text-gray-500">
-                Email <span className="text-error-500">*</span>
-              </Label>
-              <Input
-                type="email"
-                placeholder="correo@ejemplo.com"
-                name="email"
-                value={formData.email}
-                onChange={(event) => updateField("email", event.target.value)}
-                disabled={creating}
-              />
-            </div>
-            <div>
-              <Label className="text-gray-500">
-                Contraseña <span className="text-error-500">*</span>
-              </Label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Mínimo 8 caracteres"
-                  name="password"
-                  value={formData.password}
-                  onChange={(event) => updateField("password", event.target.value)}
-                  disabled={creating}
-                />
-                <span
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
-                >
-                  {showPassword ? (
-                    <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                  ) : (
-                    <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                  )}
-                </span>
-              </div>
-            </div>
-            <div>
-              <Label className="text-gray-500">Rol</Label>
-              <Select
-                value={formData.role}
-                onChange={(value) => updateField("role", value as UserRole)}
-                disabled={creating}
-                options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))}
-              />
-            </div>
-            <div>
-              <Label className="text-gray-500">Salario</Label>
-              <Input
-                type="number"
-                placeholder="Ej. 4500"
-                name="salaryAmount"
-                value={formData.salaryAmount}
-                onChange={(event) => updateField("salaryAmount", event.target.value)}
-                disabled={creating}
-              />
-            </div>
-            <div>
-              <Label className="text-gray-500">Ciclo de pago</Label>
-              <Select
-                value={formData.payCycle}
-                onChange={(value) =>
-                  updateField("payCycle", value as PayCycle | "")
-                }
-                disabled={creating}
-                placeholder="Sin ciclo de pago"
-                options={Object.entries(PAY_CYCLE_LABELS).map(([value, label]) => ({ value, label }))}
-              />
-            </div>
-            <Button type="submit" variant="primary" className="w-full" disabled={creating}>
-              {creating ? "Creando..." : "Crear usuario"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </PageShell>
   );
 };

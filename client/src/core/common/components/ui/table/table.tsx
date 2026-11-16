@@ -17,8 +17,12 @@ const TableBody: React.FC<TableBodyProps> = ({ children, className }) => {
   return <tbody className={className}>{children}</tbody>;
 };
 
-const TableRow: React.FC<TableRowProps> = ({ children, className }) => {
-  return <tr className={className}>{children}</tr>;
+const TableRow: React.FC<TableRowProps> = ({ children, className, onClick }) => {
+  return (
+    <tr className={className} onClick={onClick}>
+      {children}
+    </tr>
+  );
 };
 
 const TableCell: React.FC<TableCellProps> = ({

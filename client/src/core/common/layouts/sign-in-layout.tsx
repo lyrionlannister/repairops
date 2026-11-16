@@ -24,10 +24,10 @@ const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const currentUser = useCurrentUser();
   const hiddenPaths = (currentUser && hiddenPathsByRole[currentUser.role]) ?? [];
-  const visibleNavItems = signInNavbarItems.filter((item) => !hiddenPaths.includes(item.path));
+  const visibleNavItems = signInNavbarItems.filter((item) => !item.path || !hiddenPaths.includes(item.path));
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 xl:flex">
+    <div className="h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 xl:flex">
       <div>
         <AsideMenu
           navItems={visibleNavItems}
@@ -36,12 +36,12 @@ const LayoutContent: React.FC = () => {
         <Backdrop />
       </div>
       <div
-        className={`flex-1 transition-all duration-300 ease-in-out ${
+        className={`flex min-h-0 flex-1 flex-col transition-all duration-300 ease-in-out ${
           isExpanded || isHovered ? "lg:ml-72.5" : "lg:ml-22.5"
         } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <NavbarMenu />
-        <div className="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
+        <div className="custom-scrollbar mx-auto flex w-full max-w-(--breakpoint-2xl) flex-1 flex-col overflow-y-auto p-4 md:p-6">
           <Outlet />
         </div>
       </div>

@@ -27,6 +27,9 @@ import { InventoryMovement } from "../../../../src/commerce/inventory/entities/i
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryService } from "../../../../src/commerce/inventory/services/inventory.service.js";
+import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
+import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
+import { InventoryReservationService } from "../../../../src/commerce/inventory/services/inventory-reservation.service.js";
 import { RepairNoteController } from "../../../../src/commerce/repair-notes/controllers/repair-note.controller.js";
 import { PdfRendererService } from "../../../../src/reporting/pdf/pdf-renderer.service.js";
 import { createRepairNoteRouter } from "../../../../src/commerce/repair-notes/routes/repair-note.routes.js";
@@ -51,6 +54,11 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     const inventoryService = new InventoryService(
       new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),
       new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement)),
+      new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation)),
+    );
+    const inventoryReservationService = new InventoryReservationService(
+      new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation)),
+      inventoryService,
     );
     const repairNoteService = new RepairNoteService(
       new RepairNoteDao(AppDataSource.getRepository(RepairNote)),
@@ -60,6 +68,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
       new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
       { notifyOrderReady: async () => null } as unknown as WhatsappSendService,
+      inventoryReservationService,
     );
     const authService = new AuthService(
       new UserDao(AppDataSource.getRepository(User)),

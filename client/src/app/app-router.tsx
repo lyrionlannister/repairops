@@ -12,7 +12,7 @@ export const AppRouter = () => {
 
         {publicRoutes.map((route, index) => {
           const isAuthRoute =
-            route.path === "/admin/sign-in" || route.path === "/admin/sign-up";
+            route.path === "/admin/sign-in" || route.path === "/owner/sign-up";
 
           return (
             <Route

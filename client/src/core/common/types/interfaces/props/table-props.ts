@@ -33,6 +33,7 @@ export interface TableBodyProps {
 export interface TableRowProps {
   children: ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
 /**

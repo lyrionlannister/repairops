@@ -47,7 +47,7 @@ const Modal: React.FC<ModalProps> = ({
     : "relative w-full rounded-2xl border border-gray-200 bg-white shadow-theme-xl dark:border-gray-800 dark:bg-gray-900";
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center overflow-y-auto modal z-99999">
+    <div className="custom-scrollbar fixed inset-0 flex items-center justify-center overflow-y-auto modal z-99999">
       {!isFullscreen && (
         <div
           className="fixed inset-0 h-full w-full bg-gray-950/40 backdrop-blur-[2px] dark:bg-gray-950/70"

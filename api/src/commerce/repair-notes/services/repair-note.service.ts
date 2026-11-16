@@ -1,10 +1,11 @@
-import { singleton, inject } from "tsyringe";
-import type { FindOptionsWhere } from "typeorm";
+import { singleton } from "tsyringe";
+import type { EntityManager, FindOptionsWhere } from "typeorm";
 import { RepairNoteDao } from "../daos/repair-note.dao.js";
 import { RepairNoteItemDao } from "../daos/repair-note-item.dao.js";
 import { RepairNoteServiceTypeDao } from "../daos/repair-note-service-type.dao.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { InventoryService } from "../../inventory/services/inventory.service.js";
+import { InventoryReservationService } from "../../inventory/services/inventory-reservation.service.js";
 import { ServiceTypeDao } from "../../service-types/daos/service-type.dao.js";
 import { RepairNote } from "../entities/repair-note.entity.js";
 import { RepairNoteItem } from "../entities/repair-note-item.entity.js";
@@ -39,6 +40,15 @@ export interface RepairNoteItemInput {
   unitPrice: number;
 }
 
+// Una nota "comprometida" ya uso stock real -- antes de eso, solo reserva
+// (Fase 5, Pieza 3 de Inventario vivo: reemplaza el descuento inmediato que
+// este Service hacia hasta esa fase). "delivered" solo se alcanza pasando
+// por "done" antes, pero se incluye explicito por si algun flujo futuro la
+// alcanza de otra forma -- nunca asumir que done siempre precede.
+function isCommitted(status: string): boolean {
+  return status === "done" || status === "delivered";
+}
+
 @singleton()
 export class RepairNoteService {
   constructor(
@@ -49,6 +59,7 @@ export class RepairNoteService {
     private repairNoteServiceTypeDao: RepairNoteServiceTypeDao,
     private serviceTypeDao: ServiceTypeDao,
     private whatsappSendService: WhatsappSendService,
+    private inventoryReservationService: InventoryReservationService,
   ) {}
 
   async getAll(): Promise<RepairNote[]> {
@@ -81,11 +92,10 @@ export class RepairNoteService {
     return links.map((l) => nameById.get(l.serviceTypeId)).filter((n): n is string => Boolean(n));
   }
 
-  // Si la nota lleva items (accesorios/partes usados), crearla y registrar
-  // los movimientos de salida de stock corre en una sola transaccion:
-  // nunca se crea la nota con items que no pudieron descontar su stock.
-  // serviceTypeIds va en la misma transaccion: nunca queda una nota sin
-  // sus tipos de servicio por un fallo a medio camino.
+  // Si la nota lleva items (accesorios/partes usados), crearla y reservar su
+  // stock (o descontarlo real si la nota ya nace "comprometida", caso raro)
+  // corre en una sola transaccion. serviceTypeIds va en la misma transaccion:
+  // nunca queda una nota sin sus tipos de servicio por un fallo a medio camino.
   async create(
     data: CreatePayload,
     items: RepairNoteItemInput[] = [],
@@ -97,15 +107,18 @@ export class RepairNoteService {
     return AppDataSource.transaction(async (manager) => {
       const note = manager.create(RepairNote, { ...data, controlNumber, tenantId } as Partial<RepairNote>);
       const savedNote = await manager.save(note);
+      const committed = isCommitted(savedNote.status);
 
       for (const item of items) {
-        await this.inventoryService.applyMovement(manager, {
-          inventoryItemId: item.inventoryItemId,
-          type: "out",
-          quantity: item.quantity,
-          relatedEntityType: "repair_note",
-          relatedEntityId: savedNote.id,
-        });
+        if (committed) {
+          await this.inventoryService.applyMovement(manager, {
+            inventoryItemId: item.inventoryItemId,
+            type: "out",
+            quantity: item.quantity,
+            relatedEntityType: "repair_note",
+            relatedEntityId: savedNote.id,
+          });
+        }
         const noteItem = manager.create(RepairNoteItem, {
           tenantId,
           repairNoteId: savedNote.id,
@@ -113,7 +126,15 @@ export class RepairNoteService {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         });
-        await manager.save(noteItem);
+        const savedNoteItem = await manager.save(noteItem);
+        if (!committed) {
+          await this.inventoryReservationService.reserve(manager, {
+            relatedEntityType: "repair_note_item",
+            relatedEntityId: savedNoteItem.id,
+            inventoryItemId: item.inventoryItemId,
+            quantity: item.quantity,
+          });
+        }
       }
 
       for (const serviceTypeId of serviceTypeIds) {
@@ -129,9 +150,9 @@ export class RepairNoteService {
     });
   }
 
-  // Reemplazar los items/tipos de servicio de una nota existente revierte
-  // el stock de los items anteriores (movimiento "in" compensatorio, nunca
-  // se borra el ledger silenciosamente) y vuelve a descontar los nuevos --
+  // Reemplazar los items/tipos de servicio de una nota existente libera (o
+  // revierte, si la nota ya estaba comprometida) los items anteriores y
+  // reserva (o descuenta real, si la nota queda comprometida) los nuevos --
   // todo en la misma transaccion que el update de la nota.
   async update(
     id: string,
@@ -139,47 +160,68 @@ export class RepairNoteService {
     items?: RepairNoteItemInput[],
     serviceTypeIds?: string[],
   ): Promise<RepairNote | null> {
+    const tenantId = getCurrentTenantId();
+
     if (items === undefined && serviceTypeIds === undefined) {
-      const previous = await this.repairNoteDao.findById(id);
-      const updated = await this.repairNoteDao.update(id, data as Partial<RepairNote>);
-      await this.notifyIfJustMarkedDone(previous?.status, updated);
-      return updated;
+      let previousStatus: string | undefined;
+      const savedNote = await AppDataSource.transaction(async (manager) => {
+        const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
+        if (!note) return null;
+        previousStatus = note.status;
+        Object.assign(note, data);
+        const saved = await manager.save(note);
+
+        if (isCommitted(saved.status) && !isCommitted(previousStatus)) {
+          await this.consumeActiveReservations(manager, id, tenantId);
+        }
+
+        return saved;
+      });
+      await this.notifyIfJustMarkedDone(previousStatus, savedNote);
+      return savedNote;
     }
 
-    const tenantId = getCurrentTenantId();
     let previousStatus: string | undefined;
     const savedNote = await AppDataSource.transaction(async (manager) => {
       const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
       if (!note) return null;
       previousStatus = note.status;
+      const wasCommitted = isCommitted(previousStatus);
 
       if (items !== undefined) {
         const oldItems = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem> });
         for (const oldItem of oldItems) {
-          await this.inventoryService.applyMovement(manager, {
-            inventoryItemId: oldItem.inventoryItemId,
-            type: "in",
-            quantity: oldItem.quantity,
-            relatedEntityType: "repair_note",
-            relatedEntityId: id,
-            reason: "Edición de nota: reverso de item anterior",
-          });
+          if (wasCommitted) {
+            await this.inventoryService.applyMovement(manager, {
+              inventoryItemId: oldItem.inventoryItemId,
+              type: "in",
+              quantity: oldItem.quantity,
+              relatedEntityType: "repair_note",
+              relatedEntityId: id,
+              reason: "Edición de nota: reverso de item anterior",
+            });
+          } else {
+            await this.inventoryReservationService.release(manager, "repair_note_item", oldItem.id);
+          }
         }
         await manager.delete(RepairNoteItem, { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem>);
       }
 
       Object.assign(note, data);
       const savedNote = await manager.save(note);
+      const willBeCommitted = isCommitted(savedNote.status);
 
       if (items !== undefined) {
         for (const item of items) {
-          await this.inventoryService.applyMovement(manager, {
-            inventoryItemId: item.inventoryItemId,
-            type: "out",
-            quantity: item.quantity,
-            relatedEntityType: "repair_note",
-            relatedEntityId: id,
-          });
+          if (willBeCommitted) {
+            await this.inventoryService.applyMovement(manager, {
+              inventoryItemId: item.inventoryItemId,
+              type: "out",
+              quantity: item.quantity,
+              relatedEntityType: "repair_note",
+              relatedEntityId: id,
+            });
+          }
           const noteItem = manager.create(RepairNoteItem, {
             tenantId,
             repairNoteId: id,
@@ -187,8 +229,19 @@ export class RepairNoteService {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
           });
-          await manager.save(noteItem);
+          const savedNoteItem = await manager.save(noteItem);
+          if (!willBeCommitted) {
+            await this.inventoryReservationService.reserve(manager, {
+              relatedEntityType: "repair_note_item",
+              relatedEntityId: savedNoteItem.id,
+              inventoryItemId: item.inventoryItemId,
+              quantity: item.quantity,
+            });
+          }
         }
+      } else if (willBeCommitted && !wasCommitted) {
+        // Status cruzo a comprometido en esta misma llamada, sin tocar items.
+        await this.consumeActiveReservations(manager, id, tenantId);
       }
 
       if (serviceTypeIds !== undefined) {
@@ -205,6 +258,18 @@ export class RepairNoteService {
     return savedNote;
   }
 
+  // Consume todas las reservas activas de las lineas ACTUALES de la nota --
+  // mismo punto exacto donde se dispara el aviso de WhatsApp (la nota cruza
+  // a "done"/"delivered" por primera vez), nunca antes.
+  private async consumeActiveReservations(manager: EntityManager, repairNoteId: string, tenantId: string): Promise<void> {
+    const currentItems = await manager.find(RepairNoteItem, {
+      where: { repairNoteId, tenantId } as unknown as FindOptionsWhere<RepairNoteItem>,
+    });
+    for (const item of currentItems) {
+      await this.inventoryReservationService.consume(manager, "repair_note_item", item.id);
+    }
+  }
+
   // Avisa al cliente (plantilla `order_ready`) la primera vez que la nota
   // pasa a "done" -- nunca en un guardado posterior que la deje igual. Corre
   // fuera de cualquier transaccion de BD (es una llamada HTTP a Meta) y
@@ -219,8 +284,9 @@ export class RepairNoteService {
     }
   }
 
-  // Cancelar revierte el stock de los items ya descontados (mismo patron de
-  // reverso que update()) y marca cancelled -- nunca se borra la nota.
+  // Cancelar libera las reservas activas (si la nota aun no estaba
+  // comprometida, nunca se movio stock de verdad) o revierte el stock real
+  // (si ya estaba "done") -- nunca se borra la nota.
   async cancel(id: string): Promise<RepairNote> {
     const tenantId = getCurrentTenantId();
     return AppDataSource.transaction(async (manager) => {
@@ -229,16 +295,21 @@ export class RepairNoteService {
       if (note.status === "cancelled") throw new Error("La nota ya está cancelada");
       if (note.status === "delivered") throw new Error("No se puede cancelar una nota ya entregada");
 
+      const wasCommitted = isCommitted(note.status);
       const items = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem> });
       for (const item of items) {
-        await this.inventoryService.applyMovement(manager, {
-          inventoryItemId: item.inventoryItemId,
-          type: "in",
-          quantity: item.quantity,
-          relatedEntityType: "repair_note",
-          relatedEntityId: id,
-          reason: "Nota cancelada",
-        });
+        if (wasCommitted) {
+          await this.inventoryService.applyMovement(manager, {
+            inventoryItemId: item.inventoryItemId,
+            type: "in",
+            quantity: item.quantity,
+            relatedEntityType: "repair_note",
+            relatedEntityId: id,
+            reason: "Nota cancelada",
+          });
+        } else {
+          await this.inventoryReservationService.release(manager, "repair_note_item", item.id);
+        }
       }
 
       note.status = "cancelled";

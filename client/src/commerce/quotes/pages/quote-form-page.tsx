@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useQuotes, type QuoteFormData, type QuoteItemInput } from "../hooks/use-quotes";
@@ -7,6 +7,7 @@ import useBranch from "@common/hooks/use-branch";
 import EmployeeSelect from "@common/components/employee-select";
 import CustomerSelect from "@common/components/customer-select";
 import Input from "@ui/inputs/input";
+import DatePicker from "@ui/date-picker/date-picker";
 import Label from "@ui/inputs/label";
 import Button from "@ui/button/button";
 import Alert from "@ui/alert/alert";
@@ -32,11 +33,19 @@ const QuoteFormPage: React.FC = () => {
 
   const { quote, loading, saving, error, fetchQuote, fetchQuoteItems, createQuote, updateQuote, clearError } =
     useQuotes();
-  const { items: inventoryItems, fetchAll: fetchInventory } = useInventory();
+  const { items: allInventoryItems, fetchAll: fetchInventory } = useInventory();
   const { activeBranchId } = useBranch();
 
   const [form, setForm] = useState<QuoteFormData>(INITIAL_FORM);
   const [itemLines, setItemLines] = useState<ItemLine[]>([{ ...emptyItemLine }]);
+
+  // La cotizacion pertenece a form.localId -- mismo criterio que RepairNote,
+  // no mostrar items de una sucursal distinta a la que cotiza.
+  const quoteLocalId = form.localId || activeBranchId;
+  const inventoryItems = useMemo(
+    () => (quoteLocalId ? allInventoryItems.filter((item) => item.localId === quoteLocalId) : allInventoryItems),
+    [allInventoryItems, quoteLocalId],
+  );
 
   useEffect(() => {
     fetchInventory();
@@ -185,10 +194,9 @@ const QuoteFormPage: React.FC = () => {
             </div>
             <div>
               <Label className="text-gray-500">Válida hasta</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={form.validUntil}
-                onChange={(e) => set("validUntil", e.target.value)}
+                onChange={(date) => set("validUntil", date)}
                 disabled={saving}
               />
             </div>

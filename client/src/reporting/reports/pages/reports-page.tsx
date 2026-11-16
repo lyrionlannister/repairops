@@ -5,9 +5,9 @@ import useBranch from "@common/hooks/use-branch";
 import { useLocal } from "@app-platform/local/hooks/use-local";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import Alert from "@ui/alert/alert";
-import Input from "@ui/inputs/input";
+import DatePicker from "@ui/date-picker/date-picker";
 import Label from "@ui/inputs/label";
-import PageMeta from "@common/pages/page-meta";
+import PageShell from "@common/components/page-shell/page-shell";
 
 import { useReports } from "../hooks/use-reports";
 
@@ -56,25 +56,20 @@ const ReportsPage = () => {
   const cashIncome = summary?.totalIncome ?? 0;
 
   return (
-    <div className="space-y-6">
-      <PageMeta title="Reportes" description="Reportes del taller y del día" />
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">Reportes</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Productividad, ventas de accesorios y notas por tipo en el período seleccionado.
-        </p>
-      </div>
-
+    <PageShell
+      title="Reportes"
+      description="Productividad, ventas de accesorios y notas por tipo en el período seleccionado."
+    >
       {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
         <div>
           <Label className="text-gray-500">Desde</Label>
-          <Input type="date" value={periodStart} onChange={(event) => setPeriodStart(event.target.value)} />
+          <DatePicker value={periodStart} onChange={setPeriodStart} />
         </div>
         <div>
           <Label className="text-gray-500">Hasta</Label>
-          <Input type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} />
+          <DatePicker value={periodEnd} onChange={setPeriodEnd} />
         </div>
         {loading && <p className="text-xs text-gray-400">Cargando...</p>}
       </div>
@@ -120,9 +115,9 @@ const ReportsPage = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800">
-                    <th className="py-2 text-left font-medium text-gray-500 dark:text-gray-400">Tipo</th>
-                    <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Notas</th>
-                    <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Total</th>
+                    <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Tipo</th>
+                    <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Notas</th>
+                    <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -164,9 +159,9 @@ const ReportsPage = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800">
-                    <th className="py-2 text-left font-medium text-gray-500 dark:text-gray-400">Item</th>
-                    <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
-                    <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Ingreso</th>
+                    <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Item</th>
+                    <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Cantidad</th>
+                    <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Ingreso</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -195,11 +190,11 @@ const ReportsPage = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800">
-                <th className="py-2 text-left font-medium text-gray-500 dark:text-gray-400">Empleado</th>
-                <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Notas</th>
-                <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Ventas</th>
-                <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Atribuido</th>
-                <th className="py-2 text-right font-medium text-gray-500 dark:text-gray-400">Salario del período</th>
+                <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Empleado</th>
+                <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Notas</th>
+                <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Ventas</th>
+                <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Atribuido</th>
+                <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Salario del período</th>
                 <th className="py-2 text-center font-medium text-gray-500 dark:text-gray-400">Cubre salario</th>
               </tr>
             </thead>
@@ -222,7 +217,7 @@ const ReportsPage = () => {
           </table>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 };
 

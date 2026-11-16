@@ -6,6 +6,7 @@ import { UserDao } from "../daos/user.dao.js";
 import { RegisterUserDto } from "../dtos/register-user.dto.js";
 import { LoginUserDto } from "../dtos/login-user.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
+import { UpdateEmployeeDto } from "../dtos/update-employee.dto.js";
 import { User } from "../entities/user.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 import { repositoryToken } from "../../../core/di/repository-token.js";
@@ -92,6 +93,33 @@ export class AuthService {
       payCycle: data.payCycle ?? null,
     });
 
+    const { password, ...rest } = user;
+    return rest;
+  }
+
+  // A diferencia de createEmployee, password es opcional: solo se re-hashea
+  // y reemplaza si llega no vacio, nunca se borra la contrasena actual por
+  // dejar el campo en blanco en el form de edicion.
+  async updateEmployee(id: string, data: UpdateEmployeeDto): Promise<Omit<User, "password"> | null> {
+    const existingUser = await this.userDao.findByEmail(data.email);
+    if (existingUser && existingUser.id !== id) {
+      throw new Error("Email ya registrado");
+    }
+
+    const updatePayload: Partial<User> = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      role: data.role ?? "employee",
+      salaryAmount: data.salaryAmount ?? null,
+      payCycle: data.payCycle ?? null,
+    };
+    if (data.password) {
+      updatePayload.password = await hash(data.password, 10);
+    }
+
+    const user = await this.userDao.update(id, updatePayload);
+    if (!user) return null;
     const { password, ...rest } = user;
     return rest;
   }
