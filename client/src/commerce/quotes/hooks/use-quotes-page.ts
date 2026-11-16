@@ -31,7 +31,6 @@ export const useQuotesPage = ({
   }, [quotes, search, statusFilter]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar esta cotización?")) return;
     setDeletingId(id);
     await deleteQuote(id);
     setDeletingId(null);

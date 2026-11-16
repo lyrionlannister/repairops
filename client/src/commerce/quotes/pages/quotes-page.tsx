@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, FileText, Pencil, Trash2, Check, X, Search } from "lucide-react";
 import { useQuotes, type QuoteStatus } from "../hooks/use-quotes";
@@ -7,6 +7,7 @@ import Button from "@ui/button/button";
 import { TableBody, TableRow, TableCell } from "@ui/table/table";
 import Pagination from "@ui/table/pagination";
 import ScrollTable from "@ui/table/scroll-table";
+import ConfirmModal from "@ui/modal/confirm-modal";
 import PageShell from "@common/components/page-shell/page-shell";
 import usePaginatedList from "@common/hooks/use-paginated-list";
 
@@ -32,6 +33,7 @@ const QuotesPage: React.FC = () => {
     useQuotesPage({ quotes, deleteQuote, setStatus });
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
     usePaginatedList(filteredQuotes);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchQuotes();
@@ -167,7 +169,7 @@ const QuotesPage: React.FC = () => {
                           </button>
                           <button
                             title="Eliminar"
-                            onClick={() => handleDelete(quote.id)}
+                            onClick={() => setDeleteConfirmId(quote.id)}
                             disabled={deletingId === quote.id}
                             className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50"
                           >
@@ -203,6 +205,19 @@ const QuotesPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={deleteConfirmId !== null}
+        title="Eliminar cotización"
+        message="¿Eliminar esta cotización? Esta acción no se puede deshacer."
+        danger
+        loading={deletingId !== null}
+        onConfirm={async () => {
+          if (deleteConfirmId) await handleDelete(deleteConfirmId);
+          setDeleteConfirmId(null);
+        }}
+        onClose={() => setDeleteConfirmId(null)}
+      />
     </PageShell>
   );
 };

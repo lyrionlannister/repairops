@@ -13,6 +13,8 @@ import Select from "@ui/select/select";
 import Modal from "@ui/modal/modal";
 import PageShell from "@common/components/page-shell/page-shell";
 import ScrollTable from "@ui/table/scroll-table";
+import Pagination from "@ui/table/pagination";
+import usePaginatedList from "@common/hooks/use-paginated-list";
 
 const METHOD_LABELS: Record<"efectivo" | "tarjeta" | "transferencia", string> = {
   efectivo: "Efectivo",
@@ -71,6 +73,9 @@ const CashPage = () => {
     registerMovement,
     clearError,
   });
+
+  const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
+    usePaginatedList(movements);
 
   if (loading && !session) {
     return <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando caja...</div>;
@@ -188,7 +193,7 @@ const CashPage = () => {
                 }
               >
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {movements.map((movement) => (
+                  {pageItems.map((movement) => (
                     <tr key={movement.id}>
                       <td className="px-5 py-3 text-xs text-gray-500 dark:text-gray-400">{formatTime(movement.createdAt)}</td>
                       <td className="px-5 py-3">
@@ -207,6 +212,27 @@ const CashPage = () => {
                   ))}
                 </tbody>
               </ScrollTable>
+            )}
+
+            {movements.length > 0 && (
+              <div className="flex shrink-0 flex-col gap-3 border-t border-gray-100 px-5 py-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <span>Mostrar</span>
+                  <select
+                    value={pageSize}
+                    onChange={(event) => setPageSize(Number(event.target.value))}
+                    className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                  >
+                    {[10, 25, 50].map((size) => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+                  <span>
+                    Mostrando {startIndex + 1}–{Math.min(startIndex + pageSize, totalItems)} de {totalItems}
+                  </span>
+                </div>
+                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+              </div>
             )}
           </div>
         </>
