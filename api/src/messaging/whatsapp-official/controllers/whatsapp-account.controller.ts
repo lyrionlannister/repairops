@@ -7,6 +7,7 @@ import { WhatsappTemplateService } from "../services/whatsapp-template.service.j
 import { ConnectWhatsappAccountDto } from "../dtos/connect-whatsapp-account.dto.js";
 import { WhatsappGraphApiError } from "../clients/whatsapp-graph.client.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class WhatsappAccountController {
@@ -24,7 +25,7 @@ export class WhatsappAccountController {
         ownedByPlatform: account.ownedByPlatform,
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -44,10 +45,10 @@ export class WhatsappAccountController {
       });
     } catch (error: any) {
       if (error instanceof WhatsappGraphApiError) {
-        res.status(400).json({ error: error.message });
+        sendError(res, error, 400);
         return;
       }
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -57,7 +58,7 @@ export class WhatsappAccountController {
       const templates = await this.whatsappTemplateService.reconcile(account);
       res.status(200).json(templates);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 }

@@ -10,6 +10,7 @@ import { ContactName } from "../entities/contact-name.entity.js";
 import { normalizePhone } from "../helpers/chats.helpers.js";
 import { WhatsappAccountService } from "../../whatsapp-official/services/whatsapp-account.service.js";
 import { WhatsappSendService, WhatsappWindowClosedError } from "../../whatsapp-official/services/whatsapp-send.service.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class ChatsController {
@@ -184,7 +185,7 @@ export class ChatsController {
       res.status(200).json({ ok: true });
     } catch (error) {
       if (error instanceof WhatsappWindowClosedError) {
-        res.status(409).json({ error: error.message });
+        sendError(res, error, 409);
         return;
       }
       console.error("Error enviando mensaje manual:", error);

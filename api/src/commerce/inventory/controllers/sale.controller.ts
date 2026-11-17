@@ -7,7 +7,7 @@ import { CreateSaleDto } from "../dtos/create-sale.dto.js";
 import type { AuthenticatedRequest } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
-import { errorStatus, queryString } from "../../../core/http/error-status.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
 
 @singleton()
 export class SaleController {
@@ -21,7 +21,7 @@ export class SaleController {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getAll(branchId));
     } catch (error: any) {
-      res.status(errorStatus(error, 500)).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -38,7 +38,7 @@ export class SaleController {
       ]);
       res.status(200).json({ ...sale, items, payments });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -54,7 +54,7 @@ export class SaleController {
       const sale = await this.service.create(dto, req.user!.role);
       res.status(201).json(sale);
     } catch (error: any) {
-      res.status(errorStatus(error, 400)).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }

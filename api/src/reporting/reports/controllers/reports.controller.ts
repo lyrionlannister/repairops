@@ -7,7 +7,7 @@ import { EmployeePerformanceQueryDto } from "../dtos/employee-performance-query.
 import { AccessorySalesQueryDto } from "../dtos/accessory-sales-query.dto.js";
 import { RepairNotesByTypeQueryDto } from "../dtos/repair-notes-by-type-query.dto.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
-import { errorStatus, queryString } from "../../../core/http/error-status.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
 @singleton()
@@ -30,7 +30,7 @@ export class ReportsController {
       }
       res.status(200).json(await this.service.getEmployeePerformance({ ...dto, branchId: await this.branchOf(req) }));
     } catch (error: any) {
-      res.status(errorStatus(error, 500)).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -44,7 +44,7 @@ export class ReportsController {
       }
       res.status(200).json(await this.service.getAccessorySales({ ...dto, branchId: await this.branchOf(req) }));
     } catch (error: any) {
-      res.status(errorStatus(error, 500)).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -58,7 +58,7 @@ export class ReportsController {
       }
       res.status(200).json(await this.service.getRepairNotesByType({ ...dto, branchId: await this.branchOf(req) }));
     } catch (error: any) {
-      res.status(errorStatus(error, 500)).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 }

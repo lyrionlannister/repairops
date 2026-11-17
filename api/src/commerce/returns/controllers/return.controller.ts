@@ -6,6 +6,7 @@ import { ReturnService } from "../services/return.service.js";
 import { CreateReturnDto } from "../dtos/create-return.dto.js";
 import type { AuthenticatedRequest } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class ReturnController {
@@ -21,7 +22,7 @@ export class ReturnController {
       const items = await this.service.getItems(theReturn.id);
       res.status(200).json({ ...theReturn, items });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -29,7 +30,7 @@ export class ReturnController {
     try {
       res.status(200).json(await this.service.getBySaleId(req.params["saleId"] as string));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -44,7 +45,7 @@ export class ReturnController {
       const theReturn = await this.service.create(dto);
       res.status(201).json(theReturn);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }

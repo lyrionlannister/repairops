@@ -10,6 +10,7 @@ import { CreateWhatsappTemplateCatalogEntryDto } from "../dtos/create-whatsapp-t
 import { UpdateWhatsappTemplateCatalogEntryDto } from "../dtos/update-whatsapp-template-catalog-entry.dto.js";
 import { WhatsappGraphApiError } from "../clients/whatsapp-graph.client.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class WhatsappTemplateCatalogController {
@@ -17,10 +18,10 @@ export class WhatsappTemplateCatalogController {
 
   private handleError(error: any, res: Response): void {
     if (error instanceof WhatsappTemplateCatalogConflictError || error instanceof WhatsappGraphApiError) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
       return;
     }
-    res.status(500).json({ error: error.message });
+    sendError(res, error, 500);
   }
 
   // -- Empresa --

@@ -1,6 +1,7 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { SupplierService } from "../services/supplier.service.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class SupplierController {
@@ -11,7 +12,7 @@ export class SupplierController {
       const suppliers = await this.service.getAll();
       res.status(200).json(suppliers);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -25,7 +26,7 @@ export class SupplierController {
       }
       res.status(200).json(supplier);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -34,7 +35,7 @@ export class SupplierController {
       const supplier = await this.service.create(req.body);
       res.status(201).json(supplier);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -48,7 +49,7 @@ export class SupplierController {
       }
       res.status(200).json(supplier);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -62,7 +63,7 @@ export class SupplierController {
       }
       res.status(200).json({ message: "Proveedor eliminado" });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 }

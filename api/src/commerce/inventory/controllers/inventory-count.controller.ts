@@ -6,6 +6,7 @@ import { InventoryCountService, InventoryCountCloseBlockedError } from "../servi
 import { OpenInventoryCountDto } from "../dtos/open-inventory-count.dto.js";
 import { SetCountedInventoryCountItemDto } from "../dtos/set-counted-inventory-count-item.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class InventoryCountController {
@@ -21,7 +22,7 @@ export class InventoryCountController {
       const items = await this.service.getItems(count.id);
       res.status(200).json({ ...count, items });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -35,7 +36,7 @@ export class InventoryCountController {
       }
       res.status(201).json(await this.service.open(dto.branchId, dto.openedByEmployeeId));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -50,7 +51,7 @@ export class InventoryCountController {
       const updated = await this.service.setCounted(req.params["itemId"] as string, dto.countedQuantity, dto.reason);
       res.status(200).json(updated);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -63,7 +64,7 @@ export class InventoryCountController {
         res.status(400).json({ error: error.message, missingReasonItemIds: error.missingReasonItemIds });
         return;
       }
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }

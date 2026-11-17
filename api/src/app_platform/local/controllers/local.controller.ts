@@ -1,6 +1,7 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { LocalService, LocalValidationError } from "../services/local.service.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class LocalController {
@@ -11,7 +12,7 @@ export class LocalController {
       const config = await this.localService.getConfigWithPalette();
       res.status(200).json(config);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -20,7 +21,7 @@ export class LocalController {
       const config = await this.localService.updateConfig(req.body);
       res.status(200).json(config);
     } catch (error: any) {
-      res.status(error instanceof LocalValidationError ? 400 : 500).json({ error: error.message });
+      sendError(res, error, error instanceof LocalValidationError ? 400 : 500);
     }
   };
 }

@@ -1,6 +1,7 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { BranchService } from "../services/branch.service.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class BranchController {
@@ -10,7 +11,7 @@ export class BranchController {
     try {
       res.status(200).json(await this.service.getAll());
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -23,7 +24,7 @@ export class BranchController {
       }
       res.status(200).json(branch);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -32,7 +33,7 @@ export class BranchController {
       const branch = await this.service.create(req.body);
       res.status(201).json(branch);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -46,7 +47,7 @@ export class BranchController {
       }
       res.status(200).json(branch);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -60,7 +61,7 @@ export class BranchController {
       }
       res.status(200).json(branch);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }

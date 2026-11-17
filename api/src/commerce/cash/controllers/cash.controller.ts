@@ -8,7 +8,7 @@ import { CloseCashSessionDto } from "../dtos/close-cash-session.dto.js";
 import { RegisterCashMovementDto } from "../dtos/register-cash-movement.dto.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
-import { errorStatus, queryString } from "../../../core/http/error-status.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
 
 @singleton()
 export class CashController {
@@ -22,7 +22,7 @@ export class CashController {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getAllSessions(branchId));
     } catch (error: any) {
-      res.status(errorStatus(error, 500)).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -35,7 +35,7 @@ export class CashController {
       }
       res.status(200).json(await this.service.getOpenSession(localId));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -48,7 +48,7 @@ export class CashController {
       }
       res.status(200).json(session);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -64,7 +64,7 @@ export class CashController {
       const session = await this.service.openSession(localId, dto.openingBalance, dto.openedByEmployeeId);
       res.status(201).json(session);
     } catch (error: any) {
-      res.status(errorStatus(error, 400)).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -84,7 +84,7 @@ export class CashController {
       );
       res.status(200).json(session);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -92,7 +92,7 @@ export class CashController {
     try {
       res.status(200).json(await this.service.getMovements(req.params["id"] as string));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -116,7 +116,7 @@ export class CashController {
       });
       res.status(201).json(movement);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -124,7 +124,7 @@ export class CashController {
     try {
       res.status(200).json(await this.service.getSummary(req.params["id"] as string));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 }

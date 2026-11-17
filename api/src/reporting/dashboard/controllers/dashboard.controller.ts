@@ -3,9 +3,9 @@ import { Response } from "express";
 import type { AuthenticatedRequest } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { DashboardService, DashboardValidationError } from "../services/dashboard.service.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
-import { errorStatus, queryString } from "../../../core/http/error-status.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
 
-const statusOf = (error: unknown): number => (error instanceof DashboardValidationError ? 400 : errorStatus(error, 500));
+const fallbackStatusOf = (error: unknown): number => (error instanceof DashboardValidationError ? 400 : 500);
 
 @singleton()
 export class DashboardController {
@@ -21,7 +21,7 @@ export class DashboardController {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.dashboardService.getSummary(req.user!.role, branchId ?? undefined));
     } catch (error: any) {
-      res.status(statusOf(error)).json({ error: error.message });
+      sendError(res, error, fallbackStatusOf(error));
     }
   };
 
@@ -35,7 +35,7 @@ export class DashboardController {
       });
       res.status(200).json(series);
     } catch (error: any) {
-      res.status(statusOf(error)).json({ error: error.message });
+      sendError(res, error, fallbackStatusOf(error));
     }
   };
 }

@@ -8,7 +8,7 @@ import { RegisterMovementDto } from "../dtos/register-movement.dto.js";
 import { parseInventoryImportFile } from "../utils/inventory-import-parser.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
-import { errorStatus, queryString } from "../../../core/http/error-status.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
 
 @singleton()
 export class InventoryController {
@@ -22,7 +22,7 @@ export class InventoryController {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getAllWithAvailability(branchId));
     } catch (error: any) {
-      res.status(errorStatus(error, 500)).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -35,7 +35,7 @@ export class InventoryController {
       }
       res.status(200).json(item);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -43,7 +43,7 @@ export class InventoryController {
     try {
       res.status(200).json(await this.service.getLowStock());
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -56,7 +56,7 @@ export class InventoryController {
       }
       res.status(200).json(item);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -71,7 +71,7 @@ export class InventoryController {
       dto.localId = await this.branchAccess.resolveWriteBranch(dto.localId);
       res.status(201).json(await this.service.create(dto));
     } catch (error: any) {
-      res.status(errorStatus(error, 400)).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -84,7 +84,7 @@ export class InventoryController {
       }
       res.status(200).json(item);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -97,7 +97,7 @@ export class InventoryController {
       }
       res.status(200).json({ message: "Item eliminado" });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -105,7 +105,7 @@ export class InventoryController {
     try {
       res.status(200).json(await this.service.getMovements(req.params["id"] as string));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -133,7 +133,7 @@ export class InventoryController {
 
       res.status(200).json(await this.service.bulkImport(localId, rows));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -154,7 +154,7 @@ export class InventoryController {
       });
       res.status(201).json(movement);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }

@@ -6,6 +6,7 @@ import { LayawayService } from "../services/layaway.service.js";
 import { OpenLayawayDto } from "../dtos/open-layaway.dto.js";
 import { CompleteLayawayDto } from "../dtos/complete-layaway.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class LayawayController {
@@ -15,7 +16,7 @@ export class LayawayController {
     try {
       res.status(200).json(await this.service.getAll());
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -29,7 +30,7 @@ export class LayawayController {
       const items = await this.service.getItems(layaway.id);
       res.status(200).json({ ...layaway, items });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -43,7 +44,7 @@ export class LayawayController {
       }
       res.status(201).json(await this.service.open(dto));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -58,7 +59,7 @@ export class LayawayController {
       const layaway = await this.service.complete(req.params["id"] as string, dto.payments, dto.cashSessionId);
       res.status(200).json(layaway);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -67,7 +68,7 @@ export class LayawayController {
       const layaway = await this.service.cancel(req.params["id"] as string);
       res.status(200).json(layaway);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }

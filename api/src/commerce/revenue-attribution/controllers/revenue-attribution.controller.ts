@@ -5,6 +5,7 @@ import { validate } from "class-validator";
 import { RevenueAttributionService } from "../services/revenue-attribution.service.js";
 import { SetAttributionBasisDto } from "../dtos/set-attribution-basis.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class RevenueAttributionController {
@@ -14,7 +15,7 @@ export class RevenueAttributionController {
     try {
       res.status(200).json(await this.service.getSetting());
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -28,7 +29,7 @@ export class RevenueAttributionController {
       }
       res.status(200).json(await this.service.setBasis(dto.attributionBasis));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }
