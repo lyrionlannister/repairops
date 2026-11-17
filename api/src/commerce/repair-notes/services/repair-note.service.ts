@@ -103,6 +103,7 @@ export class RepairNoteService {
     items: RepairNoteItemInput[] = [],
     serviceTypeIds: string[] = [],
   ): Promise<RepairNote> {
+    if (!data.localId) throw new Error("La sucursal (localId) es obligatoria");
     const controlNumber = await this.localService.consumeControlNumber();
     const tenantId = getCurrentTenantId();
 
@@ -188,6 +189,7 @@ export class RepairNoteService {
     items?: RepairNoteItemInput[],
     serviceTypeIds?: string[],
   ): Promise<RepairNote | null> {
+    if ("localId" in data && !data.localId) throw new Error("La sucursal (localId) es obligatoria");
     const tenantId = getCurrentTenantId();
 
     if (items === undefined && serviceTypeIds === undefined) {

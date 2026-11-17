@@ -107,6 +107,7 @@ describe("ReportsService", () => {
           totalValue: 500,
           receivedAt: today(),
           assignedEmployeeId: employee.id,
+          localId: "1",
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
@@ -184,6 +185,7 @@ describe("ReportsService", () => {
           totalValue: 200,
           receivedAt: "2026-01-10",
           assignedEmployeeId: employee.id,
+          localId: "1",
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
@@ -197,6 +199,7 @@ describe("ReportsService", () => {
           totalValue: 9999,
           receivedAt: "2026-02-15",
           assignedEmployeeId: employee.id,
+          localId: "1",
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
@@ -311,6 +314,7 @@ describe("ReportsService", () => {
           totalValue: 200,
           receivedAt: today(),
           status: "received",
+          localId: "1",
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
@@ -328,6 +332,7 @@ describe("ReportsService", () => {
           totalValue: 300,
           receivedAt: today(),
           status: "done",
+          localId: "1",
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );

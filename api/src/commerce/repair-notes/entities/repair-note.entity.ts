@@ -15,8 +15,9 @@ export class RepairNote extends BaseEntity {
   @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_repair_notes_tenant" })
   tenant?: Tenant;
 
-  @Column({ type: "bigint", nullable: true, name: "local_id" })
-  localId?: string | null;
+  // Sucursal de la nota: obligatoria (el dashboard y la caja filtran por ella).
+  @Column({ type: "bigint", nullable: false, name: "local_id" })
+  localId!: string;
 
   @Column({ type: "bigint", nullable: true, name: "customer_id" })
   customerId?: string | null;

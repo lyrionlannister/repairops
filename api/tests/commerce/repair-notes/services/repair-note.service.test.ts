@@ -71,7 +71,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Items", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01" },
+        { localId: "1", customerName: "Cliente Items", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01" },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 300 }],
       ),
     );
@@ -96,7 +96,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Edicion", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01" },
+        { localId: "1", customerName: "Cliente Edicion", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01" },
         [{ inventoryItemId: item.id, quantity: 2, unitPrice: 150 }],
       ),
     );
@@ -134,7 +134,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Cancela", brand: "Samsung", model: "A52", reportedFailure: "Pantalla rota", receivedAt: "2026-01-01", status: "received" },
+        { localId: "1", customerName: "Cliente Cancela", brand: "Samsung", model: "A52", reportedFailure: "Pantalla rota", receivedAt: "2026-01-01", status: "received" },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 700 }],
       ),
     );
@@ -151,7 +151,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const delivered = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Entregado", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01", status: "delivered" },
+        { localId: "1", customerName: "Cliente Entregado", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01", status: "delivered" },
         [],
       ),
     );
@@ -170,7 +170,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
         {
-          customerName: "Cliente Listo",
+          localId: "1", customerName: "Cliente Listo",
           contactNumber: "5215500000000",
           brand: "Samsung",
           model: "A52",
@@ -204,7 +204,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Post-Done", brand: "Samsung", model: "A52", reportedFailure: "Rayones", receivedAt: "2026-01-01", status: "done" },
+        { localId: "1", customerName: "Cliente Post-Done", brand: "Samsung", model: "A52", reportedFailure: "Rayones", receivedAt: "2026-01-01", status: "done" },
         [{ inventoryItemId: item.id, quantity: 2, unitPrice: 20 }],
       ),
     );
@@ -226,7 +226,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Cancela Done", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01", status: "done" },
+        { localId: "1", customerName: "Cliente Cancela Done", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01", status: "done" },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 15 }],
       ),
     );
@@ -235,5 +235,13 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     const cancelled = await runWithTenant(tenantId, () => repairNoteService.cancel(note.id));
     expect(cancelled.status).toBe("cancelled");
     expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(5); // revertido real
+  });
+
+  it("rejects a note without a branch (localId is required)", async () => {
+    await expect(
+      runWithTenant(tenantId, () =>
+        repairNoteService.create({ customerName: "Sin sucursal", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01" } as never),
+      ),
+    ).rejects.toThrow("sucursal");
   });
 });
