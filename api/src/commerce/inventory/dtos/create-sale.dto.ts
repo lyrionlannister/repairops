@@ -3,6 +3,7 @@ import { Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsIn,
   IsNotEmpty,
   IsNumber,
@@ -96,6 +97,11 @@ export class CreateSaleDto {
   @IsOptional()
   @IsString()
   idempotencyKey?: string;
+
+  // El IVA no se asume: solo se cobra el taxRatePercent del local si se pide.
+  @IsOptional()
+  @IsBoolean()
+  applyTax?: boolean;
 
   @IsArray()
   @ArrayMinSize(1, { message: "La venta debe tener al menos un item" })

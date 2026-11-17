@@ -1,16 +1,29 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 import { CustomerService } from "../services/customer.service.js";
+import { CustomerDebtService } from "../services/customer-debt.service.js";
+import { CustomerPaymentService } from "../services/customer-payment.service.js";
+import { RegisterCustomerPaymentDto } from "../dtos/register-customer-payment.dto.js";
+import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
+import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class CustomerController {
-  constructor(private service: CustomerService) {}
+  constructor(
+    private service: CustomerService,
+    private debtService: CustomerDebtService,
+    private paymentService: CustomerPaymentService,
+    private branchAccess: BranchAccessService,
+  ) {}
 
   getAll = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getAll());
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -23,7 +36,7 @@ export class CustomerController {
       }
       res.status(200).json(customer);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -31,7 +44,7 @@ export class CustomerController {
     try {
       res.status(200).json(await this.service.getDeviceHistory(req.params["id"] as string));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -44,7 +57,50 @@ export class CustomerController {
       }
       res.status(200).json(balance);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
+    }
+  };
+
+  getDebts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const debts = await this.debtService.getDebts(req.params["id"] as string);
+      if (!debts) {
+        res.status(404).json({ error: "Cliente no encontrado" });
+        return;
+      }
+      res.status(200).json(debts);
+    } catch (error: any) {
+      sendError(res, error, 500);
+    }
+  };
+
+  getPayments = async (req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.paymentService.getByCustomerId(req.params["id"] as string));
+    } catch (error: any) {
+      sendError(res, error, 500);
+    }
+  };
+
+  registerPayment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dto = plainToInstance(RegisterCustomerPaymentDto, req.body);
+      const errors = await validate(dto);
+      if (errors.length > 0) {
+        res.status(400).json({ error: validationErrors(errors) });
+        return;
+      }
+      const localId = await this.branchAccess.resolveWriteBranch(dto.localId);
+      const payment = await this.paymentService.register({
+        customerId: req.params["id"] as string,
+        localId,
+        amount: dto.amount,
+        method: dto.method,
+        createdByEmployeeId: dto.createdByEmployeeId,
+      });
+      res.status(201).json(payment);
+    } catch (error: any) {
+      sendError(res, error, 400);
     }
   };
 
@@ -53,7 +109,7 @@ export class CustomerController {
       const customer = await this.service.create(req.body);
       res.status(201).json(customer);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -67,7 +123,7 @@ export class CustomerController {
       }
       res.status(200).json(customer);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -81,7 +137,7 @@ export class CustomerController {
       }
       res.status(200).json({ message: "Cliente eliminado" });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 }

@@ -111,7 +111,7 @@ export const CustomerFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? "Editar cliente" : "Nuevo cliente"}
-      description={isEdit ? "Modifica los datos del cliente." : "Registra un nuevo cliente para el tenant."}
+      description={isEdit ? "Modifica los datos del cliente." : "Registra un nuevo cliente."}
     >
       {content}
     </PageShell>

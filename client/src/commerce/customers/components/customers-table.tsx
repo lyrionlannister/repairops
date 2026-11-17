@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useNavigate } from "react-router";
-import { Pencil, Trash2, Smartphone, Users } from "lucide-react";
+import { Pencil, Trash2, Smartphone, Users, Eye } from "lucide-react";
 import type { Customer } from "../hooks/use-customers";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
@@ -71,7 +71,11 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                 key={customer.id}
                 className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50 dark:border-gray-800/50 dark:hover:bg-white/2"
               >
-                <td className="px-4 py-4 text-sm font-medium text-gray-800 dark:text-white/90">{customer.name}</td>
+                <td className="px-4 py-4 text-sm font-medium text-gray-800 dark:text-white/90">
+                  <button onClick={() => navigate(`/commerce/customers/${customer.id}`)} className="hover:text-brand-600 hover:underline dark:hover:text-brand-400">
+                    {customer.name}
+                  </button>
+                </td>
                 <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{customer.phone}</td>
                 <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{customer.email || "—"}</td>
                 <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
@@ -79,6 +83,13 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                 </td>
                 <td className="px-4 py-4 text-right">
                   <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => navigate(`/commerce/customers/${customer.id}`)}
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
+                      title="Ver cliente"
+                    >
+                      <Eye className="size-4" />
+                    </button>
                     <button
                       onClick={() => onOpenHistory(customer)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
