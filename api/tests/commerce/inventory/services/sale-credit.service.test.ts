@@ -30,6 +30,7 @@ import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/serv
 import { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
 import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
+import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
 
 describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => {
   let inventoryService: InventoryService;
@@ -40,6 +41,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    await ensureFixtureTenant(AppDataSource, tenantId);
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
     const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));

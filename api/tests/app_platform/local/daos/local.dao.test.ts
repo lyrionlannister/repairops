@@ -4,6 +4,7 @@ import AppDataSource from "../../../../src/core/config/data-source.js";
 import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
+import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
 
 // Integration test: requires a reachable Postgres (same DB_* env vars the app
 // uses). Proves the fix for the control-number race — see
@@ -17,6 +18,7 @@ describe("LocalDao.consumeControlNumber", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    await ensureFixtureTenant(AppDataSource, tenantId);
     dao = new LocalDao(AppDataSource.getRepository(Local));
   });
 

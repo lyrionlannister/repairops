@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, Unique 
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { InventoryItem } from "./inventory-item.entity.js";
 import { InventoryMovement } from "./inventory-movement.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 export type InventoryReservationStatus = "active" | "released" | "consumed";
 // Fase 5: dos origenes posibles (nota de reparacion, apartado) -- umbral
@@ -14,9 +15,14 @@ export type InventoryReservationRelatedEntityType = "repair_note_item" | "layawa
 
 @Entity("inventory_reservations")
 @Unique("UQ_inventory_reservations_related_entity", ["relatedEntityType", "relatedEntityId"])
+@Index("IDX_inventory_reservations_tenant", ["tenantId"])
 export class InventoryReservation extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_inventory_reservations_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "varchar", length: 20, nullable: false, name: "tipo_entidad_relacionada" })
   relatedEntityType!: InventoryReservationRelatedEntityType;

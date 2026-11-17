@@ -4,6 +4,7 @@ import AppDataSource from "../../../../src/core/config/data-source.js";
 import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
+import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
 
 // Integration test: requires a reachable Postgres. Mismo patron que
 // consumeControlNumber/consumeSaleNumber -- consumeReturnNumber (Fase 5,
@@ -15,6 +16,7 @@ describe("LocalDao.consumeReturnNumber", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    await ensureFixtureTenant(AppDataSource, tenantId);
     dao = new LocalDao(AppDataSource.getRepository(Local));
   });
 
@@ -38,6 +40,7 @@ describe("LocalDao.consumeReturnNumber", () => {
 
   it("starts at 1 and is independent from the sale-number counter", async () => {
     const otherTenantId = `${Date.now()}${Math.floor(Math.random() * 1000)}1`;
+    await ensureFixtureTenant(AppDataSource, otherTenantId);
     const [returnNumber, saleNumber] = await runWithTenant(otherTenantId, () =>
       Promise.all([dao.consumeReturnNumber(), dao.consumeSaleNumber()]),
     );

@@ -1,12 +1,6 @@
-import {
-  Entity,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Unique,
-  Index,
-} from "typeorm";
+import { Entity, Column, CreateDateColumn, UpdateDateColumn, Unique, Index, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 @Entity("repair_notes")
 @Unique(["tenantId", "controlNumber"])
@@ -16,6 +10,10 @@ import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 export class RepairNote extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_repair_notes_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "bigint", nullable: true, name: "local_id" })
   localId?: string | null;

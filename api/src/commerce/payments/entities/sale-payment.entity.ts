@@ -1,5 +1,7 @@
-import { Entity, Column } from "typeorm";
+import { Entity, Column, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { Sale } from "../../inventory/entities/sale.entity.js";
 
 export type SalePaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "credito";
 
@@ -9,12 +11,22 @@ export type SalePaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "cred
 // filas cuya suma es el total (pago dividido) y empieza a llenar los
 // campos de proveedor.
 @Entity("sale_payments")
+@Index("IDX_sale_payments_tenant", ["tenantId"])
+@Index("IDX_sale_payments_id_venta", ["saleId"])
 export class SalePayment extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
 
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_sale_payments_tenant" })
+  tenant?: Tenant;
+
   @Column({ type: "bigint", nullable: false, name: "id_venta" })
   saleId!: string;
+
+  @ManyToOne(() => Sale, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "id_venta", foreignKeyConstraintName: "FK_sale_payments_id_venta" })
+  sale?: Sale;
 
   @Column({ type: "varchar", length: 20, nullable: false, name: "metodo" })
   method!: SalePaymentMethod;

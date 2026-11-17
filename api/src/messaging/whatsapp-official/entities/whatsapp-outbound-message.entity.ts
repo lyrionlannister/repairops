@@ -1,11 +1,7 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Unique,
-  UpdateDateColumn,
-} from "typeorm";
+import { Column, CreateDateColumn, Entity, Unique, UpdateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { WhatsappAccount } from "./whatsapp-account.entity.js";
 
 export type WhatsappOutboundMessageStatus = "sent" | "failed" | "blocked_not_approved" | "blocked_catalog_missing";
 
@@ -15,12 +11,21 @@ export type WhatsappOutboundMessageStatus = "sent" | "failed" | "blocked_not_app
 // nota pasando a "terminada") nunca manda el mensaje dos veces.
 @Entity("whatsapp_outbound_messages")
 @Unique(["tenantId", "idempotencyKey"])
+@Index("IDX_whatsapp_outbound_messages_account_id", ["accountId"])
 export class WhatsappOutboundMessage extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
 
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_whatsapp_outbound_messages_tenant" })
+  tenant?: Tenant;
+
   @Column({ type: "bigint", nullable: false, name: "account_id" })
   accountId!: string;
+
+  @ManyToOne(() => WhatsappAccount, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "account_id", foreignKeyConstraintName: "FK_whatsapp_outbound_messages_account_id" })
+  account?: WhatsappAccount;
 
   // Snapshot del `key` al momento del intento, no FK -- es un log de lo que
   // se intentó enviar; borrar la entrada del catálogo despues no debe borrar

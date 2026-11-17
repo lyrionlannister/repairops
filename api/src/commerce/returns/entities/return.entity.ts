@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, Unique } from 
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Sale } from "../../inventory/entities/sale.entity.js";
 import type { CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 // FK real a Sale (db-schema-design item 4: destino unico y conocido). Sale
 // nunca se borra (SPEC-pos-sale-cycle.md), asi que no hace falta onDelete.
@@ -11,6 +12,10 @@ import type { CashMovementMethod } from "../../cash/entities/cash-movement.entit
 export class Return extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_returns_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "bigint", nullable: false, name: "id_venta" })
   saleId!: string;

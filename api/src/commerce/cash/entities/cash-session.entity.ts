@@ -1,12 +1,18 @@
-import { Entity, Column, CreateDateColumn } from "typeorm";
+import { Entity, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 export type CashSessionStatus = "open" | "closed";
 
 @Entity("cash_sessions")
+@Index("IDX_cash_sessions_tenant", ["tenantId"])
 export class CashSession extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_cash_sessions_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "bigint", nullable: false, name: "local_id" })
   localId!: string;

@@ -1,7 +1,8 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Customer } from "./customer.entity.js";
 import type { CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 export type LayawayStatus = "open" | "completed" | "cancelled" | "expired";
 
@@ -12,9 +13,14 @@ export type LayawayStatus = "open" | "completed" | "cancelled" | "expired";
 // independientes, igual de auditables en caja (ver SPEC-fase5-pos-total.md,
 // Rama Cliente).
 @Entity("layaways")
+@Index("IDX_layaways_tenant", ["tenantId"])
 export class Layaway extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_layaways_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "bigint", nullable: false, name: "id_cliente" })
   customerId!: string;

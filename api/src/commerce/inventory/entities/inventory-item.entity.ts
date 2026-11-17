@@ -1,13 +1,19 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Supplier } from "../../suppliers/entities/supplier.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 export type InventoryItemKind = "accessory" | "part";
 
 @Entity("inventory_items")
+@Index("IDX_inventory_items_tenant", ["tenantId"])
 export class InventoryItem extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_inventory_items_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "bigint", nullable: false, name: "local_id" })
   localId!: string;

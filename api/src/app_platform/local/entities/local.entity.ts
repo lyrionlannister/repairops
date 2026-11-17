@@ -1,17 +1,16 @@
-import {
-  Check,
-  Entity,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from "typeorm";
+import { Check, Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 @Entity("local_config")
 @Check("CHK_local_config_color_marca", `"color_marca" IS NULL OR "color_marca" ~ '^#[0-9a-f]{6}$'`)
 export class Local extends BaseEntity {
   @Column({ type: "bigint", nullable: false, unique: true, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_local_config_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "varchar", length: 255, nullable: true, name: "nombre" })
   name?: string;

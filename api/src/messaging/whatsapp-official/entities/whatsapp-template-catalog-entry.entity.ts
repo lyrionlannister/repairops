@@ -1,12 +1,6 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  Unique,
-  UpdateDateColumn,
-} from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, Unique, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 export type WhatsappTemplateCategory = "UTILITY" | "MARKETING" | "AUTHENTICATION";
 
@@ -26,6 +20,10 @@ export type WhatsappTemplateCategory = "UTILITY" | "MARKETING" | "AUTHENTICATION
 export class WhatsappTemplateCatalogEntry extends BaseEntity {
   @Column({ type: "bigint", nullable: true, name: "tenant_id" })
   tenantId!: string | null;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_whatsapp_template_catalog_entries_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "varchar", length: 100, nullable: false, name: "key" })
   key!: string;

@@ -1,16 +1,22 @@
-import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { InventoryCount } from "./inventory-count.entity.js";
 import { InventoryItem } from "./inventory-item.entity.js";
 import { InventoryMovement } from "./inventory-movement.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 // Arqueo ciego: el esperado NUNCA se guarda aqui -- se lee de
 // InventoryItem.quantityOnHand EN VIVO al momento de cerrar el conteo
 // (InventoryCountService.close), mismo criterio que CashService.closeSession.
 @Entity("inventory_count_items")
+@Index("IDX_inventory_count_items_tenant", ["tenantId"])
 export class InventoryCountItem extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_inventory_count_items_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "bigint", nullable: false, name: "id_conteo" })
   countId!: string;

@@ -1,4 +1,5 @@
-import { CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 @Entity("excluded_phone")
 export class ExcludedPhone {
@@ -6,6 +7,10 @@ export class ExcludedPhone {
   // independiente.
   @PrimaryColumn({ type: "bigint", name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_excluded_phone_tenant" })
+  tenant?: Tenant;
 
   @PrimaryColumn({ type: "varchar", length: 64, name: "telefono" })
   phone!: string;

@@ -1,11 +1,7 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  UpdateDateColumn,
-} from "typeorm";
+import { Column, CreateDateColumn, Entity, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { encryptedColumnTransformer } from "../../../core/security/encrypted-column.transformer.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 export type WhatsappAccountStatus = "connected" | "disconnected";
 
@@ -18,6 +14,10 @@ export type WhatsappAccountStatus = "connected" | "disconnected";
 export class WhatsappAccount extends BaseEntity {
   @Column({ type: "bigint", nullable: false, unique: true, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_whatsapp_accounts_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "varchar", length: 50, nullable: false, name: "waba_id" })
   wabaId!: string;

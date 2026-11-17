@@ -1,18 +1,19 @@
-import {
-  Entity,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from "typeorm";
+import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 export type UserRole = "owner" | "admin" | "employee" | "technician" | "cashier";
 export type PayCycle = "weekly" | "biweekly" | "monthly";
 
 @Entity("usuarios")
+@Index("IDX_usuarios_tenant", ["tenantId"])
 export class User extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_usuarios_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "varchar", length: 20, default: "owner", name: "rol" })
   role!: UserRole;

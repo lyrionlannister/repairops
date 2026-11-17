@@ -34,6 +34,7 @@ import { RepairNoteController } from "../../../../src/commerce/repair-notes/cont
 import { PdfRendererService } from "../../../../src/reporting/pdf/pdf-renderer.service.js";
 import { createRepairNoteRouter } from "../../../../src/commerce/repair-notes/routes/repair-note.routes.js";
 import type { UserRole } from "../../../../src/identity/auth/entities/user.entity.js";
+import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
 
 // Integration test contra Postgres real + el router real (no un controller
 // falso) -- prueba el criterio de aceptacion de la Fase 1: un cajero no
@@ -49,6 +50,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    await ensureFixtureTenant(AppDataSource, tenantId);
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const inventoryService = new InventoryService(
