@@ -4,6 +4,9 @@ import { User } from "../../identity/auth/entities/user.entity.js";
 import { ExcludedPhone } from "../../messaging/whatsapp-admin/entities/excluded-phone.entity.js";
 import { WhatsappSettings } from "../../messaging/whatsapp-admin/entities/whatsapp-settings.entity.js";
 import { ContactName } from "../../messaging/chats/entities/contact-name.entity.js";
+import { ChatMessage } from "../../messaging/chats/entities/chat-message.entity.js";
+import { ChatDailyStat } from "../../messaging/chats/entities/chat-daily-stat.entity.js";
+import { ChatDailyContact } from "../../messaging/chats/entities/chat-daily-contact.entity.js";
 import { Local } from "../../app_platform/local/entities/local.entity.js";
 import { RepairNote } from "../../commerce/repair-notes/entities/repair-note.entity.js";
 import { MessageTemplate } from "../../messaging/message-templates/entities/message-template.entity.js";
@@ -59,6 +62,9 @@ export const appDataSourceOptions: DataSourceOptions = {
     ExcludedPhone,
     WhatsappSettings,
     ContactName,
+    ChatMessage,
+    ChatDailyStat,
+    ChatDailyContact,
     Local,
     RepairNote,
     RepairNoteItem,

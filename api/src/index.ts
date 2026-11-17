@@ -2,10 +2,11 @@ import "reflect-metadata";
 import express from "express";
 import cors from "cors";
 import AppDataSource from "./core/config/data-source.js";
-import ChatMemoryDataSource from "./core/config/chat-memory-data-source.js";
 import { optionalEnvNumber } from "./core/config/env.js";
 import { registerRepositories } from "./core/di/register-repositories.js";
 import { registerRoutes } from "./core/http/register-routes.js";
+import { container } from "tsyringe";
+import { ChatRetentionService } from "./messaging/chats/services/chat-retention.service.js";
 
 const app = express();
 const port = optionalEnvNumber("PORT", 3000);
@@ -28,12 +29,13 @@ app.use(
   }),
 );
 
-Promise.all([AppDataSource.initialize(), ChatMemoryDataSource.initialize()])
+AppDataSource.initialize()
   .then(async () => {
-    console.log("Bases de datos conectadas exitosamente");
+    console.log("Base de datos conectada exitosamente");
 
     registerRepositories();
     registerRoutes(app);
+    container.resolve(ChatRetentionService).start();
 
     app.get("/", (_req, res) => {
       res.status(200).json({
@@ -55,6 +57,6 @@ Promise.all([AppDataSource.initialize(), ChatMemoryDataSource.initialize()])
     });
   })
   .catch((error) => {
-    console.error("Error al conectar las bases de datos:", error);
+    console.error("Error al conectar la base de datos:", error);
     process.exit(1);
   });

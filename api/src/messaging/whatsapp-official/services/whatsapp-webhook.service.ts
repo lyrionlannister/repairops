@@ -3,6 +3,8 @@ import { Repository } from "typeorm";
 import { WhatsappAccountDao } from "../daos/whatsapp-account.dao.js";
 import { WhatsappSendService } from "./whatsapp-send.service.js";
 import { ChatAutomationService } from "../../chats/services/chat-automation.service.js";
+import { ChatsService } from "../../chats/services/chats.service.js";
+import { normalizePhone } from "../../chats/helpers/chats.helpers.js";
 import { ExcludedPhone } from "../../whatsapp-admin/entities/excluded-phone.entity.js";
 import { WhatsappSettings } from "../../whatsapp-admin/entities/whatsapp-settings.entity.js";
 import { ContactName } from "../../chats/entities/contact-name.entity.js";
@@ -13,6 +15,7 @@ import { runWithTenant } from "../../../core/tenancy/tenant-context.js";
 export interface IncomingWhatsappMessage {
   phoneNumberId: string;
   from: string;
+  messageId?: string;
   body: string;
   contactName?: string;
 }
@@ -28,6 +31,7 @@ export class WhatsappWebhookService {
     private whatsappAccountDao: WhatsappAccountDao,
     private whatsappSendService: WhatsappSendService,
     private chatAutomationService: ChatAutomationService,
+    private chatsService: ChatsService,
     @inject(repositoryToken(ExcludedPhone)) private excludedPhoneRepository: Repository<ExcludedPhone>,
     @inject(repositoryToken(WhatsappSettings)) private whatsappSettingsRepository: Repository<WhatsappSettings>,
     @inject(repositoryToken(ContactName)) private contactNameRepository: Repository<ContactName>,
@@ -51,6 +55,17 @@ export class WhatsappWebhookService {
         return;
       }
 
+      // Se guarda antes de los chequeos de IA y modo humano: el inbox debe
+      // ver todo lo que escribe el cliente, y la ventana de 24h se calcula
+      // sobre este mensaje.
+      await this.chatsService.recordMessage({
+        contactPhone: message.from,
+        direction: "inbound",
+        sender: "customer",
+        body: message.body,
+        waMessageId: message.messageId,
+      });
+
       const aiRepliesEnabled = await this.getAiRepliesEnabled(account.tenantId);
       if (!aiRepliesEnabled) {
         console.log("Mensaje ignorado: respuestas con IA deshabilitadas", { from: message.from });
@@ -59,7 +74,7 @@ export class WhatsappWebhookService {
 
       if (message.contactName) {
         this.contactNameRepository
-          .save({ phone: message.from, name: message.contactName })
+          .save({ tenantId: account.tenantId, phone: normalizePhone(message.from), name: message.contactName })
           .catch((err) => console.warn("Error guardando nombre de contacto:", err));
       }
 
@@ -70,6 +85,7 @@ export class WhatsappWebhookService {
       }
 
       const automationResponse = await this.chatAutomationService.send({
+        tenantId: account.tenantId,
         from: message.from,
         body: message.body,
       });
@@ -83,13 +99,20 @@ export class WhatsappWebhookService {
 
       // Responde dentro de la misma llamada que recibio el mensaje -- la
       // ventana de 24h siempre esta abierta (el mensaje acaba de llegar).
-      await this.whatsappSendService.sendFreeText(
+      const waMessageId = await this.whatsappSendService.sendFreeText(
         account.phoneNumberId,
         account.accessToken,
         message.from,
         automationResponse.reply,
         new Date(),
       );
+      await this.chatsService.recordMessage({
+        contactPhone: message.from,
+        direction: "outbound",
+        sender: "ai",
+        body: automationResponse.reply,
+        waMessageId,
+      });
     });
   }
 

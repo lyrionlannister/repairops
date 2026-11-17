@@ -1,51 +1,64 @@
 import { singleton, inject } from "tsyringe";
 import { Repository } from "typeorm";
-import {
-  ChatHistoryDao,
-  ConversationCountPoint,
-} from "../daos/chat-history.dao.js";
+import { ChatMessageDao } from "../daos/chat-message.dao.js";
+import { ChatStatsDao, ConversationCountPoint } from "../daos/chat-stats.dao.js";
 import { ContactName } from "../entities/contact-name.entity.js";
+import { ChatDirection, ChatSender } from "../entities/chat-message.entity.js";
 import { repositoryToken } from "../../../core/di/repository-token.js";
-import { toConversationDto, toMessageDto } from "../helpers/chats.helpers.js";
+import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
+import { normalizePhone, toConversationDto, toMessageDto } from "../helpers/chats.helpers.js";
 import { ConversationDto, MessageDto } from "../types/chats.types.js";
+
+export interface RecordMessageInput {
+  contactPhone: string;
+  direction: ChatDirection;
+  sender: ChatSender;
+  body: string;
+  waMessageId?: string | null;
+}
 
 @singleton()
 export class ChatsService {
   constructor(
-    private chatHistoryDao: ChatHistoryDao,
+    private chatMessageDao: ChatMessageDao,
+    private chatStatsDao: ChatStatsDao,
     @inject(repositoryToken(ContactName)) private contactNameRepository: Repository<ContactName>,
   ) {}
 
+  async recordMessage(input: RecordMessageInput): Promise<void> {
+    await this.chatMessageDao.record({ ...input, contactPhone: normalizePhone(input.contactPhone) });
+  }
+
   async getConversations(): Promise<ConversationDto[]> {
-    const rows = await this.chatHistoryDao.getConversations();
-    const contactNames = await this.contactNameRepository.find();
+    const rows = await this.chatMessageDao.getConversations();
+    const contactNames = await this.contactNameRepository.find({ where: { tenantId: getCurrentTenantId() } });
     const nameMap = new Map(contactNames.map((cn) => [cn.phone, cn.name]));
 
     return rows.map((row) => toConversationDto(row, nameMap));
   }
 
   async getMessages(sessionId: string): Promise<MessageDto[]> {
-    const entries = await this.chatHistoryDao.getMessagesBySessionId(sessionId);
+    const entries = await this.chatMessageDao.getMessagesByContact(normalizePhone(sessionId));
     return entries.map((entry) => toMessageDto(entry));
   }
 
   async getConversationCountsByDay(): Promise<ConversationCountPoint[]> {
-    return this.chatHistoryDao.getConversationCountsByDay();
+    return this.chatStatsDao.getCountsByDay();
   }
 
   async getConversationCountsByMonth(year: number): Promise<ConversationCountPoint[]> {
-    return this.chatHistoryDao.getConversationCountsByMonth(year);
+    return this.chatStatsDao.getCountsByMonth(year);
   }
 
   async getWeekSessionCount(): Promise<number> {
-    return this.chatHistoryDao.getWeekSessionCount();
+    return this.chatStatsDao.getWeekContactCount();
   }
 
   async getLastInteractionAt(): Promise<string | null> {
-    return this.chatHistoryDao.getLastInteractionAt();
+    return this.chatStatsDao.getLastMessageAt();
   }
 
-  async getLastHumanMessageAt(sessionId: string): Promise<Date | null> {
-    return this.chatHistoryDao.findLastHumanMessageAt(sessionId);
+  async getLastInboundAt(sessionId: string): Promise<Date | null> {
+    return this.chatMessageDao.findLastInboundAt(normalizePhone(sessionId));
   }
 }

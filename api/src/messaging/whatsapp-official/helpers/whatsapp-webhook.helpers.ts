@@ -25,6 +25,7 @@ export function extractIncomingTextMessages(payload: unknown): IncomingWhatsappM
         messages.push({
           phoneNumberId,
           from: raw.from,
+          messageId: raw.id,
           body: raw.text.body,
           contactName: contact?.profile?.name,
         });

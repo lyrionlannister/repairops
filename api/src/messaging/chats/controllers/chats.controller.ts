@@ -4,7 +4,9 @@ import { CHATS_ERROR_MESSAGES } from "../constants/chats.constants.js";
 import { ChatsService } from "../services/chats.service.js";
 import { humanModeService } from "../../../app_platform/human-mode/human-mode.service.js";
 import AppDataSource from "../../../core/config/data-source.js";
+import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { ContactName } from "../entities/contact-name.entity.js";
+import { normalizePhone } from "../helpers/chats.helpers.js";
 import { WhatsappAccountService } from "../../whatsapp-official/services/whatsapp-account.service.js";
 import { WhatsappSendService, WhatsappWindowClosedError } from "../../whatsapp-official/services/whatsapp-send.service.js";
 
@@ -99,7 +101,7 @@ export class ChatsController {
     try {
       const sessionId = Array.isArray(req.params.sessionId) ? req.params.sessionId[0] : req.params.sessionId;
       const contactName = await AppDataSource.getRepository(ContactName)
-        .findOneBy({ phone: sessionId })
+        .findOneBy({ tenantId: getCurrentTenantId(), phone: normalizePhone(sessionId) })
         .then((cn) => cn?.name);
       await humanModeService.activate(sessionId, contactName);
       res.status(200).json({ isHumanMode: true });
@@ -138,15 +140,22 @@ export class ChatsController {
 
       const [account, lastInboundAt] = await Promise.all([
         this.whatsappAccountService.getOrCreateForTenant(),
-        this.chatsService.getLastHumanMessageAt(sessionId),
+        this.chatsService.getLastInboundAt(sessionId),
       ]);
-      await this.whatsappSendService.sendFreeText(
+      const waMessageId = await this.whatsappSendService.sendFreeText(
         account.phoneNumberId,
         account.accessToken,
         sessionId,
         body,
         lastInboundAt,
       );
+      await this.chatsService.recordMessage({
+        contactPhone: sessionId,
+        direction: "outbound",
+        sender: "agent",
+        body,
+        waMessageId,
+      });
 
       res.status(200).json({ ok: true });
     } catch (error) {

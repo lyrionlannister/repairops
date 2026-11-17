@@ -2,6 +2,7 @@ import { singleton } from "tsyringe";
 import { settingsService } from "../../../identity/settings/settings.service.js";
 
 export type IncomingChatMessage = {
+  tenantId: string;
   from: string;
   body: string;
 };

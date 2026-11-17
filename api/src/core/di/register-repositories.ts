@@ -1,7 +1,5 @@
 import { container } from "tsyringe";
 import AppDataSource, { appDataSourceOptions } from "../config/data-source.js";
-import ChatMemoryDataSource from "../config/chat-memory-data-source.js";
-import { ChatHistory } from "../../messaging/chats/entities/chat-history.entity.js";
 import { redisClient } from "../config/redis-client.js";
 import { REDIS_CLIENT } from "./tokens.js";
 import { repositoryToken, type EntityConstructor } from "./repository-token.js";
@@ -10,7 +8,7 @@ import { repositoryToken, type EntityConstructor } from "./repository-token.js";
 // para resolver cualquier Dao -- cada Dao pide su repositorio por
 // @inject(repositoryToken(Entity)) (ver core/daos). Una Entity nueva que ya
 // esté en appDataSourceOptions.entities queda disponible sin tocar este
-// archivo. Debe correr despues de AppDataSource/ChatMemoryDataSource.initialize().
+// archivo. Debe correr despues de AppDataSource.initialize().
 export function registerRepositories(): void {
   const entities = [appDataSourceOptions.entities ?? []]
     .flat()
@@ -18,10 +16,5 @@ export function registerRepositories(): void {
   for (const entity of entities) {
     container.registerInstance(repositoryToken(entity), AppDataSource.getRepository(entity));
   }
-  // ChatHistory vive en la BD de memoria de chat (customer_service), no en app_db.
-  container.registerInstance(
-    repositoryToken(ChatHistory),
-    ChatMemoryDataSource.getRepository(ChatHistory),
-  );
   container.registerInstance(REDIS_CLIENT, redisClient);
 }
