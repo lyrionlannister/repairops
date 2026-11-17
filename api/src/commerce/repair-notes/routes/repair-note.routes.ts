@@ -19,9 +19,12 @@ export const createRepairNoteRouter = (controller: RepairNoteController): Router
   router.get("/:id/items", controller.getItems);
   router.get("/:id/service-types", controller.getServiceTypes);
   router.get("/:id/pdf", controller.getPdf);
+  router.get("/:id/payments", controller.getPayments);
   router.post("/", canWriteRepairNotes, controller.create);
   router.patch("/:id", canWriteRepairNotes, controller.update);
   router.post("/:id/cancel", canWriteRepairNotes, controller.cancel);
+  // Entregar cobra: lo puede hacer también el cajero (ver el comentario de arriba).
+  router.post("/:id/deliver", controller.deliver);
   router.delete("/:id", canWriteRepairNotes, controller.delete);
   return router;
 };

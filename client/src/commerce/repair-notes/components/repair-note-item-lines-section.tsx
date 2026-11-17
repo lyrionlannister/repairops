@@ -27,9 +27,9 @@ export const RepairNoteItemLinesSection: FC<RepairNoteItemLinesSectionProps> = (
   onRemoveLine,
 }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 space-y-4">
-    <SectionTitle>Items usados</SectionTitle>
+    <SectionTitle>Productos usados</SectionTitle>
     <p className="text-xs text-gray-500 dark:text-gray-400">
-      Accesorios o partes del inventario consumidos en esta reparación — descuentan stock automáticamente.
+      Accesorios o refacciones del inventario usados en esta reparación; se descuentan del stock solos.
     </p>
     <div className="space-y-3">
       {itemLines.map((line, index) => (
@@ -38,7 +38,7 @@ export const RepairNoteItemLinesSection: FC<RepairNoteItemLinesSectionProps> = (
             <Select
               value={line.inventoryItemId}
               onChange={(value) => onItemChange(index, value)}
-              placeholder="Selecciona un item"
+              placeholder="Selecciona un producto"
               disabled={saving}
               options={inventoryItems.map((i) => ({
                 value: i.id,
@@ -79,7 +79,7 @@ export const RepairNoteItemLinesSection: FC<RepairNoteItemLinesSectionProps> = (
       ))}
       <Button type="button" variant="outline" onClick={onAddLine} disabled={saving}>
         <Plus className="mr-1.5 size-4" />
-        Agregar item
+        Agregar producto
       </Button>
     </div>
   </div>

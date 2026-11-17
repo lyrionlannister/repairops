@@ -10,6 +10,7 @@ import { ProfilePage } from "../identity/auth/pages/profile-page";
 import { RepairNotesPage } from "../commerce/repair-notes/pages/repair-notes-page";
 import { RepairNoteFormPage } from "../commerce/repair-notes/pages/repair-note-form-page";
 import { RepairNotePrintPage } from "../commerce/repair-notes/pages/repair-note-print-page";
+import { RepairNoteDetailPage } from "../commerce/repair-notes/pages/repair-note-detail-page";
 import { MessageTemplatesPage } from "../messaging/message-templates/pages/message-templates-page";
 import { MessageTemplateFormPage } from "../messaging/message-templates/pages/message-template-form-page";
 import { WhatsappOfficialPage } from "../messaging/whatsapp-official/pages/whatsapp-official-page";
@@ -35,6 +36,7 @@ import { BranchFormPage } from "../identity/branches/pages/branch-form-page";
 import { CustomersPage } from "../commerce/customers/pages/customers-page";
 import { ReportsPage } from "../reporting/reports/pages/reports-page";
 import { CustomerFormPage } from "../commerce/customers/pages/customer-form-page";
+import { CustomerDetailPage } from "../commerce/customers/pages/customer-detail-page";
 
 export const publicRoutes = [
   {
@@ -87,6 +89,10 @@ export const protectedRoutes = [
   {
     path: "/commerce/repair-notes/new",
     element: <RepairNoteFormPage />,
+  },
+  {
+    path: "/commerce/repair-notes/:id",
+    element: <RepairNoteDetailPage />,
   },
   {
     path: "/commerce/repair-notes/:id/edit",
@@ -143,6 +149,10 @@ export const protectedRoutes = [
   {
     path: "/commerce/customers/new",
     element: <CustomerFormPage />,
+  },
+  {
+    path: "/commerce/customers/:id",
+    element: <CustomerDetailPage />,
   },
   {
     path: "/commerce/customers/:id/edit",

@@ -5,7 +5,7 @@ import { Label } from "@ui/inputs/label";
 import { TextArea } from "@ui/textarea/textarea";
 import { ServiceTypeMultiSelect } from "@common/components/service-type-multi-select";
 import { SectionTitle } from "./section-title";
-import { CheckboxField } from "./checkbox-field";
+import { CheckboxField } from "@ui/checkbox/checkbox-field";
 
 interface RepairNoteDeviceSectionProps {
   brand: string;
