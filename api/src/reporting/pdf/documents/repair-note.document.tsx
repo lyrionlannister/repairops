@@ -1,123 +1,84 @@
 import { Document, Page, View, Text } from "@react-pdf/renderer";
 import type { RepairNotePdfData } from "./repair-note.pdf-data.js";
-import { createStyles } from "../theme.js";
+import { createNoteStyles } from "../theme.js";
 import { formatMoney } from "../format-money.js";
-import { Header } from "../components/header.js";
-import { Check, Field, SectionLabel } from "../components/info-card.js";
+import { DocumentHeader } from "../components/header.js";
+import { TintCard, PlainCard } from "../components/info-card.js";
+import { TotalsCard } from "../components/totals.js";
 import { Signatures } from "../components/signatures.js";
-import { LegalFooter } from "../components/legal-footer.js";
 import { QrPanel } from "../components/qr-panel.js";
-import { TotalsGrid } from "../components/totals.js";
+import { FooterBand } from "../components/footer-band.js";
+import { longDate, shortDate } from "../format-date.js";
 
-const LEGAL_NOTICE =
+const DEFAULT_CONDITIONS =
   "Aviso: La empresa no se hace responsable por equipos con más de 10 días de haber ingresado al taller de " +
   "servicio a partir de la fecha. Costo de almacenaje: $10.00/día. A los 20 días el equipo saldrá a remate. " +
   "Garantía de 1 mes a partir de la fecha de entrega sobre la falla reparada; la garantía no aplica en equipos " +
   "mojados y golpeados. En pantallas estrelladas o con rayas, NO APLICA GARANTÍA.";
 
-const dateParts = (value: string | null) => {
-  if (!value) return { dia: "--", mes: "--", anio: "--" };
-  const [y = "--", m = "--", d = "--"] = value.split("-");
-  return { dia: d, mes: m, anio: y };
-};
-
+// Nota de reparación en una sola hoja carta, según el diseño "Tickets de nota con QR".
 export const RepairNoteDocument: React.FC<{ data: RepairNotePdfData }> = ({ data }) => {
-  const styles = createStyles(data.palette);
-  const received = dateParts(data.receivedAt);
-  const delivery = dateParts(data.deliveryDate);
+  const styles = createNoteStyles(data.palette);
+  const name = data.local.name ?? "Reparación de Celulares y Tablets";
+  const serviceLine = [
+    data.serviceTypeNames.length > 0 && `Servicio: ${data.serviceTypeNames.join(", ")}`,
+    data.deviceOff && "Equipo apagado",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const warranty = data.hasWarranty
+    ? `Con garantía${data.hasExtendedWarranty ? ` extendida (${data.extendedWarrantyDays ?? "?"} días)` : ""}`
+    : "Sin garantía";
+  const falla = [{ label: "FALLA REPORTADA", text: data.reportedFailure }];
+  if (data.additionalFindings) falla.push({ label: "HALLAZGOS ADICIONALES", text: data.additionalFindings });
   const hasTechnicianInfo = Boolean(data.assignedEmployeeName || data.technicianNotes);
+
+  const totalsRows: Array<{ label: string; value: string }> = [{ label: "Costo total", value: formatMoney(data.totalValue) }];
+  if (data.requiresAdvance) totalsRows.push({ label: "Anticipo", value: formatMoney(data.advanceValue) });
+  if (data.deliveryDate) totalsRows.push({ label: "Entrega estimada", value: shortDate(data.deliveryDate) });
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        <Header
+      <Page size="LETTER" style={styles.page}>
+        <DocumentHeader
           styles={styles}
           local={data.local}
-          subtitle="Cambio de Cristales · Software y Cambios de Compañías · Cambio de Touch o Pantallas"
-          side={
-            <>
-              <Text style={styles.sideLabel}>Número de Control</Text>
-              <Text style={styles.folio}>N° {data.controlNumber}</Text>
-              <View style={styles.dateRow}>
-                {[
-                  { label: "DÍA", value: received.dia },
-                  { label: "MES", value: received.mes },
-                  { label: "AÑO", value: received.anio.slice(-2) },
-                ].map(({ label, value }) => (
-                  <View key={label} style={styles.dateBox}>
-                    <Text style={styles.dateBoxLabel}>{label}</Text>
-                    <Text style={styles.dateBoxValue}>{value}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          }
+          folioLabel="NOTA DE REPARACIÓN"
+          folioValue={`Nº ${data.controlNumber}`}
+          folioDate={`${longDate(data.receivedAt)} · ${data.receivedTime}`}
         />
 
-        <View style={styles.row}>
-          <Field styles={styles} label="Nombre del Cliente" value={data.customerName} flex />
-          <Field styles={styles} label="Celular / Contacto" value={data.contactNumber ?? ""} />
-        </View>
-
-        <SectionLabel styles={styles}>Datos del Equipo</SectionLabel>
-        <View style={styles.sectionBody}>
-          <View style={styles.rowFlush}>
-            <Field styles={styles} label="Marca" value={data.brand} />
-            <Field styles={styles} label="Modelo" value={data.model} flex />
+        <View style={styles.body}>
+          <View style={styles.twoCols} wrap={false}>
+            <TintCard styles={styles} label="CLIENTE" title={data.customerName} sub={data.contactNumber ? `Tel. ${data.contactNumber}` : null} />
+            <TintCard styles={styles} label="EQUIPO" title={`${data.brand} ${data.model}`} sub={serviceLine || null} />
           </View>
-          <Field styles={styles} label="Falla Reportada" value={data.reportedFailure} />
-          {data.additionalFindings && (
-            <Field styles={styles} label="Hallazgos Adicionales" value={data.additionalFindings} />
-          )}
-        </View>
 
-        <SectionLabel styles={styles}>Tipo de Servicio Requerido por el Cliente</SectionLabel>
-        <View style={styles.sectionBody}>
-          <View style={styles.checksRow}>
-            {data.serviceTypeNames.map((name) => (
-              <Check key={name} styles={styles} checked label={name} />
-            ))}
-            <Check styles={styles} checked={data.deviceOff} label="Equipo Apagado" />
-          </View>
-          <View style={styles.checksRow}>
-            <Check styles={styles} checked={data.hasWarranty} label="Con Garantía" />
-            <Check styles={styles} checked={!data.hasWarranty} label="Sin Garantía" />
-            {data.hasExtendedWarranty && (
-              <Text style={styles.note}>Garantía extendida: {data.extendedWarrantyDays} días</Text>
-            )}
-          </View>
-        </View>
+          <PlainCard styles={styles} blocks={falla} />
 
-        {hasTechnicianInfo && (
-          <>
-            <SectionLabel styles={styles}>Observaciones del Técnico</SectionLabel>
-            <View style={styles.sectionBody}>
-              {data.assignedEmployeeName && (
-                <Field styles={styles} label="Técnico" value={data.assignedEmployeeName} />
-              )}
-              {data.technicianNotes && <Text style={styles.bodyText}>{data.technicianNotes}</Text>}
+          {hasTechnicianInfo && (
+            <View style={styles.plainCard} wrap={false}>
+              <Text style={styles.cardLabel}>OBSERVACIONES DEL TÉCNICO</Text>
+              {data.assignedEmployeeName && <Text style={styles.cardText}>Técnico: {data.assignedEmployeeName}</Text>}
+              {data.technicianNotes && <Text style={styles.cardText}>{data.technicianNotes}</Text>}
             </View>
-          </>
-        )}
+          )}
+
+          <View style={styles.twoCols} wrap={false}>
+            <View style={styles.conditions}>
+              <Text style={styles.cardLabel}>CONDICIONES</Text>
+              <Text style={styles.warrantyLine}>{warranty}</Text>
+              <Text style={styles.conditionsText}>{data.local.warrantyClause ?? DEFAULT_CONDITIONS}</Text>
+            </View>
+            <TotalsCard styles={styles} rows={totalsRows} balanceLabel="SALDO A LIQUIDAR" balanceValue={formatMoney(data.balance)} />
+          </View>
+
+          <Signatures styles={styles} labels={["Firma del cliente", `Recibe: ${name}`]} />
+        </View>
 
         <QrPanel styles={styles} url={data.qrUrl} publicRef={data.publicRef} />
 
-        <Signatures styles={styles} labels={["Ejecutivo Responsable", "Firma de Autorización del Cliente"]} />
-
-        <LegalFooter styles={styles}>{LEGAL_NOTICE}</LegalFooter>
-
-        <TotalsGrid
-          styles={styles}
-          cells={[
-            { label: "Costo de Reparación", value: formatMoney(data.totalValue) },
-            { label: "Anticipo", value: data.requiresAdvance ? formatMoney(data.advanceValue) : "—" },
-            {
-              label: "Fecha de Entrega",
-              value: data.deliveryDate ? `${delivery.dia}/${delivery.mes}/${delivery.anio}` : "—",
-            },
-            { label: "Total a Liquidar", value: formatMoney(data.balance) },
-          ]}
-        />
+        <FooterBand styles={styles} left="Conserva esta nota para recoger tu equipo" right="¡Gracias por tu confianza!" />
       </Page>
     </Document>
   );

@@ -3,13 +3,19 @@ import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 
 export type QuoteStatus = "pending" | "accepted" | "rejected";
+export type QuoteKind = "product" | "repair";
 
 export interface QuoteRecord {
   id: string;
   localId: string;
+  kind: QuoteKind;
   customerId: string | null;
   customerName: string;
   contactNumber: string | null;
+  brand: string | null;
+  model: string | null;
+  reportedFailure: string | null;
+  repairNoteId: string | null;
   totalValue: number;
   validUntil: string | null;
   status: QuoteStatus;
@@ -31,18 +37,28 @@ export interface QuoteItemRecord extends QuoteItemInput {
 
 export interface QuoteFormData {
   localId: string;
+  kind: QuoteKind;
   customerId: string;
   customerName: string;
   contactNumber: string;
+  brand: string;
+  model: string;
+  reportedFailure: string;
+  serviceTypeIds: string[];
   validUntil: string;
   createdByEmployeeId: string;
 }
 
 const toPayload = (form: QuoteFormData) => ({
   localId: form.localId,
+  kind: form.kind,
   customerId: form.customerId || undefined,
   customerName: form.customerName,
   contactNumber: form.contactNumber || undefined,
+  brand: form.kind === "repair" ? form.brand : undefined,
+  model: form.kind === "repair" ? form.model : undefined,
+  reportedFailure: form.kind === "repair" ? form.reportedFailure : undefined,
+  serviceTypeIds: form.kind === "repair" ? form.serviceTypeIds : [],
   validUntil: form.validUntil || undefined,
   createdByEmployeeId: form.createdByEmployeeId || undefined,
 });
@@ -97,6 +113,19 @@ export const useQuotes = () => {
         const res = await apiClient(`/quotes/${id}/items`);
         if (!res.ok) return [];
         return (await res.json()) as QuoteItemRecord[];
+      } catch {
+        return [];
+      }
+    },
+    [apiClient],
+  );
+
+  const fetchQuoteServiceTypeIds = useCallback(
+    async (id: string): Promise<string[]> => {
+      try {
+        const res = await apiClient(`/quotes/${id}/service-types`);
+        if (!res.ok) return [];
+        return (await res.json()) as string[];
       } catch {
         return [];
       }
@@ -200,6 +229,7 @@ export const useQuotes = () => {
     fetchQuotes,
     fetchQuote,
     fetchQuoteItems,
+    fetchQuoteServiceTypeIds,
     createQuote,
     updateQuote,
     setStatus,

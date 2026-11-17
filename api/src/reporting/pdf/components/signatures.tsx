@@ -1,12 +1,12 @@
 import { View, Text } from "@react-pdf/renderer";
-import type { PdfStyles } from "../theme.js";
+import type { NoteStyles } from "../theme.js";
 
-export const Signatures: React.FC<{ styles: PdfStyles; labels: string[] }> = ({ styles, labels }) => (
+export const Signatures: React.FC<{ styles: NoteStyles; labels: string[] }> = ({ styles, labels }) => (
   <View style={styles.signatures} wrap={false}>
     {labels.map((label) => (
-      <View key={label} style={styles.signatureBox}>
-        <Text style={styles.signatureLine}>{label}</Text>
-      </View>
+      <Text key={label} style={styles.signatureBox}>
+        {label}
+      </Text>
     ))}
   </View>
 );

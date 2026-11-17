@@ -22,6 +22,7 @@ export interface RepairNotePdfData {
   advanceValue: string | null;
   balance: string;
   receivedAt: string;
+  receivedTime: string;
   deliveryDate: string | null;
   assignedEmployeeName: string | null;
   technicianNotes: string | null;
@@ -57,6 +58,7 @@ export function toRepairNotePdfData(
     advanceValue: note.advanceValue != null ? moneyString(note.advanceValue) : null,
     balance: moneyString(total.minus(advance)),
     receivedAt: note.receivedAt,
+    receivedTime: note.receivedTime,
     deliveryDate: note.deliveryDate ?? null,
     assignedEmployeeName: options.assignedEmployeeName ?? null,
     technicianNotes: note.technicianNotes ?? null,

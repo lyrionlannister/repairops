@@ -6,6 +6,7 @@ export interface PdfLocal {
   address: string | null;
   phone: string | null;
   logo: string | null;
+  warrantyClause: string | null;
 }
 
 export function toPdfLocal(local: Local | null): PdfLocal {
@@ -14,6 +15,7 @@ export function toPdfLocal(local: Local | null): PdfLocal {
     address: local?.address ?? null,
     phone: local?.phone ?? null,
     logo: local?.logo ?? null,
+    warrantyClause: local?.warrantyClause ?? null,
   };
 }
 

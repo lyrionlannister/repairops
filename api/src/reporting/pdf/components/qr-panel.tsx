@@ -1,13 +1,17 @@
 import { View, Text, Svg, Path } from "@react-pdf/renderer";
-import { QR_INK, type PdfStyles } from "../theme.js";
+import { QR_INK, type NoteStyles } from "../theme.js";
 import { buildQrPath } from "../qr-matrix.js";
 
-const QR_SIZE_PT = 96;
+const QR_SIZE_PT = 104;
+const STEPS = [
+  "Abre la cámara de tu teléfono y apunta al QR",
+  "Envía el mensaje que ya viene escrito",
+  "Recibe el estado de tu nota al instante",
+];
 
-// El QR y su panel solo se dibujan con una URL real: sin numero de WhatsApp
-// configurado el documento sale sin panel, nunca con un QR roto. El QR va
-// siempre en negro puro (no lleva color de marca) para escanear bien.
-export const QrPanel: React.FC<{ styles: PdfStyles; url: string | null; publicRef: string }> = ({
+// Solo lo usa la nota de reparación (consulta por WhatsApp); sin URL no se
+// dibuja, nunca un QR roto.
+export const QrPanel: React.FC<{ styles: NoteStyles; url: string | null; publicRef: string }> = ({
   styles,
   url,
   publicRef,
@@ -20,14 +24,19 @@ export const QrPanel: React.FC<{ styles: PdfStyles; url: string | null; publicRe
         <Svg width={QR_SIZE_PT} height={QR_SIZE_PT} viewBox={`0 0 ${size} ${size}`}>
           <Path d={path} fill={QR_INK} />
         </Svg>
+        <Text style={styles.qrRef}>REF · {publicRef}</Text>
       </View>
       <View style={styles.qrText}>
-        <Text style={styles.qrTitle}>Consulta tu nota por WhatsApp</Text>
+        <Text style={styles.qrTitle}>¿Cómo va tu equipo?</Text>
         <Text style={styles.qrHint}>
-          Escanea el código con la cámara de tu teléfono y envía el mensaje que aparece. Te responderemos con el
-          estado de tu equipo.
+          Escanea el código y consulta el estado de tu nota por WhatsApp, sin llamar ni venir al taller.
         </Text>
-        <Text style={styles.qrRef}>Ref. {publicRef}</Text>
+        {STEPS.map((step, index) => (
+          <View key={step} style={styles.step}>
+            <Text style={styles.stepDot}>{index + 1}</Text>
+            <Text>{step}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );

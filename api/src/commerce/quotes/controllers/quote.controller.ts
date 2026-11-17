@@ -12,7 +12,7 @@ import { UpdateQuoteDto } from "../dtos/update-quote.dto.js";
 import { SetQuoteStatusDto } from "../dtos/set-quote-status.dto.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
-import { errorStatus, queryString } from "../../../core/http/error-status.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
 
 @singleton()
 export class QuoteController {
@@ -28,7 +28,7 @@ export class QuoteController {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getAll(branchId));
     } catch (error: any) {
-      res.status(errorStatus(error, 500)).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -41,7 +41,7 @@ export class QuoteController {
       }
       res.status(200).json(quote);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -49,7 +49,15 @@ export class QuoteController {
     try {
       res.status(200).json(await this.service.getItems(req.params["id"] as string));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
+    }
+  };
+
+  getServiceTypes = async (req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.service.getServiceTypeIds(req.params["id"] as string));
+    } catch (error: any) {
+      sendError(res, error, 500);
     }
   };
 
@@ -61,12 +69,16 @@ export class QuoteController {
         res.status(400).json({ error: validationErrors(errors) });
         return;
       }
-      const { items, ...data } = dto;
+      if (!dto.customerId && !String(dto.contactNumber ?? "").trim()) {
+        res.status(400).json({ error: "El teléfono del cliente es obligatorio" });
+        return;
+      }
+      const { items, serviceTypeIds, ...data } = dto;
       data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
-      const quote = await this.service.create(data, items);
+      const quote = await this.service.create(data, items, serviceTypeIds ?? []);
       res.status(201).json(quote);
     } catch (error: any) {
-      res.status(errorStatus(error, 400)).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -78,15 +90,15 @@ export class QuoteController {
         res.status(400).json({ error: validationErrors(errors) });
         return;
       }
-      const { items, ...data } = dto;
-      const quote = await this.service.update(req.params["id"] as string, data, items);
+      const { items, serviceTypeIds, ...data } = dto;
+      const quote = await this.service.update(req.params["id"] as string, data, items, serviceTypeIds);
       if (!quote) {
         res.status(404).json({ error: "Cotización no encontrada" });
         return;
       }
       res.status(200).json(quote);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -105,7 +117,7 @@ export class QuoteController {
       }
       res.status(200).json(quote);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -118,7 +130,7 @@ export class QuoteController {
       }
       res.status(200).json({ message: "Cotización eliminada" });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -131,14 +143,15 @@ export class QuoteController {
       }
       const items = await this.service.getItems(quote.id);
       const local = await this.localService.getConfig();
-      const data = toQuotePdfData(quote, items, local);
+      const serviceTypeNames = quote.kind === "repair" ? await this.service.getServiceTypeNames(quote.id) : [];
+      const data = toQuotePdfData(quote, items, local, { serviceTypeNames });
       const buffer = await this.pdfRendererService.render(QuoteDocument, { data });
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="cotizacion-${quote.id}.pdf"`);
       res.status(200).send(buffer);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 }

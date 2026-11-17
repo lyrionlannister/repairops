@@ -1,28 +1,31 @@
 import { View, Text } from "@react-pdf/renderer";
-import type { PdfStyles } from "../theme.js";
+import type { NoteStyles } from "../theme.js";
 
-export const Field: React.FC<{ styles: PdfStyles; label: string; value: string; flex?: boolean }> = ({
+// Tarjeta con fondo de marca (CLIENTE/EQUIPO) -- título corto + línea secundaria opcional.
+export const TintCard: React.FC<{ styles: NoteStyles; label: string; title: string; sub?: string | null }> = ({
   styles,
   label,
-  value,
-  flex,
+  title,
+  sub,
 }) => (
-  <View style={flex ? styles.fieldFlex : styles.field}>
-    <Text style={styles.fieldLabel}>{label}</Text>
-    <Text style={styles.fieldValue}>{value}</Text>
+  <View style={styles.tintCard}>
+    <Text style={styles.cardLabelTint}>{label}</Text>
+    <Text style={styles.cardTitle}>{title}</Text>
+    {sub && <Text style={styles.cardSub}>{sub}</Text>}
   </View>
 );
 
-export const SectionLabel: React.FC<{ styles: PdfStyles; children: string }> = ({ styles, children }) => (
-  <View style={styles.sectionLabel}>
-    <View style={styles.sectionLabelBar} />
-    <Text style={styles.sectionLabelText}>{children}</Text>
-  </View>
-);
-
-export const Check: React.FC<{ styles: PdfStyles; checked: boolean; label: string }> = ({ styles, checked, label }) => (
-  <View style={styles.checkItem}>
-    <View style={checked ? styles.checkBoxOn : styles.checkBoxOff} />
-    <Text style={checked ? styles.checkLabelOn : styles.checkLabelOff}>{label}</Text>
+// Tarjeta sin fondo (FALLA REPORTADA, HALLAZGOS, etc.) -- un bloque de texto por hijo.
+export const PlainCard: React.FC<{ styles: NoteStyles; blocks: Array<{ label: string; text: string }> }> = ({
+  styles,
+  blocks,
+}) => (
+  <View style={styles.plainCard} wrap={false}>
+    {blocks.map((block, index) => (
+      <View key={block.label} style={index > 0 ? { marginTop: 8 } : undefined}>
+        <Text style={styles.cardLabel}>{block.label}</Text>
+        <Text style={styles.cardText}>{block.text}</Text>
+      </View>
+    ))}
   </View>
 );

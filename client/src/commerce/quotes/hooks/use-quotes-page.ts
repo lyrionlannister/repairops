@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 
-import type { QuoteStatus } from "./use-quotes";
+import type { QuoteKind, QuoteStatus } from "./use-quotes";
 
 export type QuoteListItem = {
   id: string;
+  kind: QuoteKind;
   customerName: string;
   contactNumber: string | null;
   status: QuoteStatus;
   validUntil: string | null;
   totalValue: number;
+  repairNoteId: string | null;
 };
 
 export const useQuotesPage = ({

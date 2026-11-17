@@ -1,23 +1,26 @@
 import { View, Text } from "@react-pdf/renderer";
-import type { PdfStyles } from "../theme.js";
+import type { NoteStyles } from "../theme.js";
 
-export const TotalsGrid: React.FC<{ styles: PdfStyles; cells: Array<{ label: string; value: string }> }> = ({
-  styles,
-  cells,
-}) => (
-  <View style={styles.totalsGrid} wrap={false}>
-    {cells.map(({ label, value }) => (
-      <View key={label} style={styles.totalsCell}>
-        <Text style={styles.totalsLabel}>{label}</Text>
-        <Text style={styles.totalsValue}>{value}</Text>
+interface TotalsCardProps {
+  styles: NoteStyles;
+  rows: Array<{ label: string; value: string }>;
+  balanceLabel: string;
+  balanceValue: string;
+}
+
+// Tarjeta de totales compartida: filas simples arriba, fila de balance
+// resaltada al fondo (SALDO A LIQUIDAR en la nota, TOTAL en la cotización).
+export const TotalsCard: React.FC<TotalsCardProps> = ({ styles, rows, balanceLabel, balanceValue }) => (
+  <View style={styles.totalsCard}>
+    {rows.map((row) => (
+      <View key={row.label} style={styles.totalsRow}>
+        <Text style={styles.totalsKey}>{row.label}</Text>
+        <Text style={styles.totalsVal}>{row.value}</Text>
       </View>
     ))}
-  </View>
-);
-
-export const TotalBar: React.FC<{ styles: PdfStyles; label: string; value: string }> = ({ styles, label, value }) => (
-  <View style={styles.totalBar} wrap={false}>
-    <Text style={styles.totalBarLabel}>{label}</Text>
-    <Text style={styles.totalBarValue}>{value}</Text>
+    <View style={styles.balanceRow}>
+      <Text style={styles.balanceLabel}>{balanceLabel}</Text>
+      <Text style={styles.balanceValue}>{balanceValue}</Text>
+    </View>
   </View>
 );

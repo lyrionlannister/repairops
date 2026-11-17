@@ -5,6 +5,7 @@ import { useQuoteCustomerHistory } from "../hooks/use-quote-customer-history";
 import { useQuoteItemLines } from "../hooks/use-quote-item-lines";
 import { QuoteCustomerHistoryPanel } from "../components/quote-customer-history-panel";
 import { QuoteCustomerSection } from "../components/quote-customer-section";
+import { QuoteKindDeviceSection } from "../components/quote-kind-device-section";
 import { QuoteItemLinesSection } from "../components/quote-item-lines-section";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useBranch } from "@common/hooks/use-branch";
@@ -13,9 +14,14 @@ import { PageShell } from "@common/components/page-shell/page-shell";
 
 const INITIAL_FORM: QuoteFormData = {
   localId: "",
+  kind: "product",
   customerId: "",
   customerName: "",
   contactNumber: "",
+  brand: "",
+  model: "",
+  reportedFailure: "",
+  serviceTypeIds: [],
   validUntil: "",
   createdByEmployeeId: "",
 };
@@ -25,8 +31,17 @@ export const QuoteFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { quote, loading, saving, fetchQuote, fetchQuoteItems, createQuote, updateQuote, clearError } =
-    useQuotes();
+  const {
+    quote,
+    loading,
+    saving,
+    fetchQuote,
+    fetchQuoteItems,
+    fetchQuoteServiceTypeIds,
+    createQuote,
+    updateQuote,
+    clearError,
+  } = useQuotes();
   const { workingBranchId } = useBranch();
 
   const [form, setForm] = useState<QuoteFormData>(INITIAL_FORM);
@@ -59,16 +74,26 @@ export const QuoteFormPage: React.FC = () => {
 
   useEffect(() => {
     if (quote && isEdit) {
-      setForm({
+      setForm((prev) => ({
+        ...prev,
         localId: quote.localId,
+        kind: quote.kind,
         customerId: quote.customerId ?? "",
         customerName: quote.customerName,
         contactNumber: quote.contactNumber ?? "",
+        brand: quote.brand ?? "",
+        model: quote.model ?? "",
+        reportedFailure: quote.reportedFailure ?? "",
         validUntil: quote.validUntil ?? "",
         createdByEmployeeId: quote.createdByEmployeeId ?? "",
-      });
+      }));
+      if (quote.kind === "repair") {
+        fetchQuoteServiceTypeIds(quote.id).then((serviceTypeIds) =>
+          setForm((prev) => ({ ...prev, serviceTypeIds })),
+        );
+      }
     }
-  }, [quote, isEdit]);
+  }, [quote, isEdit, fetchQuoteServiceTypeIds]);
 
   useEffect(() => {
     if (!isEdit && workingBranchId && !form.localId) {
@@ -127,6 +152,21 @@ export const QuoteFormPage: React.FC = () => {
             onContactNumberChange={(value) => set("contactNumber", value)}
             onValidUntilChange={(value) => set("validUntil", value)}
             onCreatedByEmployeeIdChange={(value) => set("createdByEmployeeId", value)}
+          />
+
+          <QuoteKindDeviceSection
+            kind={form.kind}
+            brand={form.brand}
+            model={form.model}
+            reportedFailure={form.reportedFailure}
+            serviceTypeIds={form.serviceTypeIds}
+            saving={saving}
+            disabled={isEdit}
+            onKindChange={(kind) => setForm((prev) => ({ ...prev, kind }))}
+            onBrandChange={(value) => set("brand", value)}
+            onModelChange={(value) => set("model", value)}
+            onReportedFailureChange={(value) => set("reportedFailure", value)}
+            onServiceTypeIdsChange={(serviceTypeIds) => setForm((prev) => ({ ...prev, serviceTypeIds }))}
           />
 
           <QuoteItemLinesSection
