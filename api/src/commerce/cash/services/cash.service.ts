@@ -35,8 +35,8 @@ export class CashService {
     private userDao: UserDao,
   ) {}
 
-  async getAllSessions(): Promise<CashSession[]> {
-    return this.sessionDao.findAllOrdered();
+  async getAllSessions(branchId?: string | null): Promise<CashSession[]> {
+    return this.sessionDao.findAllOrdered(branchId);
   }
 
   async getSessionById(id: string): Promise<CashSession | null> {
@@ -68,7 +68,7 @@ export class CashService {
   // nunca antes (la pantalla no debe mostrarlo mientras la sesion esta
   // abierta). Dos puertas bloquean el cierre, en este orden: diferencia sin
   // motivo, o diferencia sobre el limite del tenant sin un autorizador con
-  // rol owner/admin (SPEC-fase3-pos-dinero.md). Si cualquiera de las dos
+  // rol owner (SPEC-fase3-pos-dinero.md). Si cualquiera de las dos
   // truena, la sesion se queda "open" -- mismo criterio que una Sale que no
   // pasa sus compuertas nunca llega a crearse.
   async closeSession(
@@ -98,8 +98,8 @@ export class CashService {
         throw new Error(`La diferencia supera el límite sin autorizar (${maxUnauthorized.toFixed(2)}): requiere autorización`);
       }
       const authorizer = await this.userDao.findById(authorizedByEmployeeId);
-      if (!authorizer || !["owner", "admin"].includes(authorizer.role)) {
-        throw new Error("Quien autoriza la diferencia debe tener rol owner o admin");
+      if (!authorizer || authorizer.role !== "owner") {
+        throw new Error("Quien autoriza la diferencia debe ser el owner");
       }
     }
 

@@ -45,7 +45,7 @@ function build() {
 beforeEach(() => store.clear());
 
 describe("DashboardService permisos", () => {
-  it.each(["owner", "admin"] as const)("%s recibe importes", async (role) => {
+  it.each(["owner"] as const)("%s recibe importes", async (role) => {
     const { service } = build();
     const summary = await runWithTenant("1", () => service.getSummary(role));
     expect(summary.money?.today).toBe("100.25");

@@ -8,7 +8,7 @@ import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 // por pantalla ni por API (criterio de aceptacion de la Fase 1). Lectura
 // queda abierta a cualquier rol autenticado -- el cajero sí necesita ver una
 // nota para cobrarla o entregar el equipo.
-const canWriteRepairNotes = requireRole("owner", "admin", "technician");
+const canWriteRepairNotes = requireRole("owner", "technician");
 
 export const createRepairNoteRouter = (controller: RepairNoteController): Router => {
   const router = Router();

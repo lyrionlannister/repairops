@@ -7,6 +7,7 @@ import type { Repository } from "typeorm";
 import type { Tenant } from "../../../../src/core/tenancy/entities/tenant.entity.js";
 import type { ServiceTypeService } from "../../../../src/commerce/service-types/services/service-type.service.js";
 import type { BranchService } from "../../../../src/identity/branches/services/branch.service.js";
+import type { UserBranchService } from "../../../../src/identity/branches/services/user-branch.service.js";
 
 function makeServiceTypeService(): ServiceTypeService {
   return { seed: vi.fn() } as unknown as ServiceTypeService;
@@ -14,6 +15,14 @@ function makeServiceTypeService(): ServiceTypeService {
 
 function makeBranchService(): BranchService {
   return { seed: vi.fn() } as unknown as BranchService;
+}
+
+function makeUserBranchService(): UserBranchService {
+  return {
+    normalize: vi.fn().mockResolvedValue({ branchIds: ["1"], primaryBranchId: "1" }),
+    assign: vi.fn().mockResolvedValue(undefined),
+    getAssignments: vi.fn().mockResolvedValue(new Map()),
+  } as unknown as UserBranchService;
 }
 
 function makeUser(overrides: Partial<User> = {}): User {
@@ -46,7 +55,7 @@ describe("AuthService.login", () => {
     const userDao = {
       findByEmailAcrossTenants: vi.fn().mockResolvedValue(null),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     await expect(
       service.login({ email: "nobody@example.com", password: "whatever" }),
@@ -58,7 +67,7 @@ describe("AuthService.login", () => {
     const userDao = {
       findByEmailAcrossTenants: vi.fn().mockResolvedValue(makeUser({ password: hashed })),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     await expect(
       service.login({ email: "admin@example.com", password: "wrong-password" }),
@@ -72,7 +81,7 @@ describe("AuthService.login", () => {
         .fn()
         .mockResolvedValue(makeUser({ password: hashed, isActive: false })),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     await expect(
       service.login({ email: "admin@example.com", password: "correct-password" }),
@@ -84,7 +93,7 @@ describe("AuthService.login", () => {
     const userDao = {
       findByEmailAcrossTenants: vi.fn().mockResolvedValue(makeUser({ password: hashed })),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     const result = await service.login({
       email: "admin@example.com",
@@ -105,7 +114,7 @@ describe("AuthService.register", () => {
       create,
     } as unknown as UserDao;
     const tenantRepository = makeTenantRepository();
-    const service = new AuthService(userDao, tenantRepository, makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, tenantRepository, makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     await service.register({
       firstName: "New",
@@ -126,7 +135,7 @@ describe("AuthService.register", () => {
       create: vi.fn(),
     } as unknown as UserDao;
     const tenantRepository = makeTenantRepository();
-    const service = new AuthService(userDao, tenantRepository, makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, tenantRepository, makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     await expect(
       service.register({
@@ -147,7 +156,7 @@ describe("AuthService.createEmployee", () => {
       findByEmail: vi.fn().mockResolvedValue(null),
       create,
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     await service.createEmployee({
       firstName: "Tech",
@@ -171,7 +180,7 @@ describe("AuthService.createEmployee", () => {
       findByEmail: vi.fn().mockResolvedValue(makeUser()),
       create: vi.fn(),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     await expect(
       service.createEmployee({
@@ -189,7 +198,7 @@ describe("AuthService.listEmployees", () => {
     const userDao = {
       findAll: vi.fn().mockResolvedValue([makeUser({ id: "1" }), makeUser({ id: "2", role: "employee" })]),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService());
+    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService());
 
     const employees = await service.listEmployees();
 

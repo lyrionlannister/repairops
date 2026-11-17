@@ -7,16 +7,22 @@ import { OpenCashSessionDto } from "../dtos/open-cash-session.dto.js";
 import { CloseCashSessionDto } from "../dtos/close-cash-session.dto.js";
 import { RegisterCashMovementDto } from "../dtos/register-cash-movement.dto.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
+import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
+import { errorStatus, queryString } from "../../../core/http/error-status.js";
 
 @singleton()
 export class CashController {
-  constructor(private service: CashService) {}
+  constructor(
+    private service: CashService,
+    private branchAccess: BranchAccessService,
+  ) {}
 
-  getAllSessions = async (_req: Request, res: Response): Promise<void> => {
+  getAllSessions = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getAllSessions());
+      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      res.status(200).json(await this.service.getAllSessions(branchId));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(errorStatus(error, 500)).json({ error: error.message });
     }
   };
 
@@ -54,10 +60,11 @@ export class CashController {
         res.status(400).json({ error: validationErrors(errors) });
         return;
       }
-      const session = await this.service.openSession(dto.localId, dto.openingBalance, dto.openedByEmployeeId);
+      const localId = await this.branchAccess.resolveWriteBranch(dto.localId);
+      const session = await this.service.openSession(localId, dto.openingBalance, dto.openedByEmployeeId);
       res.status(201).json(session);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(errorStatus(error, 400)).json({ error: error.message });
     }
   };
 

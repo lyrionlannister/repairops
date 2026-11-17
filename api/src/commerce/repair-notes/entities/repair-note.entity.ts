@@ -1,12 +1,14 @@
 import { Entity, Column, CreateDateColumn, UpdateDateColumn, Unique, Index, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { Branch } from "../../../identity/branches/entities/branch.entity.js";
 
 @Entity("repair_notes")
 @Unique(["tenantId", "controlNumber"])
 @Index("IDX_repair_notes_tenant_received", ["tenantId", "receivedAt"])
 @Index("IDX_repair_notes_tenant_status", ["tenantId", "status"])
 @Index("UQ_repair_notes_public_ref", ["publicRef"], { unique: true })
+@Index("IDX_repair_notes_local", ["localId"])
 export class RepairNote extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -18,6 +20,11 @@ export class RepairNote extends BaseEntity {
   // Sucursal de la nota: obligatoria (el dashboard y la caja filtran por ella).
   @Column({ type: "bigint", nullable: false, name: "local_id" })
   localId!: string;
+
+  // NO ACTION: una sucursal con datos no se borra, se desactiva.
+  @ManyToOne(() => Branch, { onDelete: "NO ACTION" })
+  @JoinColumn({ name: "local_id", foreignKeyConstraintName: "FK_repair_notes_local" })
+  branch?: Branch;
 
   @Column({ type: "bigint", nullable: true, name: "customer_id" })
   customerId?: string | null;

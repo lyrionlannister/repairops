@@ -6,7 +6,7 @@ import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 
 // Toda venta exige una sesión de caja abierta (SaleService.create), y solo
 // quien puede operar la caja puede cobrar -- mismo módulo que cash.routes.ts.
-const canSell = requireRole("owner", "admin", "cashier");
+const canSell = requireRole("owner", "cashier");
 
 export const createSaleRouter = (controller: SaleController): Router => {
   const router = Router();

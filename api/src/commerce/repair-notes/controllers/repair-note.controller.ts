@@ -6,6 +6,8 @@ import { AuthService } from "../../../identity/auth/services/auth.service.js";
 import { PdfRendererService } from "../../../reporting/pdf/pdf-renderer.service.js";
 import { RepairNoteDocument } from "../../../reporting/pdf/documents/repair-note.document.js";
 import { toRepairNotePdfData } from "../../../reporting/pdf/documents/repair-note.pdf-data.js";
+import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
+import { errorStatus, queryString } from "../../../core/http/error-status.js";
 
 @singleton()
 export class RepairNoteController {
@@ -14,14 +16,16 @@ export class RepairNoteController {
     private localService: LocalService,
     private pdfRendererService: PdfRendererService,
     private authService: AuthService,
+    private branchAccess: BranchAccessService,
   ) {}
 
-  getAll = async (_req: Request, res: Response): Promise<void> => {
+  getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      const notes = await this.repairNoteService.getAll();
+      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      const notes = await this.repairNoteService.getAll(branchId);
       res.status(200).json(notes);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(errorStatus(error, 500)).json({ error: error.message });
     }
   };
 
@@ -60,10 +64,11 @@ export class RepairNoteController {
   create = async (req: Request, res: Response): Promise<void> => {
     try {
       const { items, serviceTypeIds, ...data } = req.body;
+      data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
       const note = await this.repairNoteService.create(data, items, serviceTypeIds);
       res.status(201).json(note);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(errorStatus(error, 400)).json({ error: error.message });
     }
   };
 
@@ -71,6 +76,7 @@ export class RepairNoteController {
     try {
       const id = req.params["id"] as string;
       const { items, serviceTypeIds, ...data } = req.body;
+      if (data.localId !== undefined) data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
       const note = await this.repairNoteService.update(id, data, items, serviceTypeIds);
       if (!note) {
         res.status(404).json({ error: "Nota no encontrada" });
@@ -78,7 +84,7 @@ export class RepairNoteController {
       }
       res.status(200).json(note);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(errorStatus(error, 500)).json({ error: error.message });
     }
   };
 

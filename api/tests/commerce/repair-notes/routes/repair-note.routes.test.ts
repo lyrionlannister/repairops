@@ -35,6 +35,10 @@ import { PdfRendererService } from "../../../../src/reporting/pdf/pdf-renderer.s
 import { createRepairNoteRouter } from "../../../../src/commerce/repair-notes/routes/repair-note.routes.js";
 import type { UserRole } from "../../../../src/identity/auth/entities/user.entity.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
+import { BranchAccessService } from "../../../../src/identity/branches/services/branch-access.service.js";
+import { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
+import { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
+import { setupStaff } from "../../../support/staff.js";
 
 // Integration test contra Postgres real + el router real (no un controller
 // falso) -- prueba el criterio de aceptacion de la Fase 1: un cajero no
@@ -45,11 +49,14 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
   let app: express.Express;
   const tenantId = `${Date.now()}4`;
 
-  const tokenFor = (role: UserRole) =>
-    jwt.sign({ id: "1", email: "x@x.com", tenantId, role }, requireJwtSecret());
+  // Sucursal real y un usuario por rol (el personal asignado a ella): ver tests/support/staff.ts.
+  let branchId = "";
+  let tokens: Record<string, string> = {};
+  const tokenFor = (role: UserRole) => tokens[role] as string;
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    ({ branchId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
     await ensureFixtureTenant(AppDataSource, tenantId);
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
@@ -81,6 +88,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       localService,
       new PdfRendererService(),
       authService,
+      new BranchAccessService(new BranchDao(AppDataSource.getRepository(Branch))),
     );
 
     app = express();
@@ -92,14 +100,14 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     await AppDataSource.destroy();
   });
 
-  const newNotePayload = {
-    localId: "1",
+  const newNotePayload = () => ({
+    localId: branchId,
     customerName: "Cliente de prueba",
     brand: "Marca",
     model: "Modelo",
     reportedFailure: "Falla de prueba",
     receivedAt: "2026-01-01",
-  };
+  });
 
   it("rejects a cashier creating a repair note (403), but allows read", async () => {
     const cashierToken = tokenFor("cashier");
@@ -107,7 +115,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     const createRes = await request(app)
       .post("/repair-notes")
       .set("Authorization", `Bearer ${cashierToken}`)
-      .send(newNotePayload);
+      .send(newNotePayload());
     expect(createRes.status).toBe(403);
 
     const readRes = await request(app)
@@ -122,7 +130,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     const createRes = await request(app)
       .post("/repair-notes")
       .set("Authorization", `Bearer ${technicianToken}`)
-      .send(newNotePayload);
+      .send(newNotePayload());
     expect(createRes.status).toBe(201);
     const noteId = createRes.body.id;
 
@@ -145,7 +153,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     const createRes = await request(app)
       .post("/repair-notes")
       .set("Authorization", `Bearer ${technicianToken}`)
-      .send(newNotePayload);
+      .send(newNotePayload());
     const noteId = createRes.body.id;
 
     const updateRes = await request(app)
@@ -166,7 +174,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
   });
 
   it("rejects requests without a valid token", async () => {
-    const res = await request(app).post("/repair-notes").send(newNotePayload);
+    const res = await request(app).post("/repair-notes").send(newNotePayload());
     expect(res.status).toBe(401);
   });
 
@@ -176,14 +184,14 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     const createRes = await request(app)
       .post("/repair-notes")
       .set("Authorization", `Bearer ${ownerToken}`)
-      .send(newNotePayload);
+      .send(newNotePayload());
     const controlNumber = createRes.body.controlNumber;
 
     const foundRes = await request(app)
       .get(`/repair-notes/by-control-number/${controlNumber}`)
       .set("Authorization", `Bearer ${ownerToken}`);
     expect(foundRes.status).toBe(200);
-    expect(foundRes.body.customerName).toBe(newNotePayload.customerName);
+    expect(foundRes.body.customerName).toBe(newNotePayload().customerName);
 
     const missingRes = await request(app)
       .get("/repair-notes/by-control-number/999999")

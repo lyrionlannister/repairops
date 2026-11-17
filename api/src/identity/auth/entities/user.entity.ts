@@ -2,7 +2,7 @@ import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColu
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
-export type UserRole = "owner" | "admin" | "employee" | "technician" | "cashier";
+export type UserRole = "owner" | "employee" | "technician" | "cashier";
 export type PayCycle = "weekly" | "biweekly" | "monthly";
 
 @Entity("usuarios")

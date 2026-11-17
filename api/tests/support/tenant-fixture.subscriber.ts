@@ -26,3 +26,8 @@ export async function ensureFixtureTenant(manager: { query(sql: string, params?:
     await manager.query(`INSERT INTO "tenants" ("id", "nombre") VALUES ($1, $2) ON CONFLICT ("id") DO NOTHING`, [id, FIXTURE_TENANT_NAME]);
   }
 }
+
+// Sucursal fixture con id explicito (para pruebas que insertan con SQL crudo o necesitan el id antes).
+export async function ensureFixtureBranch(manager: { query(sql: string, params?: unknown[]): Promise<unknown> }, tenantId: string, branchId: string): Promise<void> {
+  await manager.query(`INSERT INTO "branches" ("id", "tenant_id", "nombre") VALUES ($1, $2, $3) ON CONFLICT ("id") DO NOTHING`, [branchId, tenantId, FIXTURE_TENANT_NAME]);
+}

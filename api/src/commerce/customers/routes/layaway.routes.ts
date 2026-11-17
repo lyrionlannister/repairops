@@ -6,7 +6,7 @@ import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 
 // Mismo rol que vende/devuelve -- un apartado mueve dinero y stock igual
 // que una venta.
-const canSell = requireRole("owner", "admin", "cashier");
+const canSell = requireRole("owner", "cashier");
 
 export const createLayawayRouter = (controller: LayawayController): Router => {
   const router = Router();

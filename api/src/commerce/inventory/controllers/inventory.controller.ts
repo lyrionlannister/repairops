@@ -7,16 +7,22 @@ import { CreateInventoryItemDto } from "../dtos/create-inventory-item.dto.js";
 import { RegisterMovementDto } from "../dtos/register-movement.dto.js";
 import { parseInventoryImportFile } from "../utils/inventory-import-parser.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
+import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
+import { errorStatus, queryString } from "../../../core/http/error-status.js";
 
 @singleton()
 export class InventoryController {
-  constructor(private service: InventoryService) {}
+  constructor(
+    private service: InventoryService,
+    private branchAccess: BranchAccessService,
+  ) {}
 
-  getAll = async (_req: Request, res: Response): Promise<void> => {
+  getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getAllWithAvailability());
+      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      res.status(200).json(await this.service.getAllWithAvailability(branchId));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(errorStatus(error, 500)).json({ error: error.message });
     }
   };
 
@@ -62,9 +68,10 @@ export class InventoryController {
         res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
+      dto.localId = await this.branchAccess.resolveWriteBranch(dto.localId);
       res.status(201).json(await this.service.create(dto));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(errorStatus(error, 400)).json({ error: error.message });
     }
   };
 

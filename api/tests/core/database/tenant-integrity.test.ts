@@ -1,4 +1,6 @@
 import "reflect-metadata";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import AppDataSource from "../../../src/core/config/data-source.js";
 import { Tenant } from "../../../src/core/tenancy/entities/tenant.entity.js";
@@ -73,5 +75,34 @@ describe("integridad por tenant", () => {
       if (count > 0) leftovers.push(table);
     }
     expect(leftovers).toEqual([]);
+  });
+
+  it("toda columna local_id y branch_id tiene FK a branches", async () => {
+    const columns: Array<{ table_name: string; column_name: string }> = await AppDataSource.query(
+      `SELECT table_name, column_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND column_name IN ('local_id', 'branch_id') AND table_name <> 'local_config'`,
+    );
+    const fks: Array<{ table_name: string; column_name: string }> = await AppDataSource.query(
+      `SELECT tc.table_name, k.column_name FROM information_schema.table_constraints tc
+       JOIN information_schema.key_column_usage k ON k.constraint_name = tc.constraint_name AND k.table_schema = tc.table_schema
+       JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name
+       WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name = 'branches'`,
+    );
+    const have = new Set(fks.map((row) => row.table_name + "." + row.column_name));
+    expect(columns.filter((c) => !have.has(c.table_name + "." + c.column_name))).toEqual([]);
+  });
+
+  it("admin no es un rol del tenant: ningun requireRole ni tipo de rol lo menciona", () => {
+    const root = join(__dirname, "../../../src");
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) walk(path);
+        else if (path.endsWith(".ts") && /requireRole\([^)]*"admin"|UserRole =[^;]*"admin"|ROLES[^;]*"admin"/.test(readFileSync(path, "utf8"))) offenders.push(path);
+      }
+    };
+    walk(root);
+    expect(offenders).toEqual([]);
   });
 });

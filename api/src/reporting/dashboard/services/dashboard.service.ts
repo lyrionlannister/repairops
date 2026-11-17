@@ -8,7 +8,7 @@ import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import type { UserRole } from "../../../identity/auth/entities/user.entity.js";
 
 const CACHE_TTL_SECONDS = 60;
-const MONEY_ROLES: UserRole[] = ["owner", "admin"];
+const MONEY_ROLES: UserRole[] = ["owner"];
 
 export class DashboardValidationError extends Error {}
 

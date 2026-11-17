@@ -7,7 +7,7 @@ import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 export const createReportsRouter = (controller: ReportsController): Router => {
   const router = Router();
   // Los reportes traen ingresos y salarios: solo owner y admin.
-  router.use(authMiddleware, tenantMiddleware, requireRole("owner", "admin"));
+  router.use(authMiddleware, tenantMiddleware, requireRole("owner"));
   router.get("/employee-performance", controller.getEmployeePerformance);
   router.get("/accessory-sales", controller.getAccessorySales);
   router.get("/repair-notes-by-type", controller.getRepairNotesByType);

@@ -1,11 +1,13 @@
 import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { Branch } from "../../../identity/branches/entities/branch.entity.js";
 
 export type QuoteStatus = "pending" | "accepted" | "rejected";
 
 @Entity("quotes")
 @Index("IDX_quotes_tenant", ["tenantId"])
+@Index("IDX_quotes_local", ["localId"])
 export class Quote extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -16,6 +18,11 @@ export class Quote extends BaseEntity {
 
   @Column({ type: "bigint", nullable: false, name: "local_id" })
   localId!: string;
+
+  // NO ACTION: una sucursal con datos no se borra, se desactiva.
+  @ManyToOne(() => Branch, { onDelete: "NO ACTION" })
+  @JoinColumn({ name: "local_id", foreignKeyConstraintName: "FK_quotes_local" })
+  branch?: Branch;
 
   @Column({ type: "bigint", nullable: true, name: "customer_id" })
   customerId?: string | null;

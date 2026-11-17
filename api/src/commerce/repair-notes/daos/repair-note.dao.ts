@@ -10,8 +10,10 @@ export class RepairNoteDao extends TenantScopedDao<RepairNote> {
     super(repository);
   }
 
-  async findAllOrdered(): Promise<RepairNote[]> {
-    return this.scoped().orderBy("entity.controlNumber", "DESC").getMany();
+  async findAllOrdered(branchId?: string | null): Promise<RepairNote[]> {
+    return this.scoped()
+      .andWhere(branchId ? "entity.localId = :branchId" : "1 = 1", { branchId })
+      .orderBy("entity.controlNumber", "DESC").getMany();
   }
 
   async findByControlNumber(controlNumber: number): Promise<RepairNote | null> {

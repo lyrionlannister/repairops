@@ -64,8 +64,8 @@ export class RepairNoteService {
     private inventoryReservationService: InventoryReservationService,
   ) {}
 
-  async getAll(): Promise<RepairNote[]> {
-    return this.repairNoteDao.findAllOrdered();
+  async getAll(branchId?: string | null): Promise<RepairNote[]> {
+    return this.repairNoteDao.findAllOrdered(branchId);
   }
 
   async getById(id: string): Promise<RepairNote | null> {

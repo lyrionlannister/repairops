@@ -28,6 +28,7 @@ import { CashSession } from "../../commerce/cash/entities/cash-session.entity.js
 import { CashMovement } from "../../commerce/cash/entities/cash-movement.entity.js";
 import { RevenueAttributionSetting } from "../../commerce/revenue-attribution/entities/revenue-attribution-setting.entity.js";
 import { Branch } from "../../identity/branches/entities/branch.entity.js";
+import { UserBranch } from "../../identity/branches/entities/user-branch.entity.js";
 import { Customer } from "../../commerce/customers/entities/customer.entity.js";
 import { WhatsappAccount } from "../../messaging/whatsapp-official/entities/whatsapp-account.entity.js";
 import { WhatsappTemplateStatus } from "../../messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
@@ -85,6 +86,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     CashMovement,
     RevenueAttributionSetting,
     Branch,
+    UserBranch,
     Customer,
     WhatsappAccount,
     WhatsappTemplateStatus,

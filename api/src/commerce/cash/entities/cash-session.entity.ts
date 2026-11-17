@@ -1,11 +1,13 @@
 import { Entity, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { Branch } from "../../../identity/branches/entities/branch.entity.js";
 
 export type CashSessionStatus = "open" | "closed";
 
 @Entity("cash_sessions")
 @Index("IDX_cash_sessions_tenant", ["tenantId"])
+@Index("IDX_cash_sessions_local", ["localId"])
 export class CashSession extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -16,6 +18,11 @@ export class CashSession extends BaseEntity {
 
   @Column({ type: "bigint", nullable: false, name: "local_id" })
   localId!: string;
+
+  // NO ACTION: una sucursal con datos no se borra, se desactiva.
+  @ManyToOne(() => Branch, { onDelete: "NO ACTION" })
+  @JoinColumn({ name: "local_id", foreignKeyConstraintName: "FK_cash_sessions_local" })
+  branch?: Branch;
 
   @Column({ type: "bigint", nullable: true, name: "id_empleado_apertura" })
   openedByEmployeeId?: string | null;

@@ -52,7 +52,7 @@ const SALE_DAY = `((s.fecha_creacion AT TIME ZONE 'UTC') AT TIME ZONE $4)::date`
 export class ReportsDao {
   constructor(@inject(repositoryToken(RepairNote)) private repository: Repository<RepairNote>) {}
 
-  notesByEmployee(start: string, end: string): Promise<EmployeeTotalsRow[]> {
+  notesByEmployee(start: string, end: string, branchId: string | null): Promise<EmployeeTotalsRow[]> {
     return this.repository.query(
       `
       SELECT n.id_empleado_asignado::text AS "employeeId",
@@ -68,15 +68,16 @@ export class ReportsDao {
         WHERE ri.id_nota_reparacion = n.id AND ri.tenant_id = n.tenant_id
       ) it ON true
       WHERE n.tenant_id = $1 AND n.id_empleado_asignado IS NOT NULL AND n.fecha_recepcion BETWEEN $2::date AND $3::date
+        AND ($4::bigint IS NULL OR n.local_id = $4::bigint)
       GROUP BY n.id_empleado_asignado
       `,
-      [getCurrentTenantId(), start, end],
+      [getCurrentTenantId(), start, end, branchId],
     );
   }
 
   // Un renglon de servicio (tipo_linea 'service_type') no tiene costo de
   // inventario: el margen es el precio completo.
-  salesByEmployee(start: string, end: string, timeZone: string): Promise<EmployeeTotalsRow[]> {
+  salesByEmployee(start: string, end: string, timeZone: string, branchId: string | null): Promise<EmployeeTotalsRow[]> {
     return this.repository.query(
       `
       SELECT s.id_empleado_creador::text AS "employeeId",
@@ -93,25 +94,27 @@ export class ReportsDao {
         WHERE si.id_venta = s.id AND si.tenant_id = s.tenant_id
       ) it ON true
       WHERE s.tenant_id = $1 AND s.id_empleado_creador IS NOT NULL AND ${SALE_DAY} BETWEEN $2::date AND $3::date
+        AND ($5::bigint IS NULL OR s.local_id = $5::bigint)
       GROUP BY s.id_empleado_creador
       `,
-      [getCurrentTenantId(), start, end, timeZone],
+      [getCurrentTenantId(), start, end, timeZone, branchId],
     );
   }
 
-  async accessoryTotals(start: string, end: string, timeZone: string): Promise<AccessoryTotalsRow> {
+  async accessoryTotals(start: string, end: string, timeZone: string, branchId: string | null): Promise<AccessoryTotalsRow> {
     const rows = await this.repository.query(
       `
       SELECT COUNT(*)::int AS "salesCount", COALESCE(SUM(s.valor_total), 0)::numeric(14,2)::text AS "totalRevenue"
       FROM sales s
       WHERE s.tenant_id = $1 AND ${SALE_DAY} BETWEEN $2::date AND $3::date
+        AND ($5::bigint IS NULL OR s.local_id = $5::bigint)
       `,
-      [getCurrentTenantId(), start, end, timeZone],
+      [getCurrentTenantId(), start, end, timeZone, branchId],
     );
     return rows[0];
   }
 
-  accessoryByItem(start: string, end: string, timeZone: string): Promise<AccessoryGroupRow[]> {
+  accessoryByItem(start: string, end: string, timeZone: string, branchId: string | null): Promise<AccessoryGroupRow[]> {
     return this.repository.query(
       `
       SELECT si.id_referencia::text AS key,
@@ -122,14 +125,15 @@ export class ReportsDao {
       JOIN sales s ON s.id = si.id_venta AND s.tenant_id = si.tenant_id
       LEFT JOIN inventory_items inv ON inv.id = si.id_referencia AND inv.tenant_id = si.tenant_id
       WHERE si.tenant_id = $1 AND si.tipo_linea = 'inventory_item' AND ${SALE_DAY} BETWEEN $2::date AND $3::date
+        AND ($5::bigint IS NULL OR s.local_id = $5::bigint)
       GROUP BY si.id_referencia, inv.nombre
       ORDER BY SUM(si.cantidad * si.precio_unitario) DESC
       `,
-      [getCurrentTenantId(), start, end, timeZone],
+      [getCurrentTenantId(), start, end, timeZone, branchId],
     );
   }
 
-  accessoryByPeriod(start: string, end: string, timeZone: string, groupBy: "day" | "week"): Promise<AccessoryGroupRow[]> {
+  accessoryByPeriod(start: string, end: string, timeZone: string, groupBy: "day" | "week", branchId: string | null): Promise<AccessoryGroupRow[]> {
     const bucket = groupBy === "day" ? `TO_CHAR(${SALE_DAY}, 'YYYY-MM-DD')` : `TO_CHAR(${SALE_DAY}, 'IYYY-"W"IW')`;
     return this.repository.query(
       `
@@ -142,26 +146,28 @@ export class ReportsDao {
         WHERE si.id_venta = s.id AND si.tenant_id = s.tenant_id AND si.tipo_linea = 'inventory_item'
       ) q ON true
       WHERE s.tenant_id = $1 AND ${SALE_DAY} BETWEEN $2::date AND $3::date
+        AND ($5::bigint IS NULL OR s.local_id = $5::bigint)
       GROUP BY 1
       ORDER BY 1
       `,
-      [getCurrentTenantId(), start, end, timeZone],
+      [getCurrentTenantId(), start, end, timeZone, branchId],
     );
   }
 
-  async notesTotals(start: string, end: string): Promise<NotesTotalsRow> {
+  async notesTotals(start: string, end: string, branchId: string | null): Promise<NotesTotalsRow> {
     const rows = await this.repository.query(
       `
       SELECT COUNT(*)::int AS "totalNotes", COALESCE(SUM(valor_total), 0)::numeric(14,2)::text AS "totalRevenue"
       FROM repair_notes
       WHERE tenant_id = $1 AND fecha_recepcion BETWEEN $2::date AND $3::date
+        AND ($4::bigint IS NULL OR local_id = $4::bigint)
       `,
-      [getCurrentTenantId(), start, end],
+      [getCurrentTenantId(), start, end, branchId],
     );
     return rows[0];
   }
 
-  notesByType(start: string, end: string): Promise<NotesByTypeRow[]> {
+  notesByType(start: string, end: string, branchId: string | null): Promise<NotesByTypeRow[]> {
     return this.repository.query(
       `
       SELECT st.id::text AS type, st.nombre AS label,
@@ -171,23 +177,25 @@ export class ReportsDao {
       LEFT JOIN (SELECT DISTINCT l.id_tipo_servicio, l.id_nota_reparacion FROM repair_note_service_types l WHERE l.tenant_id = $1) link
         ON link.id_tipo_servicio = st.id
       LEFT JOIN repair_notes n ON n.id = link.id_nota_reparacion AND n.tenant_id = $1 AND n.fecha_recepcion BETWEEN $2::date AND $3::date
+        AND ($4::bigint IS NULL OR n.local_id = $4::bigint)
       WHERE st.tenant_id = $1
       GROUP BY st.id, st.nombre
       ORDER BY st.nombre ASC, st.id
       `,
-      [getCurrentTenantId(), start, end],
+      [getCurrentTenantId(), start, end, branchId],
     );
   }
 
-  notesByStatus(start: string, end: string): Promise<NotesByStatusRow[]> {
+  notesByStatus(start: string, end: string, branchId: string | null): Promise<NotesByStatusRow[]> {
     return this.repository.query(
       `
       SELECT estado AS status, COUNT(*)::int AS count, COALESCE(SUM(valor_total), 0)::numeric(14,2)::text AS "totalValue"
       FROM repair_notes
       WHERE tenant_id = $1 AND fecha_recepcion BETWEEN $2::date AND $3::date
+        AND ($4::bigint IS NULL OR local_id = $4::bigint)
       GROUP BY estado
       `,
-      [getCurrentTenantId(), start, end],
+      [getCurrentTenantId(), start, end, branchId],
     );
   }
 }

@@ -34,8 +34,8 @@ export class QuoteService {
     private quoteItemDao: QuoteItemDao,
   ) {}
 
-  async getAll(): Promise<Quote[]> {
-    return this.quoteDao.findAllOrdered();
+  async getAll(branchId?: string | null): Promise<Quote[]> {
+    return this.quoteDao.findAllOrdered(branchId);
   }
 
   async getById(id: string): Promise<Quote | null> {

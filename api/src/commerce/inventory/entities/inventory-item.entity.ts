@@ -2,11 +2,13 @@ import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColu
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Supplier } from "../../suppliers/entities/supplier.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { Branch } from "../../../identity/branches/entities/branch.entity.js";
 
 export type InventoryItemKind = "accessory" | "part";
 
 @Entity("inventory_items")
 @Index("IDX_inventory_items_tenant", ["tenantId"])
+@Index("IDX_inventory_items_local", ["localId"])
 export class InventoryItem extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -17,6 +19,11 @@ export class InventoryItem extends BaseEntity {
 
   @Column({ type: "bigint", nullable: false, name: "local_id" })
   localId!: string;
+
+  // NO ACTION: una sucursal con datos no se borra, se desactiva.
+  @ManyToOne(() => Branch, { onDelete: "NO ACTION" })
+  @JoinColumn({ name: "local_id", foreignKeyConstraintName: "FK_inventory_items_local" })
+  branch?: Branch;
 
   @Column({ type: "varchar", length: 255, nullable: false, name: "nombre" })
   name!: string;

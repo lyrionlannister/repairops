@@ -46,14 +46,14 @@ export class ReportsService {
     return { timeZone, ...resolvePeriod(periodStart, periodEnd, timeZone) };
   }
 
-  async getEmployeePerformance(query: { employeeId?: string; periodStart?: string; periodEnd?: string }) {
+  async getEmployeePerformance(query: { employeeId?: string; periodStart?: string; periodEnd?: string; branchId?: string | null }) {
     const { start, end, timeZone } = await this.period(query.periodStart, query.periodEnd);
     const periodDays = dayCount(start, end);
 
     const [employees, noteRows, saleRows, setting] = await Promise.all([
       this.userDao.findAll(),
-      this.reportsDao.notesByEmployee(start, end),
-      this.reportsDao.salesByEmployee(start, end, timeZone),
+      this.reportsDao.notesByEmployee(start, end, query.branchId ?? null),
+      this.reportsDao.salesByEmployee(start, end, timeZone, query.branchId ?? null),
       this.revenueAttributionService.getSetting(),
     ]);
 
@@ -81,15 +81,15 @@ export class ReportsService {
     return { attributionBasis: setting.attributionBasis, periodStart: start, periodEnd: end, employees: result };
   }
 
-  async getAccessorySales(query: { periodStart?: string; periodEnd?: string; groupBy?: AccessorySalesGroupBy }) {
+  async getAccessorySales(query: { periodStart?: string; periodEnd?: string; groupBy?: AccessorySalesGroupBy; branchId?: string | null }) {
     const { start, end, timeZone } = await this.period(query.periodStart, query.periodEnd);
     const groupBy = query.groupBy ?? "item";
 
     const [totals, groups] = await Promise.all([
-      this.reportsDao.accessoryTotals(start, end, timeZone),
+      this.reportsDao.accessoryTotals(start, end, timeZone, query.branchId ?? null),
       groupBy === "item"
-        ? this.reportsDao.accessoryByItem(start, end, timeZone)
-        : this.reportsDao.accessoryByPeriod(start, end, timeZone, groupBy),
+        ? this.reportsDao.accessoryByItem(start, end, timeZone, query.branchId ?? null)
+        : this.reportsDao.accessoryByPeriod(start, end, timeZone, groupBy, query.branchId ?? null),
     ]);
 
     const salesCount = totals.salesCount;
@@ -106,12 +106,12 @@ export class ReportsService {
     };
   }
 
-  async getRepairNotesByType(query: { periodStart?: string; periodEnd?: string }) {
+  async getRepairNotesByType(query: { periodStart?: string; periodEnd?: string; branchId?: string | null }) {
     const { start, end } = await this.period(query.periodStart, query.periodEnd);
     const [totals, byType, byStatus] = await Promise.all([
-      this.reportsDao.notesTotals(start, end),
-      this.reportsDao.notesByType(start, end),
-      this.reportsDao.notesByStatus(start, end),
+      this.reportsDao.notesTotals(start, end, query.branchId ?? null),
+      this.reportsDao.notesByType(start, end, query.branchId ?? null),
+      this.reportsDao.notesByStatus(start, end, query.branchId ?? null),
     ]);
 
     return {

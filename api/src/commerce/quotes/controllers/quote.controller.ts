@@ -11,6 +11,8 @@ import { CreateQuoteDto } from "../dtos/create-quote.dto.js";
 import { UpdateQuoteDto } from "../dtos/update-quote.dto.js";
 import { SetQuoteStatusDto } from "../dtos/set-quote-status.dto.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
+import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
+import { errorStatus, queryString } from "../../../core/http/error-status.js";
 
 @singleton()
 export class QuoteController {
@@ -18,13 +20,15 @@ export class QuoteController {
     private service: QuoteService,
     private localService: LocalService,
     private pdfRendererService: PdfRendererService,
+    private branchAccess: BranchAccessService,
   ) {}
 
-  getAll = async (_req: Request, res: Response): Promise<void> => {
+  getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getAll());
+      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      res.status(200).json(await this.service.getAll(branchId));
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(errorStatus(error, 500)).json({ error: error.message });
     }
   };
 
@@ -58,10 +62,11 @@ export class QuoteController {
         return;
       }
       const { items, ...data } = dto;
+      data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
       const quote = await this.service.create(data, items);
       res.status(201).json(quote);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(errorStatus(error, 400)).json({ error: error.message });
     }
   };
 

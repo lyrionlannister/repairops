@@ -57,8 +57,8 @@ export class SaleService {
     private customerDao: CustomerDao,
   ) {}
 
-  async getAll(): Promise<Sale[]> {
-    return this.saleDao.findAllOrdered();
+  async getAll(branchId?: string | null): Promise<Sale[]> {
+    return this.saleDao.findAllOrdered(branchId);
   }
 
   async getById(id: string): Promise<Sale | null> {

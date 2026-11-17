@@ -10,8 +10,10 @@ export class InventoryItemDao extends TenantScopedDao<InventoryItem> {
     super(repository);
   }
 
-  async findAllOrdered(): Promise<InventoryItem[]> {
-    return this.scoped().orderBy("entity.name", "ASC").getMany();
+  async findAllOrdered(branchId?: string | null): Promise<InventoryItem[]> {
+    return this.scoped()
+      .andWhere(branchId ? "entity.localId = :branchId" : "1 = 1", { branchId })
+      .orderBy("entity.name", "ASC").getMany();
   }
 
   async findBySku(sku: string): Promise<InventoryItem | null> {

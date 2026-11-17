@@ -1,6 +1,7 @@
 import { singleton, inject } from "tsyringe";
 import { BranchDao } from "../daos/branch.dao.js";
 import { Branch } from "../entities/branch.entity.js";
+import { getBranchScope } from "../../../core/tenancy/tenant-context.js";
 
 type CreatePayload = Pick<Branch, "name" | "address" | "phone">;
 type UpdatePayload = Partial<CreatePayload>;
@@ -9,12 +10,20 @@ type UpdatePayload = Partial<CreatePayload>;
 export class BranchService {
   constructor(private dao: BranchDao) {}
 
-  async getAll(): Promise<Branch[]> {
-    return this.dao.findAll();
+  // Owner: todas las del tenant. Personal: solo las suyas, con la principal marcada.
+  async getAll(): Promise<Array<Branch & { isPrimary?: boolean }>> {
+    const all = await this.dao.findAll();
+    const scope = getBranchScope();
+    if (!scope) return all;
+    return all
+      .filter((branch) => scope.writeIds.includes(String(branch.id)))
+      .map((branch) => Object.assign(branch, { isPrimary: String(branch.id) === scope.primaryId }));
   }
 
   async getById(id: string): Promise<Branch | null> {
-    return this.dao.findById(id);
+    const branch = await this.dao.findById(id);
+    const scope = getBranchScope();
+    return branch && scope && !scope.writeIds.includes(String(branch.id)) ? null : branch;
   }
 
   async create(data: CreatePayload): Promise<Branch> {

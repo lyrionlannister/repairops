@@ -10,7 +10,9 @@ export class QuoteDao extends TenantScopedDao<Quote> {
     super(repository);
   }
 
-  async findAllOrdered(): Promise<Quote[]> {
-    return this.scoped().orderBy("entity.createdAt", "DESC").getMany();
+  async findAllOrdered(branchId?: string | null): Promise<Quote[]> {
+    return this.scoped()
+      .andWhere(branchId ? "entity.localId = :branchId" : "1 = 1", { branchId })
+      .orderBy("entity.createdAt", "DESC").getMany();
   }
 }
