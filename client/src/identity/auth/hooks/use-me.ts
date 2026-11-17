@@ -4,7 +4,7 @@ import { useApiClient } from "@common/hooks/use-api-client";
 export interface Me {
   id: string;
   tenantId: string;
-  role: "owner" | "admin" | "employee" | "technician" | "cashier";
+  role: "owner" | "employee" | "technician" | "cashier";
   firstName: string;
   lastName: string;
   email: string;

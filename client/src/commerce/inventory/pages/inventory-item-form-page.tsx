@@ -47,7 +47,7 @@ export const InventoryItemFormPage: React.FC = () => {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
 
   const { items, loading, saving, fetchAll, create, update } = useInventory();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
@@ -86,10 +86,10 @@ export const InventoryItemFormPage: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!activeBranchId) return;
+    if (!workingBranchId) return;
 
     const payload = {
-      localId: activeBranchId,
+      localId: workingBranchId,
       name: form.name,
       sku: form.sku || null,
       kind: form.kind,

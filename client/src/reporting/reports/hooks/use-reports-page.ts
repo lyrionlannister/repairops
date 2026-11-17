@@ -14,7 +14,7 @@ const toCents = (amount: number) => Math.round(amount * 100);
 // propio reloj para saber qué día es.
 export const useReportsPage = () => {
   const { local, fetchLocal } = useLocal();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const { session, summary, fetchOpenSession, fetchSummary } = useCash();
   const reports = useReports();
   const { fetchReports, employeePerformance, accessorySales, repairNotesByType } = reports;
@@ -31,8 +31,8 @@ export const useReportsPage = () => {
   }, [fetchReports, periodStart, periodEnd]);
 
   useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
 
   useEffect(() => {
     if (session) fetchSummary(session.id);

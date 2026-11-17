@@ -1,12 +1,11 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
 
-export type UserRole = "owner" | "admin" | "employee" | "technician" | "cashier";
+export type UserRole = "owner" | "employee" | "technician" | "cashier";
 export type PayCycle = "weekly" | "biweekly" | "monthly";
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   owner: "Dueño",
-  admin: "Administrador",
   employee: "Empleado",
   technician: "Técnico",
   cashier: "Cajero",
@@ -26,6 +25,9 @@ export interface UserRecord {
   role: UserRole;
   salaryAmount: number | null;
   payCycle: PayCycle | null;
+  // Sucursales del usuario (vacío para el owner, que accede a todas).
+  branchIds: string[];
+  primaryBranchId: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -39,6 +41,8 @@ interface CreateUserPayload {
   role: UserRole;
   salaryAmount?: number;
   payCycle?: PayCycle;
+  branchIds?: string[];
+  primaryBranchId?: string;
 }
 
 // password es opcional: si se omite, el backend debe conservar la contraseña actual.
@@ -50,6 +54,8 @@ interface UpdateUserPayload {
   role: UserRole;
   salaryAmount?: number;
   payCycle?: PayCycle;
+  branchIds?: string[];
+  primaryBranchId?: string;
 }
 
 export const useUsers = () => {

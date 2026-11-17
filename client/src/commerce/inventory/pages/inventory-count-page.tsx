@@ -17,9 +17,9 @@ export const InventoryCountPage: React.FC = () => {
   const { branches, fetchAll: fetchBranches } = useBranches();
   const { count, saving, missingReasonItemIds, open, setCounted, close } = useInventoryCounts();
 
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const [pickedBranchId, setBranchId] = useState("");
-  const branchId = pickedBranchId || activeBranchId || "";
+  const branchId = pickedBranchId || workingBranchId || "";
   const [drafts, setDrafts] = useState<Record<string, LineDraft>>({});
 
   useEffect(() => {

@@ -13,7 +13,7 @@ import { newIdempotencyKey } from "../utils/format";
 export const ReturnPage: React.FC = () => {
   const { searching, saving, findSaleByNumber, findSaleById, listSalesByCustomer, getReturnedQuantities, create } =
     useReturns();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const { items: inventoryItems, fetchAll: fetchInventory } = useInventory();
   useEffect(() => {
     fetchInventory();
@@ -36,8 +36,8 @@ export const ReturnPage: React.FC = () => {
   const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
 
   useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
 
   useEffect(() => {
     setCustomerSaleId("");

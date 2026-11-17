@@ -15,9 +15,9 @@ import { InventoryMovementModal } from "../components/inventory-movement-modal";
 import { InventoryImportModal } from "../components/inventory-import-modal";
 
 export const InventoryPage = () => {
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const { items, loading, saving, error, fetchAll, remove, bulkImport, registerMovement } =
-    useBranchScopedInventory(activeBranchId);
+    useBranchScopedInventory(workingBranchId);
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const navigate = useNavigate();
   const supplierName = (supplierId: string | null) => suppliers.find((s) => s.id === supplierId)?.name ?? "—";
@@ -45,7 +45,7 @@ export const InventoryPage = () => {
     handleMovementSubmit,
   } = useInventoryPage({
     items,
-    branchId: activeBranchId,
+    branchId: workingBranchId,
     fetchAll,
     remove,
     bulkImport,

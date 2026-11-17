@@ -24,10 +24,10 @@ export const QuickSalePage: React.FC = () => {
   const { queue: offlineQueue, isOnline, syncing, submitOrQueue, sync } = useOfflineSalesQueue();
   const { showToast } = useToast();
   const [creating, setCreating] = useState(false);
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   // Solo items de la sucursal activa -- vender de otra sucursal decrementaria
   // stock que el cajero no puede ver ni reponer desde aqui.
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(activeBranchId);
+  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(workingBranchId);
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
   const { local, fetchLocal } = useLocal();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
@@ -65,8 +65,8 @@ export const QuickSalePage: React.FC = () => {
   }, [fetchInventory, fetchLocal, fetchCustomers]);
 
   useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
 
   const resetForm = () => {
     setCustomerId("");
@@ -77,11 +77,11 @@ export const QuickSalePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeBranchId || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer) return;
+    if (!workingBranchId || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer) return;
     if (validLines.length === 0) return;
 
     const salePayload = {
-      localId: activeBranchId,
+      localId: workingBranchId,
       cashSessionId: cashSession.id,
       customerId: customerId || undefined,
       customerName: customerName || undefined,

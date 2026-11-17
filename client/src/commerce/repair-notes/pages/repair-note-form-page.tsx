@@ -44,7 +44,7 @@ export const RepairNoteFormPage: React.FC = () => {
     clearError,
   } = useRepairNotes();
   const knownBrands = useKnownBrands(notes);
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const {
     session: cashSession,
     saving: cashSaving,
@@ -64,7 +64,7 @@ export const RepairNoteFormPage: React.FC = () => {
   // La nota pertenece a form.localId (su propia sucursal, no necesariamente
   // la activa en el header al editar una nota de otra sucursal) -- las
   // refacciones a reservar deben salir del stock de esa misma sucursal.
-  const noteLocalId = form.localId || activeBranchId;
+  const noteLocalId = form.localId || workingBranchId;
   const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(noteLocalId);
 
   const {
@@ -83,10 +83,10 @@ export const RepairNoteFormPage: React.FC = () => {
   }, [fetchInventory, fetchNotes]);
 
   useEffect(() => {
-    if (!isEdit && activeBranchId) {
-      setForm((prev) => (prev.localId ? prev : { ...prev, localId: activeBranchId }));
+    if (!isEdit && workingBranchId) {
+      setForm((prev) => (prev.localId ? prev : { ...prev, localId: workingBranchId }));
     }
-  }, [isEdit, activeBranchId]);
+  }, [isEdit, workingBranchId]);
 
   useEffect(() => {
     if (isEdit && id) {
@@ -114,7 +114,7 @@ export const RepairNoteFormPage: React.FC = () => {
       if (!result) return;
       const turningDelivered = form.status === "delivered" && note?.status !== "delivered";
       if (turningDelivered) {
-        await fetchOpenSession(activeBranchId);
+        await fetchOpenSession(workingBranchId);
         // El anticipo ya se cobro al recibir el equipo: aqui solo se cobra el saldo.
         setCashAmount(String(Math.max(0, Number(result.totalValue) - Number(result.advanceValue ?? 0))));
         setCashEmployeeId(result.assignedEmployeeId ?? "");

@@ -13,10 +13,12 @@ import { useCurrentUser } from "../hooks/use-current-user";
 // Un técnico no opera caja -- ocultar el ítem de menú es el lado de
 // pantalla de la Regla de permisos por módulo; la API (requireRole en
 // cash.routes.ts) es la que de verdad lo bloquea aunque alguien edite el DOM.
+// Solo el owner administra usuarios, sucursales, reportes y la configuracion del local.
+const OWNER_ONLY_PATHS = ["/identity/users", "/identity/branches", "/reporting/reports", "/platform/local"];
 const hiddenPathsByRole: Partial<Record<string, string[]>> = {
-  technician: ["/commerce/cash", "/reporting/reports"],
-  cashier: ["/reporting/reports"],
-  employee: ["/reporting/reports"],
+  technician: ["/commerce/cash", ...OWNER_ONLY_PATHS],
+  cashier: OWNER_ONLY_PATHS,
+  employee: OWNER_ONLY_PATHS,
 };
 
 const LayoutContent: React.FC = () => {

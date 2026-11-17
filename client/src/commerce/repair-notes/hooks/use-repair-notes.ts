@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
+import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 
 export type RepairNoteStatus = "received" | "in_repair" | "done" | "delivered" | "cancelled";
 
@@ -138,11 +139,13 @@ export const useRepairNotes = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const branchQuery = useBranchQuery();
+
   const fetchNotes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient("/repair-notes");
+      const response = await apiClient(`/repair-notes${branchQuery}`);
       if (!response.ok) throw new Error("Error al obtener notas");
       const data = (await response.json()) as RepairNoteRecord[];
       setNotes(data);
@@ -151,7 +154,7 @@ export const useRepairNotes = () => {
     } finally {
       setLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, branchQuery]);
 
   const fetchNote = useCallback(
     async (id: string) => {

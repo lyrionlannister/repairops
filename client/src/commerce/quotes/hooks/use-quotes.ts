@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
+import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 
 export type QuoteStatus = "pending" | "accepted" | "rejected";
 
@@ -54,11 +55,13 @@ export const useQuotes = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const branchQuery = useBranchQuery();
+
   const fetchQuotes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/quotes");
+      const res = await apiClient(`/quotes${branchQuery}`);
       if (!res.ok) throw new Error("Error al obtener cotizaciones");
       setQuotes(await res.json());
     } catch (err) {
@@ -66,7 +69,7 @@ export const useQuotes = () => {
     } finally {
       setLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, branchQuery]);
 
   const fetchQuote = useCallback(
     async (id: string) => {

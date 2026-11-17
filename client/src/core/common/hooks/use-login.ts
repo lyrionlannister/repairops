@@ -11,7 +11,7 @@ interface LoginResponse {
   user: {
     id: string;
     tenantId: string;
-    role: "owner" | "admin" | "employee" | "technician" | "cashier";
+    role: "owner" | "employee" | "technician" | "cashier";
     isPlatformAdmin: boolean;
     firstName: string;
     lastName: string;

@@ -11,6 +11,8 @@ import { EyeIcon, EyeCloseIcon } from "@common/icons";
 import { useUsers, ROLE_LABELS, PAY_CYCLE_LABELS, type PayCycle, type UserRole } from "../hooks/use-users";
 import { useEmployeeContext } from "../hooks/use-employee-context";
 import { EmployeeContextPanel } from "../components/employee-context-panel";
+import { BranchAssignmentField } from "../components/branch-assignment-field";
+import { useBranch } from "@common/hooks/use-branch";
 
 interface UserFormState {
   firstName: string;
@@ -20,6 +22,8 @@ interface UserFormState {
   role: UserRole;
   salaryAmount: string;
   payCycle: PayCycle | "";
+  branchIds: string[];
+  primaryBranchId: string;
 }
 
 const emptyForm: UserFormState = {
@@ -30,6 +34,8 @@ const emptyForm: UserFormState = {
   role: "employee",
   salaryAmount: "",
   payCycle: "",
+  branchIds: [],
+  primaryBranchId: "",
 };
 
 export const UserFormPage: React.FC = () => {
@@ -42,6 +48,7 @@ export const UserFormPage: React.FC = () => {
     createUser, creating,
     updateUser, updating,
   } = useUsers();
+  const { branches, workingBranchId } = useBranch();
   const context = useEmployeeContext(isEdit ? id ?? null : null);
   const [form, setForm] = useState<UserFormState>(emptyForm);
   const [showPassword, setShowPassword] = useState(false);
@@ -62,11 +69,19 @@ export const UserFormPage: React.FC = () => {
         role: user.role,
         salaryAmount: user.salaryAmount != null ? String(user.salaryAmount) : "",
         payCycle: user.payCycle ?? "",
+        branchIds: user.branchIds ?? [],
+        primaryBranchId: user.primaryBranchId ?? "",
       });
     }
   }, [isEdit, id, users]);
 
-  const updateField = (field: keyof UserFormState, value: string) => {
+  // Usuario nuevo: arranca en la sucursal en la que está trabajando el owner.
+  useEffect(() => {
+    if (isEdit || !workingBranchId) return;
+    setForm((prev) => (prev.branchIds.length > 0 ? prev : { ...prev, branchIds: [workingBranchId], primaryBranchId: workingBranchId }));
+  }, [isEdit, workingBranchId]);
+
+  const updateField = (field: Exclude<keyof UserFormState, "branchIds">, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -81,6 +96,8 @@ export const UserFormPage: React.FC = () => {
       role: form.role,
       salaryAmount: form.salaryAmount ? Number(form.salaryAmount) : undefined,
       payCycle: form.payCycle || undefined,
+      // El owner accede a todas las sucursales: no se asignan.
+      ...(form.role === "owner" ? {} : { branchIds: form.branchIds, primaryBranchId: form.primaryBranchId || undefined }),
     };
 
     const ok = isEdit && id
@@ -172,6 +189,16 @@ export const UserFormPage: React.FC = () => {
           options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))}
         />
       </div>
+
+      {form.role !== "owner" && (
+        <BranchAssignmentField
+          branches={branches}
+          branchIds={form.branchIds}
+          primaryBranchId={form.primaryBranchId}
+          disabled={loading || saving}
+          onChange={(branchIds, primaryBranchId) => setForm((prev) => ({ ...prev, branchIds, primaryBranchId }))}
+        />
+      )}
 
       <div>
         <Label className="text-gray-500">Salario</Label>

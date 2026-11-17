@@ -24,10 +24,10 @@ export const LayawayFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { saving, error, open } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   // Solo items de la sucursal activa -- un apartado reserva stock fisico,
   // no tiene sentido reservar de una sucursal que el cajero no ve.
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(activeBranchId);
+  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(workingBranchId);
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -44,8 +44,8 @@ export const LayawayFormPage: React.FC = () => {
   }, [fetchCustomers, fetchInventory]);
 
   useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
 
   const { creditLimit, creditBalance, creditAvailable, creditLoaded, devices, activeLayaways } = useCustomerContext(
     customerId || null,

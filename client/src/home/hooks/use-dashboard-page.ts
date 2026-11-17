@@ -1,5 +1,6 @@
 import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranch } from "@common/hooks/use-branch";
+import { ALL_BRANCHES } from "@common/contexts/branch-context";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { dayLabel, formatLastInteraction, toChartValue } from "../utils/dashboard-metrics";
@@ -13,7 +14,7 @@ export type ActivityItem = {
   kind: "sale" | "repair" | "other";
   title: string;
   subtitle: string;
-  // Solo owner/admin: el API no manda importes a los demás roles.
+  // Solo owner: el API no manda importes a los demás roles.
   amount?: string;
   date: string;
 };
@@ -60,7 +61,9 @@ export const useDashboardPage = () => {
     [apiClient],
   );
 
-  const branchQuery = activeBranchId ? `&branchId=${encodeURIComponent(activeBranchId)}` : "";
+  // "Todas" (solo owner) no manda branchId: el API suma todas las sucursales.
+  const branchQuery =
+    activeBranchId && activeBranchId !== ALL_BRANCHES ? `&branchId=${encodeURIComponent(activeBranchId)}` : "";
 
   useEffect(() => {
     load<SummaryResponse>(`/dashboard/summary?${branchQuery.slice(1)}`, setSummary).catch(console.error);

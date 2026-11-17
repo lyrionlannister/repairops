@@ -22,7 +22,7 @@ export const LayawaysPage: React.FC = () => {
   const navigate = useNavigate();
   const { layaways, saving, fetchAll, complete, cancel } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const { session: cashSession, fetchOpenSession } = useCash();
 
   const [completingId, setCompletingId] = useState<string | null>(null);
@@ -40,8 +40,8 @@ export const LayawaysPage: React.FC = () => {
   }, [fetchAll, fetchCustomers]);
 
   useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
 
   const customerName = (id: string) => customers.find((c) => c.id === id)?.name ?? `Cliente ${id}`;
 

@@ -27,13 +27,13 @@ export const QuoteFormPage: React.FC = () => {
 
   const { quote, loading, saving, fetchQuote, fetchQuoteItems, createQuote, updateQuote, clearError } =
     useQuotes();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
 
   const [form, setForm] = useState<QuoteFormData>(INITIAL_FORM);
 
   // La cotizacion pertenece a form.localId -- mismo criterio que RepairNote,
   // no mostrar items de una sucursal distinta a la que cotiza.
-  const quoteLocalId = form.localId || activeBranchId;
+  const quoteLocalId = form.localId || workingBranchId;
   const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(quoteLocalId);
 
   const {
@@ -71,10 +71,10 @@ export const QuoteFormPage: React.FC = () => {
   }, [quote, isEdit]);
 
   useEffect(() => {
-    if (!isEdit && activeBranchId && !form.localId) {
-      setForm((prev) => ({ ...prev, localId: activeBranchId }));
+    if (!isEdit && workingBranchId && !form.localId) {
+      setForm((prev) => ({ ...prev, localId: workingBranchId }));
     }
-  }, [isEdit, activeBranchId, form.localId]);
+  }, [isEdit, workingBranchId, form.localId]);
 
   const set = (field: keyof QuoteFormData, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
 

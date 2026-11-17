@@ -12,7 +12,7 @@ import { CloseCashModal } from "../components/close-cash-modal";
 
 export const CashPage = () => {
   const { local, fetchLocal } = useLocal();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const {
     session,
     closedSession,
@@ -57,7 +57,7 @@ export const CashPage = () => {
     handleDismissClosedSession,
   } = useCashPage({
     local,
-    branchId: activeBranchId,
+    branchId: workingBranchId,
     session,
     movements,
     summary,

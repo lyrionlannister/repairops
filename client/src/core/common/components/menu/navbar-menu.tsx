@@ -3,6 +3,7 @@ import { Check, ChevronDown } from "lucide-react";
 
 import { useSidebar } from "../../hooks/use-sidebar";
 import { useBranch } from "../../hooks/use-branch";
+import { ALL_BRANCHES } from "../../contexts/branch-context";
 import { UserDropdown } from "./user-dropdown";
 import { ThemeToggleButton } from "./theme-toggle-button";
 import { Dropdown } from "../ui/dropdown/dropdown";
@@ -12,8 +13,11 @@ export const NavbarMenu: React.FC = () => {
   const [isBranchMenuOpen, setBranchMenuOpen] = useState(false);
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
-  const { branches, activeBranchId, setActiveBranchId } = useBranch();
-  const activeBranchName = branches.find((b) => b.id === activeBranchId)?.name ?? branches[0]?.name ?? "Sucursal principal";
+  const { branches, activeBranchId, canSwitch, setActiveBranchId } = useBranch();
+  const activeBranchName =
+    activeBranchId === ALL_BRANCHES
+      ? "Todas las sucursales"
+      : (branches.find((b) => b.id === activeBranchId)?.name ?? branches[0]?.name ?? "Sucursal principal");
 
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {
@@ -87,7 +91,7 @@ export const NavbarMenu: React.FC = () => {
           </button>
 
           <div className="relative flex lg:hidden">
-            {branches.length > 1 ? (
+            {canSwitch && branches.length > 1 ? (
               <>
                 <button
                   type="button"
@@ -104,6 +108,17 @@ export const NavbarMenu: React.FC = () => {
                   onClose={() => setBranchMenuOpen(false)}
                   className="max-h-80 w-48 overflow-y-auto p-1.5"
                 >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveBranchId(ALL_BRANCHES);
+                      setBranchMenuOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                  >
+                    Todas las sucursales
+                    {activeBranchId === ALL_BRANCHES && <Check className="size-4 text-brand-500" />}
+                  </button>
                   {branches.map((branch) => (
                     <button
                       key={branch.id}
@@ -158,7 +173,7 @@ export const NavbarMenu: React.FC = () => {
           } items-center justify-end w-full gap-3 px-5 py-3 lg:flex lg:px-0 shadow-theme-md lg:shadow-none`}
         >
           <div className="hidden relative lg:flex">
-            {branches.length > 1 ? (
+            {canSwitch && branches.length > 1 ? (
               <>
                 <button
                   type="button"
@@ -175,6 +190,17 @@ export const NavbarMenu: React.FC = () => {
                   onClose={() => setBranchMenuOpen(false)}
                   className="max-h-80 w-56 overflow-y-auto p-1.5"
                 >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveBranchId(ALL_BRANCHES);
+                      setBranchMenuOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                  >
+                    Todas las sucursales
+                    {activeBranchId === ALL_BRANCHES && <Check className="size-4 text-brand-500" />}
+                  </button>
                   {branches.map((branch) => (
                     <button
                       key={branch.id}
