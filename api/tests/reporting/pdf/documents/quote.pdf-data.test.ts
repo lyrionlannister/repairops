@@ -12,7 +12,7 @@ function makeQuote(overrides: Partial<Quote> = {}): Quote {
     totalValue: "600.00",
     validUntil: "2026-02-01",
     status: "pending",
-    createdAt: new Date("2026-01-10T00:00:00.000Z"),
+    createdAt: new Date("2026-01-10T12:00:00.000Z"),
     ...overrides,
   } as unknown as Quote;
 }

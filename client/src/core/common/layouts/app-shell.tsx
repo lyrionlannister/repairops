@@ -14,7 +14,9 @@ import { useCurrentUser } from "../hooks/use-current-user";
 // pantalla de la Regla de permisos por módulo; la API (requireRole en
 // cash.routes.ts) es la que de verdad lo bloquea aunque alguien edite el DOM.
 const hiddenPathsByRole: Partial<Record<string, string[]>> = {
-  technician: ["/commerce/cash"],
+  technician: ["/commerce/cash", "/reporting/reports"],
+  cashier: ["/reporting/reports"],
+  employee: ["/reporting/reports"],
 };
 
 const LayoutContent: React.FC = () => {

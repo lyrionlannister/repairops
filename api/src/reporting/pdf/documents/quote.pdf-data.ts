@@ -27,7 +27,8 @@ export function toQuotePdfData(quote: Quote, items: QuoteItem[], local: Local | 
     totalValue: moneyString(quote.totalValue),
     validUntil: quote.validUntil ?? null,
     status: quote.status,
-    createdAt: quote.createdAt.toISOString().slice(0, 10),
+    // Dia en la zona horaria del taller (no el dia UTC del servidor).
+    createdAt: quote.createdAt.toLocaleDateString("en-CA", { timeZone: local?.timeZone ?? "America/Mexico_City" }),
     items: items.map((item) => ({
       description: item.description,
       quantity: item.quantity,
