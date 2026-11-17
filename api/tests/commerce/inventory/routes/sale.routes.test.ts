@@ -131,6 +131,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       .send({
         localId: branchId,
         cashSessionId: session.id,
+        applyTax: true,
         // 25 subtotal + 16% de impuesto por defecto del tenant = 29.
         payments: [{ method: "efectivo", amount: 29 }],
         items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 25 }],

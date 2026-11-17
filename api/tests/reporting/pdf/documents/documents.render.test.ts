@@ -26,6 +26,7 @@ const noteData = (overrides: Partial<RepairNotePdfData> = {}): RepairNotePdfData
   advanceValue: "500.00",
   balance: "1000.00",
   receivedAt: "2026-01-10",
+  receivedTime: "09:15",
   deliveryDate: "2026-01-15",
   assignedEmployeeName: "Luis",
   technicianNotes: "Revisar touch",
@@ -41,8 +42,13 @@ const noteData = (overrides: Partial<RepairNotePdfData> = {}): RepairNotePdfData
 
 const quoteData = (overrides: Partial<QuotePdfData> = {}): QuotePdfData => ({
   id: "1",
+  kind: "product",
   customerName: "Juan Pérez",
   contactNumber: null,
+  brand: null,
+  model: null,
+  reportedFailure: null,
+  serviceTypeNames: [],
   totalValue: "600.00",
   validUntil: "2026-02-01",
   status: "pending",

@@ -14,6 +14,8 @@ import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
 import { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
 import { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
+import { RepairNotePayment } from "../../../../src/commerce/repair-notes/entities/repair-note-payment.entity.js";
+import { RepairNotePaymentDao } from "../../../../src/commerce/repair-notes/daos/repair-note-payment.dao.js";
 import { RepairNoteItem } from "../../../../src/commerce/repair-notes/entities/repair-note-item.entity.js";
 import { RepairNoteItemDao } from "../../../../src/commerce/repair-notes/daos/repair-note-item.dao.js";
 import { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
@@ -78,6 +80,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
       { getDisplayPhoneNumber: async () => null } as unknown as WhatsappAccountService,
       inventoryReservationService,
+      new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
     );
     const authService = new AuthService(
       new UserDao(AppDataSource.getRepository(User)),
@@ -103,6 +106,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
   const newNotePayload = () => ({
     localId: branchId,
     customerName: "Cliente de prueba",
+    contactNumber: "5551234567",
     brand: "Marca",
     model: "Modelo",
     reportedFailure: "Falla de prueba",

@@ -16,6 +16,7 @@ function makeNote(overrides: Partial<RepairNote> = {}): RepairNote {
     requiresAdvance: true,
     advanceValue: "100.00",
     receivedAt: "2026-01-10",
+    receivedTime: "14:35",
     deliveryDate: "2026-01-15",
     technicianNotes: "Revisar touch",
     serviceRepair: true,
@@ -86,13 +87,14 @@ describe("toRepairNotePdfData", () => {
       address: "Calle 1",
       phone: "555",
       logo: "data:image/png;base64,abc",
+      warrantyClause: null,
     });
   });
 
   it("deja el local en null cuando no hay configuración", () => {
     const data = toRepairNotePdfData(makeNote(), null);
 
-    expect(data.local).toEqual({ name: null, address: null, phone: null, logo: null });
+    expect(data.local).toEqual({ name: null, address: null, phone: null, logo: null, warrantyClause: null });
     expect(data.palette.dark).toBe("#1e40af");
   });
 

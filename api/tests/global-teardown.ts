@@ -31,6 +31,10 @@ export default async function setup() {
           FIXTURE_TENANT_NAME,
         ]);
       }
+      // Insertar con id explícito nunca avanza branches_id_seq -- sin este
+      // resync, el primer INSERT normal (sin id, ej. tests/support/staff.ts)
+      // pide nextval() y choca contra uno de los ids fijos de arriba.
+      await client.query(`SELECT setval('branches_id_seq', (SELECT COALESCE(MAX(id), 1) FROM branches))`);
     } catch {
       // sin base de datos: las pruebas de integracion fallaran por su cuenta
     } finally {

@@ -58,6 +58,7 @@ describe("acceso por sucursal", () => {
           model: "B",
           reportedFailure: "x",
           receivedAt: "2026-01-01",
+          receivedTime: "12:00",
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
@@ -86,7 +87,7 @@ describe("acceso por sucursal", () => {
     });
 
     it("el personal no escribe en otra sucursal, y sin sucursal usa su principal", async () => {
-      const base = { controlNumber: 99, customerName: "X", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", publicRef: generatePublicRef() };
+      const base = { controlNumber: 99, customerName: "X", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", receivedTime: "12:00", publicRef: generatePublicRef() };
       await expect(runWithTenant(tenantId, () => dao.create({ ...base, localId: branchB } as Partial<RepairNote>), scopeA)).rejects.toBeInstanceOf(BranchAccessError);
       const created = await runWithTenant(tenantId, () => dao.create({ ...base, controlNumber: 100, publicRef: generatePublicRef() } as Partial<RepairNote>), scopeA);
       expect(String(created.localId)).toBe(branchA);
