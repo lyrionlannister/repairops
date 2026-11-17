@@ -26,7 +26,7 @@ export const PriceListPage = () => {
   }, [fetchAll, fetchSuppliers]);
 
   const initialSuccessMessage =
-    location.state?.imported !== undefined ? `PDF importado: ${location.state.imported} items cargados.` : null;
+    location.state?.imported !== undefined ? `PDF importado: ${location.state.imported} productos cargados.` : null;
 
   const {
     deleteConfirmId,
@@ -52,7 +52,7 @@ export const PriceListPage = () => {
   return (
     <PageShell
       title="Lista de Precios"
-      description={items.length > 0 ? `${items.length} items en total.` : "Sin items cargados."}
+      description={items.length > 0 ? `${items.length} productos en total.` : "Aún no hay productos."}
       action={
         <div className="flex shrink-0 gap-2">
           <Button variant="outline" onClick={() => navigate("/commerce/price-list/import")}>
@@ -61,7 +61,7 @@ export const PriceListPage = () => {
           </Button>
           <Button variant="primary" onClick={() => navigate("/commerce/price-list/new")}>
             <Plus className="mr-1.5 size-4" />
-            Nuevo item
+            Nuevo producto
           </Button>
         </div>
       }
@@ -203,8 +203,8 @@ export const PriceListPage = () => {
 
       <ConfirmModal
         isOpen={deleteConfirmId !== null}
-        title="Eliminar item"
-        message="¿Eliminar este item de la lista de precios? Esta acción no se puede deshacer."
+        title="Eliminar producto"
+        message="¿Eliminar este producto de la lista de precios? Esta acción no se puede deshacer."
         danger
         loading={saving}
         onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}

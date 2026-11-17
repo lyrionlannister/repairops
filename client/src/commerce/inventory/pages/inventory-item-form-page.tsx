@@ -162,7 +162,7 @@ export const InventoryItemFormPage: React.FC = () => {
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving}>
-          {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear item"}
+          {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear producto"}
         </Button>
       </div>
     </form>
@@ -170,8 +170,8 @@ export const InventoryItemFormPage: React.FC = () => {
 
   return (
     <PageShell
-      title={isEdit ? "Editar item" : "Nuevo item"}
-      description={isEdit ? "Modifica los datos del item de inventario." : "Registra un nuevo item de inventario."}
+      title={isEdit ? "Editar producto" : "Nuevo producto"}
+      description={isEdit ? "Modifica los datos del producto." : "Registra un nuevo producto en el inventario."}
     >
 
       <div className={hasPanel ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "max-w-xl"}>

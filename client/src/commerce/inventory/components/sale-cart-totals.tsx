@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { CheckboxField } from "@ui/checkbox/checkbox-field";
 import { formatMoney } from "../utils/format";
 
 interface SaleCartTotalsProps {
@@ -6,17 +7,26 @@ interface SaleCartTotalsProps {
   taxRate: number;
   taxAmount: number;
   total: number;
+  applyTax: boolean;
+  onApplyTaxChange: (value: boolean) => void;
 }
 
-export const SaleCartTotals: FC<SaleCartTotalsProps> = ({ subtotal, taxRate, taxAmount, total }) => (
-  <div className="space-y-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+export const SaleCartTotals: FC<SaleCartTotalsProps> = ({
+  subtotal,
+  taxRate,
+  taxAmount,
+  total,
+  applyTax,
+  onApplyTaxChange,
+}) => (
+  <div className="space-y-2">
     <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
       <span>Subtotal</span>
       <span>{formatMoney(subtotal)}</span>
     </div>
     {taxRate > 0 && (
       <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-        <span>Impuesto ({taxRate}%)</span>
+        <CheckboxField checked={applyTax} onChange={onApplyTaxChange} label={`Aplicar IVA (${taxRate}%)`} />
         <span>{formatMoney(taxAmount)}</span>
       </div>
     )}

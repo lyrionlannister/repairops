@@ -790,6 +790,18 @@ span.flatpickr-weekday,
   @apply opacity-100;
 }
 
+/* Tablas: contenido de las celdas centrado, igual que los encabezados (en < xl las filas son tarjetas). */
+@media (width >= 80rem) {
+  .stack-table td,
+  .ui-table td {
+    text-align: center;
+  }
+  .stack-table td > .flex,
+  .ui-table td > .flex {
+    justify-content: center;
+  }
+}
+
 /* ScrollTable en < xl: cada fila se vuelve una tarjeta; la etiqueta sale de data-label (la pone el componente desde el <thead>). */
 @media (width < 80rem) {
   .stack-table table,

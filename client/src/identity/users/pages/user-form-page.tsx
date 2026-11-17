@@ -237,7 +237,7 @@ export const UserFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? "Editar usuario" : "Nuevo usuario"}
-      description={isEdit ? "Modifica los datos del usuario." : "Crea un usuario para el tenant actual."}
+      description={isEdit ? "Modifica los datos del usuario." : "Crea un usuario para tu equipo."}
     >
 
       {isEdit && id ? (

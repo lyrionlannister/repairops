@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
 import { useImportStaging, type StagingRow } from "../hooks/use-import-staging";
 import { useToast } from "@common/hooks/use-toast";
-import { PageMeta } from "@common/pages/page-meta";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import { ImportSelectStep } from "../components/import-select-step";
 import { ImportPreviewStep } from "../components/import-preview-step";
 
@@ -96,16 +96,10 @@ export const ImportPriceListPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <PageMeta title="Importar lista de precios" description="Importar lista de precios con IA" />
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">Importar lista de precios</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Sube un PDF o Excel: una IA identifica marca/modelo/precio y revisas el resultado antes de confirmar.
-        </p>
-      </div>
-
-
+    <PageShell
+      title="Importar lista de precios"
+      description="Sube un PDF o Excel: una IA identifica marca/modelo/precio y revisas el resultado antes de confirmar."
+    >
       {step === "select" && (
         <ImportSelectStep
           suppliers={suppliers}
@@ -153,6 +147,6 @@ export const ImportPriceListPage: React.FC = () => {
           onConfirm={handleConfirm}
         />
       )}
-    </div>
+    </PageShell>
   );
 };

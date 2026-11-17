@@ -48,7 +48,7 @@ export const WhatsappOfficialPage = () => {
   return (
     <PageShell
       title="WhatsApp"
-      description="Cuenta oficial (Graph API) y plantillas proactivas aprobadas por Meta."
+      description="Tu cuenta oficial de WhatsApp Business y las plantillas aprobadas por Meta."
       action={
         <Button variant="outline" onClick={sync} disabled={templatesLoading}>
           <RefreshCw className={`mr-1.5 size-4 ${templatesLoading ? "animate-spin" : ""}`} />
@@ -141,7 +141,7 @@ export const WhatsappOfficialPage = () => {
       <TemplateCatalogSection
         scope="tenant"
         title="Plantillas de la empresa"
-        description="Catálogo proactivo de este taller -- se sincroniza con la WABA conectada."
+        description="Plantillas de tu taller. Se sincronizan con tu cuenta de WhatsApp Business."
         statusByEntryId={statusByEntryId}
       />
 
@@ -149,7 +149,7 @@ export const WhatsappOfficialPage = () => {
         <TemplateCatalogSection
           scope="system"
           title="Plantillas de sistema"
-          description="Configuración de la plataforma misma, no de ningún taller -- todavía sin sincronizar con Meta."
+          description="Plantillas generales del sistema, compartidas por todos los talleres. Aún sin sincronizar con Meta."
         />
       )}
     </PageShell>

@@ -25,14 +25,14 @@ export const SaleCartLinesSection: FC<SaleCartLinesSectionProps> = ({
   onRemoveLine,
 }) => (
   <div className="space-y-3">
-    <Label className="text-gray-500">Items</Label>
+    <Label className="text-gray-500">Productos</Label>
     {lines.map((line, index) => (
       <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex-1">
           <Select
             value={line.inventoryItemId}
             onChange={(value) => onItemChange(index, value)}
-            placeholder="Selecciona un item"
+            placeholder="Selecciona un producto"
             options={inventoryItems.map((i) => ({
               value: i.id,
               label: `${i.name} (stock: ${i.quantityOnHand})`,
@@ -68,7 +68,7 @@ export const SaleCartLinesSection: FC<SaleCartLinesSectionProps> = ({
     ))}
     <Button type="button" variant="outline" onClick={onAddLine}>
       <Plus className="mr-1.5 size-4" />
-      Agregar item
+      Agregar producto
     </Button>
   </div>
 );

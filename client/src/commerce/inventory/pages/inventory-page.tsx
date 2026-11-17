@@ -61,7 +61,7 @@ export const InventoryPage = () => {
   return (
     <PageShell
       title="Inventario"
-      description={items.length > 0 ? `${items.length} items en total.` : "Sin items cargados."}
+      description={items.length > 0 ? `${items.length} productos en total.` : "Aún no hay productos."}
       action={
         <div className="flex shrink-0 gap-2">
           <Button variant="outline" onClick={() => setIsImportOpen(true)}>
@@ -70,7 +70,7 @@ export const InventoryPage = () => {
           </Button>
           <Button variant="primary" onClick={() => navigate("/commerce/inventory/new")}>
             <Plus className="mr-1.5 size-4" />
-            Nuevo item
+            Nuevo producto
           </Button>
         </div>
       }
@@ -112,8 +112,8 @@ export const InventoryPage = () => {
 
       <ConfirmModal
         isOpen={deleteConfirmId !== null}
-        title="Eliminar item"
-        message="¿Eliminar este item de inventario? Esta acción no se puede deshacer."
+        title="Eliminar producto"
+        message="¿Eliminar este producto del inventario? Esta acción no se puede deshacer."
         danger
         loading={saving}
         onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}

@@ -58,7 +58,7 @@ export const LayawayFormPage: React.FC = () => {
     if (!customerId) return setFormError("Selecciona un cliente.");
     if (!expiresAt) return setFormError("Indica la fecha de vencimiento.");
     const items = buildItemsPayload();
-    if (items.length === 0) return setFormError("Agrega al menos un item con precio.");
+    if (items.length === 0) return setFormError("Agrega al menos un producto con precio.");
 
     const created = await open({
       customerId,
@@ -102,7 +102,7 @@ export const LayawayFormPage: React.FC = () => {
               <Select
                 value={line.inventoryItemId}
                 onChange={(value) => handleItemChange(index, value)}
-                placeholder="Selecciona un item"
+                placeholder="Selecciona un producto"
                 options={inventoryItems.map((i) => ({ value: i.id, label: `${i.name} (disponible: ${i.available})` }))}
               />
             </div>
@@ -116,7 +116,7 @@ export const LayawayFormPage: React.FC = () => {
         ))}
         <Button type="button" variant="outline" onClick={addLine}>
           <Plus className="mr-1.5 size-4" />
-          Agregar item
+          Agregar producto
         </Button>
       </div>
 

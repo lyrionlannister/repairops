@@ -26,7 +26,7 @@ export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
   <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6">
       <div className="mb-1">
-        <h3 className="text-base font-semibold text-brand-600 dark:text-brand-400">Conversaciones por día</h3>
+        <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">Conversaciones por día</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Últimos 30 días</p>
       </div>
       <div className="max-w-full overflow-x-auto">
@@ -41,7 +41,7 @@ export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
 
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6">
       <div className="mb-1">
-        <h3 className="text-base font-semibold text-brand-600 dark:text-brand-400">Conversaciones por mes</h3>
+        <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">Conversaciones por mes</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total mensual del año {year}</p>
       </div>
       <div className="max-w-full overflow-x-auto">
@@ -57,7 +57,7 @@ export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
     {monthlyBusinessSeries && (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6">
       <div className="mb-1">
-        <h3 className="text-base font-semibold text-brand-600 dark:text-brand-400">Ventas vs. reparaciones (mes)</h3>
+        <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">Ventas vs. reparaciones (mes)</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total mensual del año {year}</p>
       </div>
       <div className="max-w-full overflow-x-auto">

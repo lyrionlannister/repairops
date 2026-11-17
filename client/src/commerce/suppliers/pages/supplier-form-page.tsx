@@ -52,7 +52,7 @@ export const SupplierFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? "Editar proveedor" : "Nuevo proveedor"}
-      description={isEdit ? "Modifica los datos del proveedor." : "Registra un nuevo proveedor para el tenant."}
+      description={isEdit ? "Modifica los datos del proveedor." : "Registra un nuevo proveedor."}
     >
 
       <div className={isEdit ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-xl"}>

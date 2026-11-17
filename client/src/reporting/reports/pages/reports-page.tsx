@@ -23,7 +23,7 @@ export const ReportsPage = () => {
   } = useReportsPage();
 
   return (
-    <PageShell
+    <PageShell scrollHeader
       title="Reportes"
       description="Productividad, ventas de accesorios y notas por tipo en el período seleccionado."
     >

@@ -1,64 +1,38 @@
 import type { FC } from "react";
-import { formatMoney } from "../utils/format";
-import { Banknote, PackageOpen, TrendingUp, CalendarDays } from "lucide-react";
+import { PackageOpen, AlertTriangle, Landmark } from "lucide-react";
 
 interface DashboardSecondaryStatsProps {
-  // null cuando el rol no ve importes: la tarjeta no se pinta.
-  weeklyRevenue: string | null;
   openRepairNotes: number;
   criticalStockItems: number;
   openCashSessions: number;
 }
 
+// Panel "Operación": tres contadores en filas, al estilo del bloque de objetivo de TailAdmin.
 export const DashboardSecondaryStats: FC<DashboardSecondaryStatsProps> = ({
-  weeklyRevenue,
   openRepairNotes,
   criticalStockItems,
   openCashSessions,
-}) => (
-  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:gap-5">
-    {weeklyRevenue !== null && (
-    <div className="group rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-500/10">
-        <Banknote className="size-4 text-teal-600 dark:text-teal-400" />
-      </div>
-      <div className="mt-3">
-        <span className="text-xs text-gray-500 dark:text-gray-400">Ventas esta semana</span>
-        <h4 className="mt-1 text-lg font-bold text-gray-900 dark:text-white">
-          {formatMoney(weeklyRevenue)}
-        </h4>
-      </div>
-    </div>
-    )}
-
-    <div className="group rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-500/10">
-        <PackageOpen className="size-4 text-brand-600 dark:text-brand-400" />
-      </div>
-      <div className="mt-3">
-        <span className="text-xs text-gray-500 dark:text-gray-400">Notas abiertas</span>
-        <h4 className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{openRepairNotes}</h4>
+}) => {
+  const rows = [
+    { label: "Notas abiertas", value: openRepairNotes, icon: <PackageOpen />, tone: "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400" },
+    { label: "Stock crítico", value: criticalStockItems, icon: <AlertTriangle />, tone: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400" },
+    { label: "Cajas abiertas", value: openCashSessions, icon: <Landmark />, tone: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" },
+  ];
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 sm:p-6">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Operación</h3>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Estado actual del taller</p>
+      <div className="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between gap-3 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className={`flex size-10 items-center justify-center rounded-xl [&>svg]:size-5 ${row.tone}`}>{row.icon}</div>
+              <span className="text-sm text-gray-600 dark:text-gray-300">{row.label}</span>
+            </div>
+            <span className="text-xl font-bold text-gray-800 dark:text-white/90">{row.value}</span>
+          </div>
+        ))}
       </div>
     </div>
-
-    <div className="group rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/10">
-        <TrendingUp className="size-4 text-blue-600 dark:text-blue-400" />
-      </div>
-      <div className="mt-3">
-        <span className="text-xs text-gray-500 dark:text-gray-400">Stock crítico</span>
-        <h4 className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{criticalStockItems}</h4>
-      </div>
-    </div>
-
-    <div className="group rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-500/10">
-        <CalendarDays className="size-4 text-orange-500 dark:text-orange-400" />
-      </div>
-      <div className="mt-3">
-        <span className="text-xs text-gray-500 dark:text-gray-400">Caja abierta</span>
-        <h4 className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{openCashSessions}</h4>
-      </div>
-    </div>
-  </div>
-);
+  );
+};

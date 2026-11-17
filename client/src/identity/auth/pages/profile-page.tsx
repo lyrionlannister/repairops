@@ -11,7 +11,7 @@ export const ProfilePage: React.FC = () => {
   }, [fetchMe]);
 
   return (
-    <PageShell title="Mi perfil" description="Tus datos como usuario de este tenant.">
+    <PageShell title="Mi perfil" description="Tus datos de usuario.">
       {loading && !me ? (
         <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando perfil...</div>
       ) : (

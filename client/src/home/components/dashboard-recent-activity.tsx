@@ -8,7 +8,7 @@ interface DashboardRecentActivityProps {
 }
 
 export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ recentActivity }) => (
-  <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/3 sm:p-6">
+  <div className="h-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/3 sm:p-6">
     <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Actividad reciente</h3>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Últimos movimientos de caja</p>
     {recentActivity.length === 0 ? (

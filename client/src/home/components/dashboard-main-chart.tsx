@@ -16,7 +16,7 @@ export const DashboardMainChart: FC<DashboardMainChartProps> = ({
 }) => (
   <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6">
     <div className="mb-1">
-      <h3 className="text-lg font-semibold text-brand-600 dark:text-brand-400">Ventas y reparaciones por día</h3>
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Ventas y reparaciones por día</h3>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Últimos 30 días</p>
     </div>
     <div className="max-w-full overflow-x-auto">

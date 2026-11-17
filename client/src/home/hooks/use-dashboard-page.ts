@@ -48,7 +48,7 @@ const EMPTY_COUNTS = { openRepairNotes: 0, criticalStockItems: 0, openCashSessio
 export const useDashboardPage = () => {
   const { apiClient } = useApiClient();
   const { activeBranchId } = useBranch();
-  const [year, setYear] = useState(new Date().getFullYear());
+  const year = new Date().getFullYear();
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [daily, setDaily] = useState<SeriesResponse | null>(null);
   const [monthly, setMonthly] = useState<SeriesResponse | null>(null);
@@ -118,7 +118,6 @@ export const useDashboardPage = () => {
     dailyBusinessCategories: useMemo(() => dailyBusinessSeries.map((p) => dayLabel(p.bucket)), [dailyBusinessSeries]),
     monthLabels: MONTH_LABELS,
     year,
-    setYear,
     showMoney,
     businessMetrics,
     dailyBusinessSeries,

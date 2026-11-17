@@ -21,14 +21,25 @@ import { SaleCartTotals } from "../components/sale-cart-totals";
 import { SalePaymentsSection } from "../components/sale-payments-section";
 
 export const QuickSalePage: React.FC = () => {
-  const { queue: offlineQueue, isOnline, syncing, submitOrQueue, sync } = useOfflineSalesQueue();
+  const {
+    queue: offlineQueue,
+    isOnline,
+    syncing,
+    submitOrQueue,
+    sync,
+  } = useOfflineSalesQueue();
   const { showToast } = useToast();
   const [creating, setCreating] = useState(false);
   const { workingBranchId } = useBranch();
   // Solo items de la sucursal activa -- vender de otra sucursal decrementaria
   // stock que el cajero no puede ver ni reponer desde aqui.
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(workingBranchId);
-  const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
+  const { items: inventoryItems, fetchAll: fetchInventory } =
+    useBranchScopedInventory(workingBranchId);
+  const {
+    session: cashSession,
+    loading: loadingCashSession,
+    fetchOpenSession,
+  } = useCash();
   const { local, fetchLocal } = useLocal();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
 
@@ -41,6 +52,8 @@ export const QuickSalePage: React.FC = () => {
     lines,
     payments,
     idempotencyKey,
+    applyTax,
+    setApplyTax,
     subtotal,
     taxAmount,
     total,
@@ -56,7 +69,12 @@ export const QuickSalePage: React.FC = () => {
     addPayment,
     removePayment,
     reset: resetCart,
-  } = useSaleCart({ taxRatePercent: taxRate, isOnline, inventoryItems, customerId });
+  } = useSaleCart({
+    taxRatePercent: taxRate,
+    isOnline,
+    inventoryItems,
+    customerId,
+  });
 
   useEffect(() => {
     fetchInventory();
@@ -77,7 +95,13 @@ export const QuickSalePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!workingBranchId || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer) return;
+    if (
+      !workingBranchId ||
+      !cashSession ||
+      !paymentsMatchTotal ||
+      hasCreditoWithoutCustomer
+    )
+      return;
     if (validLines.length === 0) return;
 
     const salePayload = {
@@ -87,6 +111,7 @@ export const QuickSalePage: React.FC = () => {
       customerName: customerName || undefined,
       createdByEmployeeId: createdByEmployeeId || undefined,
       idempotencyKey,
+      applyTax,
       payments: payments.map((p) => ({
         method: p.method,
         amount: Number(p.amount) || 0,
@@ -123,7 +148,10 @@ export const QuickSalePage: React.FC = () => {
   };
 
   return (
-    <PageShell title="Venta Rápida" description="Venta de mostrador: cada item descuenta su stock automáticamente.">
+    <PageShell
+      title="Venta Rápida"
+      description="Venta de mostrador: cada producto descuenta su stock automáticamente."
+    >
       {!isOnline && (
         <Alert
           variant="warning"
@@ -132,7 +160,12 @@ export const QuickSalePage: React.FC = () => {
         />
       )}
       {offlineQueue.length > 0 && (
-        <OfflineSalesQueueBanner offlineQueue={offlineQueue} isOnline={isOnline} syncing={syncing} onSync={sync} />
+        <OfflineSalesQueueBanner
+          offlineQueue={offlineQueue}
+          isOnline={isOnline}
+          syncing={syncing}
+          onSync={sync}
+        />
       )}
       {!loadingCashSession && !cashSession && (
         <Alert
@@ -144,61 +177,88 @@ export const QuickSalePage: React.FC = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3"
+        className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3"
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <Label className="text-gray-500">Nombre del cliente (opcional, solo para el ticket)</Label>
-            <Input placeholder="Opcional" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+        <div className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 lg:col-span-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label className="text-gray-500">
+                Nombre del cliente (opcional, solo para el ticket)
+              </Label>
+              <Input
+                placeholder="Opcional"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-gray-500">Empleado</Label>
+              <EmployeeSelect
+                value={createdByEmployeeId}
+                onChange={setCreatedByEmployeeId}
+              />
+            </div>
           </div>
-          <div>
-            <Label className="text-gray-500">Empleado</Label>
-            <EmployeeSelect value={createdByEmployeeId} onChange={setCreatedByEmployeeId} />
-          </div>
-        </div>
 
-        <div>
-          <Label className="text-gray-500">Cliente registrado (requerido para vender a crédito)</Label>
-          <Select
-            value={customerId}
-            onChange={setCustomerId}
-            placeholder="Sin cliente registrado"
-            options={customers.map((c) => ({ value: c.id, label: c.name }))}
+          <div>
+            <Label className="text-gray-500">
+              Cliente registrado (requerido para vender a crédito)
+            </Label>
+            <Select
+              value={customerId}
+              onChange={setCustomerId}
+              placeholder="Sin cliente registrado"
+              options={customers.map((c) => ({ value: c.id, label: c.name }))}
+            />
+          </div>
+
+          <SaleCartLinesSection
+            lines={lines}
+            inventoryItems={inventoryItems}
+            onItemChange={handleItemChange}
+            onLineChange={updateLine}
+            onAddLine={addLine}
+            onRemoveLine={removeLine}
           />
         </div>
 
-        <SaleCartLinesSection
-          lines={lines}
-          inventoryItems={inventoryItems}
-          onItemChange={handleItemChange}
-          onLineChange={updateLine}
-          onAddLine={addLine}
-          onRemoveLine={removeLine}
-        />
+        <div className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
+          <SaleCartTotals
+            subtotal={subtotal}
+            taxRate={taxRate}
+            taxAmount={taxAmount}
+            total={total}
+            applyTax={applyTax}
+            onApplyTaxChange={setApplyTax}
+          />
 
-        <SaleCartTotals subtotal={subtotal} taxRate={taxRate} taxAmount={taxAmount} total={total} />
+          <SalePaymentsSection
+            payments={payments}
+            isOnline={isOnline}
+            paymentsSum={paymentsSum}
+            paymentsMatchTotal={paymentsMatchTotal}
+            hasCreditoWithoutCustomer={hasCreditoWithoutCustomer}
+            total={total}
+            onPaymentChange={updatePayment}
+            onAddPayment={addPayment}
+            onRemovePayment={removePayment}
+          />
 
-        <SalePaymentsSection
-          payments={payments}
-          isOnline={isOnline}
-          paymentsSum={paymentsSum}
-          paymentsMatchTotal={paymentsMatchTotal}
-          hasCreditoWithoutCustomer={hasCreditoWithoutCustomer}
-          total={total}
-          onPaymentChange={updatePayment}
-          onAddPayment={addPayment}
-          onRemovePayment={removePayment}
-        />
-
-        <Button
-          type="submit"
-          variant="primary"
-          className="w-full"
-          disabled={creating || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer}
-        >
-          <ShoppingCart className="mr-1.5 size-4" />
-          {creating ? "Registrando..." : "Registrar venta"}
-        </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full"
+            disabled={
+              creating ||
+              !cashSession ||
+              !paymentsMatchTotal ||
+              hasCreditoWithoutCustomer
+            }
+          >
+            <ShoppingCart className="mr-1.5 size-4" />
+            {creating ? "Registrando..." : "Registrar venta"}
+          </Button>
+        </div>
       </form>
     </PageShell>
   );

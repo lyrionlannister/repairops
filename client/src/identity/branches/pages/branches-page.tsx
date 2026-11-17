@@ -76,7 +76,7 @@ export const BranchesPage = () => {
                 <col />
                 <col />
                 <col />
-                <col className="w-16" />
+                <col className="w-24" />
               </colgroup>
             }
             header={

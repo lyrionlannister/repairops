@@ -4,7 +4,7 @@ import { useConversations } from "../hooks/use-conversations";
 import { useMessages } from "../hooks/use-messages";
 import { useHumanMode } from "../hooks/use-human-mode";
 import { useChatsPage } from "../hooks/use-chats-page";
-import { PageMeta } from "@common/pages/page-meta";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import { formatPhone, getInitials, getAvatarColor } from "../utils/contact-display";
 import { ConversationItem } from "../components/conversation-item";
 import { MessageBubble } from "../components/message-bubble";
@@ -37,8 +37,8 @@ export const ChatsPage: React.FC = () => {
   const avatarColor = selectedConversation ? getAvatarColor(selectedConversation.sessionId) : "";
 
   return (
-    <div className="flex h-[calc(100vh-152px)] min-h-125 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-soft dark:border-gray-700 dark:bg-[#111B21]">
-      <PageMeta title="Chats" description="Conversaciones de WhatsApp" />
+    <PageShell title="Chats" description="Conversaciones de WhatsApp">
+    <div className="flex min-h-125 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-soft dark:border-gray-700 dark:bg-[#111B21]">
 
       <div className="flex flex-1 overflow-hidden">
         {/* Panel izquierdo -- en mobile es la pantalla completa hasta elegir un chat, luego se oculta */}
@@ -188,6 +188,6 @@ export const ChatsPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </PageShell>
   );
 };
-

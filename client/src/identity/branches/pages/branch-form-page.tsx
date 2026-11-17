@@ -87,7 +87,7 @@ export const BranchFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? "Editar sucursal" : "Nueva sucursal"}
-      description={isEdit ? "Modifica los datos de la sucursal." : "Registra una nueva sucursal para el tenant."}
+      description={isEdit ? "Modifica los datos de la sucursal." : "Registra una nueva sucursal."}
     >
 
       {isEdit && id ? (

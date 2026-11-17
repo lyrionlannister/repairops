@@ -34,7 +34,7 @@ export const SuppliersPage = () => {
   return (
     <PageShell
       title="Proveedores"
-      description="Gestiona el catálogo de proveedores disponible para cada tenant."
+      description="Gestiona los proveedores de tu taller."
       action={
         <Button variant="primary" onClick={() => navigate("/commerce/suppliers/new")}>
           <Plus className="mr-1.5 size-4" />
@@ -62,7 +62,7 @@ export const SuppliersPage = () => {
         ) : pageItems.length === 0 ? (
           <div className="flex flex-col items-center gap-3 p-12 text-center text-gray-400">
             <Search className="size-10 opacity-40" />
-            <p className="text-sm">No hay proveedores para este tenant.</p>
+            <p className="text-sm">Aún no hay proveedores registrados.</p>
           </div>
         ) : (
           <ScrollTable

@@ -21,7 +21,6 @@ export const HomePage: React.FC = () => {
     lastInteraction,
     dailyCategories,
     monthLabels,
-    setYear,
     dailyBusinessSeries,
     dailyBusinessCategories,
     monthlyBusinessSeries,
@@ -42,40 +41,37 @@ export const HomePage: React.FC = () => {
   );
 
   return (
-    <PageShell title="Panel inicial" description="Métricas operativas del negocio y la atención.">
-      <div>
-        <h2 className="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Negocio</h2>
-        <div className="flex flex-col gap-4 md:gap-6">
-          {showMoney && (
+    <PageShell scrollHeader title="Panel inicial" description="Métricas operativas del negocio y la atención.">
+      <section className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
+        {showMoney && (
+          <div className="flex flex-col gap-4 md:gap-6 lg:col-span-2">
             <DashboardRevenueCards
               monthlyRevenue={businessMetrics.monthlyRevenue}
+              weeklyRevenue={businessMetrics.weeklyRevenue}
               todayRevenue={businessMetrics.todayRevenue}
               monthDelta={monthDelta}
               todayDelta={todayDelta}
             />
-          )}
-
+            <DashboardMainChart
+              dailyBusinessSeries={dailyBusinessSeries}
+              dailyBusinessCategories={dailyBusinessCategories}
+              currencyFormatter={currencyFormatter}
+            />
+          </div>
+        )}
+        <div
+          className={`flex flex-col gap-4 md:gap-6 ${showMoney ? "" : "lg:col-span-3 lg:grid lg:grid-cols-2"}`}
+        >
           <DashboardSecondaryStats
-            weeklyRevenue={showMoney ? businessMetrics.weeklyRevenue : null}
             openRepairNotes={businessMetrics.openRepairNotes}
             criticalStockItems={businessMetrics.criticalStockItems}
             openCashSessions={businessMetrics.openCashSessions}
           />
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 md:gap-6">
-            {showMoney && (
-              <div className="lg:col-span-2">
-                <DashboardMainChart
-                  dailyBusinessSeries={dailyBusinessSeries}
-                  dailyBusinessCategories={dailyBusinessCategories}
-                  currencyFormatter={currencyFormatter}
-                />
-              </div>
-            )}
+          <div className="flex-1">
             <DashboardRecentActivity recentActivity={recentActivity} />
           </div>
         </div>
-      </div>
+      </section>
 
       <DashboardConversationStats
         lastInteraction={lastInteraction}
@@ -83,7 +79,6 @@ export const HomePage: React.FC = () => {
         weekCount={weekCount}
         totalYear={totalYear}
         year={year}
-        onYearChange={setYear}
       />
 
       <DashboardSecondaryCharts

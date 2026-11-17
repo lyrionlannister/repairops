@@ -55,7 +55,7 @@ export const InventoryTransfersPage: React.FC = () => {
   return (
     <PageShell
       title="Transferencias entre sucursales"
-      description="Mueve cantidad de un item a otro item ya existente en otra sucursal. No crea items nuevos."
+      description="Pasa unidades de un producto a su equivalente en otra sucursal. No crea productos nuevos."
     >
 
       <form
@@ -68,7 +68,7 @@ export const InventoryTransfersPage: React.FC = () => {
             <Select
               value={fromItemId}
               onChange={setFromItemId}
-              placeholder="Selecciona el item de origen"
+              placeholder="Selecciona el producto de origen"
               options={items.map((i) => ({ value: i.id, label: itemLabel(i) }))}
             />
           </div>
@@ -77,7 +77,7 @@ export const InventoryTransfersPage: React.FC = () => {
             <Select
               value={toItemId}
               onChange={setToItemId}
-              placeholder="Selecciona el item de destino"
+              placeholder="Selecciona el producto de destino"
               options={items.filter((i) => i.id !== fromItemId).map((i) => ({ value: i.id, label: itemLabel(i) }))}
             />
           </div>

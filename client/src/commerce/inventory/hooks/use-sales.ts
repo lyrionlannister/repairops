@@ -35,6 +35,7 @@ export interface PaymentInput {
 }
 
 export interface CreateSalePayload {
+  applyTax?: boolean;
   localId: string;
   cashSessionId: string;
   customerId?: string;

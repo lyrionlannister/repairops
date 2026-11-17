@@ -80,7 +80,7 @@ export const UsersPage: React.FC = () => {
                 <col />
                 <col />
                 <col />
-                <col className="w-20" />
+                <col className="w-28" />
               </colgroup>
             }
             header={
