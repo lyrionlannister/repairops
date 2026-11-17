@@ -106,7 +106,10 @@ describe("ChatMessageDao / ChatStatsDao tenant isolation", () => {
   });
 
   it("purgeBefore removes old messages but keeps the daily counters", async () => {
-    await messageDao.purgeBefore(new Date(Date.now() + 60_000));
+    // Solo se envejecen los mensajes de estos tenants: purgeBefore es de sistema y una
+    // fecha de corte futura borraria tambien los mensajes recientes de cualquier otro tenant.
+    await AppDataSource.query(`UPDATE chat_messages SET created_at = now() - INTERVAL '2 days' WHERE tenant_id = ANY($1::bigint[])`, [[tenantA, tenantB]]);
+    await messageDao.purgeBefore(new Date(Date.now() - 24 * 60 * 60 * 1000));
 
     expect(await runWithTenant(tenantA, () => messageDao.getMessagesByContact(phone))).toHaveLength(0);
     const daily = await runWithTenant(tenantA, () => statsDao.getCountsByDay());
