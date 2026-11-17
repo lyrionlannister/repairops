@@ -10,13 +10,12 @@ import { useLogout } from "../../hooks/use-logout";
 
 export const AsideMenu: React.FC<{
   navItems?: NavItem[];
-  othersItems?: NavItem[];
-}> = ({ navItems = [], othersItems = [] }) => {
+}> = ({ navItems = [] }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
-    type: "main" | "others";
+    type: "main";
     name: string;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
@@ -31,19 +30,11 @@ export const AsideMenu: React.FC<{
 
   useEffect(() => {
     let submenuMatched = false;
-    ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
-      items.forEach((nav) => {
-        if (nav.subItems) {
-          nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
-              setOpenSubmenu({
-                type: menuType as "main" | "others",
-                name: nav.name,
-              });
-              submenuMatched = true;
-            }
-          });
+    navItems.forEach((nav) => {
+      nav.subItems?.forEach((subItem) => {
+        if (isActive(subItem.path)) {
+          setOpenSubmenu({ type: "main", name: nav.name });
+          submenuMatched = true;
         }
       });
     });
@@ -65,7 +56,7 @@ export const AsideMenu: React.FC<{
     }
   }, [openSubmenu]);
 
-  const handleSubmenuToggle = (name: string, menuType: "main" | "others") => {
+  const handleSubmenuToggle = (name: string, menuType: "main") => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (
         prevOpenSubmenu &&
@@ -81,7 +72,7 @@ export const AsideMenu: React.FC<{
 
   const handleLogout = useLogout();
 
-  const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
+  const renderMenuItems = (items: NavItem[], menuType: "main") => (
     <ul className="flex flex-col gap-4">
       {items.map((nav) => (
         <li key={nav.name}>
@@ -210,7 +201,6 @@ export const AsideMenu: React.FC<{
   };
 
   const mainGroups = groupItemsByRelation(navItems, "General");
-  const extraGroups = groupItemsByRelation(othersItems, "Otros");
 
   return (
     <aside
@@ -275,43 +265,6 @@ export const AsideMenu: React.FC<{
                 ))}
               </div>
             </div>
-            {extraGroups.length > 0 && (
-              <div className="">
-                <>
-                  <h2
-                    className={`mb-4 flex text-xs leading-5 uppercase text-gray-400 ${
-                      !isExpanded && !isHovered
-                        ? "lg:justify-center"
-                        : "justify-start"
-                    }`}
-                  >
-                    {isExpanded || isHovered || isMobileOpen ? (
-                      "Otros"
-                    ) : (
-                      <HorizontaLDots />
-                    )}
-                  </h2>
-                  <div className="space-y-5">
-                    {extraGroups.map(({ title, items }) => (
-                      <div key={title} className="space-y-3">
-                        {extraGroups.length > 1 && (
-                          <h3
-                            className={`flex text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400 ${
-                              !isExpanded && !isHovered
-                                ? "lg:justify-center"
-                                : "justify-start"
-                            }`}
-                          >
-                            {isExpanded || isHovered || isMobileOpen ? title : "•"}
-                          </h3>
-                        )}
-                        {renderMenuItems(items, "others")}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              </div>
-            )}
           </div>
         </nav>
 

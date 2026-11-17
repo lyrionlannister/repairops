@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Plus, PackageCheck, Ban } from "lucide-react";
 import { useLayaways, type LayawayMethod, type LayawayRecord } from "../hooks/use-layaways";
 import { useCustomers } from "../hooks/use-customers";
+import { useBranch } from "@common/hooks/use-branch";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
@@ -19,14 +20,15 @@ import { METHOD_LABELS, STATUS_LABELS, formatMoney, daysUntil } from "../utils/f
 
 export const LayawaysPage: React.FC = () => {
   const navigate = useNavigate();
-  const { layaways, saving, error, fetchAll, complete, cancel } = useLayaways();
+  const { layaways, saving, fetchAll, complete, cancel } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
-  const { session: cashSession } = useCash();
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const { workingBranchId } = useBranch();
+  const { session: cashSession, fetchOpenSession } = useCash();
 
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [completeAmount, setCompleteAmount] = useState("");
   const [completeMethod, setCompleteMethod] = useState<LayawayMethod>("efectivo");
+  const [noCashError, setNoCashError] = useState(false);
   const [cancelId, setCancelId] = useState<string | null>(null);
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
@@ -37,6 +39,10 @@ export const LayawaysPage: React.FC = () => {
     fetchCustomers();
   }, [fetchAll, fetchCustomers]);
 
+  useEffect(() => {
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
+
   const customerName = (id: string) => customers.find((c) => c.id === id)?.name ?? `Cliente ${id}`;
 
   const openCompleteModal = (layaway: LayawayRecord) => {
@@ -46,22 +52,20 @@ export const LayawaysPage: React.FC = () => {
   };
 
   const handleComplete = async () => {
-    if (!completingId || !cashSession) return;
-    const ok = await complete(completingId, cashSession.id, [{ method: completeMethod, amount: Number(completeAmount) || 0 }]);
-    if (ok) {
-      setSuccessMsg("Apartado completado.");
-      setTimeout(() => setSuccessMsg(null), 3500);
+    if (!completingId) return;
+    if (!cashSession) {
+      setCompletingId(null);
+      setNoCashError(true);
+      return;
     }
+    setNoCashError(false);
+    await complete(completingId, cashSession.id, [{ method: completeMethod, amount: Number(completeAmount) || 0 }]);
     setCompletingId(null);
   };
 
   const handleCancel = async () => {
     if (!cancelId) return;
-    const ok = await cancel(cancelId);
-    if (ok) {
-      setSuccessMsg("Apartado cancelado.");
-      setTimeout(() => setSuccessMsg(null), 3500);
-    }
+    await cancel(cancelId);
     setCancelId(null);
   };
 
@@ -70,18 +74,18 @@ export const LayawaysPage: React.FC = () => {
       title="Apartados"
       description="Reserva productos para un cliente con un anticipo. El stock físico solo baja al completar."
       action={
-        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/app/layaways/new")}>
+        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/layaways/new")}>
           Nuevo apartado
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
+      {noCashError && <Alert variant="warning" title="Sin sesión de caja" message="Abre una sesión de caja en Caja antes de completar un apartado." />}
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
         {layaways.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay apartados registrados.</div>
         ) : (
           <ScrollTable
+            className="min-w-160"
             colgroup={
               <colgroup>
                 <col />
@@ -135,7 +139,7 @@ export const LayawaysPage: React.FC = () => {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
                 {[10, 25, 50].map((size) => (
                   <option key={size} value={size}>{size}</option>

@@ -3,6 +3,7 @@ import type { EntityManager, FindOptionsWhere } from "typeorm";
 import { RepairNoteDao } from "../daos/repair-note.dao.js";
 import { RepairNoteItemDao } from "../daos/repair-note-item.dao.js";
 import { RepairNoteServiceTypeDao } from "../daos/repair-note-service-type.dao.js";
+import { RepairNotePaymentDao } from "../daos/repair-note-payment.dao.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { InventoryService } from "../../inventory/services/inventory.service.js";
 import { InventoryReservationService } from "../../inventory/services/inventory-reservation.service.js";
@@ -10,9 +11,18 @@ import { ServiceTypeDao } from "../../service-types/daos/service-type.dao.js";
 import { RepairNote } from "../entities/repair-note.entity.js";
 import { RepairNoteItem } from "../entities/repair-note-item.entity.js";
 import { RepairNoteServiceType } from "../entities/repair-note-service-type.entity.js";
+import { Customer } from "../../customers/entities/customer.entity.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
-import { WhatsappSendService } from "../../../messaging/whatsapp-official/services/whatsapp-send.service.js";
+import { WhatsappAccountService } from "../../../messaging/whatsapp-official/services/whatsapp-account.service.js";
+import { buildNoteQrUrl } from "../../../messaging/whatsapp-official/utils/note-qr-url.js";
+import { generatePublicRef } from "../utils/public-ref.js";
+import { Decimal } from "decimal.js";
+import { CashSession } from "../../cash/entities/cash-session.entity.js";
+import { CashMovement } from "../../cash/entities/cash-movement.entity.js";
+import { RepairNotePayment, type RepairNotePaymentMethod } from "../entities/repair-note-payment.entity.js";
+import { sumCreditBalance } from "../../customers/utils/credit-balance.js";
+import { resolveOrCreateCustomer } from "../../customers/utils/resolve-customer.js";
 
 // tenantId/controlNumber los agrega create() desde el contexto/consecutivo
 // (nunca el caller); totalValue/status/requiresAdvance/deviceOff/
@@ -27,11 +37,11 @@ type DefaultedOnCreate =
   | "hasExtendedWarranty";
 type CreatePayload = Omit<
   RepairNote,
-  "id" | "publicId" | "tenantId" | "controlNumber" | "createdAt" | "updatedAt" | DefaultedOnCreate
+  "id" | "publicId" | "tenantId" | "controlNumber" | "publicRef" | "receivedTime" | "createdAt" | "updatedAt" | DefaultedOnCreate
 > &
   Partial<Pick<RepairNote, DefaultedOnCreate>>;
 type UpdatePayload = Partial<
-  Omit<RepairNote, "id" | "publicId" | "tenantId" | "controlNumber" | "createdAt" | "updatedAt">
+  Omit<RepairNote, "id" | "publicId" | "tenantId" | "controlNumber" | "publicRef" | "createdAt" | "updatedAt">
 >;
 
 export interface RepairNoteItemInput {
@@ -39,6 +49,24 @@ export interface RepairNoteItemInput {
   quantity: number;
   unitPrice: number;
 }
+
+// Cómo se cobró el anticipo al recibir el equipo (nunca a crédito: es dinero que entra a caja).
+export interface AdvancePaymentInput {
+  method: "efectivo" | "tarjeta" | "transferencia";
+  createdByEmployeeId: string;
+}
+
+export interface DeliveryPaymentInput {
+  method: RepairNotePaymentMethod;
+  amount: number;
+}
+
+export interface DeliverInput {
+  payments: DeliveryPaymentInput[];
+  createdByEmployeeId?: string | null;
+}
+
+const PAYMENT_METHODS: RepairNotePaymentMethod[] = ["efectivo", "tarjeta", "transferencia", "credito"];
 
 // Una nota "comprometida" ya uso stock real -- antes de eso, solo reserva
 // (Fase 5, Pieza 3 de Inventario vivo: reemplaza el descuento inmediato que
@@ -58,12 +86,13 @@ export class RepairNoteService {
     private inventoryService: InventoryService,
     private repairNoteServiceTypeDao: RepairNoteServiceTypeDao,
     private serviceTypeDao: ServiceTypeDao,
-    private whatsappSendService: WhatsappSendService,
+    private whatsappAccountService: WhatsappAccountService,
     private inventoryReservationService: InventoryReservationService,
+    private repairNotePaymentDao: RepairNotePaymentDao,
   ) {}
 
-  async getAll(): Promise<RepairNote[]> {
-    return this.repairNoteDao.findAllOrdered();
+  async getAll(branchId?: string | null): Promise<RepairNote[]> {
+    return this.repairNoteDao.findAllOrdered(branchId);
   }
 
   async getById(id: string): Promise<RepairNote | null> {
@@ -100,13 +129,54 @@ export class RepairNoteService {
     data: CreatePayload,
     items: RepairNoteItemInput[] = [],
     serviceTypeIds: string[] = [],
+    advancePayment?: AdvancePaymentInput,
   ): Promise<RepairNote> {
-    const controlNumber = await this.localService.consumeControlNumber();
+    if (!data.localId) throw new Error("La sucursal (localId) es obligatoria");
     const tenantId = getCurrentTenantId();
+    await this.assertCanCollectAdvance(data, advancePayment, tenantId);
+    const controlNumber = await this.localService.consumeControlNumber();
+    const local = await this.localService.getConfig();
+    const receivedTime = new Date().toLocaleTimeString("en-GB", {
+      timeZone: local.timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
+    // public_ref es unico en toda la tabla: ante un choque (1 en ~10^12) se
+    // reintenta la transaccion completa con otra referencia.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.createWithRef(data, items, serviceTypeIds, controlNumber, tenantId, advancePayment, receivedTime);
+      } catch (error) {
+        const isRefCollision =
+          (error as { code?: string; constraint?: string }).code === "23505" &&
+          (error as { constraint?: string }).constraint === "UQ_repair_notes_public_ref";
+        if (!isRefCollision || attempt >= 5) throw error;
+      }
+    }
+  }
+
+  private async createWithRef(
+    data: CreatePayload,
+    items: RepairNoteItemInput[],
+    serviceTypeIds: string[],
+    controlNumber: number,
+    tenantId: string,
+    advancePayment: AdvancePaymentInput | undefined,
+    receivedTime: string,
+  ): Promise<RepairNote> {
     return AppDataSource.transaction(async (manager) => {
-      const note = manager.create(RepairNote, { ...data, controlNumber, tenantId } as Partial<RepairNote>);
+      const customerId = await resolveOrCreateCustomer(manager, tenantId, data);
+      const note = manager.create(RepairNote, {
+        ...data,
+        customerId,
+        controlNumber,
+        tenantId,
+        receivedTime,
+        publicRef: generatePublicRef(),
+      } as Partial<RepairNote>);
       const savedNote = await manager.save(note);
+      await this.registerAdvance(manager, savedNote, advancePayment, tenantId);
       const committed = isCommitted(savedNote.status);
 
       for (const item of items) {
@@ -150,6 +220,174 @@ export class RepairNoteService {
     });
   }
 
+  // Reglas del anticipo que no dependen del folio: se revisan antes de consumirlo.
+  private async assertCanCollectAdvance(
+    data: CreatePayload,
+    input: AdvancePaymentInput | undefined,
+    tenantId: string,
+  ): Promise<void> {
+    if (!data.requiresAdvance || !(Number(data.advanceValue) > 0)) return;
+    if (!input?.createdByEmployeeId) throw new Error("Indica quién cobra el anticipo");
+    if (!["efectivo", "tarjeta", "transferencia"].includes(input.method)) {
+      throw new Error("El anticipo no puede quedar a crédito: se cobra al recibir el equipo");
+    }
+    const session = await AppDataSource.manager.findOne(CashSession, {
+      where: { tenantId, localId: data.localId, status: "open" } as unknown as FindOptionsWhere<CashSession>,
+    });
+    if (!session) throw new Error("Abre la caja de la sucursal para cobrar el anticipo");
+  }
+
+  // El anticipo entra a caja en el mismo momento en que se crea la nota: un pago
+  // de la nota y un ingreso en la caja abierta de la sucursal, ambos en la
+  // transacción de la nota. Sin caja abierta no hay nota con anticipo.
+  private async registerAdvance(
+    manager: EntityManager,
+    note: RepairNote,
+    input: AdvancePaymentInput | undefined,
+    tenantId: string,
+  ): Promise<void> {
+    const advance = new Decimal(note.advanceValue ?? 0);
+    if (!note.requiresAdvance || advance.lte(0)) return;
+    if (!input?.createdByEmployeeId) throw new Error("Indica quién cobra el anticipo");
+    if (!["efectivo", "tarjeta", "transferencia"].includes(input.method)) {
+      throw new Error("El anticipo no puede quedar a crédito: se cobra al recibir el equipo");
+    }
+    const session = await manager.findOne(CashSession, {
+      where: { tenantId, localId: note.localId, status: "open" } as unknown as FindOptionsWhere<CashSession>,
+    });
+    if (!session) throw new Error("Abre la caja de la sucursal para cobrar el anticipo");
+
+    await manager.save(
+      manager.create(RepairNotePayment, {
+        tenantId,
+        repairNoteId: note.id,
+        kind: "advance",
+        method: input.method,
+        amount: advance.toNumber(),
+      }),
+    );
+    await manager.save(
+      manager.create(CashMovement, {
+        tenantId,
+        cashSessionId: session.id,
+        type: "income",
+        method: input.method,
+        amount: advance.toNumber(),
+        relatedEntityType: "repair_note",
+        relatedEntityId: note.id,
+        note: `Anticipo nota #${note.controlNumber}`,
+        createdByEmployeeId: input.createdByEmployeeId,
+      }),
+    );
+  }
+
+  // Entregar = cobrar el saldo (total menos anticipo): todo o nada. Los pagos deben
+  // sumar exacto el saldo; efectivo, tarjeta y transferencia son ingresos en la caja
+  // abierta, y el crédito es cuenta por cobrar (exige cliente y respeta su límite,
+  // contando también lo que ya debe por ventas y otras notas). Solo se puede
+  // entregar una nota "Lista"; entregar por PATCH de estado está bloqueado.
+  async deliver(id: string, input: DeliverInput): Promise<RepairNote> {
+    const tenantId = getCurrentTenantId();
+    const local = await this.localService.getConfig();
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: local.timeZone });
+    const payments = input.payments ?? [];
+    for (const payment of payments) {
+      if (!PAYMENT_METHODS.includes(payment.method)) throw new Error("Método de pago inválido");
+      if (!(Number(payment.amount) > 0)) throw new Error("Cada pago debe ser mayor a 0");
+    }
+
+    return AppDataSource.transaction(async (manager) => {
+      const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
+      if (!note) throw new Error("Nota no encontrada");
+      if (note.status !== "done") throw new Error("La nota debe estar Lista para poder entregarse");
+
+      const advances = await manager.find(RepairNotePayment, {
+        where: { repairNoteId: id, tenantId, kind: "advance" } as unknown as FindOptionsWhere<RepairNotePayment>,
+      });
+      const advancePaid = advances.reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
+      const balance = Decimal.max(0, new Decimal(note.totalValue ?? 0).minus(advancePaid));
+      const paid = payments.reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
+      if (!paid.equals(balance)) {
+        throw new Error(`Los pagos deben sumar el saldo de la nota (${balance.toFixed(2)})`);
+      }
+
+      const credit = payments.filter((p) => p.method === "credito").reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
+      if (credit.gt(0)) {
+        if (!note.customerId) throw new Error("Entregar a crédito requiere un cliente registrado");
+        const customer = await manager.findOneBy(Customer, {
+          id: note.customerId,
+          tenantId,
+        } as unknown as FindOptionsWhere<Customer>);
+        if (!customer) throw new Error("Cliente no encontrado");
+        const current = await sumCreditBalance(manager, tenantId, customer.id);
+        const limit = new Decimal(customer.creditLimit);
+        if (new Decimal(current).plus(credit).gt(limit)) {
+          throw new Error(
+            `El crédito supera el límite disponible del cliente (límite: ${limit.toFixed(2)}, saldo actual: ${new Decimal(current).toFixed(2)})`,
+          );
+        }
+      }
+
+      const cashPayments = payments.filter((p) => p.method !== "credito");
+      let session: CashSession | null = null;
+      if (cashPayments.length > 0) {
+        if (!input.createdByEmployeeId) throw new Error("Indica quién cobra la entrega");
+        session = await manager.findOne(CashSession, {
+          where: { tenantId, localId: note.localId, status: "open" } as unknown as FindOptionsWhere<CashSession>,
+        });
+        if (!session) throw new Error("Abre la caja de la sucursal para cobrar la entrega");
+      }
+
+      for (const payment of payments) {
+        await manager.save(
+          manager.create(RepairNotePayment, {
+            tenantId,
+            repairNoteId: id,
+            kind: "delivery",
+            method: payment.method,
+            amount: Number(payment.amount),
+          }),
+        );
+        if (payment.method !== "credito" && session) {
+          await manager.save(
+            manager.create(CashMovement, {
+              tenantId,
+              cashSessionId: session.id,
+              type: "income",
+              method: payment.method,
+              amount: Number(payment.amount),
+              relatedEntityType: "repair_note",
+              relatedEntityId: id,
+              note: `Entrega nota #${note.controlNumber}`,
+              createdByEmployeeId: input.createdByEmployeeId ?? null,
+            }),
+          );
+        }
+      }
+
+      note.status = "delivered";
+      if (!note.deliveryDate) note.deliveryDate = today;
+      return manager.save(note);
+    });
+  }
+
+  async getPayments(repairNoteId: string): Promise<RepairNotePayment[]> {
+    return this.repairNotePaymentDao.findByRepairNoteId(repairNoteId);
+  }
+
+  // Un anticipo ya cobrado es un ingreso en caja: ni su valor ni "requiere anticipo" se editan.
+  private async assertAdvanceUnchanged(id: string, data: UpdatePayload, tenantId: string): Promise<void> {
+    const charged = await AppDataSource.manager.count(RepairNotePayment, {
+      where: { repairNoteId: id, tenantId, kind: "advance" } as unknown as FindOptionsWhere<RepairNotePayment>,
+    });
+    if (charged === 0) return;
+    const current = await this.repairNoteDao.findById(id);
+    if (!current) return;
+    const sameValue = new Decimal(data.advanceValue ?? current.advanceValue ?? 0).equals(new Decimal(current.advanceValue ?? 0));
+    const sameFlag = (data.requiresAdvance ?? current.requiresAdvance) === current.requiresAdvance;
+    if (!sameValue || !sameFlag) throw new Error("El anticipo ya se cobró y no se puede modificar");
+  }
+
   // Reemplazar los items/tipos de servicio de una nota existente libera (o
   // revierte, si la nota ya estaba comprometida) los items anteriores y
   // reserva (o descuenta real, si la nota queda comprometida) los nuevos --
@@ -160,7 +398,19 @@ export class RepairNoteService {
     items?: RepairNoteItemInput[],
     serviceTypeIds?: string[],
   ): Promise<RepairNote | null> {
+    if ("localId" in data && !data.localId) throw new Error("La sucursal (localId) es obligatoria");
     const tenantId = getCurrentTenantId();
+
+    if ("advanceValue" in data || "requiresAdvance" in data) {
+      await this.assertAdvanceUnchanged(id, data, tenantId);
+    }
+
+    if (data.status === "delivered") {
+      const current = await this.repairNoteDao.findById(id);
+      if (current && current.status !== "delivered") {
+        throw new Error("Para entregar una nota hay que cobrar el saldo: usa Entregar");
+      }
+    }
 
     if (items === undefined && serviceTypeIds === undefined) {
       let previousStatus: string | undefined;
@@ -177,7 +427,6 @@ export class RepairNoteService {
 
         return saved;
       });
-      await this.notifyIfJustMarkedDone(previousStatus, savedNote);
       return savedNote;
     }
 
@@ -254,7 +503,6 @@ export class RepairNoteService {
 
       return savedNote;
     });
-    await this.notifyIfJustMarkedDone(previousStatus, savedNote);
     return savedNote;
   }
 
@@ -270,18 +518,20 @@ export class RepairNoteService {
     }
   }
 
-  // Avisa al cliente (plantilla `order_ready`) la primera vez que la nota
-  // pasa a "done" -- nunca en un guardado posterior que la deje igual. Corre
-  // fuera de cualquier transaccion de BD (es una llamada HTTP a Meta) y
-  // nunca tumba el guardado de la nota ya confirmado: una falla de WhatsApp
-  // queda registrada en WhatsappOutboundMessage, no aqui.
-  private async notifyIfJustMarkedDone(previousStatus: string | undefined, note: RepairNote | null): Promise<void> {
-    if (!note || note.status !== "done" || previousStatus === "done") return;
-    try {
-      await this.whatsappSendService.notifyOrderReady(note);
-    } catch {
-      // swallow: ver comentario de arriba.
-    }
+  // URL del QR impreso en la nota (wa.me con el mensaje prellenado), o null si el
+  // taller aun no tiene numero de WhatsApp conectado. Unica fuente: el cliente y
+  // el PDF solo dibujan lo que devuelve esto.
+  async getWhatsappQrUrl(note: Pick<RepairNote, "controlNumber" | "publicRef">): Promise<string | null> {
+    const [displayPhoneNumber, local] = await Promise.all([
+      this.whatsappAccountService.getDisplayPhoneNumber(),
+      this.localService.getConfig(),
+    ]);
+    return buildNoteQrUrl({
+      displayPhoneNumber,
+      controlNumber: note.controlNumber,
+      localName: local.name,
+      publicRef: note.publicRef,
+    });
   }
 
   // Cancelar libera las reservas activas (si la nota aun no estaba

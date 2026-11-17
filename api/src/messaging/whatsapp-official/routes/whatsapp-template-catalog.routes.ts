@@ -8,7 +8,7 @@ import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 // Conectar/editar el catalogo de WhatsApp del taller es tan sensible como
 // abrir/cerrar caja -- mismo criterio que canWriteCash/canConnectAccount
 // (ver plan Fase 4, Checkpoint 7).
-const canWriteCatalog = requireRole("owner", "admin");
+const canWriteCatalog = requireRole("owner");
 
 export const createWhatsappTemplateCatalogRouter = (
   controller: WhatsappTemplateCatalogController,

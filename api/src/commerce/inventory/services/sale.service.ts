@@ -33,6 +33,7 @@ export interface PaymentInput {
 }
 
 export interface CreateSalePayload {
+  applyTax?: boolean;
   localId: string;
   cashSessionId: string;
   customerId?: string | null;
@@ -57,8 +58,8 @@ export class SaleService {
     private customerDao: CustomerDao,
   ) {}
 
-  async getAll(): Promise<Sale[]> {
-    return this.saleDao.findAllOrdered();
+  async getAll(branchId?: string | null): Promise<Sale[]> {
+    return this.saleDao.findAllOrdered(branchId);
   }
 
   async getById(id: string): Promise<Sale | null> {
@@ -124,7 +125,7 @@ export class SaleService {
         unitPrice: item.unitPrice,
         discountPercent: item.discountPercent,
       })),
-      Number(local.taxRatePercent),
+      data.applyTax ? Number(local.taxRatePercent) : 0,
     );
 
     const paymentsSum = data.payments.reduce((sum, p) => sum.plus(p.amount), new Decimal(0));

@@ -7,7 +7,6 @@ import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useInventoryPage } from "../hooks/use-inventory-page";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
@@ -16,9 +15,9 @@ import { InventoryMovementModal } from "../components/inventory-movement-modal";
 import { InventoryImportModal } from "../components/inventory-import-modal";
 
 export const InventoryPage = () => {
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const { items, loading, saving, error, fetchAll, remove, bulkImport, registerMovement } =
-    useBranchScopedInventory(activeBranchId);
+    useBranchScopedInventory(workingBranchId);
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const navigate = useNavigate();
   const supplierName = (supplierId: string | null) => suppliers.find((s) => s.id === supplierId)?.name ?? "—";
@@ -30,7 +29,6 @@ export const InventoryPage = () => {
   const {
     deleteConfirmId,
     setDeleteConfirmId,
-    successMsg,
     isImportOpen,
     setIsImportOpen,
     importFile,
@@ -47,7 +45,7 @@ export const InventoryPage = () => {
     handleMovementSubmit,
   } = useInventoryPage({
     items,
-    branchId: activeBranchId,
+    branchId: workingBranchId,
     fetchAll,
     remove,
     bulkImport,
@@ -63,22 +61,20 @@ export const InventoryPage = () => {
   return (
     <PageShell
       title="Inventario"
-      description={items.length > 0 ? `${items.length} items en total.` : "Sin items cargados."}
+      description={items.length > 0 ? `${items.length} productos en total.` : "Aún no hay productos."}
       action={
         <div className="flex shrink-0 gap-2">
           <Button variant="outline" onClick={() => setIsImportOpen(true)}>
             <Upload className="mr-1.5 size-4" />
             Importar CSV/Excel
           </Button>
-          <Button variant="primary" onClick={() => navigate("/app/inventory/new")}>
+          <Button variant="primary" onClick={() => navigate("/commerce/inventory/new")}>
             <Plus className="mr-1.5 size-4" />
-            Nuevo item
+            Nuevo producto
           </Button>
         </div>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <InventoryTable
         loading={loading}
@@ -116,8 +112,8 @@ export const InventoryPage = () => {
 
       <ConfirmModal
         isOpen={deleteConfirmId !== null}
-        title="Eliminar item"
-        message="¿Eliminar este item de inventario? Esta acción no se puede deshacer."
+        title="Eliminar producto"
+        message="¿Eliminar este producto del inventario? Esta acción no se puede deshacer."
         danger
         loading={saving}
         onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}

@@ -4,7 +4,6 @@ import { RefreshCw } from "lucide-react";
 import { useWhatsappAccount } from "../hooks/use-whatsapp-account";
 import { useWhatsappTemplates } from "../hooks/use-whatsapp-templates";
 import { useCurrentUser } from "@common/hooks/use-current-user";
-import { Alert } from "@ui/alert/alert";
 import { Badge } from "@ui/badge/badge";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
@@ -20,13 +19,11 @@ export const WhatsappOfficialPage = () => {
   const {
     account,
     loading: accountLoading,
-    error: accountError,
     fetchStatus,
     connecting,
-    connectError,
     connectAccount,
   } = useWhatsappAccount();
-  const { templates, loading: templatesLoading, error: templatesError, sync } = useWhatsappTemplates();
+  const { templates, loading: templatesLoading, sync } = useWhatsappTemplates();
   const [isConnectOpen, setIsConnectOpen] = useState(false);
   const [connectForm, setConnectForm] = useState(EMPTY_CONNECT_FORM);
 
@@ -51,7 +48,7 @@ export const WhatsappOfficialPage = () => {
   return (
     <PageShell
       title="WhatsApp"
-      description="Cuenta oficial (Graph API) y plantillas proactivas aprobadas por Meta."
+      description="Tu cuenta oficial de WhatsApp Business y las plantillas aprobadas por Meta."
       action={
         <Button variant="outline" onClick={sync} disabled={templatesLoading}>
           <RefreshCw className={`mr-1.5 size-4 ${templatesLoading ? "animate-spin" : ""}`} />
@@ -59,8 +56,6 @@ export const WhatsappOfficialPage = () => {
         </Button>
       }
     >
-      {accountError && <Alert variant="error" title="Error" message={accountError} />}
-      {templatesError && <Alert variant="error" title="Error al sincronizar" message={templatesError} />}
 
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
         <div className="flex items-center justify-between">
@@ -103,7 +98,6 @@ export const WhatsappOfficialPage = () => {
           sistema permanente, no uno de usuario de corta duración -- se validan contra Meta antes de
           guardarse.
         </p>
-        {connectError && <Alert variant="error" title="Meta rechazó las credenciales" message={connectError} />}
         <form onSubmit={handleConnectAccount} className="mt-4 space-y-4">
           <div>
             <Label className="text-gray-500">WABA ID</Label>
@@ -147,7 +141,7 @@ export const WhatsappOfficialPage = () => {
       <TemplateCatalogSection
         scope="tenant"
         title="Plantillas de la empresa"
-        description="Catálogo proactivo de este taller -- se sincroniza con la WABA conectada."
+        description="Plantillas de tu taller. Se sincronizan con tu cuenta de WhatsApp Business."
         statusByEntryId={statusByEntryId}
       />
 
@@ -155,7 +149,7 @@ export const WhatsappOfficialPage = () => {
         <TemplateCatalogSection
           scope="system"
           title="Plantillas de sistema"
-          description="Configuración de la plataforma misma, no de ningún taller -- todavía sin sincronizar con Meta."
+          description="Plantillas generales del sistema, compartidas por todos los talleres. Aún sin sincronizar con Meta."
         />
       )}
     </PageShell>

@@ -13,7 +13,7 @@ export const RegisterPage: React.FC = () => {
   useEffect(() => {
     const checkLogin = sessionStorage.getItem("user");
     if (checkLogin) {
-      navigate("/app/dashboard", { replace: true });
+      navigate("/home", { replace: true });
     } else {
       setLoading(false);
     }

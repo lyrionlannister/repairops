@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
+import { useToast } from "@common/hooks/use-toast";
 import { useOfflineSalesQueue } from "../hooks/use-offline-sales-queue";
 import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useSaleCart } from "../hooks/use-sale-cart";
@@ -18,30 +19,41 @@ import { OfflineSalesQueueBanner } from "../components/offline-sales-queue-banne
 import { SaleCartLinesSection } from "../components/sale-cart-lines-section";
 import { SaleCartTotals } from "../components/sale-cart-totals";
 import { SalePaymentsSection } from "../components/sale-payments-section";
-import { formatMoney } from "../utils/format";
 
 export const QuickSalePage: React.FC = () => {
-  const { queue: offlineQueue, isOnline, syncing, submitOrQueue, sync } = useOfflineSalesQueue();
+  const {
+    queue: offlineQueue,
+    isOnline,
+    syncing,
+    submitOrQueue,
+    sync,
+  } = useOfflineSalesQueue();
+  const { showToast } = useToast();
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   // Solo items de la sucursal activa -- vender de otra sucursal decrementaria
   // stock que el cajero no puede ver ni reponer desde aqui.
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(activeBranchId);
-  const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
+  const { items: inventoryItems, fetchAll: fetchInventory } =
+    useBranchScopedInventory(workingBranchId);
+  const {
+    session: cashSession,
+    loading: loadingCashSession,
+    fetchOpenSession,
+  } = useCash();
   const { local, fetchLocal } = useLocal();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
 
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [createdByEmployeeId, setCreatedByEmployeeId] = useState("");
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const taxRate = Number(local?.taxRatePercent ?? 0);
   const {
     lines,
     payments,
     idempotencyKey,
+    applyTax,
+    setApplyTax,
     subtotal,
     taxAmount,
     total,
@@ -57,7 +69,12 @@ export const QuickSalePage: React.FC = () => {
     addPayment,
     removePayment,
     reset: resetCart,
-  } = useSaleCart({ taxRatePercent: taxRate, isOnline, inventoryItems, customerId });
+  } = useSaleCart({
+    taxRatePercent: taxRate,
+    isOnline,
+    inventoryItems,
+    customerId,
+  });
 
   useEffect(() => {
     fetchInventory();
@@ -66,8 +83,8 @@ export const QuickSalePage: React.FC = () => {
   }, [fetchInventory, fetchLocal, fetchCustomers]);
 
   useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
 
   const resetForm = () => {
     setCustomerId("");
@@ -78,16 +95,23 @@ export const QuickSalePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeBranchId || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer) return;
+    if (
+      !workingBranchId ||
+      !cashSession ||
+      !paymentsMatchTotal ||
+      hasCreditoWithoutCustomer
+    )
+      return;
     if (validLines.length === 0) return;
 
     const salePayload = {
-      localId: activeBranchId,
+      localId: workingBranchId,
       cashSessionId: cashSession.id,
       customerId: customerId || undefined,
       customerName: customerName || undefined,
       createdByEmployeeId: createdByEmployeeId || undefined,
       idempotencyKey,
+      applyTax,
       payments: payments.map((p) => ({
         method: p.method,
         amount: Number(p.amount) || 0,
@@ -103,7 +127,6 @@ export const QuickSalePage: React.FC = () => {
     };
 
     setCreating(true);
-    setError(null);
     // Siempre se intenta el POST real primero -- navigator.onLine no detecta
     // "el server no responde", solo la interfaz de red del sistema. La cola
     // es el resultado de que la llamada de verdad haya fallado por red, no
@@ -112,23 +135,23 @@ export const QuickSalePage: React.FC = () => {
     setCreating(false);
 
     if ("sale" in result) {
-      setSuccessMsg(`Venta #${result.sale.saleNumber} registrada por ${formatMoney(result.sale.totalValue)}.`);
       resetForm();
       fetchInventory();
-      setTimeout(() => setSuccessMsg(null), 3500);
     } else if ("queued" in result) {
-      setSuccessMsg(`Sin conexión: venta guardada como ${result.queued.localFolio}, se sincroniza sola al reconectar.`);
+      showToast({
+        title: "Sin conexión",
+        message: `Venta guardada como ${result.queued.localFolio}; se sincroniza sola al reconectar.`,
+        variant: "info",
+      });
       resetForm();
-      setTimeout(() => setSuccessMsg(null), 4500);
-    } else {
-      setError(result.error);
     }
   };
 
   return (
-    <PageShell title="Venta Rápida" description="Venta de mostrador: cada item descuenta su stock automáticamente.">
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
+    <PageShell
+      title="Venta Rápida"
+      description="Venta de mostrador: cada producto descuenta su stock automáticamente."
+    >
       {!isOnline && (
         <Alert
           variant="warning"
@@ -137,7 +160,12 @@ export const QuickSalePage: React.FC = () => {
         />
       )}
       {offlineQueue.length > 0 && (
-        <OfflineSalesQueueBanner offlineQueue={offlineQueue} isOnline={isOnline} syncing={syncing} onSync={sync} />
+        <OfflineSalesQueueBanner
+          offlineQueue={offlineQueue}
+          isOnline={isOnline}
+          syncing={syncing}
+          onSync={sync}
+        />
       )}
       {!loadingCashSession && !cashSession && (
         <Alert
@@ -149,61 +177,88 @@ export const QuickSalePage: React.FC = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3"
+        className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3"
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <Label className="text-gray-500">Nombre del cliente (opcional, solo para el ticket)</Label>
-            <Input placeholder="Opcional" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+        <div className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 lg:col-span-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label className="text-gray-500">
+                Nombre del cliente (opcional, solo para el ticket)
+              </Label>
+              <Input
+                placeholder="Opcional"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-gray-500">Empleado</Label>
+              <EmployeeSelect
+                value={createdByEmployeeId}
+                onChange={setCreatedByEmployeeId}
+              />
+            </div>
           </div>
-          <div>
-            <Label className="text-gray-500">Empleado</Label>
-            <EmployeeSelect value={createdByEmployeeId} onChange={setCreatedByEmployeeId} />
-          </div>
-        </div>
 
-        <div>
-          <Label className="text-gray-500">Cliente registrado (requerido para vender a crédito)</Label>
-          <Select
-            value={customerId}
-            onChange={setCustomerId}
-            placeholder="Sin cliente registrado"
-            options={customers.map((c) => ({ value: c.id, label: c.name }))}
+          <div>
+            <Label className="text-gray-500">
+              Cliente registrado (requerido para vender a crédito)
+            </Label>
+            <Select
+              value={customerId}
+              onChange={setCustomerId}
+              placeholder="Sin cliente registrado"
+              options={customers.map((c) => ({ value: c.id, label: c.name }))}
+            />
+          </div>
+
+          <SaleCartLinesSection
+            lines={lines}
+            inventoryItems={inventoryItems}
+            onItemChange={handleItemChange}
+            onLineChange={updateLine}
+            onAddLine={addLine}
+            onRemoveLine={removeLine}
           />
         </div>
 
-        <SaleCartLinesSection
-          lines={lines}
-          inventoryItems={inventoryItems}
-          onItemChange={handleItemChange}
-          onLineChange={updateLine}
-          onAddLine={addLine}
-          onRemoveLine={removeLine}
-        />
+        <div className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
+          <SaleCartTotals
+            subtotal={subtotal}
+            taxRate={taxRate}
+            taxAmount={taxAmount}
+            total={total}
+            applyTax={applyTax}
+            onApplyTaxChange={setApplyTax}
+          />
 
-        <SaleCartTotals subtotal={subtotal} taxRate={taxRate} taxAmount={taxAmount} total={total} />
+          <SalePaymentsSection
+            payments={payments}
+            isOnline={isOnline}
+            paymentsSum={paymentsSum}
+            paymentsMatchTotal={paymentsMatchTotal}
+            hasCreditoWithoutCustomer={hasCreditoWithoutCustomer}
+            total={total}
+            onPaymentChange={updatePayment}
+            onAddPayment={addPayment}
+            onRemovePayment={removePayment}
+          />
 
-        <SalePaymentsSection
-          payments={payments}
-          isOnline={isOnline}
-          paymentsSum={paymentsSum}
-          paymentsMatchTotal={paymentsMatchTotal}
-          hasCreditoWithoutCustomer={hasCreditoWithoutCustomer}
-          total={total}
-          onPaymentChange={updatePayment}
-          onAddPayment={addPayment}
-          onRemovePayment={removePayment}
-        />
-
-        <Button
-          type="submit"
-          variant="primary"
-          className="w-full"
-          disabled={creating || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer}
-        >
-          <ShoppingCart className="mr-1.5 size-4" />
-          {creating ? "Registrando..." : "Registrar venta"}
-        </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full"
+            disabled={
+              creating ||
+              !cashSession ||
+              !paymentsMatchTotal ||
+              hasCreditoWithoutCustomer
+            }
+          >
+            <ShoppingCart className="mr-1.5 size-4" />
+            {creating ? "Registrando..." : "Registrar venta"}
+          </Button>
+        </div>
       </form>
     </PageShell>
   );

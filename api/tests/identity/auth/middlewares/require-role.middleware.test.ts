@@ -10,23 +10,23 @@ function makeRes() {
 }
 
 describe("requireRole", () => {
-  it("rejects an employee hitting an owner/admin-only route with 403", () => {
+  it("rejects an employee hitting an owner-or-cashier-only route with 403", () => {
     const req = { user: { id: "1", email: "e@x.com", tenantId: "1", role: "employee" } } as AuthenticatedRequest;
     const res = makeRes();
     const next = vi.fn();
 
-    requireRole("owner", "admin")(req, res, next);
+    requireRole("owner", "cashier")(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
   });
 
   it("allows a role included in the allowlist through", () => {
-    const req = { user: { id: "1", email: "e@x.com", tenantId: "1", role: "admin" } } as AuthenticatedRequest;
+    const req = { user: { id: "1", email: "e@x.com", tenantId: "1", role: "cashier" } } as AuthenticatedRequest;
     const res = makeRes();
     const next = vi.fn();
 
-    requireRole("owner", "admin")(req, res, next);
+    requireRole("owner", "cashier")(req, res, next);
 
     expect(next).toHaveBeenCalledOnce();
     expect(res.status).not.toHaveBeenCalled();

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, Bot, User, ArrowLeftRight } from "lucide-react";
+import { Search, Bot, User, ArrowLeftRight, ArrowLeft } from "lucide-react";
 import { useConversations } from "../hooks/use-conversations";
 import { useMessages } from "../hooks/use-messages";
 import { useHumanMode } from "../hooks/use-human-mode";
 import { useChatsPage } from "../hooks/use-chats-page";
-import { PageMeta } from "@common/pages/page-meta";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import { formatPhone, getInitials, getAvatarColor } from "../utils/contact-display";
 import { ConversationItem } from "../components/conversation-item";
 import { MessageBubble } from "../components/message-bubble";
@@ -15,7 +15,7 @@ export const ChatsPage: React.FC = () => {
   const { conversations, loading: loadingConversations, error: convError } = useConversations();
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const { search, setSearch, filtered } = useChatsPage(conversations);
-  const { messages, loading: loadingMessages } = useMessages(selectedSessionId);
+  const { messages, loading: loadingMessages, downloadMedia } = useMessages(selectedSessionId);
   const { isHumanMode, toggling, sending, activate, deactivate, sendMessage } =
     useHumanMode(selectedSessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -37,12 +37,16 @@ export const ChatsPage: React.FC = () => {
   const avatarColor = selectedConversation ? getAvatarColor(selectedConversation.sessionId) : "";
 
   return (
-    <div className="flex h-[calc(100vh-152px)] min-h-125 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-soft dark:border-gray-700 dark:bg-[#111B21]">
-      <PageMeta title="Chats" description="Conversaciones de WhatsApp" />
+    <PageShell title="Chats" description="Conversaciones de WhatsApp">
+    <div className="flex min-h-125 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-soft dark:border-gray-700 dark:bg-[#111B21]">
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Panel izquierdo */}
-        <div className="flex w-85 shrink-0 flex-col border-r border-gray-200 dark:border-gray-700">
+        {/* Panel izquierdo -- en mobile es la pantalla completa hasta elegir un chat, luego se oculta */}
+        <div
+          className={`w-full shrink-0 flex-col border-r border-gray-200 dark:border-gray-700 md:flex md:w-85 ${
+            selectedSessionId ? "hidden" : "flex"
+          }`}
+        >
 
           {/* Header izquierdo */}
           <div className="flex min-h-15.25 items-center justify-between bg-[#f0f2f5] px-4 py-2.5 dark:bg-[#1F2C33]">
@@ -101,11 +105,21 @@ export const ChatsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Panel derecho */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Panel derecho -- en mobile solo aparece al elegir un chat, con boton de regreso */}
+        <div
+          className={`w-full flex-1 flex-col overflow-hidden md:flex ${selectedConversation ? "flex" : "hidden md:flex"}`}
+        >
           {selectedConversation ? (
             /* Header del chat */
             <div className="flex items-center gap-3 bg-[#f0f2f5] px-4 py-2.5 dark:bg-[#1F2C33]">
+              <button
+                type="button"
+                onClick={() => setSelectedSessionId(null)}
+                className="shrink-0 rounded-lg p-1.5 text-gray-500 hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10 md:hidden"
+                aria-label="Volver a conversaciones"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
               <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${avatarColor}`}>
                 {avatarLabel}
               </div>
@@ -161,7 +175,7 @@ export const ChatsPage: React.FC = () => {
               </div>
             ) : (
               messages.map((msg) => (
-                <MessageBubble key={msg.id} content={msg.content} fromMe={msg.fromMe} />
+                <MessageBubble key={msg.id} message={msg} onDownload={downloadMedia} />
               ))
             )}
             <div ref={messagesEndRef} />
@@ -174,6 +188,6 @@ export const ChatsPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </PageShell>
   );
 };
-

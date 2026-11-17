@@ -2,6 +2,7 @@ import { singleton } from "tsyringe";
 import { settingsService } from "../../../identity/settings/settings.service.js";
 
 export type IncomingChatMessage = {
+  tenantId: string;
   from: string;
   body: string;
 };
@@ -11,10 +12,9 @@ export type ChatAutomationResponse = {
   transferToHuman?: boolean;
 };
 
-// Reemplaza a WhatsappProcessor.sendToAutomation (retirado junto con
-// whatsapp-web.js) -- mismo contrato HTTP hacia n8n, transporte-agnostico:
-// no sabe si el mensaje entro por Graph API o por lo que sea que lo
-// reemplace despues.
+// Contrato HTTP hacia n8n, independiente del transporte. Hoy nada lo llama:
+// el webhook solo atiende por ref de nota (ver WhatsappWebhookService); queda
+// para cuando el flujo de n8n se retome.
 @singleton()
 export class ChatAutomationService {
   async send(message: IncomingChatMessage): Promise<ChatAutomationResponse | null> {

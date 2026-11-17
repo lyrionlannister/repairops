@@ -4,13 +4,12 @@ import { useLogin, type LoginPayload } from "../../../core/common/hooks/use-logi
 import { Input } from "../../../core/common/components/ui/inputs/input";
 import { Label } from "../../../core/common/components/ui/inputs/label";
 import { Button } from "../../../core/common/components/ui/button/button";
-import { Alert } from "../../../core/common/components/ui/alert/alert";
 import { EyeCloseIcon, EyeIcon } from "../../../core/common/icons";
 import { AUTH_REDIRECT_DELAY_MS, INITIAL_AUTH_FORM_DATA } from "../constants/auth.constants";
 import { updateAuthFormField } from "../helpers/auth-form.helpers";
 
 export const AuthForm: React.FC = () => {
-  const { login, loading, error, success, clearError, clearSuccess } =
+  const { login, loading, clearError, clearSuccess } =
     useLogin();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -45,21 +44,6 @@ export const AuthForm: React.FC = () => {
             </h1>
           </div>
 
-          {error && (
-            <div className="mb-4">
-              <Alert variant="error" title="Error" message={error} />
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4">
-              <Alert
-                variant="success"
-                title="¡Éxito!"
-                message="Sesión iniciada. Serás redirigido..."
-              />
-            </div>
-          )}
 
           <div>
             <form onSubmit={handleSubmit}>

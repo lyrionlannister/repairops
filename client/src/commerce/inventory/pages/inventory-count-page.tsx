@@ -7,7 +7,7 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
-import { Alert } from "@ui/alert/alert";
+import { useBranch } from "@common/hooks/use-branch";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
 type LineDraft = { countedQuantity: string; reason: string };
@@ -15,11 +15,12 @@ type LineDraft = { countedQuantity: string; reason: string };
 export const InventoryCountPage: React.FC = () => {
   const { items, fetchAll: fetchItems } = useInventory();
   const { branches, fetchAll: fetchBranches } = useBranches();
-  const { count, saving, error, missingReasonItemIds, open, setCounted, close } = useInventoryCounts();
+  const { count, saving, missingReasonItemIds, open, setCounted, close } = useInventoryCounts();
 
-  const [branchId, setBranchId] = useState("");
+  const { workingBranchId } = useBranch();
+  const [pickedBranchId, setBranchId] = useState("");
+  const branchId = pickedBranchId || workingBranchId || "";
   const [drafts, setDrafts] = useState<Record<string, LineDraft>>({});
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchItems();
@@ -49,11 +50,7 @@ export const InventoryCountPage: React.FC = () => {
   };
 
   const handleClose = async () => {
-    const ok = await close();
-    if (ok) {
-      setSuccessMsg("Conteo cerrado. Ajustes aplicados sobre el stock real.");
-      setTimeout(() => setSuccessMsg(null), 4000);
-    }
+    await close();
   };
 
   const isOpen = count?.status === "open";
@@ -64,8 +61,6 @@ export const InventoryCountPage: React.FC = () => {
       title="Conteo de inventario"
       description="Captura lo que cuentas físicamente. El esperado no se muestra hasta cerrar el conteo."
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       {!count && (
         <div className="flex items-end gap-2 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
@@ -127,7 +122,13 @@ export const InventoryCountPage: React.FC = () => {
                       </Button>
                     </>
                   ) : (
-                    item.reason && <span className="text-sm text-gray-500 dark:text-gray-400">{item.reason}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {item.countedQuantity === null
+                        ? "No contado"
+                        : item.appliedMovementId
+                          ? `Ajustado${item.reason ? ` · ${item.reason}` : ""}`
+                          : "Sin diferencia"}
+                    </span>
                   )}
                 </div>
               );

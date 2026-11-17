@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 @Entity("whatsapp_settings")
 export class WhatsappSettings {
@@ -6,6 +7,10 @@ export class WhatsappSettings {
   // global con un unico registro id=1 como antes.
   @PrimaryColumn({ type: "bigint", name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_whatsapp_settings_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "boolean", default: true, name: "respuestas_ia_habilitadas" })
   aiRepliesEnabled!: boolean;

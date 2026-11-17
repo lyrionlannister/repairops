@@ -1,13 +1,14 @@
 import { Store } from "lucide-react";
 
 import { useApiClient } from "@common/hooks/use-api-client";
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { TextArea } from "@ui/textarea/textarea";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
+import { BrandColorField } from "../components/brand-color-field";
+import { TIME_ZONES } from "../utils/time-zones";
 import { useLocal } from "../hooks/use-local";
 import { useLocalPage } from "../hooks/use-local-page";
 
@@ -25,6 +26,7 @@ export const LocalPage = () => {
     handleAttributionBasisChange,
     handleSubmit,
     removeLogo,
+    setBrandColor,
   } = useLocalPage({
     local,
     loading,
@@ -42,8 +44,6 @@ export const LocalPage = () => {
 
   return (
     <PageShell title="Configuración del Local" description="Datos que aparecerán en las notas de reparación impresas.">
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {saveSuccess && <Alert variant="success" title="Guardado" message="Configuración actualizada correctamente." />}
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
@@ -74,10 +74,14 @@ export const LocalPage = () => {
 
           <hr className="border-gray-100 dark:border-gray-800" />
 
+          <BrandColorField value={form.brandColor} palette={local?.brandPalette ?? null} disabled={saving} onChange={setBrandColor} />
+
+          <hr className="border-gray-100 dark:border-gray-800" />
+
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <Label className="text-gray-500">Nombre del local</Label>
-              <Input name="name" placeholder="Ej. Kaltra Fix" value={form.name} onChange={handleChange} disabled={saving} />
+              <Input name="name" placeholder="Ej. Kaltra Fix" value={form.name} onChange={handleChange} disabled={saving} required />
             </div>
             <div>
               <Label className="text-gray-500">Teléfono</Label>
@@ -117,7 +121,7 @@ export const LocalPage = () => {
                 value={form.currency}
                 onChange={handleChange}
                 disabled={saving}
-                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
               >
                 <option value="MXN">Peso mexicano (MXN)</option>
                 <option value="USD">Dólar estadounidense (USD)</option>
@@ -130,12 +134,29 @@ export const LocalPage = () => {
                 value={form.defaultTicketSize}
                 onChange={handleChange}
                 disabled={saving}
-                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
               >
                 <option value="58mm">Térmico 58mm</option>
                 <option value="80mm">Térmico 80mm</option>
                 <option value="letter">Carta</option>
               </select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-gray-500">Zona horaria</Label>
+              <select
+                name="timeZone"
+                value={form.timeZone}
+                onChange={handleChange}
+                disabled={saving}
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              >
+                {TIME_ZONES.map((zone) => (
+                  <option key={zone.value} value={zone.value}>
+                    {zone.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-400">Define qué es "hoy", la semana y el mes en el panel y los reportes.</p>
             </div>
             <div className="sm:col-span-2">
               <Label className="text-gray-500">Cláusula de garantía (aparece impresa en el ticket)</Label>
@@ -159,7 +180,7 @@ export const LocalPage = () => {
               value={attributionBasis}
               onChange={handleAttributionBasisChange}
               disabled={attributionSaving}
-              className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
             >
               <option value="total_value">Total cobrado</option>
               <option value="margin">Margen (ingreso - costo de los items)</option>

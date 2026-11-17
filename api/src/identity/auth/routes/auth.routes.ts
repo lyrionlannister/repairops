@@ -15,21 +15,21 @@ export const createAuthRouter = (authController: AuthController): Router => {
     "/users",
     authMiddleware,
     tenantMiddleware,
-    requireRole("owner", "admin"),
+    requireRole("owner"),
     authController.getUsers,
   );
   router.patch(
     "/users/:id/toggle-status",
     authMiddleware,
     tenantMiddleware,
-    requireRole("owner", "admin"),
+    requireRole("owner"),
     authController.toggleUserStatus,
   );
   router.patch(
     "/users/:id",
     authMiddleware,
     tenantMiddleware,
-    requireRole("owner", "admin"),
+    requireRole("owner"),
     authController.updateEmployee,
   );
   router.get("/employees", authMiddleware, tenantMiddleware, authController.listEmployees);
@@ -37,7 +37,7 @@ export const createAuthRouter = (authController: AuthController): Router => {
     "/employees",
     authMiddleware,
     tenantMiddleware,
-    requireRole("owner", "admin"),
+    requireRole("owner"),
     authController.createEmployee,
   );
 

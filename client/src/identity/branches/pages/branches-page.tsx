@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Pencil, Search, Store } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Toggle } from "@ui/toggle/toggle";
@@ -17,10 +16,9 @@ import { useBranchesPage } from "../hooks/use-branches-page";
 
 export const BranchesPage = () => {
   const navigate = useNavigate();
-  const { branches, loading, error, fetchAll, setActive } = useBranches();
+  const { branches, loading, fetchAll, setActive } = useBranches();
   const { refreshBranches } = useBranch();
   const { search, setSearch, filteredBranches } = useBranchesPage(branches);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -33,8 +31,6 @@ export const BranchesPage = () => {
     const ok = await setActive(branch.id, !branch.isActive);
     if (ok) {
       await refreshBranches();
-      setSuccessMsg("Sucursal actualizada correctamente.");
-      window.setTimeout(() => setSuccessMsg(null), 3000);
     }
   };
 
@@ -43,14 +39,12 @@ export const BranchesPage = () => {
       title="Sucursales"
       description="Administra las sucursales disponibles y cuál está activa en el selector de arriba."
       action={
-        <Button variant="primary" onClick={() => navigate("/app/branches/new")}>
+        <Button variant="primary" onClick={() => navigate("/identity/branches/new")}>
           <Plus className="mr-1.5 size-4" />
           Nueva sucursal
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">
@@ -75,13 +69,14 @@ export const BranchesPage = () => {
           </div>
         ) : (
           <ScrollTable
+            className="min-w-160"
             colgroup={
               <colgroup>
                 <col />
                 <col />
                 <col />
                 <col />
-                <col className="w-16" />
+                <col className="w-24" />
               </colgroup>
             }
             header={
@@ -108,7 +103,7 @@ export const BranchesPage = () => {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <button
-                      onClick={() => navigate(`/app/branches/${branch.id}/edit`)}
+                      onClick={() => navigate(`/identity/branches/${branch.id}/edit`)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                       title="Editar"
                     >
@@ -128,7 +123,7 @@ export const BranchesPage = () => {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
                 {[10, 25, 50].map((size) => (
                   <option key={size} value={size}>{size}</option>

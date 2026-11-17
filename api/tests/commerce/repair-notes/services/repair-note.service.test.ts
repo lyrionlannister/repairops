@@ -7,13 +7,15 @@ import { LocalService } from "../../../../src/app_platform/local/services/local.
 import { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
 import { RepairNoteItem } from "../../../../src/commerce/repair-notes/entities/repair-note-item.entity.js";
 import { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
+import { RepairNotePayment } from "../../../../src/commerce/repair-notes/entities/repair-note-payment.entity.js";
+import { RepairNotePaymentDao } from "../../../../src/commerce/repair-notes/daos/repair-note-payment.dao.js";
 import { RepairNoteItemDao } from "../../../../src/commerce/repair-notes/daos/repair-note-item.dao.js";
 import { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
 import { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/daos/repair-note-service-type.dao.js";
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteService } from "../../../../src/commerce/repair-notes/services/repair-note.service.js";
-import type { WhatsappSendService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
+import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
@@ -22,6 +24,11 @@ import { InventoryService } from "../../../../src/commerce/inventory/services/in
 import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
 import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
 import { InventoryReservationService } from "../../../../src/commerce/inventory/services/inventory-reservation.service.js";
+import { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
+import { Sale } from "../../../../src/commerce/inventory/entities/sale.entity.js";
+import { SalePayment } from "../../../../src/commerce/payments/entities/sale-payment.entity.js";
+import { CashSession } from "../../../../src/commerce/cash/entities/cash-session.entity.js";
+import { CashMovement } from "../../../../src/commerce/cash/entities/cash-movement.entity.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 // Integration test against a real Postgres. Fase 5, Pieza 3 (Inventario
@@ -36,7 +43,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
   let reservationDao: InventoryReservationDao;
   const tenantId = `${Date.now()}3`;
 
-  const buildRepairNoteService = (whatsappSendService: WhatsappSendService) => {
+  const buildRepairNoteService = (whatsappAccountService: WhatsappAccountService) => {
     const inventoryReservationService = new InventoryReservationService(reservationDao, inventoryService);
     return new RepairNoteService(
       new RepairNoteDao(AppDataSource.getRepository(RepairNote)),
@@ -45,8 +52,9 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
       inventoryService,
       new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
       new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
-      whatsappSendService,
+      whatsappAccountService,
       inventoryReservationService,
+      new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
     );
   };
 
@@ -56,7 +64,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
     reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
     inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
-    repairNoteService = buildRepairNoteService({ notifyOrderReady: async () => null } as unknown as WhatsappSendService);
+    repairNoteService = buildRepairNoteService({ getDisplayPhoneNumber: async () => null } as unknown as WhatsappAccountService);
   });
 
   afterAll(async () => {
@@ -71,7 +79,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Items", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01" },
+        { localId: "1", customerName: "Cliente Items", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01" },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 300 }],
       ),
     );
@@ -96,7 +104,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Edicion", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01" },
+        { localId: "1", customerName: "Cliente Edicion", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01" },
         [{ inventoryItemId: item.id, quantity: 2, unitPrice: 150 }],
       ),
     );
@@ -134,7 +142,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Cancela", brand: "Samsung", model: "A52", reportedFailure: "Pantalla rota", receivedAt: "2026-01-01", status: "received" },
+        { localId: "1", customerName: "Cliente Cancela", brand: "Samsung", model: "A52", reportedFailure: "Pantalla rota", receivedAt: "2026-01-01", status: "received" },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 700 }],
       ),
     );
@@ -151,7 +159,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const delivered = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Entregado", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01", status: "delivered" },
+        { localId: "1", customerName: "Cliente Entregado", brand: "Samsung", model: "A52", reportedFailure: "No enciende", receivedAt: "2026-01-01", status: "delivered" },
         [],
       ),
     );
@@ -161,8 +169,6 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
   });
 
   it("consumes the active reservation into a real stock movement the first time the note moves to done, never again after that", async () => {
-    const notifyOrderReady = vi.fn().mockResolvedValue(null);
-    const serviceWithNotifySpy = buildRepairNoteService({ notifyOrderReady } as unknown as WhatsappSendService);
 
     const item = await runWithTenant(tenantId, () =>
       inventoryService.create({ localId: "1", name: "Bateria Done", sku: "A52-BAT-DONE", kind: "part", costPrice: 150, salePrice: 300 }),
@@ -170,9 +176,9 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 4 }));
 
     const note = await runWithTenant(tenantId, () =>
-      serviceWithNotifySpy.create(
+      repairNoteService.create(
         {
-          customerName: "Cliente Listo",
+          localId: "1", customerName: "Cliente Listo",
           contactNumber: "5215500000000",
           brand: "Samsung",
           model: "A52",
@@ -185,20 +191,16 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     );
     expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(4); // reservado, no descontado
 
-    await runWithTenant(tenantId, () => serviceWithNotifySpy.update(note.id, { status: "done" }));
-    expect(notifyOrderReady).toHaveBeenCalledTimes(1);
-    expect(notifyOrderReady).toHaveBeenCalledWith(expect.objectContaining({ id: note.id, status: "done" }));
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" }));
 
     expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3); // ahora si, consumido real
-    const [noteItem] = await runWithTenant(tenantId, () => serviceWithNotifySpy.getItems(note.id));
+    const [noteItem] = await runWithTenant(tenantId, () => repairNoteService.getItems(note.id));
     const reservation = await runWithTenant(tenantId, () => reservationDao.findByRelatedEntity("repair_note_item", noteItem.id));
     expect(reservation?.status).toBe("consumed");
     expect(reservation?.consumedMovementId).not.toBeNull();
 
-    // Guardar la nota otra vez sin salir de "done" no debe volver a avisar
-    // ni a consumir una segunda vez.
-    await runWithTenant(tenantId, () => serviceWithNotifySpy.update(note.id, { technicianNotes: "revisado de nuevo" }));
-    expect(notifyOrderReady).toHaveBeenCalledTimes(1);
+    // Guardar la nota otra vez sin salir de "done" no debe consumir una segunda vez.
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { technicianNotes: "revisado de nuevo" }));
     expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3);
   });
 
@@ -210,7 +212,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Post-Done", brand: "Samsung", model: "A52", reportedFailure: "Rayones", receivedAt: "2026-01-01", status: "done" },
+        { localId: "1", customerName: "Cliente Post-Done", brand: "Samsung", model: "A52", reportedFailure: "Rayones", receivedAt: "2026-01-01", status: "done" },
         [{ inventoryItemId: item.id, quantity: 2, unitPrice: 20 }],
       ),
     );
@@ -232,7 +234,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { customerName: "Cliente Cancela Done", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01", status: "done" },
+        { localId: "1", customerName: "Cliente Cancela Done", brand: "Samsung", model: "A52", reportedFailure: "No carga", receivedAt: "2026-01-01", status: "done" },
         [{ inventoryItemId: item.id, quantity: 1, unitPrice: 15 }],
       ),
     );
@@ -241,5 +243,226 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     const cancelled = await runWithTenant(tenantId, () => repairNoteService.cancel(note.id));
     expect(cancelled.status).toBe("cancelled");
     expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(5); // revertido real
+  });
+
+  it("rejects a note without a branch (localId is required)", async () => {
+    await expect(
+      runWithTenant(tenantId, () =>
+        repairNoteService.create({ customerName: "Sin sucursal", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01" } as never),
+      ),
+    ).rejects.toThrow("sucursal");
+  });
+  it("crea un cliente cuando la nota llega sin customerId, y lo reutiliza con el mismo nombre y teléfono", async () => {
+    const base = { localId: "1", brand: "Apple", model: "iPhone 12", reportedFailure: "No enciende", receivedAt: "2026-01-01" };
+    const first = await runWithTenant(tenantId, () =>
+      repairNoteService.create({ ...base, customerName: "Ana Nueva", contactNumber: "8330001111" }),
+    );
+    expect(first.customerId).toBeTruthy();
+    const customer = await AppDataSource.getRepository(Customer).findOneBy({ id: first.customerId! } as never);
+    expect(customer).toMatchObject({ name: "Ana Nueva", phone: "8330001111" });
+
+    const second = await runWithTenant(tenantId, () =>
+      repairNoteService.create({ ...base, customerName: "ana nueva", contactNumber: "8330001111" }),
+    );
+    expect(second.customerId).toBe(first.customerId);
+
+    const other = await runWithTenant(tenantId, () =>
+      repairNoteService.create({ ...base, customerName: "Otra Persona", contactNumber: "8330001111" }),
+    );
+    expect(other.customerId).not.toBe(first.customerId);
+  });
+});
+
+// Anticipo (cobrado al recibir el equipo) y entrega (cobro del saldo):
+// ambos mueven dinero real de caja, así que se prueban contra Postgres real,
+// no con mocks. Cada test usa su propia sucursal fixture (ver
+// FIXTURE_BRANCH_IDS en tests/global-teardown.ts) para no pisar la sesión
+// de caja de otro test del mismo archivo.
+describe("RepairNoteService: anticipo y entrega", () => {
+  let repairNoteService: RepairNoteService;
+  const tenantId = `${Date.now()}7`;
+
+  const buildRepairNoteService = (whatsappAccountService: WhatsappAccountService) => {
+    const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
+    const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
+    const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    const inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
+    const inventoryReservationService = new InventoryReservationService(reservationDao, inventoryService);
+    return new RepairNoteService(
+      new RepairNoteDao(AppDataSource.getRepository(RepairNote)),
+      new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
+      new RepairNoteItemDao(AppDataSource.getRepository(RepairNoteItem)),
+      inventoryService,
+      new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
+      new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
+      whatsappAccountService,
+      inventoryReservationService,
+      new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
+    );
+  };
+
+  const baseNote = (localId: string, overrides: Record<string, unknown> = {}) => ({
+    localId,
+    customerName: "Cliente de prueba",
+    contactNumber: "8339990000",
+    brand: "Marca",
+    model: "Modelo",
+    reportedFailure: "Falla",
+    receivedAt: "2026-01-01",
+    ...overrides,
+  });
+
+  beforeAll(async () => {
+    await AppDataSource.initialize();
+    repairNoteService = buildRepairNoteService({ getDisplayPhoneNumber: async () => null } as unknown as WhatsappAccountService);
+  });
+
+  afterAll(async () => {
+    await AppDataSource.destroy();
+  });
+
+  it("rejects charging an advance without an open cash session", async () => {
+    await expect(
+      runWithTenant(tenantId, () =>
+        repairNoteService.create(
+          baseNote("9001", { requiresAdvance: true, advanceValue: 100 }) as never,
+          [],
+          [],
+          { method: "efectivo", createdByEmployeeId: "1" },
+        ),
+      ),
+    ).rejects.toThrow("Abre la caja");
+  });
+
+  it("charging an advance creates its payment and a cash movement 'Anticipo nota #N'", async () => {
+    const localId = "9002";
+    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: 0, status: "open" } as never);
+
+    const note = await runWithTenant(tenantId, () =>
+      repairNoteService.create(
+        baseNote(localId, { requiresAdvance: true, advanceValue: 150 }) as never,
+        [],
+        [],
+        { method: "efectivo", createdByEmployeeId: "1" },
+      ),
+    );
+
+    const payments = await runWithTenant(tenantId, () => repairNoteService.getPayments(note.id));
+    expect(payments).toHaveLength(1);
+    expect(payments[0]).toMatchObject({ kind: "advance", method: "efectivo" });
+    expect(Number(payments[0]!.amount)).toBe(150);
+
+    const session = await AppDataSource.getRepository(CashSession).findOneBy({ tenantId, localId } as never);
+    const movements = await AppDataSource.getRepository(CashMovement).find({ where: { tenantId, cashSessionId: session!.id } as never });
+    const advanceMovement = movements.find((m) => m.note === `Anticipo nota #${note.controlNumber}`);
+    expect(advanceMovement).toBeTruthy();
+    expect(Number(advanceMovement!.amount)).toBe(150);
+    expect(advanceMovement!.relatedEntityType).toBe("repair_note");
+  });
+
+  it("rejects editing the advance once it has already been charged", async () => {
+    const localId = "42";
+    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: 0, status: "open" } as never);
+    const note = await runWithTenant(tenantId, () =>
+      repairNoteService.create(
+        baseNote(localId, { requiresAdvance: true, advanceValue: 80 }) as never,
+        [],
+        [],
+        { method: "efectivo", createdByEmployeeId: "1" },
+      ),
+    );
+
+    await expect(
+      runWithTenant(tenantId, () => repairNoteService.update(note.id, { advanceValue: 999 } as never)),
+    ).rejects.toThrow("ya se cobró");
+    await expect(
+      runWithTenant(tenantId, () => repairNoteService.update(note.id, { requiresAdvance: false } as never)),
+    ).rejects.toThrow("ya se cobró");
+  });
+
+  it("deliver rejects when the payments don't sum the note's balance", async () => {
+    const localId = "1";
+    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 1000 }) as never));
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" } as never));
+
+    await expect(
+      runWithTenant(tenantId, () => repairNoteService.deliver(note.id, { payments: [{ method: "efectivo", amount: 500 }] })),
+    ).rejects.toThrow("deben sumar el saldo");
+  });
+
+  it("deliver to credito requires a registered customer", async () => {
+    const localId = "2";
+    const note = await runWithTenant(tenantId, () =>
+      repairNoteService.create(
+        { localId, customerName: "Sin teléfono", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: 300 } as never,
+      ),
+    );
+    expect(note.customerId).toBeNull();
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" } as never));
+
+    await expect(
+      runWithTenant(tenantId, () => repairNoteService.deliver(note.id, { payments: [{ method: "credito", amount: 300 }] })),
+    ).rejects.toThrow("crédito requiere un cliente");
+  });
+
+  it("deliver to credito respects the limit, counting debt from both sales and other notes", async () => {
+    const localId = "3";
+    const customer = await AppDataSource.getRepository(Customer).save({
+      tenantId,
+      name: "Cliente Límite",
+      phone: "8330004000",
+      creditLimit: 500,
+    } as never);
+
+    const sale = await AppDataSource.getRepository(Sale).save({
+      tenantId,
+      localId,
+      saleNumber: Math.floor(Date.now() / 1000),
+      customerId: customer.id,
+      customerName: customer.name,
+      cashSessionId: "1",
+      origin: "counter",
+      subtotal: 200,
+      totalValue: 200,
+      createdByEmployeeId: null,
+      idempotencyKey: null,
+    } as never);
+    await AppDataSource.getRepository(SalePayment).save({ tenantId, saleId: sale.id, method: "credito", amount: 200 } as never);
+
+    const otherNote = await runWithTenant(tenantId, () =>
+      repairNoteService.create({ localId, customerId: customer.id, customerName: customer.name, brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: 200 } as never),
+    );
+    await runWithTenant(tenantId, () => repairNoteService.update(otherNote.id, { status: "done" } as never));
+    await runWithTenant(tenantId, () => repairNoteService.deliver(otherNote.id, { payments: [{ method: "credito", amount: 200 }] }));
+
+    // Deuda existente: 200 (venta) + 200 (nota) = 400. Límite 500. Esta nota
+    // de 200 más a crédito dejaría 600 > 500: debe rechazarse.
+    const newNote = await runWithTenant(tenantId, () =>
+      repairNoteService.create({ localId, customerId: customer.id, customerName: customer.name, brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: 200 } as never),
+    );
+    await runWithTenant(tenantId, () => repairNoteService.update(newNote.id, { status: "done" } as never));
+
+    await expect(
+      runWithTenant(tenantId, () => repairNoteService.deliver(newNote.id, { payments: [{ method: "credito", amount: 200 }] })),
+    ).rejects.toThrow("supera el límite");
+  });
+
+  it("deliver only works once the note is 'done'", async () => {
+    const localId = "4";
+    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 100 }) as never));
+
+    await expect(
+      runWithTenant(tenantId, () => repairNoteService.deliver(note.id, { payments: [{ method: "efectivo", amount: 100 }] })),
+    ).rejects.toThrow("debe estar Lista");
+  });
+
+  it("a note cannot be delivered through a plain status PATCH", async () => {
+    const localId = "5";
+    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 100 }) as never));
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" } as never));
+
+    await expect(
+      runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "delivered" } as never)),
+    ).rejects.toThrow("usa Entregar");
   });
 });

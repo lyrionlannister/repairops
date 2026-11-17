@@ -33,7 +33,7 @@ export const BranchContextPanel = ({
           Valor en stock: {formatMoney(stockValue)}
         </p>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Stock crítico: {criticalCount} {criticalCount === 1 ? "item" : "items"}
+          Stock crítico: {criticalCount} {criticalCount === 1 ? "producto" : "productos"}
         </p>
       </div>
     </div>

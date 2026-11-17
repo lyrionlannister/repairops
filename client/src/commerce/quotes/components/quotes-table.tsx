@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useNavigate } from "react-router";
-import { FileText, Pencil, Trash2, Check, X } from "lucide-react";
+import { FileText, Pencil, Trash2, Check, X, Wrench } from "lucide-react";
 import type { QuoteListItem } from "../hooks/use-quotes-page";
 import { TableBody, TableRow, TableCell } from "@ui/table/table";
 import { Pagination } from "@ui/table/pagination";
@@ -52,18 +52,20 @@ export const QuotesTable: FC<QuotesTableProps> = ({
         </div>
       ) : (
         <ScrollTable
+          className="min-w-175"
           colgroup={
             <colgroup>
               <col />
+              <col className="w-24" />
               <col className="w-32" />
               <col className="w-32" />
               <col className="w-28" />
-              <col className="w-48" />
+              <col className="w-52" />
             </colgroup>
           }
           header={
             <TableRow className="border-b border-gray-200 dark:border-gray-800">
-              {["Cliente", "Estado", "Válida hasta", "Total", "Acciones"].map((h) => (
+              {["Cliente", "Tipo", "Estado", "Válida hasta", "Total", "Acciones"].map((h) => (
                 <TableCell
                   key={h}
                   isHeader
@@ -86,6 +88,9 @@ export const QuotesTable: FC<QuotesTableProps> = ({
                   <TableCell className="px-4 py-4">
                     <p className="text-sm font-medium text-gray-800 dark:text-white/90">{quote.customerName}</p>
                     {quote.contactNumber && <p className="text-xs text-gray-400">{quote.contactNumber}</p>}
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    {quote.kind === "repair" ? "Reparación" : "Producto"}
                   </TableCell>
                   <TableCell className="px-4 py-4">
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
@@ -118,16 +123,25 @@ export const QuotesTable: FC<QuotesTableProps> = ({
                           </button>
                         </>
                       )}
+                      {quote.status === "accepted" && quote.kind === "repair" && quote.repairNoteId && (
+                        <button
+                          title="Ver nota de reparación"
+                          onClick={() => navigate(`/commerce/repair-notes/${quote.repairNoteId}`)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-900/20"
+                        >
+                          <Wrench className="size-4" />
+                        </button>
+                      )}
                       <button
                         title="Ver / Descargar PDF"
-                        onClick={() => navigate(`/app/quotes/${quote.id}/print`)}
+                        onClick={() => navigate(`/commerce/quotes/${quote.id}/print`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <FileText className="size-4" />
                       </button>
                       <button
                         title="Editar"
-                        onClick={() => navigate(`/app/quotes/${quote.id}/edit`)}
+                        onClick={() => navigate(`/commerce/quotes/${quote.id}/edit`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <Pencil className="size-4" />
@@ -156,7 +170,7 @@ export const QuotesTable: FC<QuotesTableProps> = ({
             <select
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
             >
               {[10, 25, 50].map((size) => (
                 <option key={size} value={size}>

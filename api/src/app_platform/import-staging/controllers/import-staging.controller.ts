@@ -7,6 +7,7 @@ import { triggerImportStagingWorkflow } from "../trigger-workflow.js";
 import { UpdateStagingRowsDto } from "../dtos/update-staging-rows.dto.js";
 import { ImportStagingCallbackDto } from "../dtos/import-staging-callback.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class ImportStagingController {
@@ -35,7 +36,7 @@ export class ImportStagingController {
 
       res.status(202).json({ importId, status: "processing" });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -48,7 +49,7 @@ export class ImportStagingController {
       }
       res.status(200).json(record);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -67,7 +68,7 @@ export class ImportStagingController {
       }
       res.status(200).json(record);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -76,7 +77,7 @@ export class ImportStagingController {
       const result = await this.service.commit(req.params["importId"] as string);
       res.status(200).json(result);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -85,7 +86,7 @@ export class ImportStagingController {
       await this.service.discard(req.params["importId"] as string);
       res.status(200).json({ message: "Staging descartado" });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 
@@ -108,7 +109,7 @@ export class ImportStagingController {
       );
       res.status(200).json({ ok: true });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }

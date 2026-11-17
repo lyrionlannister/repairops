@@ -1,11 +1,15 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
+import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 
 export type RepairNoteStatus = "received" | "in_repair" | "done" | "delivered" | "cancelled";
 
 export interface RepairNoteRecord {
   id: string;
   controlNumber: number;
+  publicRef: string;
+  // URL wa.me del QR impreso; la arma el API. null si el taller no tiene numero de WhatsApp.
+  whatsappQrUrl?: string | null;
   customerName: string;
   contactNumber?: string;
   brand: string;
@@ -16,6 +20,7 @@ export interface RepairNoteRecord {
   requiresAdvance: boolean;
   advanceValue?: number;
   receivedAt: string;
+  receivedTime: string;
   deliveryDate?: string;
   technicianNotes?: string;
   additionalFindings?: string;
@@ -101,6 +106,12 @@ export const STATUS_CONFIG: Record<RepairNoteStatus, { label: string; className:
   },
 };
 
+// Cómo se cobró el anticipo al recibir el equipo: entra como ingreso en la caja abierta.
+export interface AdvancePaymentInput {
+  method: "efectivo" | "tarjeta" | "transferencia";
+  createdByEmployeeId: string;
+}
+
 export interface RepairNoteItemInput {
   inventoryItemId: string;
   quantity: number;
@@ -127,6 +138,13 @@ const toPayload = (form: RepairNoteFormData) => ({
   customerId: form.customerId || undefined,
 });
 
+// Siguiente paso del flujo de una nota; "delivered" y "cancelled" son finales.
+export const NEXT_STATUS: Partial<Record<RepairNoteStatus, { status: RepairNoteStatus; label: string }>> = {
+  received: { status: "in_repair", label: "Iniciar reparación" },
+  in_repair: { status: "done", label: "Marcar como lista" },
+  done: { status: "delivered", label: "Entregar y cobrar" },
+};
+
 export const useRepairNotes = () => {
   const { apiClient } = useApiClient();
   const [notes, setNotes] = useState<RepairNoteRecord[]>([]);
@@ -135,11 +153,13 @@ export const useRepairNotes = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const branchQuery = useBranchQuery();
+
   const fetchNotes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient("/repair-notes");
+      const response = await apiClient(`/repair-notes${branchQuery}`);
       if (!response.ok) throw new Error("Error al obtener notas");
       const data = (await response.json()) as RepairNoteRecord[];
       setNotes(data);
@@ -148,7 +168,7 @@ export const useRepairNotes = () => {
     } finally {
       setLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, branchQuery]);
 
   const fetchNote = useCallback(
     async (id: string) => {
@@ -171,14 +191,18 @@ export const useRepairNotes = () => {
   );
 
   const createNote = useCallback(
-    async (form: RepairNoteFormData, items?: RepairNoteItemInput[]): Promise<RepairNoteRecord | null> => {
+    async (
+      form: RepairNoteFormData,
+      items?: RepairNoteItemInput[],
+      advancePayment?: AdvancePaymentInput,
+    ): Promise<RepairNoteRecord | null> => {
       setSaving(true);
       setError(null);
       try {
         const response = await apiClient("/repair-notes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...toPayload(form), items }),
+          body: JSON.stringify({ ...toPayload(form), items, advancePayment }),
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
@@ -219,6 +243,33 @@ export const useRepairNotes = () => {
         return null;
       } finally {
         setSaving(false);
+      }
+    },
+    [apiClient],
+  );
+
+  // Cambia solo el estado (el API acepta una actualización parcial). Al entregar
+  // se fija la fecha de entrega de hoy si la nota no tenía una.
+  const changeStatus = useCallback(
+    async (id: string, status: RepairNoteStatus, deliveryDate?: string): Promise<RepairNoteRecord | null> => {
+      setError(null);
+      try {
+        const response = await apiClient(`/repair-notes/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(deliveryDate ? { status, deliveryDate } : { status }),
+        });
+        if (!response.ok) {
+          const data = (await response.json().catch(() => ({}))) as { error?: string };
+          throw new Error(data?.error || "Error al cambiar el estado");
+        }
+        const updated = (await response.json()) as RepairNoteRecord;
+        setNote(updated);
+        setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+        return updated;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error desconocido");
+        return null;
       }
     },
     [apiClient],
@@ -303,6 +354,7 @@ export const useRepairNotes = () => {
     updateNote,
     cancelNote,
     deleteNote,
+    changeStatus,
     clearError: () => setError(null),
   };
 };

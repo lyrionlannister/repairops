@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useReturns, type SaleWithItems, type SaleListItem, type RefundMethod } from "../hooks/use-returns";
+import { useInventory } from "@commerce/inventory/hooks/use-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useBranch } from "@common/hooks/use-branch";
 import { Alert } from "@ui/alert/alert";
@@ -7,12 +8,17 @@ import { PageShell } from "@common/components/page-shell/page-shell";
 import { useReturnRefund, type LineDraft } from "../hooks/use-return-refund";
 import { SaleSearchPanel } from "../components/sale-search-panel";
 import { ReturnLinesForm } from "../components/return-lines-form";
-import { formatMoney, newIdempotencyKey } from "../utils/format";
+import { newIdempotencyKey } from "../utils/format";
 
 export const ReturnPage: React.FC = () => {
-  const { searching, searchError, saving, error, findSaleByNumber, findSaleById, listSalesByCustomer, getReturnedQuantities, create } =
+  const { searching, saving, findSaleByNumber, findSaleById, listSalesByCustomer, getReturnedQuantities, create } =
     useReturns();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
+  const { items: inventoryItems, fetchAll: fetchInventory } = useInventory();
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
+  const itemNames = Object.fromEntries(inventoryItems.map((i) => [i.id, i.name]));
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
 
   const [saleNumberInput, setSaleNumberInput] = useState("");
@@ -24,15 +30,14 @@ export const ReturnPage: React.FC = () => {
   const [lines, setLines] = useState<LineDraft[]>([]);
   const [reason, setReason] = useState("");
   const [refundMethod, setRefundMethod] = useState<RefundMethod>("efectivo");
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   // Protege contra doble clic en "Confirmar devolución", mismo mecanismo que
   // venta rápida -- ReturnService.create devuelve la misma devolución en vez
   // de crear una segunda.
   const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
 
   useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
 
   useEffect(() => {
     setCustomerSaleId("");
@@ -110,9 +115,7 @@ export const ReturnPage: React.FC = () => {
     });
 
     if (theReturn) {
-      setSuccessMsg(`Devolución #${theReturn.returnNumber} registrada por ${formatMoney(theReturn.totalRefunded)}.`);
       resetForm();
-      setTimeout(() => setSuccessMsg(null), 3500);
     }
   };
 
@@ -121,8 +124,6 @@ export const ReturnPage: React.FC = () => {
       title="Devoluciones"
       description="Busca una venta por su folio para devolver una o más líneas. Nunca modifica la venta original."
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
       {!loadingCashSession && !cashSession && (
         <Alert
           variant="warning"
@@ -143,13 +144,13 @@ export const ReturnPage: React.FC = () => {
         onSelectCustomerSale={handleSelectCustomerSale}
       />
 
-      {searchError && <Alert variant="error" title="No encontrada" message={searchError} />}
 
       {sale && (
         <ReturnLinesForm
           sale={sale}
           lines={lines}
           alreadyReturned={alreadyReturned}
+          itemNames={itemNames}
           refundMethod={refundMethod}
           reason={reason}
           totalRefunded={totalRefunded}

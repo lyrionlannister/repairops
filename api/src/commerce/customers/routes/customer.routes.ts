@@ -10,6 +10,9 @@ export const createCustomerRouter = (controller: CustomerController): Router => 
   router.get("/:id", controller.getById);
   router.get("/:id/devices", controller.getDevices);
   router.get("/:id/credit-balance", controller.getCreditBalance);
+  router.get("/:id/debts", controller.getDebts);
+  router.get("/:id/payments", controller.getPayments);
+  router.post("/:id/payments", controller.registerPayment);
   router.post("/", controller.create);
   router.patch("/:id", controller.update);
   router.delete("/:id", controller.delete);

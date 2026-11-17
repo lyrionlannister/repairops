@@ -3,8 +3,8 @@ import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
 import { useImportStaging, type StagingRow } from "../hooks/use-import-staging";
-import { Alert } from "@ui/alert/alert";
-import { PageMeta } from "@common/pages/page-meta";
+import { useToast } from "@common/hooks/use-toast";
+import { PageShell } from "@common/components/page-shell/page-shell";
 import { ImportSelectStep } from "../components/import-select-step";
 import { ImportPreviewStep } from "../components/import-preview-step";
 
@@ -14,8 +14,9 @@ const POLL_INTERVAL_MS = 2500;
 
 export const ImportPriceListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { suppliers, loading: loadingSuppliers, fetchAll: fetchSuppliers } = useSuppliers();
-  const { uploading, saving, error, upload, fetchById, updateRows, commit, discard } = useImportStaging();
+  const { uploading, saving, upload, fetchById, updateRows, commit, discard } = useImportStaging();
 
   const [step, setStep] = useState<Step>("select");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -23,7 +24,6 @@ export const ImportPriceListPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [importId, setImportId] = useState<string | null>(null);
   const [rows, setRows] = useState<StagingRow[]>([]);
-  const [stagingError, setStagingError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -45,16 +45,15 @@ export const ImportPriceListPage: React.FC = () => {
         setRows(record.rows);
         setStep("preview");
       } else if (record.status === "error") {
-        setStagingError(record.error ?? "La IA no pudo procesar el archivo");
+        showToast({ title: "No se pudo procesar el archivo", message: record.error ?? "La IA no pudo procesar el archivo", variant: "error" });
         setStep("select");
       }
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [step, importId, fetchById]);
+  }, [step, importId, fetchById, showToast]);
 
   const handleFile = (file: File) => {
     setSelectedFile(file);
-    setStagingError(null);
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -85,7 +84,7 @@ export const ImportPriceListPage: React.FC = () => {
     if (!ok) return;
     const result = await commit(importId);
     if (!result) return;
-    navigate("/app/price-list", { state: { imported: result.imported } });
+    navigate("/commerce/price-list", { state: { imported: result.imported } });
   };
 
   const handleDiscard = async () => {
@@ -97,17 +96,10 @@ export const ImportPriceListPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <PageMeta title="Importar lista de precios" description="Importar lista de precios con IA" />
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">Importar lista de precios</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Sube un PDF o Excel: una IA identifica marca/modelo/precio y revisas el resultado antes de confirmar.
-        </p>
-      </div>
-
-      {(error || stagingError) && <Alert variant="error" title="Error" message={error ?? stagingError ?? ""} />}
-
+    <PageShell
+      title="Importar lista de precios"
+      description="Sube un PDF o Excel: una IA identifica marca/modelo/precio y revisas el resultado antes de confirmar."
+    >
       {step === "select" && (
         <ImportSelectStep
           suppliers={suppliers}
@@ -130,7 +122,7 @@ export const ImportPriceListPage: React.FC = () => {
             e.target.value = "";
           }}
           onClearFile={() => setSelectedFile(null)}
-          onCancel={() => navigate("/app/price-list")}
+          onCancel={() => navigate("/commerce/price-list")}
           onUpload={handleUpload}
         />
       )}
@@ -155,6 +147,6 @@ export const ImportPriceListPage: React.FC = () => {
           onConfirm={handleConfirm}
         />
       )}
-    </div>
+    </PageShell>
   );
 };

@@ -1,8 +1,8 @@
 import type { FC } from "react";
 import { useNavigate } from "react-router";
-import { Plus, Printer, Pencil, Trash2, Ban } from "lucide-react";
+import { Plus, Printer, Pencil, Trash2, Ban, Eye, Wrench, CheckCircle2, HandCoins } from "lucide-react";
 import type { RepairNoteRecord, RepairNoteStatus } from "../hooks/use-repair-notes";
-import { STATUS_CONFIG } from "../hooks/use-repair-notes";
+import { NEXT_STATUS, STATUS_CONFIG } from "../hooks/use-repair-notes";
 import { Button } from "@ui/button/button";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
@@ -27,7 +27,15 @@ interface RepairNotesTableProps {
   onPageSizeChange: (size: number) => void;
   onRequestCancel: (id: string) => void;
   onRequestDelete: (id: string) => void;
+  advancingId: string | null;
+  onAdvance: (note: RepairNoteRecord) => void;
 }
+
+const NEXT_STATUS_ICON: Record<string, FC<{ className?: string }>> = {
+  in_repair: Wrench,
+  done: CheckCircle2,
+  delivered: HandCoins,
+};
 
 export const RepairNotesTable: FC<RepairNotesTableProps> = ({
   loading,
@@ -48,6 +56,8 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
   onPageSizeChange,
   onRequestCancel,
   onRequestDelete,
+  advancingId,
+  onAdvance,
 }) => {
   const navigate = useNavigate();
 
@@ -74,13 +84,14 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
             {notes.length === 0 ? "Crea la primera nota para comenzar." : "Prueba con otro cliente, equipo o estado."}
           </p>
           {canEditNotes && (
-            <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/app/repair-notes/new")}>
+            <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/repair-notes/new")}>
               Nueva nota
             </Button>
           )}
         </div>
       ) : (
         <ScrollTable
+          className="min-w-240"
           colgroup={
             <colgroup>
               <col className="w-16" />
@@ -89,12 +100,12 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
               <col />
               <col />
               <col />
-              <col className="w-44" />
+              <col className="w-56" />
             </colgroup>
           }
           header={
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              {["#", "Cliente", "Equipo", "Estado", "Recibido", "Total", "Acciones"].map((h) => (
+              {["Folio", "Cliente", "Equipo", "Estado", "Recibido", "Total", "Acciones"].map((h) => (
                 <th
                   key={h}
                   className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400"
@@ -134,9 +145,30 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1">
+                      {canEditNotes && NEXT_STATUS[note.status] && (() => {
+                        const next = NEXT_STATUS[note.status]!;
+                        const Icon = NEXT_STATUS_ICON[next.status] ?? Wrench;
+                        return (
+                          <button
+                            title={next.label}
+                            onClick={() => onAdvance(note)}
+                            disabled={advancingId === note.id}
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-900/20 disabled:opacity-50"
+                          >
+                            <Icon className="size-4" />
+                          </button>
+                        );
+                      })()}
+                      <button
+                        title="Ver nota"
+                        onClick={() => navigate(`/commerce/repair-notes/${note.id}`)}
+                        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
+                      >
+                        <Eye className="size-4" />
+                      </button>
                       <button
                         title="Imprimir"
-                        onClick={() => navigate(`/app/repair-notes/${note.id}/print`)}
+                        onClick={() => navigate(`/commerce/repair-notes/${note.id}/print`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                       >
                         <Printer className="size-4" />
@@ -145,7 +177,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                         <>
                           <button
                             title="Editar"
-                            onClick={() => navigate(`/app/repair-notes/${note.id}/edit`)}
+                            onClick={() => navigate(`/commerce/repair-notes/${note.id}/edit`)}
                             className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                           >
                             <Pencil className="size-4" />
@@ -186,7 +218,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
             <select
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
             >
               {[10, 25, 50].map((size) => (
                 <option key={size} value={size}>

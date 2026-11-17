@@ -36,6 +36,10 @@ import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.da
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { User, type UserRole } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
+import { BranchAccessService } from "../../../../src/identity/branches/services/branch-access.service.js";
+import { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
+import { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
+import { setupStaff } from "../../../support/staff.js";
 
 // Integration test contra Postgres real + el router real -- un técnico no
 // opera el POS, igual criterio de módulo que cash.routes.ts.
@@ -45,11 +49,14 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
   let inventoryService: InventoryService;
   const tenantId = `${Date.now()}7`;
 
-  const tokenFor = (role: UserRole) =>
-    jwt.sign({ id: "1", email: "x@x.com", tenantId, role }, requireJwtSecret());
+  // Sucursal real y un usuario por rol (el personal asignado a ella): ver tests/support/staff.ts.
+  let branchId = "";
+  let tokens: Record<string, string> = {};
+  const tokenFor = (role: UserRole) => tokens[role] as string;
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    ({ branchId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
@@ -75,7 +82,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       serviceTypeDao,
       new CustomerDao(AppDataSource.getRepository(Customer)),
     );
-    const controller = new SaleController(saleService);
+    const controller = new SaleController(saleService, new BranchAccessService(new BranchDao(AppDataSource.getRepository(Branch))));
 
     app = express();
     app.use(express.json());
@@ -92,7 +99,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
     const createRes = await request(app)
       .post("/sales")
       .set("Authorization", `Bearer ${technicianToken}`)
-      .send({ localId: "1", cashSessionId: "1", payments: [{ method: "efectivo", amount: 1 }], items: [] });
+      .send({ localId: branchId, cashSessionId: "1", payments: [{ method: "efectivo", amount: 1 }], items: [] });
     expect(createRes.status).toBe(403);
 
     const readRes = await request(app).get("/sales").set("Authorization", `Bearer ${technicianToken}`);
@@ -102,10 +109,10 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
   it("allows a cashier to sell with an open cash session", async () => {
     const cashierToken = tokenFor("cashier");
 
-    const session = await runWithTenant(tenantId, () => cashService.openSession("1", 0));
+    const session = await runWithTenant(tenantId, () => cashService.openSession(branchId, 0));
     const item = await runWithTenant(tenantId, () =>
       inventoryService.create({
-        localId: "1",
+        localId: branchId,
         name: "Funda ruta",
         sku: "FUNDA-ROUTE",
         kind: "accessory",
@@ -122,8 +129,9 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       .post("/sales")
       .set("Authorization", `Bearer ${cashierToken}`)
       .send({
-        localId: "1",
+        localId: branchId,
         cashSessionId: session.id,
+        applyTax: true,
         // 25 subtotal + 16% de impuesto por defecto del tenant = 29.
         payments: [{ method: "efectivo", amount: 29 }],
         items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 25 }],

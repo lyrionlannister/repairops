@@ -35,6 +35,7 @@ import { ReturnDao } from "../../../../src/commerce/returns/daos/return.dao.js";
 import { ReturnItemDao } from "../../../../src/commerce/returns/daos/return-item.dao.js";
 import { ReturnService } from "../../../../src/commerce/returns/services/return.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
+import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
 
 describe("ReturnService.create", () => {
   let inventoryService: InventoryService;
@@ -48,6 +49,7 @@ describe("ReturnService.create", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    await ensureFixtureTenant(AppDataSource, tenantId);
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
     const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
@@ -293,6 +295,7 @@ describe("ReturnService.create", () => {
 
   it("rejects a return whose saleId belongs to a different tenant (tenant isolation)", async () => {
     const otherTenantId = `${Date.now()}4`;
+    await ensureFixtureTenant(AppDataSource, otherTenantId);
     const sessionA = await openSession("7");
     const item = await runWithTenant(tenantId, () =>
       inventoryService.create({ localId: "1", name: "Funda tenant A", sku: "FUNDA-TA", kind: "accessory", costPrice: 10, salePrice: 30, minStock: 0 }),

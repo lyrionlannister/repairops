@@ -1,6 +1,6 @@
 import { FindOptionsWhere, ObjectLiteral, Repository, SelectQueryBuilder } from "typeorm";
 import { BaseDao } from "./base.dao.js";
-import { getCurrentTenantId } from "../tenancy/tenant-context.js";
+import { BranchAccessError, getBranchScope, getCurrentTenantId } from "../tenancy/tenant-context.js";
 
 type TenantOwned = { tenantId: string };
 
@@ -9,57 +9,88 @@ type TenantOwned = { tenantId: string };
 // `this.scoped()`, nunca de `this.repository.find()`/`createQueryBuilder()`
 // directo, asi el filtro de tenant no depende de que cada autor se acuerde
 // de ponerlo. Los metodos heredados de BaseDao ya quedan cubiertos aqui.
+//
+// Las entidades con sucursal (columna `localId`) ademas se acotan a las sucursales del
+// usuario cuando el contexto trae un alcance (personal que no es owner): lecturas a su
+// sucursal principal, escrituras a las suyas. El owner no tiene alcance y ve todas.
 export abstract class TenantScopedDao<
   T extends ObjectLiteral & TenantOwned,
 > extends BaseDao<T> {
+  private readonly hasBranch: boolean;
+
   constructor(repository: Repository<T>) {
     super(repository);
+    this.hasBranch = repository.metadata.hasColumnWithPropertyPath("localId");
   }
 
   protected scoped(alias = "entity"): SelectQueryBuilder<T> {
     const tenantId = getCurrentTenantId();
-    return this.repository
+    const query = this.repository
       .createQueryBuilder(alias)
       .where(`${alias}.tenantId = :tenantId`, { tenantId });
+    const branch = this.hasBranch ? getBranchScope() : null;
+    if (branch) {
+      if (branch.readIds.length === 0) query.andWhere("1 = 0");
+      else query.andWhere(`${alias}.localId IN (:...readBranchIds)`, { readBranchIds: branch.readIds });
+    }
+    return query;
   }
 
   protected currentTenantId(): string {
     return getCurrentTenantId();
   }
 
+  private canRead(entity: T): boolean {
+    const branch = this.hasBranch ? getBranchScope() : null;
+    return !branch || branch.readIds.includes(String((entity as { localId?: unknown }).localId));
+  }
+
   override async create(data: Partial<T>): Promise<T> {
     const tenantId = getCurrentTenantId();
+    const branch = this.hasBranch ? getBranchScope() : null;
+    if (branch) {
+      const localId = String((data as { localId?: unknown }).localId ?? branch.primaryId ?? "");
+      if (!branch.writeIds.includes(localId)) {
+        throw new BranchAccessError("No tienes acceso a esa sucursal");
+      }
+      return super.create({ ...data, localId, tenantId } as unknown as Partial<T>);
+    }
     return super.create({ ...data, tenantId } as Partial<T>);
   }
 
   override async findById(id: string | number): Promise<T | null> {
     const tenantId = getCurrentTenantId();
     const entity = await super.findById(id);
-    if (!entity || entity.tenantId !== tenantId) return null;
+    if (!entity || entity.tenantId !== tenantId || !this.canRead(entity)) return null;
     return entity;
   }
 
   override async findOne(where: Partial<T>): Promise<T | null> {
     const tenantId = getCurrentTenantId();
-    return super.findOne({ ...where, tenantId } as Partial<T>);
+    const entity = await super.findOne({ ...where, tenantId } as Partial<T>);
+    return entity && this.canRead(entity) ? entity : null;
   }
 
   override async findAll(): Promise<T[]> {
+    if (this.hasBranch) return this.scoped().getMany();
     const tenantId = getCurrentTenantId();
     return this.repository.find({ where: { tenantId } as unknown as FindOptionsWhere<T> });
   }
 
   override async update(id: string | number, data: Partial<T>): Promise<T | null> {
-    const tenantId = getCurrentTenantId();
-    const existing = await super.findById(id);
-    if (!existing || existing.tenantId !== tenantId) return null;
+    const existing = await this.findById(id);
+    if (!existing) return null;
+    const branch = this.hasBranch ? getBranchScope() : null;
+    const newLocal = (data as { localId?: unknown }).localId;
+    if (branch && newLocal !== undefined && !branch.writeIds.includes(String(newLocal))) {
+      throw new BranchAccessError("No tienes acceso a esa sucursal");
+    }
     return super.update(id, data);
   }
 
   override async delete(id: string | number): Promise<boolean> {
-    const tenantId = getCurrentTenantId();
-    const existing = await super.findById(id);
-    if (!existing || existing.tenantId !== tenantId) return false;
+    const existing = await this.findById(id);
+    if (!existing) return false;
     return super.delete(id);
   }
 }

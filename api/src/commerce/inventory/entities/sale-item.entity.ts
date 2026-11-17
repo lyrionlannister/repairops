@@ -1,15 +1,27 @@
-import { Entity, Column } from "typeorm";
+import { Entity, Column, ManyToOne, JoinColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { Sale } from "./sale.entity.js";
 
 export type SaleItemLineType = "inventory_item" | "service_type";
 
 @Entity("sale_items")
+@Index("IDX_sale_items_tenant", ["tenantId"])
+@Index("IDX_sale_items_id_venta", ["saleId"])
 export class SaleItem extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
 
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_sale_items_tenant" })
+  tenant?: Tenant;
+
   @Column({ type: "bigint", nullable: false, name: "id_venta" })
   saleId!: string;
+
+  @ManyToOne(() => Sale, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "id_venta", foreignKeyConstraintName: "FK_sale_items_id_venta" })
+  sale?: Sale;
 
   // Discriminador explicito -- mismo patron que InventoryMovement/CashMovement
   // (tipo_entidad_relacionada + id_entidad_relacionada), no un par de columnas

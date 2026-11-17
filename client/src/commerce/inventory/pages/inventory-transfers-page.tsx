@@ -8,19 +8,17 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
-import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
 export const InventoryTransfersPage: React.FC = () => {
   const { items, fetchAll: fetchItems } = useInventory();
   const { branches, fetchAll: fetchBranches } = useBranches();
-  const { transfers, creating, error, fetchAll: fetchTransfers, create } = useInventoryTransfers();
+  const { transfers, creating, fetchAll: fetchTransfers, create } = useInventoryTransfers();
 
   const [fromItemId, setFromItemId] = useState("");
   const [toItemId, setToItemId] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [reason, setReason] = useState("");
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchItems();
@@ -46,23 +44,19 @@ export const InventoryTransfersPage: React.FC = () => {
     });
 
     if (ok) {
-      setSuccessMsg("Transferencia registrada.");
       setFromItemId("");
       setToItemId("");
       setQuantity("1");
       setReason("");
       fetchItems();
-      setTimeout(() => setSuccessMsg(null), 3500);
     }
   };
 
   return (
     <PageShell
       title="Transferencias entre sucursales"
-      description="Mueve cantidad de un item a otro item ya existente en otra sucursal. No crea items nuevos."
+      description="Pasa unidades de un producto a su equivalente en otra sucursal. No crea productos nuevos."
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <form
         onSubmit={handleSubmit}
@@ -74,7 +68,7 @@ export const InventoryTransfersPage: React.FC = () => {
             <Select
               value={fromItemId}
               onChange={setFromItemId}
-              placeholder="Selecciona el item de origen"
+              placeholder="Selecciona el producto de origen"
               options={items.map((i) => ({ value: i.id, label: itemLabel(i) }))}
             />
           </div>
@@ -83,7 +77,7 @@ export const InventoryTransfersPage: React.FC = () => {
             <Select
               value={toItemId}
               onChange={setToItemId}
-              placeholder="Selecciona el item de destino"
+              placeholder="Selecciona el producto de destino"
               options={items.filter((i) => i.id !== fromItemId).map((i) => ({ value: i.id, label: itemLabel(i) }))}
             />
           </div>

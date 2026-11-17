@@ -4,7 +4,6 @@ import type { SaleListItem } from "../hooks/use-returns";
 import { CustomerSelect } from "@common/components/customer-select";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
-import { Label } from "@ui/inputs/label";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@ui/table/table";
 import { formatMoney } from "../utils/format";
 
@@ -32,24 +31,46 @@ export const SaleSearchPanel: FC<SaleSearchPanelProps> = ({
   onSelectCustomerSale,
 }) => (
   <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-      <div className="w-full sm:w-40">
-        <Label className="text-gray-500">Folio de venta</Label>
-        <Input
-          type="number"
-          placeholder="# venta"
-          value={saleNumberInput}
-          onChange={(e) => onSaleNumberInputChange(e.target.value)}
-        />
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_auto_1fr] md:gap-8">
+      <form
+        className="space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSearch();
+        }}
+      >
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Buscar por folio</h3>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">El número impreso en el ticket de venta.</p>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input
+              type="number"
+              placeholder="Ej. 1024"
+              value={saleNumberInput}
+              onChange={(e) => onSaleNumberInputChange(e.target.value)}
+            />
+          </div>
+          <Button type="submit" variant="primary" disabled={searching || !saleNumberInput}>
+            <Search className="mr-1.5 size-4" />
+            {searching ? "Buscando..." : "Buscar"}
+          </Button>
+        </div>
+      </form>
+
+      <div className="flex items-center gap-3 md:flex-col md:self-stretch">
+        <span className="h-px flex-1 bg-gray-300 dark:bg-gray-700 md:h-auto md:w-px" />
+        <span className="text-xs font-medium uppercase tracking-wide text-gray-400">o</span>
+        <span className="h-px flex-1 bg-gray-300 dark:bg-gray-700 md:h-auto md:w-px" />
       </div>
-      <Button type="button" variant="outline" onClick={onSearch} disabled={searching}>
-        <Search className="mr-1.5 size-4" />
-        {searching ? "Buscando..." : "Buscar"}
-      </Button>
-      <div className="hidden h-11 items-center text-sm text-gray-400 sm:flex">o</div>
-      <div className="w-full sm:flex-1">
-        <Label className="text-gray-500">Buscar por cliente</Label>
-        <CustomerSelect value={customerId} onChange={(id) => onCustomerIdChange(id)} />
+
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Buscar por cliente</h3>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Elige un cliente para ver sus ventas.</p>
+        </div>
+        <CustomerSelect value={customerId} onChange={(id) => onCustomerIdChange(id)} placeholder="Busca por nombre o teléfono" />
       </div>
     </div>
 

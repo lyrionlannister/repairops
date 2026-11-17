@@ -2,16 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useRepairNotes } from "../hooks/use-repair-notes";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
-import { useCash, type CashMovementMethod } from "@commerce/cash/hooks/use-cash";
 import { useBranch } from "@common/hooks/use-branch";
 import {
   INITIAL_FORM,
+  type AdvancePaymentInput,
   type RepairNoteFormData,
-  type RepairNoteRecord,
   type RepairNoteStatus,
 } from "../hooks/use-repair-notes";
 import { Button } from "@ui/button/button";
-import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useRepairNoteCustomerHistory } from "../hooks/use-repair-note-customer-history";
 import { useRepairNoteItemLines } from "../hooks/use-repair-note-item-lines";
@@ -23,8 +21,11 @@ import { RepairNoteDatesSection } from "../components/repair-note-dates-section"
 import { RepairNoteItemLinesSection } from "../components/repair-note-item-lines-section";
 import { RepairNoteCostSection, RepairNoteWarrantySection } from "../components/repair-note-cost-warranty-section";
 import { RepairNoteStatusSection } from "../components/repair-note-status-section";
-import { RepairNoteChargeModal } from "../components/repair-note-charge-modal";
+import { Step, Stepper } from "@ui/stepper/stepper";
+import { useFormSteps } from "@common/hooks/use-form-steps";
 import { noteToForm } from "../utils/note-to-form";
+
+const STEPS = ["Cliente", "Equipo", "Servicio", "Costo y garantía"];
 
 export const RepairNoteFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,7 +37,6 @@ export const RepairNoteFormPage: React.FC = () => {
     notes,
     loading,
     saving,
-    error,
     fetchNotes,
     fetchNote,
     fetchNoteItems,
@@ -46,27 +46,17 @@ export const RepairNoteFormPage: React.FC = () => {
     clearError,
   } = useRepairNotes();
   const knownBrands = useKnownBrands(notes);
-  const { activeBranchId } = useBranch();
-  const {
-    session: cashSession,
-    saving: cashSaving,
-    error: cashError,
-    fetchOpenSession,
-    registerMovement,
-    clearError: clearCashError,
-  } = useCash();
+  const { workingBranchId } = useBranch();
 
   const [form, setForm] = useState<RepairNoteFormData>(INITIAL_FORM);
   const [initialServiceTypeIds, setInitialServiceTypeIds] = useState<string[]>([]);
-  const [chargeNote, setChargeNote] = useState<RepairNoteRecord | null>(null);
-  const [cashAmount, setCashAmount] = useState("0");
-  const [cashMethod, setCashMethod] = useState<CashMovementMethod>("efectivo");
-  const [cashEmployeeId, setCashEmployeeId] = useState("");
+  const [advanceMethod, setAdvanceMethod] = useState<AdvancePaymentInput["method"]>("efectivo");
+  const [advanceEmployeeId, setAdvanceEmployeeId] = useState("");
 
   // La nota pertenece a form.localId (su propia sucursal, no necesariamente
   // la activa en el header al editar una nota de otra sucursal) -- las
   // refacciones a reservar deben salir del stock de esa misma sucursal.
-  const noteLocalId = form.localId || activeBranchId;
+  const noteLocalId = form.localId || workingBranchId;
   const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(noteLocalId);
 
   const {
@@ -85,10 +75,10 @@ export const RepairNoteFormPage: React.FC = () => {
   }, [fetchInventory, fetchNotes]);
 
   useEffect(() => {
-    if (!isEdit && activeBranchId) {
-      setForm((prev) => (prev.localId ? prev : { ...prev, localId: activeBranchId }));
+    if (!isEdit && workingBranchId) {
+      setForm((prev) => (prev.localId ? prev : { ...prev, localId: workingBranchId }));
     }
-  }, [isEdit, activeBranchId]);
+  }, [isEdit, workingBranchId]);
 
   useEffect(() => {
     if (isEdit && id) {
@@ -107,45 +97,27 @@ export const RepairNoteFormPage: React.FC = () => {
   const set = (field: keyof RepairNoteFormData, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  const { step, isLast, formRef, next, back, goTo } = useFormSteps(STEPS.length);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Enter en un paso intermedio avanza en lugar de guardar.
+    if (!isLast) return next();
     clearError();
     const items = buildItemsPayload();
     if (isEdit && id) {
       const result = await updateNote(id, form, items);
       if (!result) return;
-      const turningDelivered = form.status === "delivered" && note?.status !== "delivered";
-      if (turningDelivered) {
-        await fetchOpenSession(activeBranchId);
-        setCashAmount(String(result.totalValue));
-        setCashEmployeeId(result.assignedEmployeeId ?? "");
-        setChargeNote(result);
-        return;
-      }
-      navigate("/app/repair-notes");
+      navigate(`/commerce/repair-notes/${result.id}`, { state: { saved: "updated" } });
     } else {
-      const result = await createNote(form, items);
-      if (result) navigate("/app/repair-notes");
+      const hasAdvance = form.requiresAdvance && Number(form.advanceValue) > 0;
+      const result = await createNote(
+        form,
+        items,
+        hasAdvance ? { method: advanceMethod, createdByEmployeeId: advanceEmployeeId } : undefined,
+      );
+      if (result) navigate(`/commerce/repair-notes/${result.id}`, { state: { saved: "created" } });
     }
-  };
-
-  const closeChargeModal = () => {
-    setChargeNote(null);
-    clearCashError();
-    navigate("/app/repair-notes");
-  };
-
-  const handleRegisterCharge = async () => {
-    if (!chargeNote || !cashSession) return;
-    const ok = await registerMovement(cashSession.id, {
-      type: "income",
-      method: cashMethod,
-      amount: Number(cashAmount) || 0,
-      createdByEmployeeId: cashEmployeeId,
-      relatedEntityType: "repair_note",
-      relatedEntityId: chargeNote.id,
-    });
-    if (ok) closeChargeModal();
   };
 
   // Panel de historial solo aplica editando una nota con cliente real
@@ -166,10 +138,12 @@ export const RepairNoteFormPage: React.FC = () => {
       title={isEdit ? `Editar nota #${note?.controlNumber ?? ""}` : "Nueva nota de reparación"}
       description={isEdit ? "Modifica los datos de la nota." : "Registra un nuevo equipo en el taller."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className={showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"}>
-        <form onSubmit={handleSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
+        <form ref={formRef} onSubmit={handleSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
+          <Stepper steps={STEPS} current={step} onStepClick={goTo} />
+
+          <Step index={0} current={step}>
           <RepairNoteCustomerSection
             customerId={form.customerId}
             customerName={form.customerName}
@@ -187,6 +161,9 @@ export const RepairNoteFormPage: React.FC = () => {
             onContactNumberChange={(value) => set("contactNumber", value)}
           />
 
+          </Step>
+
+          <Step index={1} current={step}>
           <RepairNoteDeviceSection
             brand={form.brand}
             model={form.model}
@@ -202,6 +179,9 @@ export const RepairNoteFormPage: React.FC = () => {
             onDeviceOffChange={(value) => set("deviceOff", value)}
           />
 
+          </Step>
+
+          <Step index={2} current={step}>
           <RepairNoteDatesSection
             receivedAt={form.receivedAt}
             deliveryDate={form.deliveryDate}
@@ -227,6 +207,9 @@ export const RepairNoteFormPage: React.FC = () => {
             onRemoveLine={removeItemLine}
           />
 
+          </Step>
+
+          <Step index={3} current={step}>
           <RepairNoteCostSection
             totalValue={form.totalValue}
             requiresAdvance={form.requiresAdvance}
@@ -235,6 +218,11 @@ export const RepairNoteFormPage: React.FC = () => {
             onTotalValueChange={(value) => set("totalValue", value)}
             onRequiresAdvanceToggle={() => set("requiresAdvance", !form.requiresAdvance)}
             onAdvanceValueChange={(value) => set("advanceValue", value)}
+            advanceLocked={isEdit && Boolean(note?.requiresAdvance) && Number(note?.advanceValue) > 0}
+            advanceMethod={isEdit ? undefined : advanceMethod}
+            advanceEmployeeId={advanceEmployeeId}
+            onAdvanceMethodChange={isEdit ? undefined : (value) => setAdvanceMethod(value as AdvancePaymentInput["method"])}
+            onAdvanceEmployeeChange={isEdit ? undefined : setAdvanceEmployeeId}
           />
 
           <RepairNoteWarrantySection
@@ -264,13 +252,28 @@ export const RepairNoteFormPage: React.FC = () => {
             />
           )}
 
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate("/app/repair-notes")} disabled={saving}>
+          </Step>
+
+          <div className="flex justify-between gap-3">
+            <Button type="button" variant="outline" onClick={() => navigate(isEdit && id ? `/commerce/repair-notes/${id}` : "/commerce/repair-notes")} disabled={saving}>
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear nota"}
-            </Button>
+            <div className="flex gap-3">
+              {step > 0 && (
+                <Button type="button" variant="outline" onClick={back} disabled={saving}>
+                  Atrás
+                </Button>
+              )}
+              {isLast ? (
+                <Button type="submit" variant="primary" disabled={saving}>
+                  {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear nota"}
+                </Button>
+              ) : (
+                <Button type="button" variant="primary" onClick={next}>
+                  Siguiente
+                </Button>
+              )}
+            </div>
           </div>
         </form>
 
@@ -281,20 +284,6 @@ export const RepairNoteFormPage: React.FC = () => {
         )}
       </div>
 
-      <RepairNoteChargeModal
-        isOpen={Boolean(chargeNote)}
-        cashSession={cashSession}
-        cashError={cashError}
-        cashAmount={cashAmount}
-        cashMethod={cashMethod}
-        cashEmployeeId={cashEmployeeId}
-        cashSaving={cashSaving}
-        onClose={closeChargeModal}
-        onCashAmountChange={setCashAmount}
-        onCashMethodChange={setCashMethod}
-        onCashEmployeeIdChange={setCashEmployeeId}
-        onRegisterCharge={handleRegisterCharge}
-      />
     </PageShell>
   );
 };

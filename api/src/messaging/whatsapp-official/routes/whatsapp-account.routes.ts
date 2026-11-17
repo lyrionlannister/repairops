@@ -6,7 +6,7 @@ import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 
 // Conectar la cuenta de WhatsApp del taller es tan sensible como abrir/cerrar
 // caja -- mismo criterio que canWriteCash (ver plan Fase 4, Checkpoint 6).
-const canConnectAccount = requireRole("owner", "admin");
+const canConnectAccount = requireRole("owner");
 
 export const createWhatsappAccountRouter = (controller: WhatsappAccountController): Router => {
   const router = Router();

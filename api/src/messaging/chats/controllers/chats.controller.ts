@@ -2,16 +2,21 @@ import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { CHATS_ERROR_MESSAGES } from "../constants/chats.constants.js";
 import { ChatsService } from "../services/chats.service.js";
+import { ChatMediaService } from "../services/chat-media.service.js";
 import { humanModeService } from "../../../app_platform/human-mode/human-mode.service.js";
 import AppDataSource from "../../../core/config/data-source.js";
+import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { ContactName } from "../entities/contact-name.entity.js";
+import { normalizePhone } from "../helpers/chats.helpers.js";
 import { WhatsappAccountService } from "../../whatsapp-official/services/whatsapp-account.service.js";
 import { WhatsappSendService, WhatsappWindowClosedError } from "../../whatsapp-official/services/whatsapp-send.service.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class ChatsController {
   constructor(
     private chatsService: ChatsService,
+    private chatMediaService: ChatMediaService,
     private whatsappAccountService: WhatsappAccountService,
     private whatsappSendService: WhatsappSendService,
   ) {}
@@ -40,6 +45,28 @@ export class ChatsController {
     } catch (error) {
       console.error("Error obteniendo mensajes", error);
       res.status(500).json({ error: CHATS_ERROR_MESSAGES.MESSAGES_LIST });
+    }
+  }
+
+  // Entrega el archivo por el API (nunca una URL del bucket). La busqueda del
+  // mensaje es del tenant del contexto, asi que un id de otro tenant da 404.
+  async getMedia(req: Request, res: Response): Promise<void> {
+    try {
+      const sessionId = String(req.params.sessionId ?? "");
+      const mediaId = String(req.params.mediaId ?? "");
+      const message = await this.chatsService.findMediaMessage(sessionId, mediaId);
+      const stored = message?.mediaKey ? await this.chatMediaService.read(message.mediaKey) : null;
+      if (!message || !stored) {
+        res.status(404).json({ error: "Archivo no encontrado" });
+        return;
+      }
+      res.setHeader("Content-Type", message.mediaMime ?? stored.contentType);
+      res.setHeader("Content-Disposition", "attachment");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.status(200).send(stored.body);
+    } catch (error) {
+      console.error("Error entregando archivo de chat", error instanceof Error ? error.message : error);
+      res.status(500).json({ error: "No se pudo obtener el archivo" });
     }
   }
 
@@ -99,7 +126,7 @@ export class ChatsController {
     try {
       const sessionId = Array.isArray(req.params.sessionId) ? req.params.sessionId[0] : req.params.sessionId;
       const contactName = await AppDataSource.getRepository(ContactName)
-        .findOneBy({ phone: sessionId })
+        .findOneBy({ tenantId: getCurrentTenantId(), phone: normalizePhone(sessionId) })
         .then((cn) => cn?.name);
       await humanModeService.activate(sessionId, contactName);
       res.status(200).json({ isHumanMode: true });
@@ -138,20 +165,27 @@ export class ChatsController {
 
       const [account, lastInboundAt] = await Promise.all([
         this.whatsappAccountService.getOrCreateForTenant(),
-        this.chatsService.getLastHumanMessageAt(sessionId),
+        this.chatsService.getLastInboundAt(sessionId),
       ]);
-      await this.whatsappSendService.sendFreeText(
+      const waMessageId = await this.whatsappSendService.sendFreeText(
         account.phoneNumberId,
         account.accessToken,
         sessionId,
         body,
         lastInboundAt,
       );
+      await this.chatsService.recordMessage({
+        contactPhone: sessionId,
+        direction: "outbound",
+        sender: "agent",
+        body,
+        waMessageId,
+      });
 
       res.status(200).json({ ok: true });
     } catch (error) {
       if (error instanceof WhatsappWindowClosedError) {
-        res.status(409).json({ error: error.message });
+        sendError(res, error, 409);
         return;
       }
       console.error("Error enviando mensaje manual:", error);

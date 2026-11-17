@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { MessageSquareText, Plus, Pencil, Search, Trash2 } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
@@ -16,10 +15,9 @@ import { useMessageTemplatesPage } from "../hooks/use-message-templates-page";
 
 export const MessageTemplatesPage = () => {
   const navigate = useNavigate();
-  const { templates, loading, saving, error, fetchAll, remove } = useMessageTemplates();
+  const { templates, loading, saving, fetchAll, remove } = useMessageTemplates();
   const { search, setSearch, filteredTemplates } = useMessageTemplatesPage(templates);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -29,11 +27,7 @@ export const MessageTemplatesPage = () => {
     usePaginatedList(filteredTemplates);
 
   const handleDelete = async (id: string) => {
-    const ok = await remove(id);
-    if (ok) {
-      setSuccessMsg("Template eliminado.");
-      window.setTimeout(() => setSuccessMsg(null), 3000);
-    }
+    await remove(id);
     setDeleteConfirmId(null);
   };
 
@@ -42,14 +36,12 @@ export const MessageTemplatesPage = () => {
       title="Templates de Mensajes"
       description="Mensajes predefinidos que usa el agente de WhatsApp."
       action={
-        <Button variant="primary" onClick={() => navigate("/app/templates/new")}>
+        <Button variant="primary" onClick={() => navigate("/messaging/message-templates/new")}>
           <Plus className="mr-1.5 size-4" />
           Nuevo template
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">
@@ -74,6 +66,7 @@ export const MessageTemplatesPage = () => {
           </div>
         ) : (
           <ScrollTable
+            className="min-w-150"
             colgroup={
               <colgroup>
                 <col className="w-48" />
@@ -109,7 +102,7 @@ export const MessageTemplatesPage = () => {
                   <td className="px-4 py-4 align-top text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => navigate(`/app/templates/${template.id}/edit`)}
+                        onClick={() => navigate(`/messaging/message-templates/${template.id}/edit`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                         title="Editar"
                       >
@@ -137,7 +130,7 @@ export const MessageTemplatesPage = () => {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
                 {[10, 25, 50].map((size) => (
                   <option key={size} value={size}>{size}</option>

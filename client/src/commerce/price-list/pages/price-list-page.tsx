@@ -5,7 +5,6 @@ import { Tags, Upload, Plus, Pencil, Trash2, Search, PackagePlus } from "lucide-
 import { usePriceList } from "../hooks/use-price-list";
 import { usePriceListPage } from "../hooks/use-price-list-page";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { Pagination } from "@ui/table/pagination";
@@ -18,7 +17,7 @@ import { formatPrice } from "../utils/format";
 export const PriceListPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { items, loading, saving, error, fetchAll, remove } = usePriceList();
+  const { items, loading, saving, fetchAll, remove } = usePriceList();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
 
   useEffect(() => {
@@ -27,12 +26,11 @@ export const PriceListPage = () => {
   }, [fetchAll, fetchSuppliers]);
 
   const initialSuccessMessage =
-    location.state?.imported !== undefined ? `PDF importado: ${location.state.imported} items cargados.` : null;
+    location.state?.imported !== undefined ? `PDF importado: ${location.state.imported} productos cargados.` : null;
 
   const {
     deleteConfirmId,
     setDeleteConfirmId,
-    successMsg,
     search,
     setSearch,
     activeBrand,
@@ -54,22 +52,20 @@ export const PriceListPage = () => {
   return (
     <PageShell
       title="Lista de Precios"
-      description={items.length > 0 ? `${items.length} items en total.` : "Sin items cargados."}
+      description={items.length > 0 ? `${items.length} productos en total.` : "Aún no hay productos."}
       action={
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" onClick={() => navigate("/app/price-list/import")}>
+          <Button variant="outline" onClick={() => navigate("/commerce/price-list/import")}>
             <Upload className="mr-1.5 size-4" />
             Importar PDF
           </Button>
-          <Button variant="primary" onClick={() => navigate("/app/price-list/new")}>
+          <Button variant="primary" onClick={() => navigate("/commerce/price-list/new")}>
             <Plus className="mr-1.5 size-4" />
-            Nuevo item
+            Nuevo producto
           </Button>
         </div>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -98,7 +94,7 @@ export const PriceListPage = () => {
             <button
               key={brand}
               onClick={() => { setActiveBrand(brand); setPage(1); }}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full px-3 py-3 text-xs md:py-1 font-medium transition-colors ${
                 activeBrand === brand
                   ? "bg-brand-600 text-white dark:bg-brand-500"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -154,7 +150,7 @@ export const PriceListPage = () => {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() =>
-                          navigate("/app/inventory/new", {
+                          navigate("/commerce/inventory/new", {
                             state: {
                               prefillFromPriceList: {
                                 name: `${item.brand} ${item.model}`,
@@ -169,7 +165,7 @@ export const PriceListPage = () => {
                       >
                         <PackagePlus className="size-4" />
                       </button>
-                      <button onClick={() => navigate(`/app/price-list/${item.id}/edit`)} className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30">
+                      <button onClick={() => navigate(`/commerce/price-list/${item.id}/edit`)} className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30">
                         <Pencil className="size-4" />
                       </button>
                       <button onClick={() => setDeleteConfirmId(item.id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30">
@@ -190,7 +186,7 @@ export const PriceListPage = () => {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
                 {[10, 25, 50].map((size) => (
                   <option key={size} value={size}>{size}</option>
@@ -207,8 +203,8 @@ export const PriceListPage = () => {
 
       <ConfirmModal
         isOpen={deleteConfirmId !== null}
-        title="Eliminar item"
-        message="¿Eliminar este item de la lista de precios? Esta acción no se puede deshacer."
+        title="Eliminar producto"
+        message="¿Eliminar este producto de la lista de precios? Esta acción no se puede deshacer."
         danger
         loading={saving}
         onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}

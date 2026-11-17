@@ -2,7 +2,6 @@ import { useLocal } from "@app-platform/local/hooks/use-local";
 import { useBranch } from "@common/hooks/use-branch";
 import { useCash } from "../hooks/use-cash";
 import { useCashPage } from "../hooks/use-cash-page";
-import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { ClosedSessionBanner } from "../components/closed-session-banner";
@@ -13,7 +12,7 @@ import { CloseCashModal } from "../components/close-cash-modal";
 
 export const CashPage = () => {
   const { local, fetchLocal } = useLocal();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   const {
     session,
     closedSession,
@@ -58,7 +57,7 @@ export const CashPage = () => {
     handleDismissClosedSession,
   } = useCashPage({
     local,
-    branchId: activeBranchId,
+    branchId: workingBranchId,
     session,
     movements,
     summary,
@@ -85,7 +84,6 @@ export const CashPage = () => {
 
   return (
     <PageShell title="Caja" description="Apertura, movimientos y cierre de caja del local.">
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       {closedSession && (
         <ClosedSessionBanner closedSession={closedSession} onDismiss={handleDismissClosedSession} />

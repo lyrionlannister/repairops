@@ -14,6 +14,7 @@ import { requireJwtSecret } from "../jwt-secret.js";
 import { allowSystemScope, runWithTenant } from "../../../core/tenancy/tenant-context.js";
 import { ServiceTypeService } from "../../../commerce/service-types/services/service-type.service.js";
 import { BranchService } from "../../branches/services/branch.service.js";
+import { UserBranchService, type BranchAssignment } from "../../branches/services/user-branch.service.js";
 
 const { sign } = jwt;
 
@@ -24,6 +25,7 @@ export class AuthService {
     @inject(repositoryToken(Tenant)) private tenantRepository: Repository<Tenant>,
     private serviceTypeService: ServiceTypeService,
     private branchService: BranchService,
+    private userBranchService: UserBranchService,
   ) {}
 
   async register(data: RegisterUserDto): Promise<User> {
@@ -68,9 +70,13 @@ export class AuthService {
     });
   }
 
-  async getAllUsers(): Promise<Omit<User, "password">[]> {
-    const users = await this.userDao.findAll();
-    return users.map(({ password, ...rest }) => rest);
+  // Cada usuario sale con sus sucursales (branchIds y la principal); el owner no tiene filas.
+  async getAllUsers(): Promise<Array<Omit<User, "password"> & BranchAssignment>> {
+    const [users, assignments] = await Promise.all([this.userDao.findAll(), this.userBranchService.getAssignments()]);
+    return users.map(({ password, ...rest }) => ({
+      ...rest,
+      ...(assignments.get(String(rest.id)) ?? { branchIds: [], primaryBranchId: null }),
+    }));
   }
 
   // Empleado nuevo dentro del tenant ya resuelto por tenantMiddleware -- a
@@ -81,6 +87,10 @@ export class AuthService {
       throw new Error("Email ya registrado");
     }
 
+    // Las sucursales se validan antes de crear nada: un usuario sin sucursal no puede operar.
+    const role = data.role ?? "employee";
+    const assignment = await this.userBranchService.normalize(role, data.branchIds, data.primaryBranchId);
+
     const hashedPassword = await hash(data.password, 10);
 
     const user = await this.userDao.create({
@@ -88,10 +98,11 @@ export class AuthService {
       lastName: data.lastName,
       email: data.email,
       password: hashedPassword,
-      role: data.role ?? "employee",
+      role,
       salaryAmount: data.salaryAmount ?? null,
       payCycle: data.payCycle ?? null,
     });
+    await this.userBranchService.assign(user.id, assignment);
 
     const { password, ...rest } = user;
     return rest;
@@ -105,6 +116,15 @@ export class AuthService {
     if (existingUser && existingUser.id !== id) {
       throw new Error("Email ya registrado");
     }
+
+    // Sin branchIds se conservan las actuales; si el usuario deja de ser owner debe tener sucursales.
+    const role = data.role ?? "employee";
+    const current = (await this.userBranchService.getAssignments()).get(String(id));
+    const assignment = await this.userBranchService.normalize(
+      role,
+      data.branchIds ?? current?.branchIds,
+      data.primaryBranchId ?? (data.branchIds ? undefined : (current?.primaryBranchId ?? undefined)),
+    );
 
     const updatePayload: Partial<User> = {
       firstName: data.firstName,
@@ -120,6 +140,7 @@ export class AuthService {
 
     const user = await this.userDao.update(id, updatePayload);
     if (!user) return null;
+    await this.userBranchService.assign(user.id, assignment);
     const { password, ...rest } = user;
     return rest;
   }

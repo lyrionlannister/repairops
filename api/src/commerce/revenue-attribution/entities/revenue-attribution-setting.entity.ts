@@ -1,5 +1,6 @@
-import { Entity, Column, UpdateDateColumn } from "typeorm";
+import { Entity, Column, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 export type AttributionBasis = "total_value" | "margin" | "labor_only";
 
@@ -13,6 +14,10 @@ export type AttributionBasis = "total_value" | "margin" | "labor_only";
 export class RevenueAttributionSetting extends BaseEntity {
   @Column({ type: "bigint", nullable: false, unique: true, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_revenue_attribution_settings_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "varchar", length: 20, default: "total_value", name: "base_atribucion" })
   attributionBasis!: AttributionBasis;

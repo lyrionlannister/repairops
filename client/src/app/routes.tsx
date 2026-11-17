@@ -2,7 +2,7 @@ import { ChatsPage } from "../messaging/chats/pages/chats-page";
 import { AuthPage } from "../identity/auth/pages/auth-page";
 import { RegisterPage } from "../identity/auth/pages/register-page";
 import { NotFound } from "../core/common/pages/not-found";
-import { DashboardPage } from "../reporting/dashboard/pages/dashboard-page";
+import { HomePage } from "../home/pages/home-page";
 import { UsersPage } from "../identity/users/pages/users-page";
 import { UserFormPage } from "../identity/users/pages/user-form-page";
 import { LocalPage } from "../app_platform/local/pages/local-page";
@@ -10,6 +10,7 @@ import { ProfilePage } from "../identity/auth/pages/profile-page";
 import { RepairNotesPage } from "../commerce/repair-notes/pages/repair-notes-page";
 import { RepairNoteFormPage } from "../commerce/repair-notes/pages/repair-note-form-page";
 import { RepairNotePrintPage } from "../commerce/repair-notes/pages/repair-note-print-page";
+import { RepairNoteDetailPage } from "../commerce/repair-notes/pages/repair-note-detail-page";
 import { MessageTemplatesPage } from "../messaging/message-templates/pages/message-templates-page";
 import { MessageTemplateFormPage } from "../messaging/message-templates/pages/message-template-form-page";
 import { WhatsappOfficialPage } from "../messaging/whatsapp-official/pages/whatsapp-official-page";
@@ -33,15 +34,17 @@ import { SupplierFormPage } from "../commerce/suppliers/pages/supplier-form-page
 import { BranchesPage } from "../identity/branches/pages/branches-page";
 import { BranchFormPage } from "../identity/branches/pages/branch-form-page";
 import { CustomersPage } from "../commerce/customers/pages/customers-page";
+import { ReportsPage } from "../reporting/reports/pages/reports-page";
 import { CustomerFormPage } from "../commerce/customers/pages/customer-form-page";
+import { CustomerDetailPage } from "../commerce/customers/pages/customer-detail-page";
 
 export const publicRoutes = [
   {
-    path: "/app/sign-in",
+    path: "/identity/sign-in",
     element: <AuthPage />,
   },
   {
-    path: "/owner/sign-up",
+    path: "/identity/sign-up",
     element: <RegisterPage />,
   },
   {
@@ -52,171 +55,183 @@ export const publicRoutes = [
 
 export const protectedRoutes = [
   {
-    path: "/app/dashboard",
-    element: <DashboardPage />,
+    path: "/home",
+    element: <HomePage />,
   },
   {
-    path: "/app/chats",
+    path: "/messaging/chats",
     element: <ChatsPage />,
   },
   {
-    path: "/app/users",
+    path: "/identity/users",
     element: <UsersPage />,
   },
   {
-    path: "/app/users/new",
+    path: "/identity/users/new",
     element: <UserFormPage />,
   },
   {
-    path: "/app/users/:id/edit",
+    path: "/identity/users/:id/edit",
     element: <UserFormPage />,
   },
   {
-    path: "/app/local",
+    path: "/platform/local",
     element: <LocalPage />,
   },
   {
-    path: "/app/profile",
+    path: "/identity/profile",
     element: <ProfilePage />,
   },
   {
-    path: "/app/repair-notes",
+    path: "/commerce/repair-notes",
     element: <RepairNotesPage />,
   },
   {
-    path: "/app/repair-notes/new",
+    path: "/commerce/repair-notes/new",
     element: <RepairNoteFormPage />,
   },
   {
-    path: "/app/repair-notes/:id/edit",
+    path: "/commerce/repair-notes/:id",
+    element: <RepairNoteDetailPage />,
+  },
+  {
+    path: "/commerce/repair-notes/:id/edit",
     element: <RepairNoteFormPage />,
   },
   {
-    path: "/app/repair-notes/:id/print",
+    path: "/commerce/repair-notes/:id/print",
     element: <RepairNotePrintPage />,
   },
   {
-    path: "/app/templates",
+    path: "/messaging/message-templates",
     element: <MessageTemplatesPage />,
   },
   {
-    path: "/app/templates/new",
+    path: "/messaging/message-templates/new",
     element: <MessageTemplateFormPage />,
   },
   {
-    path: "/app/templates/:id/edit",
+    path: "/messaging/message-templates/:id/edit",
     element: <MessageTemplateFormPage />,
   },
   {
-    path: "/app/whatsapp",
+    path: "/messaging/whatsapp",
     element: <WhatsappOfficialPage />,
   },
   {
-    path: "/app/suppliers",
+    path: "/commerce/suppliers",
     element: <SuppliersPage />,
   },
   {
-    path: "/app/suppliers/new",
+    path: "/commerce/suppliers/new",
     element: <SupplierFormPage />,
   },
   {
-    path: "/app/suppliers/:id/edit",
+    path: "/commerce/suppliers/:id/edit",
     element: <SupplierFormPage />,
   },
   {
-    path: "/app/branches",
+    path: "/identity/branches",
     element: <BranchesPage />,
   },
   {
-    path: "/app/branches/new",
+    path: "/identity/branches/new",
     element: <BranchFormPage />,
   },
   {
-    path: "/app/branches/:id/edit",
+    path: "/identity/branches/:id/edit",
     element: <BranchFormPage />,
   },
   {
-    path: "/app/customers",
+    path: "/commerce/customers",
     element: <CustomersPage />,
   },
   {
-    path: "/app/customers/new",
+    path: "/commerce/customers/new",
     element: <CustomerFormPage />,
   },
   {
-    path: "/app/customers/:id/edit",
+    path: "/commerce/customers/:id",
+    element: <CustomerDetailPage />,
+  },
+  {
+    path: "/commerce/customers/:id/edit",
     element: <CustomerFormPage />,
   },
   {
-    path: "/app/price-list",
+    path: "/commerce/price-list",
     element: <PriceListPage />,
   },
   {
-    path: "/app/price-list/new",
+    path: "/commerce/price-list/new",
     element: <PriceListItemFormPage />,
   },
   {
-    path: "/app/price-list/:id/edit",
+    path: "/commerce/price-list/:id/edit",
     element: <PriceListItemFormPage />,
   },
   {
-    path: "/app/price-list/import",
+    path: "/commerce/price-list/import",
     element: <ImportPriceListPage />,
   },
   {
-    path: "/app/inventory",
+    path: "/commerce/inventory",
     element: <InventoryPage />,
   },
   {
-    path: "/app/inventory/new",
+    path: "/commerce/inventory/new",
     element: <InventoryItemFormPage />,
   },
   {
-    path: "/app/inventory/:id/edit",
+    path: "/commerce/inventory/:id/edit",
     element: <InventoryItemFormPage />,
   },
   {
-    path: "/app/sales/new",
+    path: "/commerce/sales/new",
     element: <QuickSalePage />,
   },
   {
-    path: "/app/returns",
+    path: "/commerce/returns",
     element: <ReturnPage />,
   },
   {
-    path: "/app/inventory/transfers",
+    path: "/commerce/inventory/transfers",
     element: <InventoryTransfersPage />,
   },
   {
-    path: "/app/inventory/counts",
+    path: "/commerce/inventory/counts",
     element: <InventoryCountPage />,
   },
   {
-    path: "/app/layaways",
+    path: "/commerce/layaways",
     element: <LayawaysPage />,
   },
   {
-    path: "/app/layaways/new",
+    path: "/commerce/layaways/new",
     element: <LayawayFormPage />,
   },
   {
-    path: "/app/quotes",
+    path: "/commerce/quotes",
     element: <QuotesPage />,
   },
   {
-    path: "/app/quotes/new",
+    path: "/commerce/quotes/new",
     element: <QuoteFormPage />,
   },
   {
-    path: "/app/quotes/:id/edit",
+    path: "/commerce/quotes/:id/edit",
     element: <QuoteFormPage />,
   },
   {
-    path: "/app/quotes/:id/print",
+    path: "/commerce/quotes/:id/print",
     element: <QuotePrintPage />,
   },
   {
-    path: "/app/cash",
+    path: "/commerce/cash",
     element: <CashPage />,
+  },
+  {
+    path: "/reporting/reports",
+    element: <ReportsPage />,
   },
 ];

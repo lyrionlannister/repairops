@@ -24,12 +24,13 @@ export const LayawayFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { saving, error, open } = useLayaways();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
   // Solo items de la sucursal activa -- un apartado reserva stock fisico,
   // no tiene sentido reservar de una sucursal que el cajero no ve.
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(activeBranchId);
+  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(workingBranchId);
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
 
+  const [formError, setFormError] = useState<string | null>(null);
   const [customerId, setCustomerId] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
@@ -43,8 +44,8 @@ export const LayawayFormPage: React.FC = () => {
   }, [fetchCustomers, fetchInventory]);
 
   useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
+    if (workingBranchId) fetchOpenSession(workingBranchId);
+  }, [workingBranchId, fetchOpenSession]);
 
   const { creditLimit, creditBalance, creditAvailable, creditLoaded, devices, activeLayaways } = useCustomerContext(
     customerId || null,
@@ -52,9 +53,12 @@ export const LayawayFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cashSession || !customerId || !expiresAt) return;
+    setFormError(null);
+    if (!cashSession) return setFormError("Abre una sesión de caja antes de apartar.");
+    if (!customerId) return setFormError("Selecciona un cliente.");
+    if (!expiresAt) return setFormError("Indica la fecha de vencimiento.");
     const items = buildItemsPayload();
-    if (items.length === 0) return;
+    if (items.length === 0) return setFormError("Agrega al menos un producto con precio.");
 
     const created = await open({
       customerId,
@@ -65,7 +69,7 @@ export const LayawayFormPage: React.FC = () => {
       items,
     });
 
-    if (created) navigate("/app/layaways");
+    if (created) navigate("/commerce/layaways");
   };
 
   const hasContext = Boolean(customerId);
@@ -98,7 +102,7 @@ export const LayawayFormPage: React.FC = () => {
               <Select
                 value={line.inventoryItemId}
                 onChange={(value) => handleItemChange(index, value)}
-                placeholder="Selecciona un item"
+                placeholder="Selecciona un producto"
                 options={inventoryItems.map((i) => ({ value: i.id, label: `${i.name} (disponible: ${i.available})` }))}
               />
             </div>
@@ -112,7 +116,7 @@ export const LayawayFormPage: React.FC = () => {
         ))}
         <Button type="button" variant="outline" onClick={addLine}>
           <Plus className="mr-1.5 size-4" />
-          Agregar item
+          Agregar producto
         </Button>
       </div>
 
@@ -137,7 +141,7 @@ export const LayawayFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => navigate("/app/layaways")} disabled={saving}>
+        <Button type="button" variant="outline" onClick={() => navigate("/commerce/layaways")} disabled={saving}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving || !cashSession}>
@@ -149,7 +153,7 @@ export const LayawayFormPage: React.FC = () => {
 
   return (
     <PageShell title="Nuevo apartado" description="Reserva productos para un cliente con un anticipo. El stock físico solo baja al completar.">
-      {error && <Alert variant="error" title="Error" message={error} />}
+      {(formError ?? error) && <Alert variant="error" title="Error" message={(formError ?? error)!} />}
       {!loadingCashSession && !cashSession && (
         <Alert variant="warning" title="Sin sesión de caja" message="Abre una sesión de caja en Caja antes de apartar." />
       )}

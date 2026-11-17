@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { TextArea } from "@ui/textarea/textarea";
-import { PageMeta } from "@common/pages/page-meta";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 import { useMessageTemplates } from "../hooks/use-message-templates";
 
@@ -24,7 +22,7 @@ export const MessageTemplateFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { templates, loading, saving, error, fetchAll, create, update } = useMessageTemplates();
+  const { templates, loading, saving, fetchAll, create, update } = useMessageTemplates();
   const [form, setForm] = useState<MessageTemplateFormState>(emptyForm);
 
   useEffect(() => {
@@ -47,34 +45,14 @@ export const MessageTemplateFormPage: React.FC = () => {
     const ok = isEdit && id
       ? await update(id, { text: form.text, description: form.description })
       : await create({ key: form.key, text: form.text, description: form.description });
-    if (ok) navigate("/app/templates");
+    if (ok) navigate("/messaging/message-templates");
   };
 
   return (
-    <div className="space-y-6">
-      <PageMeta
-        title={isEdit ? "Editar template" : "Nuevo template"}
-        description="Plantillas de mensajes"
-      />
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate("/app/templates")}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">
-            {isEdit ? "Editar template" : "Nuevo template"}
-          </h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            {isEdit ? "Modifica el mensaje predefinido." : "Crea un nuevo mensaje predefinido para el agente de WhatsApp."}
-          </p>
-        </div>
-      </div>
-
-      {error && <Alert variant="error" title="Error" message={error} />}
-
+    <PageShell
+      title={isEdit ? "Editar template" : "Nuevo template"}
+      description={isEdit ? "Modifica el mensaje predefinido." : "Crea un nuevo mensaje predefinido para el agente de WhatsApp."}
+    >
       <form
         onSubmit={handleSubmit}
         className="max-w-lg space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3"
@@ -118,7 +96,7 @@ export const MessageTemplateFormPage: React.FC = () => {
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="outline" onClick={() => navigate("/app/templates")}>
+          <Button type="button" variant="outline" onClick={() => navigate("/messaging/message-templates")}>
             Cancelar
           </Button>
           <Button type="submit" variant="primary" disabled={saving}>
@@ -126,7 +104,6 @@ export const MessageTemplateFormPage: React.FC = () => {
           </Button>
         </div>
       </form>
-    </div>
+    </PageShell>
   );
 };
-

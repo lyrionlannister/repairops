@@ -12,6 +12,7 @@ import { LocalService } from "../../../../src/app_platform/local/services/local.
 import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
+import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
 
 // Integration test against a real Postgres (same reasoning as
 // quote.service.test.ts): proves the rounding rule end-to-end through
@@ -24,6 +25,7 @@ describe("CashService", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    await ensureFixtureTenant(AppDataSource, tenantId, `${tenantId}1`, `${tenantId}2`, `${tenantId}3`, `${tenantId}4`);
     const sessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
     const movementDao = new CashMovementDao(AppDataSource.getRepository(CashMovement));
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));

@@ -1,9 +1,12 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { WhatsappWebhookService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-webhook.service.js";
-import type { WhatsappAccountDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-account.dao.js";
+import type { WhatsappTenantResolver } from "../../../../src/messaging/whatsapp-official/services/whatsapp-tenant-resolver.service.js";
 import type { WhatsappSendService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
-import type { ChatAutomationService } from "../../../../src/messaging/chats/services/chat-automation.service.js";
+import type { ChatsService } from "../../../../src/messaging/chats/services/chats.service.js";
+import type { ChatMediaService } from "../../../../src/messaging/chats/services/chat-media.service.js";
+import type { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import type { WhatsappAccount } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-account.entity.js";
+import type { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
 import { mockEntity } from "../../../support/mock-entity.js";
 import { humanModeService } from "../../../../src/app_platform/human-mode/human-mode.service.js";
 
@@ -17,11 +20,22 @@ const account = mockEntity<WhatsappAccount>({
   phoneNumberId: "phone-1",
   accessToken: "token-1",
 });
+const note = mockEntity<RepairNote>({
+  id: "note-9",
+  tenantId: "tenant-1",
+  controlNumber: 1042,
+  status: "done",
+  publicRef: "7F3K2A9B",
+});
 
-function makeDeps() {
-  const whatsappAccountDao = { findByPhoneNumberId: vi.fn().mockResolvedValue(account) } as unknown as WhatsappAccountDao;
-  const whatsappSendService = { sendFreeText: vi.fn().mockResolvedValue(undefined) } as unknown as WhatsappSendService;
-  const chatAutomationService = { send: vi.fn() } as unknown as ChatAutomationService;
+function makeDeps(resolved: { account: WhatsappAccount; note: RepairNote | null } | null = { account, note }) {
+  const tenantResolver = { resolve: vi.fn().mockResolvedValue(resolved) } as unknown as WhatsappTenantResolver;
+  const whatsappSendService = { sendFreeText: vi.fn().mockResolvedValue("wamid.out-1") } as unknown as WhatsappSendService;
+  const chatsService = { recordMessage: vi.fn().mockResolvedValue(undefined) } as unknown as ChatsService;
+  const localService = { getConfig: vi.fn().mockResolvedValue({ name: "Celulares Pérez" }) } as unknown as LocalService;
+  const chatMediaService = {
+    ingest: vi.fn().mockResolvedValue({ mediaKey: "tenants/tenant-1/chat/5215500000000/wamid.in-1.jpg", mediaMime: "image/jpeg", mediaSize: 10 }),
+  } as unknown as ChatMediaService;
   const excludedPhoneRepository = { exists: vi.fn().mockResolvedValue(false) } as any;
   const whatsappSettingsRepository = {
     findOneBy: vi.fn().mockResolvedValue({ tenantId: "tenant-1", aiRepliesEnabled: true }),
@@ -31,79 +45,217 @@ function makeDeps() {
   const contactNameRepository = { save: vi.fn().mockResolvedValue(undefined) } as any;
 
   const service = new WhatsappWebhookService(
-    whatsappAccountDao,
+    tenantResolver,
     whatsappSendService,
-    chatAutomationService,
+    chatsService,
+    localService,
+    chatMediaService,
     excludedPhoneRepository,
     whatsappSettingsRepository,
     contactNameRepository,
   );
-
-  return { service, whatsappAccountDao, whatsappSendService, chatAutomationService, excludedPhoneRepository, whatsappSettingsRepository, contactNameRepository };
+  return { service, chatMediaService, whatsappSendService, chatsService, excludedPhoneRepository, whatsappSettingsRepository };
 }
+
+const incoming = {
+  phoneNumberId: "phone-1",
+  from: "5215500000000",
+  messageId: "wamid.in-1",
+  body: "Hola (ref: 7F3K2A9B)",
+  messageType: "text" as const,
+};
+const READY_REPLY = "Nota #1042 de Celulares Pérez:\n¡Tu equipo ya está listo! Ya puedes pasar por él.";
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
 describe("WhatsappWebhookService.handleIncomingMessage", () => {
-  it("does nothing for a phone_number_id with no matching account", async () => {
-    const { service, whatsappAccountDao, chatAutomationService } = makeDeps();
-    vi.mocked(whatsappAccountDao.findByPhoneNumberId).mockResolvedValue(null);
+  it("no hace nada si el mensaje no se puede atribuir a un tenant", async () => {
+    const { service, chatsService, whatsappSendService } = makeDeps(null);
 
-    await service.handleIncomingMessage({ phoneNumberId: "unknown", from: "521", body: "hola" });
+    await service.handleIncomingMessage(incoming);
 
-    expect(chatAutomationService.send).not.toHaveBeenCalled();
+    expect(chatsService.recordMessage).not.toHaveBeenCalled();
+    expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
   });
 
-  it("ignores a message from an excluded phone without calling n8n", async () => {
-    const { service, excludedPhoneRepository, chatAutomationService } = makeDeps();
-    vi.mocked(excludedPhoneRepository.exists).mockResolvedValue(true);
-
-    await service.handleIncomingMessage({ phoneNumberId: "phone-1", from: "5215500000000", body: "hola" });
-
-    expect(chatAutomationService.send).not.toHaveBeenCalled();
-  });
-
-  it("skips the AI when the conversation is already in human mode", async () => {
-    const { service, chatAutomationService } = makeDeps();
-    vi.mocked(humanModeService.isActive).mockResolvedValue(true);
-
-    await service.handleIncomingMessage({ phoneNumberId: "phone-1", from: "5215500000000", body: "hola" });
-
-    expect(chatAutomationService.send).not.toHaveBeenCalled();
-  });
-
-  it("calls n8n and replies via Graph API when nothing blocks it", async () => {
-    const { service, chatAutomationService, whatsappSendService } = makeDeps();
+  it("con ref valido guarda el entrante, responde el estado y guarda la respuesta", async () => {
+    const { service, chatsService, whatsappSendService } = makeDeps();
     vi.mocked(humanModeService.isActive).mockResolvedValue(false);
-    vi.mocked(chatAutomationService.send).mockResolvedValue({ reply: "Hola, como te ayudo?" });
 
-    await service.handleIncomingMessage({
-      phoneNumberId: "phone-1",
-      from: "5215500000000",
-      body: "hola",
-      contactName: "Ana",
+    await service.handleIncomingMessage({ ...incoming, contactName: "Ana" });
+
+    expect(chatsService.recordMessage).toHaveBeenNthCalledWith(1, {
+      contactPhone: "5215500000000",
+      direction: "inbound",
+      sender: "customer",
+      body: "Hola (ref: 7F3K2A9B)",
+      waMessageId: "wamid.in-1",
+      repairNoteId: "note-9",
+      messageType: "text",
+      mediaKey: null,
+      mediaMime: null,
+      mediaSize: null,
+      locationLat: null,
+      locationLng: null,
     });
-
-    expect(chatAutomationService.send).toHaveBeenCalledWith({ from: "5215500000000", body: "hola" });
     expect(whatsappSendService.sendFreeText).toHaveBeenCalledWith(
       "phone-1",
       "token-1",
       "5215500000000",
-      "Hola, como te ayudo?",
+      READY_REPLY,
       expect.any(Date),
+    );
+    expect(chatsService.recordMessage).toHaveBeenNthCalledWith(2, {
+      contactPhone: "5215500000000",
+      direction: "outbound",
+      sender: "ai",
+      body: READY_REPLY,
+      waMessageId: "wamid.out-1",
+      repairNoteId: "note-9",
+    });
+  });
+
+  it("la respuesta nunca incluye datos del cliente ni saldo", async () => {
+    const { service, whatsappSendService } = makeDeps();
+    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
+
+    await service.handleIncomingMessage({ ...incoming, contactName: "Ana" });
+
+    const sent = vi.mocked(whatsappSendService.sendFreeText).mock.calls[0]![3];
+    expect(sent).not.toMatch(/Ana|\$|saldo/i);
+  });
+
+  it("sin nota (sin ref o ref inexistente) guarda el mensaje pero no responde", async () => {
+    const { service, chatsService, whatsappSendService } = makeDeps({ account, note: null });
+    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
+
+    await service.handleIncomingMessage({ ...incoming, body: "hola" });
+
+    expect(chatsService.recordMessage).toHaveBeenCalledTimes(1);
+    expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+  });
+
+  it("un estado desconocido no genera respuesta", async () => {
+    const { service, whatsappSendService } = makeDeps({ account, note: { ...note, status: "raro" } as RepairNote });
+    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
+
+    await service.handleIncomingMessage(incoming);
+
+    expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+  });
+
+  it("un teléfono excluido no se guarda ni recibe respuesta", async () => {
+    const { service, excludedPhoneRepository, chatsService, whatsappSendService } = makeDeps();
+    vi.mocked(excludedPhoneRepository.exists).mockResolvedValue(true);
+
+    await service.handleIncomingMessage(incoming);
+
+    expect(chatsService.recordMessage).not.toHaveBeenCalled();
+    expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+  });
+
+  it("con las respuestas automáticas apagadas guarda el mensaje y no responde", async () => {
+    const { service, whatsappSettingsRepository, chatsService, whatsappSendService } = makeDeps();
+    vi.mocked(whatsappSettingsRepository.findOneBy).mockResolvedValue({ tenantId: "tenant-1", aiRepliesEnabled: false });
+
+    await service.handleIncomingMessage(incoming);
+
+    expect(chatsService.recordMessage).toHaveBeenCalledTimes(1);
+    expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+  });
+
+  it("en modo humano guarda el mensaje (la ventana de 24h sigue abierta) y no responde", async () => {
+    const { service, chatsService, whatsappSendService } = makeDeps();
+    vi.mocked(humanModeService.isActive).mockResolvedValue(true);
+
+    await service.handleIncomingMessage(incoming);
+
+    expect(chatsService.recordMessage).toHaveBeenCalledWith(expect.objectContaining({ direction: "inbound" }));
+    expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+  });
+});
+
+describe("WhatsappWebhookService mensajes que no son texto", () => {
+  it("guarda una foto descargada con su clave de archivo y no responde", async () => {
+    const { service, chatMediaService, chatsService, whatsappSendService } = makeDeps({ account, note: null });
+    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
+
+    await service.handleIncomingMessage({
+      phoneNumberId: "phone-1",
+      from: "5215500000000",
+      messageId: "wamid.in-1",
+      body: "mi pantalla",
+      messageType: "image",
+      media: { id: "media-1", mimeType: "image/jpeg" },
+    });
+
+    expect(chatMediaService.ingest).toHaveBeenCalledWith(
+      expect.objectContaining({ mediaId: "media-1", waMessageId: "wamid.in-1", contactPhone: "5215500000000", accessToken: "token-1" }),
+    );
+    expect(chatsService.recordMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messageType: "image",
+        body: "mi pantalla",
+        mediaKey: "tenants/tenant-1/chat/5215500000000/wamid.in-1.jpg",
+        mediaMime: "image/jpeg",
+        mediaSize: 10,
+      }),
+    );
+    expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+  });
+
+  it("si el archivo no se pudo guardar, registra el mensaje con su tipo y sin archivo", async () => {
+    const { service, chatMediaService, chatsService } = makeDeps({ account, note: null });
+    vi.mocked(chatMediaService.ingest).mockResolvedValue(null);
+
+    await service.handleIncomingMessage({
+      phoneNumberId: "phone-1",
+      from: "5215500000000",
+      messageId: "wamid.in-2",
+      body: "",
+      messageType: "audio",
+      media: { id: "media-2" },
+    });
+
+    expect(chatsService.recordMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ messageType: "audio", mediaKey: null, mediaMime: null, mediaSize: null }),
     );
   });
 
-  it("activates human mode when n8n asks to transfer, even without a reply", async () => {
-    const { service, chatAutomationService, whatsappSendService } = makeDeps();
-    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
-    vi.mocked(chatAutomationService.send).mockResolvedValue({ transferToHuman: true });
+  it("guarda una ubicacion con latitud y longitud, sin descargar nada", async () => {
+    const { service, chatMediaService, chatsService } = makeDeps({ account, note: null });
 
-    await service.handleIncomingMessage({ phoneNumberId: "phone-1", from: "5215500000000", body: "quiero hablar con alguien" });
+    await service.handleIncomingMessage({
+      phoneNumberId: "phone-1",
+      from: "5215500000000",
+      messageId: "wamid.in-3",
+      body: "",
+      messageType: "location",
+      location: { lat: "19.432600", lng: "-99.133200" },
+    });
 
-    expect(humanModeService.activate).toHaveBeenCalledWith("5215500000000", undefined);
-    expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+    expect(chatMediaService.ingest).not.toHaveBeenCalled();
+    expect(chatsService.recordMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ messageType: "location", locationLat: "19.432600", locationLng: "-99.133200", mediaKey: null }),
+    );
+  });
+
+  it("un teléfono excluido no descarga ni guarda archivos", async () => {
+    const { service, excludedPhoneRepository, chatMediaService, chatsService } = makeDeps({ account, note: null });
+    vi.mocked(excludedPhoneRepository.exists).mockResolvedValue(true);
+
+    await service.handleIncomingMessage({
+      phoneNumberId: "phone-1",
+      from: "5215500000000",
+      messageId: "wamid.in-4",
+      body: "",
+      messageType: "image",
+      media: { id: "media-4" },
+    });
+
+    expect(chatMediaService.ingest).not.toHaveBeenCalled();
+    expect(chatsService.recordMessage).not.toHaveBeenCalled();
   });
 });

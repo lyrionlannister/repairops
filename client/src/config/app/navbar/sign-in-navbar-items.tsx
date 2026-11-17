@@ -11,41 +11,42 @@ import {
   Truck,
   Building2,
   Users2,
+  BarChart3,
 } from "lucide-react";
 
 export const signInNavbarItems = [
   {
     name: "Dashboard",
     icon: <LayoutDashboard className="w-5 h-5" />,
-    path: "/app/dashboard",
+    path: "/home",
     group: "General",
     new: false,
   },
   {
     name: "Reparaciones",
     icon: <Wrench className="w-5 h-5" />,
-    path: "/app/repair-notes",
+    path: "/commerce/repair-notes",
     group: "Operación",
     new: false,
   },
   {
     name: "Clientes",
     icon: <Users2 className="w-5 h-5" />,
-    path: "/app/customers",
+    path: "/commerce/customers",
     group: "Operación",
     new: false,
   },
   {
     name: "Chats",
     icon: <MessagesSquare className="w-5 h-5" />,
-    path: "/app/chats",
+    path: "/messaging/chats",
     group: "Operación",
     new: false,
   },
   {
     name: "Mi Local",
     icon: <Store className="w-5 h-5" />,
-    path: "/app/local",
+    path: "/platform/local",
     group: "Operación",
     new: false,
   },
@@ -55,10 +56,10 @@ export const signInNavbarItems = [
     group: "Ventas y stock",
     new: false,
     subItems: [
-      { name: "Venta Rápida", path: "/app/sales/new" },
-      { name: "Apartados", path: "/app/layaways" },
-      { name: "Devoluciones", path: "/app/returns" },
-      { name: "Cotizaciones", path: "/app/quotes" },
+      { name: "Venta Rápida", path: "/commerce/sales/new" },
+      { name: "Apartados", path: "/commerce/layaways" },
+      { name: "Devoluciones", path: "/commerce/returns" },
+      { name: "Cotizaciones", path: "/commerce/quotes" },
     ],
   },
   {
@@ -67,10 +68,10 @@ export const signInNavbarItems = [
     group: "Ventas y stock",
     new: false,
     subItems: [
-      { name: "Catálogo", path: "/app/inventory" },
-      { name: "Lista de Precios", path: "/app/price-list" },
-      { name: "Conteo de inventario", path: "/app/inventory/counts" },
-      { name: "Transferencias", path: "/app/inventory/transfers" },
+      { name: "Catálogo", path: "/commerce/inventory" },
+      { name: "Lista de Precios", path: "/commerce/price-list" },
+      { name: "Conteo de inventario", path: "/commerce/inventory/counts" },
+      { name: "Transferencias", path: "/commerce/inventory/transfers" },
     ],
   },
   {
@@ -79,39 +80,44 @@ export const signInNavbarItems = [
     group: "Administración",
     new: false,
     subItems: [
-      { name: "Templates", path: "/app/templates" },
-      { name: "WhatsApp", path: "/app/whatsapp" },
+      { name: "Templates", path: "/messaging/message-templates" },
+      { name: "WhatsApp", path: "/messaging/whatsapp" },
     ],
   },
   {
     name: "Proveedores",
     icon: <Truck className="w-5 h-5" />,
-    path: "/app/suppliers",
+    path: "/commerce/suppliers",
     group: "Administración",
     new: false,
   },
   {
     name: "Sucursales",
     icon: <Building2 className="w-5 h-5" />,
-    path: "/app/branches",
+    path: "/identity/branches",
     group: "Administración",
     new: false,
   },
   {
     name: "Usuarios",
     icon: <Users className="w-5 h-5" />,
-    path: "/app/users",
+    path: "/identity/users",
     group: "Administración",
     new: false,
   },
   {
     name: "Caja",
     icon: <Wallet className="w-5 h-5" />,
-    path: "/app/cash",
+    path: "/commerce/cash",
+    group: "Administración",
+    new: false,
+  },
+  {
+    name: "Reportes",
+    icon: <BarChart3 className="w-5 h-5" />,
+    path: "/reporting/reports",
     group: "Administración",
     new: false,
   },
 ];
-
-export const otherSignInItems = [];
 

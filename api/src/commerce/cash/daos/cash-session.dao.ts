@@ -17,7 +17,9 @@ export class CashSessionDao extends TenantScopedDao<CashSession> {
       .getOne();
   }
 
-  async findAllOrdered(): Promise<CashSession[]> {
-    return this.scoped().orderBy("entity.openedAt", "DESC").getMany();
+  async findAllOrdered(branchId?: string | null): Promise<CashSession[]> {
+    return this.scoped()
+      .andWhere(branchId ? "entity.localId = :branchId" : "1 = 1", { branchId })
+      .orderBy("entity.openedAt", "DESC").getMany();
   }
 }

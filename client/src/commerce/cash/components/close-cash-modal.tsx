@@ -63,7 +63,7 @@ export const CloseCashModal: FC<CloseCashModalProps> = ({
       )}
       {showCloseAuthorizerField && (
         <div>
-          <Label className="text-gray-500">Autorizado por (owner/admin)</Label>
+          <Label className="text-gray-500">Autorizado por (owner)</Label>
           <EmployeeSelect
             value={closeAuthorizedByEmployeeId}
             onChange={onCloseAuthorizedByEmployeeIdChange}

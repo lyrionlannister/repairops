@@ -28,7 +28,7 @@ export const QuoteItemLinesSection: FC<QuoteItemLinesSectionProps> = ({
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 space-y-4">
     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Items cotizados</p>
     <p className="text-xs text-gray-500 dark:text-gray-400">
-      Selecciona un item de inventario para autocompletar, o escribe una descripción libre (mano de obra, servicio, etc.).
+      Selecciona un producto del inventario para autocompletar, o escribe una descripción libre (mano de obra, servicio, etc.).
     </p>
     <div className="space-y-3">
       {itemLines.map((line, index) => (
@@ -37,7 +37,7 @@ export const QuoteItemLinesSection: FC<QuoteItemLinesSectionProps> = ({
             <Select
               value={line.inventoryItemId}
               onChange={(value) => onInventoryItemChange(index, value)}
-              placeholder="Item de inventario (opcional)"
+              placeholder="Producto de inventario (opcional)"
               disabled={saving}
               options={inventoryItems.map((i) => ({ value: i.id, label: i.name }))}
             />
@@ -80,7 +80,7 @@ export const QuoteItemLinesSection: FC<QuoteItemLinesSectionProps> = ({
       ))}
       <Button type="button" variant="outline" onClick={onAddLine} disabled={saving}>
         <Plus className="mr-1.5 size-4" />
-        Agregar item
+        Agregar producto
       </Button>
     </div>
   </div>

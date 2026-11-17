@@ -48,6 +48,8 @@ import { createCashRouter } from "../../commerce/cash/routes/cash.routes.js";
 import { RevenueAttributionController } from "../../commerce/revenue-attribution/controllers/revenue-attribution.controller.js";
 import { createRevenueAttributionRouter } from "../../commerce/revenue-attribution/routes/revenue-attribution.routes.js";
 import { ReportsController } from "../../reporting/reports/controllers/reports.controller.js";
+import { createDashboardRouter } from "../../reporting/dashboard/routes/dashboard.routes.js";
+import { DashboardController } from "../../reporting/dashboard/controllers/dashboard.controller.js";
 import { createReportsRouter } from "../../reporting/reports/routes/reports.routes.js";
 import { BranchController } from "../../identity/branches/controllers/branch.controller.js";
 import { createBranchRouter } from "../../identity/branches/routes/branch.routes.js";
@@ -115,6 +117,7 @@ export function registerRoutes(app: Express): void {
     "/api/v1/settings",
     createRevenueAttributionRouter(container.resolve(RevenueAttributionController)),
   );
+  app.use("/api/v1/dashboard", createDashboardRouter(container.resolve(DashboardController)));
   app.use("/api/v1/reports", createReportsRouter(container.resolve(ReportsController)));
   app.use("/api/v1/service-types", createServiceTypeRouter(container.resolve(ServiceTypeController)));
   app.use("/api/v1/branches", createBranchRouter(container.resolve(BranchController)));

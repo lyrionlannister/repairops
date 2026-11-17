@@ -6,7 +6,7 @@ import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 
 // Devolver dinero es tan sensible como cobrarlo -- mismo rol que puede
 // cobrar (ver sale.routes.ts).
-const canReturn = requireRole("owner", "admin", "cashier");
+const canReturn = requireRole("owner", "cashier");
 
 export const createReturnRouter = (controller: ReturnController): Router => {
   const router = Router();

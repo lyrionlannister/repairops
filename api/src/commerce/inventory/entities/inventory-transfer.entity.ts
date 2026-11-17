@@ -1,15 +1,21 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { InventoryItem } from "./inventory-item.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 // Cada InventoryItem es una fila propia por sucursal (local_id) -- "transferir"
 // mueve cantidad entre dos filas YA EXISTENTES (una por sucursal), nunca entre
 // sucursales como concepto abstracto. El caller (UI) resuelve el item destino
 // por SKU; el backend solo valida que no sean la misma fila/sucursal.
 @Entity("inventory_transfers")
+@Index("IDX_inventory_transfers_tenant", ["tenantId"])
 export class InventoryTransfer extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_inventory_transfers_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "bigint", nullable: false, name: "id_item_origen" })
   fromInventoryItemId!: string;

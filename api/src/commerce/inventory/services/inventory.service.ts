@@ -53,16 +53,16 @@ export class InventoryService {
     if (!supplier) throw new Error("Proveedor no encontrado");
   }
 
-  async getAll(): Promise<InventoryItem[]> {
-    return this.itemDao.findAllOrdered();
+  async getAll(branchId?: string | null): Promise<InventoryItem[]> {
+    return this.itemDao.findAllOrdered(branchId);
   }
 
   // "Disponible" por item, calculado en una sola consulta agrupada (ver
   // InventoryReservationDao.sumActiveQuantityByItemForTenant) -- nunca
   // cacheado en la entidad.
-  async getAllWithAvailability(): Promise<Array<InventoryItem & { available: number }>> {
+  async getAllWithAvailability(branchId?: string | null): Promise<Array<InventoryItem & { available: number }>> {
     const [items, reservedByItem] = await Promise.all([
-      this.itemDao.findAllOrdered(),
+      this.itemDao.findAllOrdered(branchId),
       this.reservationDao.sumActiveQuantityByItemForTenant(),
     ]);
     return items.map((item) => ({ ...item, available: item.quantityOnHand - (reservedByItem.get(item.id) ?? 0) }));

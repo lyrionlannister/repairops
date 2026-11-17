@@ -1,17 +1,29 @@
-import { Entity, Column, CreateDateColumn } from "typeorm";
+import { Entity, Column, CreateDateColumn, Index, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { CashSession } from "./cash-session.entity.js";
 
 export type CashMovementType = "income" | "expense";
 export type CashMovementMethod = "efectivo" | "tarjeta" | "transferencia";
-export type CashMovementRelatedEntityType = "repair_note" | "quote" | "sale" | "return" | "layaway" | "manual";
+export type CashMovementRelatedEntityType = "repair_note" | "quote" | "sale" | "return" | "layaway" | "customer_payment" | "manual";
 
 @Entity("cash_movements")
+@Index("IDX_cash_movements_tenant_created", ["tenantId", "createdAt"])
+@Index("IDX_cash_movements_id_sesion_caja", ["cashSessionId"])
 export class CashMovement extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
 
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_cash_movements_tenant" })
+  tenant?: Tenant;
+
   @Column({ type: "bigint", nullable: false, name: "id_sesion_caja" })
   cashSessionId!: string;
+
+  @ManyToOne(() => CashSession, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "id_sesion_caja", foreignKeyConstraintName: "FK_cash_movements_id_sesion_caja" })
+  cashSession?: CashSession;
 
   @Column({ type: "varchar", length: 10, nullable: false, name: "tipo" })
   type!: CashMovementType;

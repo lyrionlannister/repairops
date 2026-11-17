@@ -8,11 +8,11 @@ export const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
 
         {publicRoutes.map((route, index) => {
           const isAuthRoute =
-            route.path === "/app/sign-in" || route.path === "/owner/sign-up";
+            route.path === "/identity/sign-in" || route.path === "/identity/sign-up";
 
           return (
             <Route
@@ -32,20 +32,14 @@ export const AppRouter = () => {
         })}
 
         <Route
-          path="/app"
           element={
             <ProtectedRoute>
               <AppShell />
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="dashboard" replace />} />
           {protectedRoutes.map((route, index) => (
-            <Route
-              key={`protected-${index}`}
-              path={route.path.replace("/app/", "")}
-              element={route.element}
-            />
+            <Route key={`protected-${index}`} path={route.path} element={route.element} />
           ))}
         </Route>
       </Routes>

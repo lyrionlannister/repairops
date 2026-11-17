@@ -5,18 +5,23 @@ import { useQuoteCustomerHistory } from "../hooks/use-quote-customer-history";
 import { useQuoteItemLines } from "../hooks/use-quote-item-lines";
 import { QuoteCustomerHistoryPanel } from "../components/quote-customer-history-panel";
 import { QuoteCustomerSection } from "../components/quote-customer-section";
+import { QuoteKindDeviceSection } from "../components/quote-kind-device-section";
 import { QuoteItemLinesSection } from "../components/quote-item-lines-section";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useBranch } from "@common/hooks/use-branch";
 import { Button } from "@ui/button/button";
-import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
 const INITIAL_FORM: QuoteFormData = {
   localId: "",
+  kind: "product",
   customerId: "",
   customerName: "",
   contactNumber: "",
+  brand: "",
+  model: "",
+  reportedFailure: "",
+  serviceTypeIds: [],
   validUntil: "",
   createdByEmployeeId: "",
 };
@@ -26,15 +31,24 @@ export const QuoteFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { quote, loading, saving, error, fetchQuote, fetchQuoteItems, createQuote, updateQuote, clearError } =
-    useQuotes();
-  const { activeBranchId } = useBranch();
+  const {
+    quote,
+    loading,
+    saving,
+    fetchQuote,
+    fetchQuoteItems,
+    fetchQuoteServiceTypeIds,
+    createQuote,
+    updateQuote,
+    clearError,
+  } = useQuotes();
+  const { workingBranchId } = useBranch();
 
   const [form, setForm] = useState<QuoteFormData>(INITIAL_FORM);
 
   // La cotizacion pertenece a form.localId -- mismo criterio que RepairNote,
   // no mostrar items de una sucursal distinta a la que cotiza.
-  const quoteLocalId = form.localId || activeBranchId;
+  const quoteLocalId = form.localId || workingBranchId;
   const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(quoteLocalId);
 
   const {
@@ -60,22 +74,32 @@ export const QuoteFormPage: React.FC = () => {
 
   useEffect(() => {
     if (quote && isEdit) {
-      setForm({
+      setForm((prev) => ({
+        ...prev,
         localId: quote.localId,
+        kind: quote.kind,
         customerId: quote.customerId ?? "",
         customerName: quote.customerName,
         contactNumber: quote.contactNumber ?? "",
+        brand: quote.brand ?? "",
+        model: quote.model ?? "",
+        reportedFailure: quote.reportedFailure ?? "",
         validUntil: quote.validUntil ?? "",
         createdByEmployeeId: quote.createdByEmployeeId ?? "",
-      });
+      }));
+      if (quote.kind === "repair") {
+        fetchQuoteServiceTypeIds(quote.id).then((serviceTypeIds) =>
+          setForm((prev) => ({ ...prev, serviceTypeIds })),
+        );
+      }
     }
-  }, [quote, isEdit]);
+  }, [quote, isEdit, fetchQuoteServiceTypeIds]);
 
   useEffect(() => {
-    if (!isEdit && activeBranchId && !form.localId) {
-      setForm((prev) => ({ ...prev, localId: activeBranchId }));
+    if (!isEdit && workingBranchId && !form.localId) {
+      setForm((prev) => ({ ...prev, localId: workingBranchId }));
     }
-  }, [isEdit, activeBranchId, form.localId]);
+  }, [isEdit, workingBranchId, form.localId]);
 
   const set = (field: keyof QuoteFormData, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -85,10 +109,10 @@ export const QuoteFormPage: React.FC = () => {
     const items = buildItemsPayload();
     if (isEdit && id) {
       const result = await updateQuote(id, form, items);
-      if (result) navigate("/app/quotes");
+      if (result) navigate("/commerce/quotes");
     } else {
       const result = await createQuote(form, items);
-      if (result) navigate("/app/quotes");
+      if (result) navigate("/commerce/quotes");
     }
   };
 
@@ -106,7 +130,6 @@ export const QuoteFormPage: React.FC = () => {
       title={isEdit ? "Editar cotización" : "Nueva cotización"}
       description={isEdit ? "Modifica los datos de la cotización." : "Genera una cotización para un cliente."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className={showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"}>
         <form onSubmit={handleSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
@@ -131,6 +154,21 @@ export const QuoteFormPage: React.FC = () => {
             onCreatedByEmployeeIdChange={(value) => set("createdByEmployeeId", value)}
           />
 
+          <QuoteKindDeviceSection
+            kind={form.kind}
+            brand={form.brand}
+            model={form.model}
+            reportedFailure={form.reportedFailure}
+            serviceTypeIds={form.serviceTypeIds}
+            saving={saving}
+            disabled={isEdit}
+            onKindChange={(kind) => setForm((prev) => ({ ...prev, kind }))}
+            onBrandChange={(value) => set("brand", value)}
+            onModelChange={(value) => set("model", value)}
+            onReportedFailureChange={(value) => set("reportedFailure", value)}
+            onServiceTypeIdsChange={(serviceTypeIds) => setForm((prev) => ({ ...prev, serviceTypeIds }))}
+          />
+
           <QuoteItemLinesSection
             itemLines={itemLines}
             inventoryItems={inventoryItems}
@@ -142,7 +180,7 @@ export const QuoteFormPage: React.FC = () => {
           />
 
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate("/app/quotes")} disabled={saving}>
+            <Button type="button" variant="outline" onClick={() => navigate("/commerce/quotes")} disabled={saving}>
               Cancelar
             </Button>
             <Button type="submit" variant="primary" disabled={saving}>

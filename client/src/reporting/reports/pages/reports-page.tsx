@@ -1,54 +1,32 @@
-import { useEffect, useState } from "react";
 import { BarChart3 } from "lucide-react";
 
-import { useBranch } from "@common/hooks/use-branch";
-import { useLocal } from "@app-platform/local/hooks/use-local";
-import { useCash } from "@commerce/cash/hooks/use-cash";
-import { Alert } from "@ui/alert/alert";
 import { DatePicker } from "@ui/date-picker/date-picker";
 import { Label } from "@ui/inputs/label";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
-import { useReports } from "../hooks/use-reports";
-import { STATUS_LABELS, todayIso, formatMoney } from "../utils/format";
+import { useReportsPage } from "../hooks/use-reports-page";
+import { STATUS_LABELS, formatMoney } from "../utils/format";
 
 export const ReportsPage = () => {
-  const { local, fetchLocal } = useLocal();
-  const { activeBranchId } = useBranch();
-  const { session, summary, fetchOpenSession, fetchSummary } = useCash();
-  const { employeePerformance, accessorySales, repairNotesByType, loading, error, fetchReports } = useReports();
-
-  const [periodStart, setPeriodStart] = useState(todayIso());
-  const [periodEnd, setPeriodEnd] = useState(todayIso());
-  const currency = local?.currency ?? "MXN";
-
-  useEffect(() => {
-    fetchLocal();
-  }, [fetchLocal]);
-
-  useEffect(() => {
-    fetchReports(periodStart, periodEnd);
-  }, [fetchReports, periodStart, periodEnd]);
-
-  useEffect(() => {
-    if (activeBranchId) fetchOpenSession(activeBranchId);
-  }, [activeBranchId, fetchOpenSession]);
-
-  useEffect(() => {
-    if (session) fetchSummary(session.id);
-  }, [session, fetchSummary]);
-
-  const repairNotesRevenue = repairNotesByType?.totalRevenue ?? 0;
-  const accessoryRevenue = accessorySales?.totalRevenue ?? 0;
-  const expectedTotal = repairNotesRevenue + accessoryRevenue;
-  const cashIncome = summary?.totalIncome ?? 0;
+  const {
+    employeePerformance,
+    accessorySales,
+    repairNotesByType,
+    loading,
+    session,
+    currency,
+    periodStart,
+    periodEnd,
+    setPeriodStart,
+    setPeriodEnd,
+    cash,
+  } = useReportsPage();
 
   return (
-    <PageShell
+    <PageShell scrollHeader
       title="Reportes"
       description="Productividad, ventas de accesorios y notas por tipo en el período seleccionado."
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
         <div>
@@ -71,16 +49,16 @@ export const ReportsPage = () => {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <p className="text-xs font-semibold uppercase text-gray-400">Ingresos en caja</p>
-              <p className="mt-1 text-lg font-bold text-green-600 dark:text-green-400">{formatMoney(cashIncome, currency)}</p>
+              <p className="mt-1 text-lg font-bold text-green-600 dark:text-green-400">{formatMoney(cash.income, currency)}</p>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase text-gray-400">Reparaciones + accesorios (reporte)</p>
-              <p className="mt-1 text-lg font-bold text-gray-800 dark:text-white/90">{formatMoney(expectedTotal, currency)}</p>
+              <p className="mt-1 text-lg font-bold text-gray-800 dark:text-white/90">{formatMoney(cash.expectedTotal, currency)}</p>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase text-gray-400">Diferencia</p>
-              <p className={`mt-1 text-lg font-bold ${Math.abs(cashIncome - expectedTotal) < 0.01 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                {formatMoney(cashIncome - expectedTotal, currency)}
+              <p className={`mt-1 text-lg font-bold ${cash.matches ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                {formatMoney(cash.difference, currency)}
               </p>
             </div>
           </div>

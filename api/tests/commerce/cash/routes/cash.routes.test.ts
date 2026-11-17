@@ -17,6 +17,10 @@ import { CashController } from "../../../../src/commerce/cash/controllers/cash.c
 import { createCashRouter } from "../../../../src/commerce/cash/routes/cash.routes.js";
 import { User, type UserRole } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
+import { BranchAccessService } from "../../../../src/identity/branches/services/branch-access.service.js";
+import { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
+import { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
+import { setupStaff } from "../../../support/staff.js";
 
 // Integration test contra Postgres real + el router real -- prueba el
 // criterio de aceptacion de la Fase 1: un tecnico no puede abrir/cerrar
@@ -25,13 +29,15 @@ import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 describe("cash routes: permisos por rol (modulo Caja)", () => {
   let app: express.Express;
   const tenantId = `${Date.now()}5`;
-  const localId = "1";
+  let localId = "";
 
-  const tokenFor = (role: UserRole) =>
-    jwt.sign({ id: "1", email: "x@x.com", tenantId, role }, requireJwtSecret());
+  // Sucursal real y un usuario por rol (el personal asignado a ella): ver tests/support/staff.ts.
+  let tokens: Record<string, string> = {};
+  const tokenFor = (role: UserRole) => tokens[role] as string;
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    ({ branchId: localId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const cashService = new CashService(
@@ -40,7 +46,7 @@ describe("cash routes: permisos por rol (modulo Caja)", () => {
       localService,
       new UserDao(AppDataSource.getRepository(User)),
     );
-    const controller = new CashController(cashService);
+    const controller = new CashController(cashService, new BranchAccessService(new BranchDao(AppDataSource.getRepository(Branch))));
 
     app = express();
     app.use(express.json());

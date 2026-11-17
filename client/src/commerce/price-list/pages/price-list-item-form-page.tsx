@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-import { PageMeta } from "@common/pages/page-meta";
+import { PageShell } from "@common/components/page-shell/page-shell";
 
 import { usePriceList } from "../hooks/use-price-list";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
@@ -25,7 +23,7 @@ export const PriceListItemFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { items, loading, saving, error, fetchAll, create, update } = usePriceList();
+  const { items, loading, saving, fetchAll, create, update } = usePriceList();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const [form, setForm] = useState<PriceListItemFormState>(emptyForm);
 
@@ -56,34 +54,14 @@ export const PriceListItemFormPage: React.FC = () => {
       supplierId: form.supplierId,
     };
     const ok = isEdit && id ? await update(id, payload) : await create(payload);
-    if (ok) navigate("/app/price-list");
+    if (ok) navigate("/commerce/price-list");
   };
 
   return (
-    <div className="space-y-6">
-      <PageMeta
-        title={isEdit ? "Editar item" : "Nuevo item"}
-        description="Lista de precios de productos"
-      />
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate("/app/price-list")}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-600 dark:text-brand-400">
-            {isEdit ? "Editar item" : "Nuevo item"}
-          </h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            {isEdit ? "Modifica los datos del item." : "Agrega un nuevo item a la lista de precios."}
-          </p>
-        </div>
-      </div>
-
-      {error && <Alert variant="error" title="Error" message={error} />}
-
+    <PageShell
+      title={isEdit ? "Editar producto" : "Nuevo producto"}
+      description={isEdit ? "Modifica los datos del producto." : "Agrega un nuevo producto a la lista de precios."}
+    >
       <form
         onSubmit={handleSubmit}
         className="max-w-lg space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3"
@@ -122,15 +100,14 @@ export const PriceListItemFormPage: React.FC = () => {
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="outline" onClick={() => navigate("/app/price-list")}>
+          <Button type="button" variant="outline" onClick={() => navigate("/commerce/price-list")}>
             Cancelar
           </Button>
           <Button type="submit" variant="primary" disabled={saving}>
-            {isEdit ? "Guardar cambios" : "Crear item"}
+            {isEdit ? "Guardar cambios" : "Crear producto"}
           </Button>
         </div>
       </form>
-    </div>
+    </PageShell>
   );
 };
-

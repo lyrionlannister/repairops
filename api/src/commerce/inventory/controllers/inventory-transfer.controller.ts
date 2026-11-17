@@ -5,6 +5,7 @@ import { validate } from "class-validator";
 import { InventoryTransferService } from "../services/inventory-transfer.service.js";
 import { CreateInventoryTransferDto } from "../dtos/create-inventory-transfer.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class InventoryTransferController {
@@ -14,7 +15,7 @@ export class InventoryTransferController {
     try {
       res.status(200).json(await this.service.getAll());
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      sendError(res, error, 500);
     }
   };
 
@@ -28,7 +29,7 @@ export class InventoryTransferController {
       }
       res.status(201).json(await this.service.create(dto));
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      sendError(res, error, 400);
     }
   };
 }

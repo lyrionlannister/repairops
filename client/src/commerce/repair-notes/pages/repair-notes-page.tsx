@@ -10,6 +10,7 @@ import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useCurrentUser } from "@common/hooks/use-current-user";
 import { RepairNotesFilterBar } from "../components/repair-notes-filter-bar";
 import { RepairNotesTable } from "../components/repair-notes-table";
+import { RepairNoteDeliveryModal } from "../components/repair-note-delivery-modal";
 
 export const RepairNotesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export const RepairNotesPage: React.FC = () => {
   // Un cajero no edita diagnósticos de reparación, ni por pantalla ni por
   // API (requireRole en repair-note.routes.ts bloquea el lado de API).
   const canEditNotes = currentUser?.role !== "cashier";
-  const { notes, loading, error, fetchNotes, deleteNote, cancelNote } = useRepairNotes();
+  const { notes, loading, error, fetchNotes, deleteNote, cancelNote, changeStatus } = useRepairNotes();
   const {
     search,
     setSearch,
@@ -32,7 +33,10 @@ export const RepairNotesPage: React.FC = () => {
     setConfirmCancelId,
     confirmDelete,
     confirmCancel,
-  } = useRepairNotesPage({ notes, deleteNote, cancelNote });
+    advancingId,
+    advanceStatus,
+    deliveryModalProps,
+  } = useRepairNotesPage({ notes, deleteNote, cancelNote, changeStatus, refetch: fetchNotes });
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
     usePaginatedList(filteredNotes);
@@ -47,7 +51,7 @@ export const RepairNotesPage: React.FC = () => {
       description="Gestiona el taller de reparación de celulares."
       action={
         canEditNotes ? (
-          <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/app/repair-notes/new")}>
+          <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/repair-notes/new")}>
             Nueva nota
           </Button>
         ) : undefined
@@ -85,12 +89,16 @@ export const RepairNotesPage: React.FC = () => {
         onPageSizeChange={setPageSize}
         onRequestCancel={setConfirmCancelId}
         onRequestDelete={setConfirmDeleteId}
+        advancingId={advancingId}
+        onAdvance={advanceStatus}
       />
+
+      <RepairNoteDeliveryModal {...deliveryModalProps} />
 
       <ConfirmModal
         isOpen={Boolean(confirmCancelId)}
         title="Cancelar nota"
-        message="¿Cancelar esta nota? El cliente decidió no tomar el servicio. Si tenía items de inventario, el stock se revierte."
+        message="¿Cancelar esta nota? El cliente decidió no tomar el servicio. Si tenía productos del inventario, se devuelven al stock."
         confirmLabel="Cancelar nota"
         danger
         loading={cancellingId === confirmCancelId}

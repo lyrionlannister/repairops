@@ -118,11 +118,12 @@ export class WhatsappSendService {
     to: string,
     body: string,
     lastInboundAt: Date | null,
-  ): Promise<void> {
+  ): Promise<string | null> {
     if (!lastInboundAt || Date.now() - lastInboundAt.getTime() > TWENTY_FOUR_HOURS_MS) {
       throw new WhatsappWindowClosedError();
     }
-    await sendTextMessage(phoneNumberId, accessToken, to, body);
+    const result = await sendTextMessage(phoneNumberId, accessToken, to, body);
+    return result.messages?.[0]?.id ?? null;
   }
 
   // Sin número de contacto no hay a quién avisar -- no es un error, la nota

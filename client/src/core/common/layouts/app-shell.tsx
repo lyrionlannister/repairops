@@ -6,38 +6,36 @@ import { AsideMenu } from "../components/menu/aside-menu";
 import { NavbarMenu } from "../components/menu/navbar-menu";
 import { SidebarProvider } from "../contexts/providers/sidebar-provider";
 import { BranchProvider } from "../contexts/providers/branch-provider";
-import {
-  signInNavbarItems,
-  otherSignInItems,
-} from "../../../config/app/navbar/sign-in-navbar-items";
+import { signInNavbarItems } from "../../../config/app/navbar/sign-in-navbar-items";
 import { Backdrop } from "../components/menu/backdrop";
 import { useCurrentUser } from "../hooks/use-current-user";
 
 // Un técnico no opera caja -- ocultar el ítem de menú es el lado de
 // pantalla de la Regla de permisos por módulo; la API (requireRole en
 // cash.routes.ts) es la que de verdad lo bloquea aunque alguien edite el DOM.
+// Solo el owner administra usuarios, sucursales, reportes y la configuracion del local.
+const OWNER_ONLY_PATHS = ["/identity/users", "/identity/branches", "/reporting/reports", "/platform/local"];
 const hiddenPathsByRole: Partial<Record<string, string[]>> = {
-  technician: ["/app/cash"],
+  technician: ["/commerce/cash", ...OWNER_ONLY_PATHS],
+  cashier: OWNER_ONLY_PATHS,
+  employee: OWNER_ONLY_PATHS,
 };
 
 const LayoutContent: React.FC = () => {
-  useAuthGuard("/app/sign-in");
+  useAuthGuard("/identity/sign-in");
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const currentUser = useCurrentUser();
   const hiddenPaths = (currentUser && hiddenPathsByRole[currentUser.role]) ?? [];
   const visibleNavItems = signInNavbarItems.filter((item) => !item.path || !hiddenPaths.includes(item.path));
 
   return (
-    <div className="h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 xl:flex">
+    <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <div>
-        <AsideMenu
-          navItems={visibleNavItems}
-          othersItems={otherSignInItems}
-        />
+        <AsideMenu navItems={visibleNavItems} />
         <Backdrop />
       </div>
       <div
-        className={`flex min-h-0 flex-1 flex-col transition-all duration-300 ease-in-out ${
+        className={`flex min-h-0 min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out ${
           isExpanded || isHovered ? "lg:ml-72.5" : "lg:ml-22.5"
         } ${isMobileOpen ? "ml-0" : ""}`}
       >
@@ -51,9 +49,8 @@ const LayoutContent: React.FC = () => {
 };
 
 // Shell autenticado de la app completa (sidebar + navbar + outlet) -- lo
-// monta toda ruta bajo /app, no solo las de rol admin/owner (antes se
-// llamaba SignInLayout y vivia bajo /admin, lo que sugeria erroneamente
-// que ese prefijo era solo para administradores).
+// monta toda ruta protegida (/<modulo>/<ruta>), no solo las de rol
+// admin/owner.
 export const AppShell: React.FC = () => {
   return (
     <SidebarProvider>

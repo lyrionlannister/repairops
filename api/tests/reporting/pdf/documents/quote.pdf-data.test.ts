@@ -12,7 +12,7 @@ function makeQuote(overrides: Partial<Quote> = {}): Quote {
     totalValue: "600.00",
     validUntil: "2026-02-01",
     status: "pending",
-    createdAt: new Date("2026-01-10T00:00:00.000Z"),
+    createdAt: new Date("2026-01-10T12:00:00.000Z"),
     ...overrides,
   } as unknown as Quote;
 }
@@ -22,11 +22,11 @@ function makeItem(overrides: Partial<QuoteItem> = {}): QuoteItem {
 }
 
 describe("toQuotePdfData", () => {
-  it("convierte decimales (string) a number para la cotización y sus items", () => {
-    const data = toQuotePdfData(makeQuote(), [makeItem()], null);
+  it("entrega el dinero como cadenas decimales y calcula subtotales exactos", () => {
+    const data = toQuotePdfData(makeQuote(), [makeItem({ quantity: 3, unitPrice: "0.10" as never })], null);
 
-    expect(data.totalValue).toBe(600);
-    expect(data.items).toEqual([{ description: "Pantalla", quantity: 1, unitPrice: 500 }]);
+    expect(data.totalValue).toBe("600.00");
+    expect(data.items).toEqual([{ description: "Pantalla", quantity: 3, unitPrice: "0.10", subtotal: "0.30" }]);
   });
 
   it("usa null para contactNumber/validUntil ausentes", () => {

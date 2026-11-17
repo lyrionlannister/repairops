@@ -15,6 +15,7 @@ import { LoginUserDto } from "../dtos/login-user.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
 import { UpdateEmployeeDto } from "../dtos/update-employee.dto.js";
 import type { AuthenticatedRequest } from "../middlewares/auth.middleware.js";
+import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class AuthController {
@@ -39,8 +40,7 @@ export class AuthController {
         user: userWithoutPassword,
       });
     } catch (error: any) {
-      const message = error.message || AUTH_MESSAGES.REGISTER_ERROR;
-      res.status(400).json({ error: message });
+      sendError(res, error, 400, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
 
@@ -49,7 +49,7 @@ export class AuthController {
       const users = await this.authService.getAllUsers();
       res.status(200).json(users);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || AUTH_MESSAGES.REGISTER_ERROR });
+      sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
 
@@ -67,8 +67,7 @@ export class AuthController {
       const user = await this.authService.createEmployee(dto);
       res.status(201).json({ message: AUTH_MESSAGES.REGISTER_SUCCESS, user });
     } catch (error: any) {
-      const message = error.message || AUTH_MESSAGES.REGISTER_ERROR;
-      res.status(400).json({ error: message });
+      sendError(res, error, 400, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
 
@@ -91,7 +90,7 @@ export class AuthController {
       }
       res.status(200).json(user);
     } catch (error: any) {
-      res.status(400).json({ error: error.message || AUTH_MESSAGES.REGISTER_ERROR });
+      sendError(res, error, 400, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
 
@@ -104,7 +103,7 @@ export class AuthController {
       }
       res.status(200).json(user);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || AUTH_MESSAGES.REGISTER_ERROR });
+      sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
 
@@ -113,7 +112,7 @@ export class AuthController {
       const employees = await this.authService.listEmployees();
       res.status(200).json(employees);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || AUTH_MESSAGES.REGISTER_ERROR });
+      sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
 
@@ -127,7 +126,7 @@ export class AuthController {
       }
       res.status(200).json(user);
     } catch (error: any) {
-      res.status(500).json({ error: error.message || AUTH_MESSAGES.REGISTER_ERROR });
+      sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
 
@@ -156,8 +155,7 @@ export class AuthController {
         user,
       });
     } catch (error: any) {
-      const message = error.message || AUTH_MESSAGES.LOGIN_ERROR;
-      res.status(401).json({ error: message });
+      sendError(res, error, 401, AUTH_MESSAGES.LOGIN_ERROR);
     }
   };
 

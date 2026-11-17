@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -25,7 +24,7 @@ export const CustomerFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { customers, loading, saving, error, fetchAll, create, update } = useCustomers();
+  const { customers, loading, saving, fetchAll, create, update } = useCustomers();
   const [form, setForm] = useState<CustomerFormState>(emptyForm);
   const context = useCustomerContext(isEdit ? id ?? null : null);
 
@@ -55,7 +54,7 @@ export const CustomerFormPage: React.FC = () => {
     event.preventDefault();
     const payload = { name: form.name, phone: form.phone, email: form.email || null, creditLimit: Number(form.creditLimit) || 0 };
     const ok = isEdit && id ? await update(id, payload) : Boolean(await create(payload));
-    if (ok) navigate("/app/customers");
+    if (ok) navigate("/commerce/customers");
   };
 
   const formFields = (
@@ -81,7 +80,7 @@ export const CustomerFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={() => navigate("/app/customers")} disabled={saving}>
+        <Button type="button" variant="outline" onClick={() => navigate("/commerce/customers")} disabled={saving}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving}>
@@ -112,9 +111,8 @@ export const CustomerFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? "Editar cliente" : "Nuevo cliente"}
-      description={isEdit ? "Modifica los datos del cliente." : "Registra un nuevo cliente para el tenant."}
+      description={isEdit ? "Modifica los datos del cliente." : "Registra un nuevo cliente."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
       {content}
     </PageShell>
   );

@@ -3,12 +3,8 @@ import { ChatsController } from "../controllers/chats.controller.js";
 import { authMiddleware } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 
-// n8n_chat_histories sigue sin columna tenant_id (una sola sesion de
-// WhatsApp compartida, ver plan Fase 4) -- tenantMiddleware NO cambia eso,
-// las lecturas/escrituras de historial siguen globales. Lo que si necesita
-// tenant en contexto es el envio manual (sendMessage, Checkpoint 4): resuelve
-// WhatsappAccount de ESTE tenant via TenantScopedDao, igual que cualquier
-// otra ruta protegida.
+// Todo el historial de chat (chat_messages) y sus estadisticas son por
+// tenant: tenantMiddleware pone el tenant en contexto para los DAO.
 export function createChatsRouter(chatsController: ChatsController): Router {
   const router = Router();
   router.use(authMiddleware, tenantMiddleware);
@@ -22,6 +18,7 @@ export function createChatsRouter(chatsController: ChatsController): Router {
   router.post("/:sessionId/transfer", (req, res) => chatsController.activateTransfer(req, res));
   router.delete("/:sessionId/transfer", (req, res) => chatsController.deactivateTransfer(req, res));
   router.post("/:sessionId/messages", (req, res) => chatsController.sendMessage(req, res));
+  router.get("/:sessionId/media/:mediaId", (req, res) => chatsController.getMedia(req, res));
   router.get("/:sessionId", (req, res) => chatsController.getMessages(req, res));
 
   return router;

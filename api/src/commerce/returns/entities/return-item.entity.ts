@@ -1,7 +1,8 @@
-import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Return } from "./return.entity.js";
 import { SaleItem } from "../../inventory/entities/sale-item.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 // "Cuanto ya se devolvio de esta linea" se responde SUMANDO quantity contra
 // SaleItem.quantity en cada validacion -- nunca con una columna cacheada en
@@ -9,9 +10,14 @@ import { SaleItem } from "../../inventory/entities/sale-item.entity.js";
 // de esa invariante vive en ReturnService (lock pesimista + suma agregada
 // dentro de la transaccion), no en una constraint de DB.
 @Entity("return_items")
+@Index("IDX_return_items_tenant", ["tenantId"])
 export class ReturnItem extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_return_items_tenant" })
+  tenant?: Tenant;
 
   @Column({ type: "bigint", nullable: false, name: "id_devolucion" })
   returnId!: string;

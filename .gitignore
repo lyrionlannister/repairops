@@ -47,4 +47,4 @@ temp_interactive_push.bat
 branch_structure.json
 resources/
 
-client/scripts/
+client/scripts/api/media-storage/

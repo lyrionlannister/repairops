@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -12,6 +11,8 @@ import { EyeIcon, EyeCloseIcon } from "@common/icons";
 import { useUsers, ROLE_LABELS, PAY_CYCLE_LABELS, type PayCycle, type UserRole } from "../hooks/use-users";
 import { useEmployeeContext } from "../hooks/use-employee-context";
 import { EmployeeContextPanel } from "../components/employee-context-panel";
+import { BranchAssignmentField } from "../components/branch-assignment-field";
+import { useBranch } from "@common/hooks/use-branch";
 
 interface UserFormState {
   firstName: string;
@@ -21,6 +22,8 @@ interface UserFormState {
   role: UserRole;
   salaryAmount: string;
   payCycle: PayCycle | "";
+  branchIds: string[];
+  primaryBranchId: string;
 }
 
 const emptyForm: UserFormState = {
@@ -31,6 +34,8 @@ const emptyForm: UserFormState = {
   role: "employee",
   salaryAmount: "",
   payCycle: "",
+  branchIds: [],
+  primaryBranchId: "",
 };
 
 export const UserFormPage: React.FC = () => {
@@ -40,9 +45,10 @@ export const UserFormPage: React.FC = () => {
 
   const {
     users, loading, fetchUsers,
-    createUser, creating, createError,
-    updateUser, updating, updateError,
+    createUser, creating,
+    updateUser, updating,
   } = useUsers();
+  const { branches, workingBranchId } = useBranch();
   const context = useEmployeeContext(isEdit ? id ?? null : null);
   const [form, setForm] = useState<UserFormState>(emptyForm);
   const [showPassword, setShowPassword] = useState(false);
@@ -63,16 +69,23 @@ export const UserFormPage: React.FC = () => {
         role: user.role,
         salaryAmount: user.salaryAmount != null ? String(user.salaryAmount) : "",
         payCycle: user.payCycle ?? "",
+        branchIds: user.branchIds ?? [],
+        primaryBranchId: user.primaryBranchId ?? "",
       });
     }
   }, [isEdit, id, users]);
 
-  const updateField = (field: keyof UserFormState, value: string) => {
+  // Usuario nuevo: arranca en la sucursal en la que está trabajando el owner.
+  useEffect(() => {
+    if (isEdit || !workingBranchId) return;
+    setForm((prev) => (prev.branchIds.length > 0 ? prev : { ...prev, branchIds: [workingBranchId], primaryBranchId: workingBranchId }));
+  }, [isEdit, workingBranchId]);
+
+  const updateField = (field: Exclude<keyof UserFormState, "branchIds">, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const saving = creating || updating;
-  const error = createError || updateError;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -83,6 +96,8 @@ export const UserFormPage: React.FC = () => {
       role: form.role,
       salaryAmount: form.salaryAmount ? Number(form.salaryAmount) : undefined,
       payCycle: form.payCycle || undefined,
+      // El owner accede a todas las sucursales: no se asignan.
+      ...(form.role === "owner" ? {} : { branchIds: form.branchIds, primaryBranchId: form.primaryBranchId || undefined }),
     };
 
     const ok = isEdit && id
@@ -90,7 +105,7 @@ export const UserFormPage: React.FC = () => {
       ? await updateUser(id, { ...base, ...(form.password ? { password: form.password } : {}) })
       : await createUser({ ...base, password: form.password });
 
-    if (ok) navigate("/app/users");
+    if (ok) navigate("/identity/users");
   };
 
   const formEl = (
@@ -175,6 +190,16 @@ export const UserFormPage: React.FC = () => {
         />
       </div>
 
+      {form.role !== "owner" && (
+        <BranchAssignmentField
+          branches={branches}
+          branchIds={form.branchIds}
+          primaryBranchId={form.primaryBranchId}
+          disabled={loading || saving}
+          onChange={(branchIds, primaryBranchId) => setForm((prev) => ({ ...prev, branchIds, primaryBranchId }))}
+        />
+      )}
+
       <div>
         <Label className="text-gray-500">Salario</Label>
         <Input
@@ -199,7 +224,7 @@ export const UserFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={() => navigate("/app/users")}>
+        <Button type="button" variant="outline" onClick={() => navigate("/identity/users")}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving}>
@@ -212,9 +237,8 @@ export const UserFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? "Editar usuario" : "Nuevo usuario"}
-      description={isEdit ? "Modifica los datos del usuario." : "Crea un usuario para el tenant actual."}
+      description={isEdit ? "Modifica los datos del usuario." : "Crea un usuario para tu equipo."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       {isEdit && id ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

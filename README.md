@@ -90,7 +90,6 @@ pnpm dev          # tsc --watch + nodemon
 pnpm test         # tsc --noEmit
 pnpm test:unit    # vitest
 pnpm test:arch    # dependency-cruiser contra .dependency-cruiser.cjs
-pnpm seed:demo    # datos de demo
 
 # client/
 pnpm dev          # vite

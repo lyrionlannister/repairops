@@ -1,3 +1,4 @@
+import { ScrollTable } from "@ui/table/scroll-table";
 import { useEffect, useState } from "react";
 import { MessageCircle, Pencil, Trash2 } from "lucide-react";
 import {
@@ -7,7 +8,6 @@ import {
   type WhatsappTemplateCategory,
 } from "../hooks/use-whatsapp-template-catalog";
 import type { WhatsappTemplateSyncStatus } from "../hooks/use-whatsapp-templates";
-import { Alert } from "@ui/alert/alert";
 import { Badge } from "@ui/badge/badge";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
@@ -34,7 +34,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
   description,
   statusByEntryId,
 }) => {
-  const { entries, loading, saving, error, fetchEntries, create, update, remove } =
+  const { entries, loading, saving, fetchEntries, create, update, remove } =
     useWhatsappTemplateCatalog(scope);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<WhatsappTemplateCatalogEntryRow | null>(null);
@@ -88,7 +88,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
+    <div className="shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
         <div>
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h2>
@@ -99,7 +99,6 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
         </Button>
       </div>
 
-      {error && <div className="p-4"><Alert variant="error" title="Error" message={error} /></div>}
 
       {loading && entries.length === 0 ? (
         <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando...</div>
@@ -109,8 +108,8 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
           <p className="text-sm">Sin plantillas todavía.</p>
         </div>
       ) : (
-        <table className="w-full text-sm">
-          <thead className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-white/2">
+        <ScrollTable
+          header={
             <tr>
               <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Plantilla</th>
               <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Categoría</th>
@@ -122,7 +121,8 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
               )}
               <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Acciones</th>
             </tr>
-          </thead>
+          }
+        >
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {entries.map((entry) => {
               const liveStatus = statusByEntryId?.get(entry.id);
@@ -130,12 +130,14 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
               return (
                 <tr key={entry.id}>
                   <td className="px-5 py-4 text-gray-700 dark:text-gray-300">
+                    <div className="min-w-0 text-right xl:text-left">
                     <div className="font-medium">{entry.key}</div>
                     <div className="text-xs text-gray-400">{entry.metaName}</div>
                     {entry.triggerEvent && (
                       <div className="mt-0.5 text-xs text-gray-400">Disparador automático: {entry.triggerEvent}</div>
                     )}
                     {!entry.enabled && <Badge color="error">Deshabilitada</Badge>}
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{entry.category}</td>
                   {statusByEntryId && (
@@ -153,7 +155,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
                       <button
                         type="button"
                         onClick={() => openEditForm(entry)}
-                        className="text-gray-400 hover:text-brand-500"
+                        className="rounded-lg p-1.5 text-gray-400 hover:text-brand-500"
                         aria-label="Editar"
                       >
                         <Pencil className="size-4" />
@@ -161,7 +163,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
                       <button
                         type="button"
                         onClick={() => setDeletingEntry(entry)}
-                        className="text-gray-400 hover:text-error-500"
+                        className="rounded-lg p-1.5 text-gray-400 hover:text-error-500"
                         aria-label="Borrar"
                       >
                         <Trash2 className="size-4" />
@@ -172,7 +174,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
               );
             })}
           </tbody>
-        </table>
+        </ScrollTable>
       )}
 
       <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} className="max-w-lg p-6 sm:p-8 mx-4">

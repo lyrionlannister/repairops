@@ -7,7 +7,7 @@ import type {
 } from "@/core/common/types/interfaces/props/table-props";
 
 const Table: React.FC<TableProps> = ({ children, className }) => {
-  return <table className={`min-w-full  ${className}`}>{children}</table>;
+  return <table className={`ui-table min-w-full  ${className}`}>{children}</table>;
 };
 
 const TableHeader: React.FC<TableHeaderProps> = ({ children, className }) => {

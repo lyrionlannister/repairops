@@ -36,7 +36,7 @@ async function readError(res: Response, fallback: string): Promise<string> {
 }
 
 // `scope` elige el prefijo de ruta -- "tenant" es el catálogo de la empresa
-// (owner/admin del tenant actual), "system" es el de la plataforma misma
+// (owner del tenant actual), "system" es el de la plataforma misma
 // (solo isPlatformAdmin, ver plan Fase 4 Checkpoint 7). Mismo shape de
 // respuesta en ambos, el backend ya separa la autorización.
 export const useWhatsappTemplateCatalog = (scope: "tenant" | "system" = "tenant") => {

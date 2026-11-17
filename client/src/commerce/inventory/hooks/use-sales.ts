@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
+import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 
 export type PaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "credito";
 export type SaleItemLineType = "inventory_item" | "service_type";
@@ -34,6 +35,7 @@ export interface PaymentInput {
 }
 
 export interface CreateSalePayload {
+  applyTax?: boolean;
   localId: string;
   cashSessionId: string;
   customerId?: string;
@@ -51,11 +53,13 @@ export const useSales = () => {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const branchQuery = useBranchQuery();
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/sales");
+      const res = await apiClient(`/sales${branchQuery}`);
       if (!res.ok) throw new Error("Error al cargar ventas");
       setSales(await res.json());
     } catch (err) {
@@ -63,7 +67,7 @@ export const useSales = () => {
     } finally {
       setLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, branchQuery]);
 
   const create = useCallback(
     async (data: CreateSalePayload): Promise<Sale | null> => {

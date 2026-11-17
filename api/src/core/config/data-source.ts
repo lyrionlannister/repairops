@@ -4,6 +4,9 @@ import { User } from "../../identity/auth/entities/user.entity.js";
 import { ExcludedPhone } from "../../messaging/whatsapp-admin/entities/excluded-phone.entity.js";
 import { WhatsappSettings } from "../../messaging/whatsapp-admin/entities/whatsapp-settings.entity.js";
 import { ContactName } from "../../messaging/chats/entities/contact-name.entity.js";
+import { ChatMessage } from "../../messaging/chats/entities/chat-message.entity.js";
+import { ChatDailyStat } from "../../messaging/chats/entities/chat-daily-stat.entity.js";
+import { ChatDailyContact } from "../../messaging/chats/entities/chat-daily-contact.entity.js";
 import { Local } from "../../app_platform/local/entities/local.entity.js";
 import { RepairNote } from "../../commerce/repair-notes/entities/repair-note.entity.js";
 import { MessageTemplate } from "../../messaging/message-templates/entities/message-template.entity.js";
@@ -21,10 +24,13 @@ import { SaleItem } from "../../commerce/inventory/entities/sale-item.entity.js"
 import { SalePayment } from "../../commerce/payments/entities/sale-payment.entity.js";
 import { Quote } from "../../commerce/quotes/entities/quote.entity.js";
 import { QuoteItem } from "../../commerce/quotes/entities/quote-item.entity.js";
+import { QuoteServiceType } from "../../commerce/quotes/entities/quote-service-type.entity.js";
+import { RepairNotePayment } from "../../commerce/repair-notes/entities/repair-note-payment.entity.js";
 import { CashSession } from "../../commerce/cash/entities/cash-session.entity.js";
 import { CashMovement } from "../../commerce/cash/entities/cash-movement.entity.js";
 import { RevenueAttributionSetting } from "../../commerce/revenue-attribution/entities/revenue-attribution-setting.entity.js";
 import { Branch } from "../../identity/branches/entities/branch.entity.js";
+import { UserBranch } from "../../identity/branches/entities/user-branch.entity.js";
 import { Customer } from "../../commerce/customers/entities/customer.entity.js";
 import { WhatsappAccount } from "../../messaging/whatsapp-official/entities/whatsapp-account.entity.js";
 import { WhatsappTemplateStatus } from "../../messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
@@ -38,6 +44,7 @@ import { InventoryCountItem } from "../../commerce/inventory/entities/inventory-
 import { InventoryReservation } from "../../commerce/inventory/entities/inventory-reservation.entity.js";
 import { Layaway } from "../../commerce/customers/entities/layaway.entity.js";
 import { LayawayItem } from "../../commerce/customers/entities/layaway-item.entity.js";
+import { CustomerPayment } from "../../commerce/customers/entities/customer-payment.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
@@ -59,6 +66,9 @@ export const appDataSourceOptions: DataSourceOptions = {
     ExcludedPhone,
     WhatsappSettings,
     ContactName,
+    ChatMessage,
+    ChatDailyStat,
+    ChatDailyContact,
     Local,
     RepairNote,
     RepairNoteItem,
@@ -75,10 +85,13 @@ export const appDataSourceOptions: DataSourceOptions = {
     SalePayment,
     Quote,
     QuoteItem,
+    QuoteServiceType,
+    RepairNotePayment,
     CashSession,
     CashMovement,
     RevenueAttributionSetting,
     Branch,
+    UserBranch,
     Customer,
     WhatsappAccount,
     WhatsappTemplateStatus,
@@ -92,6 +105,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     InventoryReservation,
     Layaway,
     LayawayItem,
+    CustomerPayment,
   ],
 };
 

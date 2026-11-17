@@ -1,9 +1,13 @@
 import "reflect-metadata";
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsArray, IsOptional, IsString, ValidateIf, ValidateNested } from "class-validator";
 import { QuoteItemInputDto } from "./quote-item-input.dto.js";
 
 export class UpdateQuoteDto {
+  @IsOptional()
+  @IsString()
+  customerId?: string;
+
   @IsOptional()
   @IsString()
   customerName?: string;
@@ -11,6 +15,23 @@ export class UpdateQuoteDto {
   @IsOptional()
   @IsString()
   contactNumber?: string;
+
+  @ValidateIf((o: UpdateQuoteDto) => o.brand !== undefined || o.model !== undefined || o.reportedFailure !== undefined)
+  @IsString()
+  brand?: string;
+
+  @ValidateIf((o: UpdateQuoteDto) => o.brand !== undefined || o.model !== undefined || o.reportedFailure !== undefined)
+  @IsString()
+  model?: string;
+
+  @ValidateIf((o: UpdateQuoteDto) => o.brand !== undefined || o.model !== undefined || o.reportedFailure !== undefined)
+  @IsString()
+  reportedFailure?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  serviceTypeIds?: string[];
 
   @IsOptional()
   @IsString()

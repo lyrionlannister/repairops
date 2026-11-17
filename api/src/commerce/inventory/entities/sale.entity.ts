@@ -1,17 +1,30 @@
-import { Entity, Column, CreateDateColumn, Unique } from "typeorm";
+import { Entity, Column, CreateDateColumn, Index, Unique, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
+import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { Branch } from "../../../identity/branches/entities/branch.entity.js";
 
 export type SaleOrigin = "counter" | "repair_note" | "quote";
 
 @Entity("sales")
+@Index("IDX_sales_tenant_created", ["tenantId", "createdAt"])
 @Unique(["tenantId", "saleNumber"])
 @Unique(["tenantId", "idempotencyKey"])
+@Index("IDX_sales_local", ["localId"])
 export class Sale extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
 
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_sales_tenant" })
+  tenant?: Tenant;
+
   @Column({ type: "bigint", nullable: false, name: "local_id" })
   localId!: string;
+
+  // NO ACTION: una sucursal con datos no se borra, se desactiva.
+  @ManyToOne(() => Branch, { onDelete: "NO ACTION" })
+  @JoinColumn({ name: "local_id", foreignKeyConstraintName: "FK_sales_local" })
+  branch?: Branch;
 
   @Column({ type: "int", name: "numero_venta" })
   saleNumber!: number;

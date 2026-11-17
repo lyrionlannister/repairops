@@ -55,6 +55,8 @@ export class LocalDao extends TenantScopedDao<Local> {
          "moneda" AS "currency",
          "formato_ticket" AS "defaultTicketSize",
          "clausula_garantia" AS "warrantyClause",
+         "color_marca" AS "brandColor",
+         "zona_horaria" AS "timeZone",
          "tasa_impuesto" AS "taxRatePercent",
          "tope_descuento_por_rol" AS "maxDiscountPercentByRole",
          "fecha_creacion" AS "createdAt",

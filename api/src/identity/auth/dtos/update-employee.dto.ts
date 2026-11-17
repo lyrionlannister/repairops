@@ -1,7 +1,7 @@
-import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, MinLength } from "class-validator";
+import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, MinLength, IsArray } from "class-validator";
 import { PayCycle, UserRole } from "../entities/user.entity.js";
 
-const ROLES: UserRole[] = ["owner", "admin", "employee", "technician", "cashier"];
+const ROLES: UserRole[] = ["owner", "employee", "technician", "cashier"];
 const PAY_CYCLES: PayCycle[] = ["weekly", "biweekly", "monthly"];
 
 export class UpdateEmployeeDto {
@@ -37,4 +37,14 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsIn(PAY_CYCLES, { message: "Ciclo de pago inválido" })
   payCycle?: PayCycle;
+
+  // Sucursales del usuario (obligatorio para quien no es owner; el owner accede a todas).
+  @IsOptional()
+  @IsArray({ message: "branchIds debe ser una lista" })
+  @IsString({ each: true })
+  branchIds?: string[];
+
+  @IsOptional()
+  @IsString()
+  primaryBranchId?: string;
 }

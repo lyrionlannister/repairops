@@ -16,6 +16,8 @@ export interface LocalFormState {
   currency: string;
   defaultTicketSize: TicketSize;
   warrantyClause: string;
+  brandColor: string;
+  timeZone: string;
 }
 
 const emptyForm: LocalFormState = {
@@ -28,6 +30,8 @@ const emptyForm: LocalFormState = {
   currency: "MXN",
   defaultTicketSize: "80mm",
   warrantyClause: "",
+  brandColor: "",
+  timeZone: "America/Mexico_City",
 };
 
 export const useLocalPage = ({
@@ -85,6 +89,8 @@ export const useLocalPage = ({
         currency: local.currency ?? "MXN",
         defaultTicketSize: local.defaultTicketSize ?? "80mm",
         warrantyClause: local.warrantyClause ?? "",
+        brandColor: local.brandColor ?? "",
+        timeZone: local.timeZone ?? "America/Mexico_City",
       });
     }
   }, [local]);
@@ -145,8 +151,12 @@ export const useLocalPage = ({
       currency: form.currency || "MXN",
       defaultTicketSize: form.defaultTicketSize,
       warrantyClause: form.warrantyClause || undefined,
+      brandColor: form.brandColor || null,
+      timeZone: form.timeZone,
     });
   };
+
+  const setBrandColor = (brandColor: string) => setForm((prev) => ({ ...prev, brandColor }));
 
   const removeLogo = () => setForm((prev) => ({ ...prev, logo: "" }));
 
@@ -168,5 +178,6 @@ export const useLocalPage = ({
     handleAttributionBasisChange,
     handleSubmit,
     removeLogo,
+    setBrandColor,
   };
 };

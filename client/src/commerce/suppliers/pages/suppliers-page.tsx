@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
@@ -16,10 +15,9 @@ import { useSuppliersPage } from "../hooks/use-suppliers-page";
 
 export const SuppliersPage = () => {
   const navigate = useNavigate();
-  const { suppliers, loading, saving, error, fetchAll, remove } = useSuppliers();
+  const { suppliers, loading, saving, fetchAll, remove } = useSuppliers();
   const { search, setSearch, filteredSuppliers } = useSuppliersPage(suppliers);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -29,27 +27,21 @@ export const SuppliersPage = () => {
     usePaginatedList(filteredSuppliers);
 
   const handleDelete = async (id: string) => {
-    const ok = await remove(id);
-    if (ok) {
-      setSuccessMsg("Proveedor eliminado.");
-      window.setTimeout(() => setSuccessMsg(null), 3000);
-    }
+    await remove(id);
     setDeleteConfirmId(null);
   };
 
   return (
     <PageShell
       title="Proveedores"
-      description="Gestiona el catálogo de proveedores disponible para cada tenant."
+      description="Gestiona los proveedores de tu taller."
       action={
-        <Button variant="primary" onClick={() => navigate("/app/suppliers/new")}>
+        <Button variant="primary" onClick={() => navigate("/commerce/suppliers/new")}>
           <Plus className="mr-1.5 size-4" />
           Nuevo proveedor
         </Button>
       }
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
-      {successMsg && <Alert variant="success" title="Listo" message={successMsg} />}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">
@@ -70,10 +62,11 @@ export const SuppliersPage = () => {
         ) : pageItems.length === 0 ? (
           <div className="flex flex-col items-center gap-3 p-12 text-center text-gray-400">
             <Search className="size-10 opacity-40" />
-            <p className="text-sm">No hay proveedores para este tenant.</p>
+            <p className="text-sm">Aún no hay proveedores registrados.</p>
           </div>
         ) : (
           <ScrollTable
+            className="min-w-125"
             colgroup={
               <colgroup>
                 <col />
@@ -100,7 +93,7 @@ export const SuppliersPage = () => {
                   <td className="px-4 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => navigate(`/app/suppliers/${supplier.id}/edit`)}
+                        onClick={() => navigate(`/commerce/suppliers/${supplier.id}/edit`)}
                         className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                         title="Editar"
                       >
@@ -128,7 +121,7 @@ export const SuppliersPage = () => {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
                 {[10, 25, 50].map((size) => (
                   <option key={size} value={size}>{size}</option>

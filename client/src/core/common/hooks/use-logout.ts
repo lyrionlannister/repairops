@@ -13,7 +13,7 @@ export const useLogout = () => {
       await apiClient("/auth/logout", { method: "POST" });
     } finally {
       sessionStorage.clear();
-      navigate("/app/sign-in", { replace: true });
+      navigate("/identity/sign-in", { replace: true });
     }
   }, [apiClient, navigate]);
 };

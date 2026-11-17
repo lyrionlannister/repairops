@@ -7,7 +7,7 @@ import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 // Modulo Caja: un tecnico no abre/cierra sesion ni registra movimientos, ni
 // por pantalla ni por API (criterio de aceptacion de la Fase 1). Lectura
 // queda abierta a cualquier rol autenticado.
-const canWriteCash = requireRole("owner", "admin", "cashier");
+const canWriteCash = requireRole("owner", "cashier");
 
 export const createCashRouter = (controller: CashController): Router => {
   const router = Router();

@@ -5,7 +5,7 @@ export interface EmployeeOption {
   id: string;
   firstName: string;
   lastName: string;
-  role: "owner" | "admin" | "employee";
+  role: "owner" | "employee";
 }
 
 export const useEmployees = () => {

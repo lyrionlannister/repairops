@@ -28,7 +28,7 @@ export const QuotesPage: React.FC = () => {
       title="Cotizaciones"
       description="Genera y da seguimiento a cotizaciones para clientes."
       action={
-        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/app/quotes/new")}>
+        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/quotes/new")}>
           Nueva cotización
         </Button>
       }

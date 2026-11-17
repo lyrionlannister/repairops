@@ -36,6 +36,8 @@ export const useSaleCart = ({
   inventoryItems: InventoryItem[];
   customerId: string;
 }) => {
+  // El IVA no se asume: el cajero lo marca por venta.
+  const [applyTax, setApplyTax] = useState(false);
   const [lines, setLines] = useState<SaleLineItem[]>([{ ...emptyLine }]);
   const [payments, setPayments] = useState<SalePaymentLine[]>([emptyPayment("0.00")]);
   // Protege contra doble clic en "Registrar venta": la misma clave manda la
@@ -56,7 +58,7 @@ export const useSaleCart = ({
   const removeLine = (index: number) => setLines((prev) => prev.filter((_, i) => i !== index));
 
   const subtotal = lines.reduce((sum, line) => sum + (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0), 0);
-  const taxAmount = round2(subtotal * (taxRatePercent / 100));
+  const taxAmount = round2(subtotal * ((applyTax ? taxRatePercent : 0) / 100));
   const total = round2(subtotal + taxAmount);
 
   const updatePayment = (index: number, patch: Partial<SalePaymentLine>) => {
@@ -93,6 +95,7 @@ export const useSaleCart = ({
   const validLines = lines.filter((l) => l.inventoryItemId && Number(l.quantity) > 0);
 
   const reset = () => {
+    setApplyTax(false);
     setLines([{ ...emptyLine }]);
     setPayments([emptyPayment("0.00")]);
     setIdempotencyKey(newIdempotencyKey());
@@ -102,6 +105,8 @@ export const useSaleCart = ({
     lines,
     payments,
     idempotencyKey,
+    applyTax,
+    setApplyTax,
     subtotal,
     taxAmount,
     total,

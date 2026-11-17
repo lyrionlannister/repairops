@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 
-import { Alert } from "@ui/alert/alert";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -48,9 +47,9 @@ export const InventoryItemFormPage: React.FC = () => {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
-  const { activeBranchId } = useBranch();
+  const { workingBranchId } = useBranch();
 
-  const { items, loading, saving, error, fetchAll, create, update } = useInventory();
+  const { items, loading, saving, fetchAll, create, update } = useInventory();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const { movements, marginPercent } = useInventoryItemContext(isEdit ? id ?? null : null);
 
@@ -87,10 +86,10 @@ export const InventoryItemFormPage: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!activeBranchId) return;
+    if (!workingBranchId) return;
 
     const payload = {
-      localId: activeBranchId,
+      localId: workingBranchId,
       name: form.name,
       sku: form.sku || null,
       kind: form.kind,
@@ -101,7 +100,7 @@ export const InventoryItemFormPage: React.FC = () => {
     };
 
     const ok = isEdit && id ? await update(id, payload) : await create(payload);
-    if (ok) navigate("/app/inventory");
+    if (ok) navigate("/commerce/inventory");
   };
 
   const hasPanel = isEdit && Boolean(id);
@@ -159,11 +158,11 @@ export const InventoryItemFormPage: React.FC = () => {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={() => navigate("/app/inventory")}>
+        <Button type="button" variant="outline" onClick={() => navigate("/commerce/inventory")}>
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={saving}>
-          {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear item"}
+          {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear producto"}
         </Button>
       </div>
     </form>
@@ -171,10 +170,9 @@ export const InventoryItemFormPage: React.FC = () => {
 
   return (
     <PageShell
-      title={isEdit ? "Editar item" : "Nuevo item"}
-      description={isEdit ? "Modifica los datos del item de inventario." : "Registra un nuevo item de inventario."}
+      title={isEdit ? "Editar producto" : "Nuevo producto"}
+      description={isEdit ? "Modifica los datos del producto." : "Registra un nuevo producto en el inventario."}
     >
-      {error && <Alert variant="error" title="Error" message={error} />}
 
       <div className={hasPanel ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "max-w-xl"}>
         <div className={hasPanel ? "lg:col-span-2" : undefined}>{formCard}</div>

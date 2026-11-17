@@ -56,7 +56,8 @@ describe("WhatsappAccountService.connectOwnAccount", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "phone-own" }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ display_phone_number: "+52 1 55 1234 5678" }) });
     vi.stubGlobal("fetch", fetchMock);
 
     const dao = makeDao();
@@ -68,7 +69,7 @@ describe("WhatsappAccountService.connectOwnAccount", () => {
     const result = await service.connectOwnAccount(dto);
 
     expect(result.ownedByPlatform).toBe(false);
-    expect(dao.connectOwnAccount).toHaveBeenCalledWith(dto);
+    expect(dao.connectOwnAccount).toHaveBeenCalledWith({ ...dto, displayPhoneNumber: "5215512345678" });
   });
 
   it("never calls the DAO when Meta rejects the credentials", async () => {
