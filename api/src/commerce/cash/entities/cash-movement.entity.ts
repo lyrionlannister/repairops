@@ -5,7 +5,7 @@ import { CashSession } from "./cash-session.entity.js";
 
 export type CashMovementType = "income" | "expense";
 export type CashMovementMethod = "efectivo" | "tarjeta" | "transferencia";
-export type CashMovementRelatedEntityType = "repair_note" | "quote" | "sale" | "return" | "layaway" | "manual";
+export type CashMovementRelatedEntityType = "repair_note" | "quote" | "sale" | "return" | "layaway" | "customer_payment" | "manual";
 
 @Entity("cash_movements")
 @Index("IDX_cash_movements_tenant_created", ["tenantId", "createdAt"])

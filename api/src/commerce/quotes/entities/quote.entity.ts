@@ -2,8 +2,11 @@ import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColu
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 import { Branch } from "../../../identity/branches/entities/branch.entity.js";
+import { RepairNote } from "../../repair-notes/entities/repair-note.entity.js";
 
 export type QuoteStatus = "pending" | "accepted" | "rejected";
+// "product": venta de productos; "repair": cotiza una reparación y, al aceptarla, crea la nota.
+export type QuoteKind = "product" | "repair";
 
 @Entity("quotes")
 @Index("IDX_quotes_tenant", ["tenantId"])
@@ -24,6 +27,9 @@ export class Quote extends BaseEntity {
   @JoinColumn({ name: "local_id", foreignKeyConstraintName: "FK_quotes_local" })
   branch?: Branch;
 
+  @Column({ type: "varchar", length: 20, default: "product", name: "tipo" })
+  kind!: QuoteKind;
+
   @Column({ type: "bigint", nullable: true, name: "customer_id" })
   customerId?: string | null;
 
@@ -32,6 +38,24 @@ export class Quote extends BaseEntity {
 
   @Column({ type: "varchar", length: 50, nullable: true, name: "numero_contacto" })
   contactNumber?: string | null;
+
+  // Solo cotizaciones de reparación (un CHECK de la BD los exige cuando tipo = 'repair').
+  @Column({ type: "varchar", length: 255, nullable: true, name: "marca" })
+  brand?: string | null;
+
+  @Column({ type: "varchar", length: 255, nullable: true, name: "modelo" })
+  model?: string | null;
+
+  @Column({ type: "text", nullable: true, name: "falla_reportada" })
+  reportedFailure?: string | null;
+
+  // Nota creada al aceptar una cotización de reparación.
+  @Column({ type: "bigint", nullable: true, name: "id_nota_reparacion" })
+  repairNoteId?: string | null;
+
+  @ManyToOne(() => RepairNote, { onDelete: "SET NULL" })
+  @JoinColumn({ name: "id_nota_reparacion", foreignKeyConstraintName: "FK_quotes_id_nota_reparacion" })
+  repairNote?: RepairNote;
 
   // Cacheado: la fuente de verdad es la suma de los QuoteItem, mantenida por
   // QuoteService en cada create/update (mismo patron que

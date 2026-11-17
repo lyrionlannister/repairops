@@ -67,6 +67,12 @@ export class RepairNote extends BaseEntity {
   @Column({ type: "date", name: "fecha_recepcion" })
   receivedAt!: string;
 
+  // Hora de recepcion en la zona horaria del local (HH:MM), calculada por
+  // RepairNoteService.create -- fecha_recepcion no guarda hora, y los tres
+  // tickets (58mm, 80mm, carta) la necesitan para mostrarla junto a la fecha.
+  @Column({ type: "varchar", length: 5, name: "hora_recepcion" })
+  receivedTime!: string;
+
   @Column({ type: "date", nullable: true, name: "fecha_entrega" })
   deliveryDate?: string;
 

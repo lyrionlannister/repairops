@@ -24,6 +24,8 @@ import { SaleItem } from "../../commerce/inventory/entities/sale-item.entity.js"
 import { SalePayment } from "../../commerce/payments/entities/sale-payment.entity.js";
 import { Quote } from "../../commerce/quotes/entities/quote.entity.js";
 import { QuoteItem } from "../../commerce/quotes/entities/quote-item.entity.js";
+import { QuoteServiceType } from "../../commerce/quotes/entities/quote-service-type.entity.js";
+import { RepairNotePayment } from "../../commerce/repair-notes/entities/repair-note-payment.entity.js";
 import { CashSession } from "../../commerce/cash/entities/cash-session.entity.js";
 import { CashMovement } from "../../commerce/cash/entities/cash-movement.entity.js";
 import { RevenueAttributionSetting } from "../../commerce/revenue-attribution/entities/revenue-attribution-setting.entity.js";
@@ -42,6 +44,7 @@ import { InventoryCountItem } from "../../commerce/inventory/entities/inventory-
 import { InventoryReservation } from "../../commerce/inventory/entities/inventory-reservation.entity.js";
 import { Layaway } from "../../commerce/customers/entities/layaway.entity.js";
 import { LayawayItem } from "../../commerce/customers/entities/layaway-item.entity.js";
+import { CustomerPayment } from "../../commerce/customers/entities/customer-payment.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
@@ -82,6 +85,8 @@ export const appDataSourceOptions: DataSourceOptions = {
     SalePayment,
     Quote,
     QuoteItem,
+    QuoteServiceType,
+    RepairNotePayment,
     CashSession,
     CashMovement,
     RevenueAttributionSetting,
@@ -100,6 +105,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     InventoryReservation,
     Layaway,
     LayawayItem,
+    CustomerPayment,
   ],
 };
 

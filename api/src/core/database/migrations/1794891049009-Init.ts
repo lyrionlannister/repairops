@@ -12,7 +12,7 @@ export class Init1794891049009 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "contact_names" ("tenant_id" bigint NOT NULL, "telefono" character varying(50) NOT NULL, "nombre" character varying(255) NOT NULL, "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), "fecha_actualizacion" TIMESTAMP DEFAULT now(), CONSTRAINT "PK_b6051a3d6864eefc0406e9a353f" PRIMARY KEY ("tenant_id", "telefono"))`);
         await queryRunner.query(`CREATE TABLE "branches" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "nombre" character varying(255) NOT NULL, "direccion" character varying(500), "telefono" character varying(50), "activa" boolean NOT NULL DEFAULT true, "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), "fecha_actualizacion" TIMESTAMP DEFAULT now(), CONSTRAINT "UQ_43b11ad4d426321a2dd50599823" UNIQUE ("public_id"), CONSTRAINT "PK_7f37d3b42defea97f1df0d19535" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_branches_tenant" ON "branches" ("tenant_id") `);
-        await queryRunner.query(`CREATE TABLE "repair_notes" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "local_id" bigint NOT NULL, "customer_id" bigint, "numero_control" integer NOT NULL, "public_ref" character varying(8) NOT NULL, "nombre_cliente" character varying(255) NOT NULL, "numero_contacto" character varying(50), "marca" character varying(255) NOT NULL, "modelo" character varying(255) NOT NULL, "falla_reportada" text NOT NULL, "valor_total" numeric(10,2) NOT NULL DEFAULT '0', "estado" character varying(50) NOT NULL DEFAULT 'received', "requiere_anticipo" boolean NOT NULL DEFAULT false, "valor_anticipo" numeric(10,2), "fecha_recepcion" date NOT NULL, "fecha_entrega" date, "notas_tecnico" text, "hallazgos_adicionales" text, "id_empleado_asignado" bigint, "dispositivo_apagado" boolean NOT NULL DEFAULT false, "tiene_garantia" boolean NOT NULL DEFAULT false, "tiene_garantia_extendida" boolean NOT NULL DEFAULT false, "dias_garantia_extendida" integer, "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), "fecha_actualizacion" TIMESTAMP DEFAULT now(), CONSTRAINT "UQ_1bfcad2193cc1427288dc094e5f" UNIQUE ("public_id"), CONSTRAINT "UQ_320624bde02c9be696a3dd40900" UNIQUE ("tenant_id", "numero_control"), CONSTRAINT "PK_514e9616895615bb53d09d9837c" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "repair_notes" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "local_id" bigint NOT NULL, "customer_id" bigint, "numero_control" integer NOT NULL, "public_ref" character varying(8) NOT NULL, "nombre_cliente" character varying(255) NOT NULL, "numero_contacto" character varying(50), "marca" character varying(255) NOT NULL, "modelo" character varying(255) NOT NULL, "falla_reportada" text NOT NULL, "valor_total" numeric(10,2) NOT NULL DEFAULT '0', "estado" character varying(50) NOT NULL DEFAULT 'received', "requiere_anticipo" boolean NOT NULL DEFAULT false, "valor_anticipo" numeric(10,2), "fecha_recepcion" date NOT NULL, "hora_recepcion" character varying(5) NOT NULL, "fecha_entrega" date, "notas_tecnico" text, "hallazgos_adicionales" text, "id_empleado_asignado" bigint, "dispositivo_apagado" boolean NOT NULL DEFAULT false, "tiene_garantia" boolean NOT NULL DEFAULT false, "tiene_garantia_extendida" boolean NOT NULL DEFAULT false, "dias_garantia_extendida" integer, "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), "fecha_actualizacion" TIMESTAMP DEFAULT now(), CONSTRAINT "UQ_1bfcad2193cc1427288dc094e5f" UNIQUE ("public_id"), CONSTRAINT "UQ_320624bde02c9be696a3dd40900" UNIQUE ("tenant_id", "numero_control"), CONSTRAINT "PK_514e9616895615bb53d09d9837c" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_repair_notes_local" ON "repair_notes" ("local_id") `);
         await queryRunner.query(`CREATE UNIQUE INDEX "UQ_repair_notes_public_ref" ON "repair_notes" ("public_ref") `);
         await queryRunner.query(`CREATE INDEX "IDX_repair_notes_tenant_status" ON "repair_notes" ("tenant_id", "estado") `);
@@ -55,12 +55,19 @@ export class Init1794891049009 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "sale_payments" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "id_venta" bigint NOT NULL, "metodo" character varying(20) NOT NULL, "monto" numeric(10,2) NOT NULL, "referencia_proveedor" character varying(255), "codigo_autorizacion_proveedor" character varying(100), CONSTRAINT "UQ_73d2296fa8ad6de7f248fbd70c1" UNIQUE ("public_id"), CONSTRAINT "PK_1117d02608a00d131b95f60a58e" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_sale_payments_id_venta" ON "sale_payments" ("id_venta") `);
         await queryRunner.query(`CREATE INDEX "IDX_sale_payments_tenant" ON "sale_payments" ("tenant_id") `);
-        await queryRunner.query(`CREATE TABLE "quotes" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "local_id" bigint NOT NULL, "customer_id" bigint, "nombre_cliente" character varying(255) NOT NULL, "numero_contacto" character varying(50), "valor_total" numeric(10,2) NOT NULL DEFAULT '0', "valido_hasta" date, "estado" character varying(20) NOT NULL DEFAULT 'pending', "id_empleado_creador" bigint, "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), "fecha_actualizacion" TIMESTAMP DEFAULT now(), CONSTRAINT "UQ_ef0c29c6b71179bdbfe8754fde1" UNIQUE ("public_id"), CONSTRAINT "PK_99a0e8bcbcd8719d3a41f23c263" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "quotes" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "local_id" bigint NOT NULL, "tipo" character varying(20) NOT NULL DEFAULT 'product', "customer_id" bigint, "nombre_cliente" character varying(255) NOT NULL, "numero_contacto" character varying(50), "marca" character varying(255), "modelo" character varying(255), "falla_reportada" text, "id_nota_reparacion" bigint, "valor_total" numeric(10,2) NOT NULL DEFAULT '0', "valido_hasta" date, "estado" character varying(20) NOT NULL DEFAULT 'pending', "id_empleado_creador" bigint, "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), "fecha_actualizacion" TIMESTAMP DEFAULT now(), CONSTRAINT "UQ_ef0c29c6b71179bdbfe8754fde1" UNIQUE ("public_id"), CONSTRAINT "CHK_quotes_tipo" CHECK ("tipo" IN ('product', 'repair')), CONSTRAINT "CHK_quotes_reparacion_datos" CHECK ("tipo" = 'product' OR ("marca" IS NOT NULL AND "modelo" IS NOT NULL AND "falla_reportada" IS NOT NULL)), CONSTRAINT "PK_99a0e8bcbcd8719d3a41f23c263" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_quotes_local" ON "quotes" ("local_id") `);
         await queryRunner.query(`CREATE INDEX "IDX_quotes_tenant" ON "quotes" ("tenant_id") `);
         await queryRunner.query(`CREATE TABLE "quote_items" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "id_cotizacion" bigint NOT NULL, "id_item_inventario" bigint, "descripcion" character varying(255) NOT NULL, "cantidad" integer NOT NULL, "precio_unitario" numeric(10,2) NOT NULL, CONSTRAINT "UQ_5cb0fa39190f2d665942b9726e6" UNIQUE ("public_id"), CONSTRAINT "PK_135ad3f02b5abcf65fb5cb20ad2" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_quote_items_id_cotizacion" ON "quote_items" ("id_cotizacion") `);
         await queryRunner.query(`CREATE INDEX "IDX_quote_items_tenant" ON "quote_items" ("tenant_id") `);
+        await queryRunner.query(`CREATE TABLE "quote_service_types" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "id_cotizacion" bigint NOT NULL, "id_tipo_servicio" bigint NOT NULL, CONSTRAINT "UQ_quote_service_types_public_id" UNIQUE ("public_id"), CONSTRAINT "PK_quote_service_types" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_quote_service_types_id_tipo_servicio" ON "quote_service_types" ("id_tipo_servicio") `);
+        await queryRunner.query(`CREATE INDEX "IDX_quote_service_types_id_cotizacion" ON "quote_service_types" ("id_cotizacion") `);
+        await queryRunner.query(`CREATE INDEX "IDX_quote_service_types_tenant" ON "quote_service_types" ("tenant_id") `);
+        await queryRunner.query(`CREATE TABLE "repair_note_payments" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "id_nota_reparacion" bigint NOT NULL, "tipo" character varying(20) NOT NULL, "metodo" character varying(20) NOT NULL, "monto" numeric(10,2) NOT NULL, "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_repair_note_payments_public_id" UNIQUE ("public_id"), CONSTRAINT "CHK_repair_note_payments_tipo" CHECK ("tipo" IN ('advance', 'delivery')), CONSTRAINT "CHK_repair_note_payments_metodo" CHECK ("metodo" IN ('efectivo', 'tarjeta', 'transferencia', 'credito')), CONSTRAINT "CHK_repair_note_payments_monto" CHECK ("monto" > 0), CONSTRAINT "PK_repair_note_payments" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_repair_note_payments_id_nota_reparacion" ON "repair_note_payments" ("id_nota_reparacion") `);
+        await queryRunner.query(`CREATE INDEX "IDX_repair_note_payments_tenant" ON "repair_note_payments" ("tenant_id") `);
         await queryRunner.query(`CREATE TABLE "cash_sessions" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "local_id" bigint NOT NULL, "id_empleado_apertura" bigint, "saldo_apertura" numeric(10,2) NOT NULL, "saldo_cierre" numeric(10,2), "estado" character varying(10) NOT NULL DEFAULT 'open', "diferencia" numeric(10,2), "motivo_diferencia" text, "id_empleado_autoriza_diferencia" bigint, "fecha_apertura" TIMESTAMP NOT NULL DEFAULT now(), "fecha_cierre" TIMESTAMP, CONSTRAINT "UQ_d061925fe46389bd928428b8182" UNIQUE ("public_id"), CONSTRAINT "PK_946ea5ce864b10fb70162708448" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_cash_sessions_local" ON "cash_sessions" ("local_id") `);
         await queryRunner.query(`CREATE INDEX "IDX_cash_sessions_tenant" ON "cash_sessions" ("tenant_id") `);
@@ -100,6 +107,9 @@ export class Init1794891049009 implements MigrationInterface {
         await queryRunner.query(`CREATE INDEX "IDX_layaways_tenant" ON "layaways" ("tenant_id") `);
         await queryRunner.query(`CREATE TABLE "layaway_items" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "id_apartado" bigint NOT NULL, "id_item_inventario" bigint NOT NULL, "cantidad" integer NOT NULL, "precio_unitario" numeric(10,2) NOT NULL, CONSTRAINT "UQ_606e2bc7c7861759f19d3a0dda6" UNIQUE ("public_id"), CONSTRAINT "PK_dd11f48117ca3ff72dd41570913" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_layaway_items_tenant" ON "layaway_items" ("tenant_id") `);
+        await queryRunner.query(`CREATE TABLE "customer_payments" ("id" BIGSERIAL NOT NULL, "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenant_id" bigint NOT NULL, "local_id" bigint NOT NULL, "id_cliente" bigint NOT NULL, "monto" numeric(10,2) NOT NULL, "metodo" character varying(20) NOT NULL, "id_empleado" bigint, "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_93f0aafab62d25a3ae2140d6c07" UNIQUE ("public_id"), CONSTRAINT "PK_49f9fc4bd44d957db20148928d1" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_customer_payments_cliente" ON "customer_payments" ("id_cliente") `);
+        await queryRunner.query(`CREATE INDEX "IDX_customer_payments_tenant" ON "customer_payments" ("tenant_id") `);
         await queryRunner.query(`ALTER TABLE "usuarios" ADD CONSTRAINT "FK_usuarios_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "excluded_phone" ADD CONSTRAINT "FK_excluded_phone_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "whatsapp_settings" ADD CONSTRAINT "FK_whatsapp_settings_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
@@ -137,6 +147,12 @@ export class Init1794891049009 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "quotes" ADD CONSTRAINT "FK_quotes_local" FOREIGN KEY ("local_id") REFERENCES "branches"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "quote_items" ADD CONSTRAINT "FK_quote_items_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "quote_items" ADD CONSTRAINT "FK_quote_items_id_cotizacion" FOREIGN KEY ("id_cotizacion") REFERENCES "quotes"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "quotes" ADD CONSTRAINT "FK_quotes_id_nota_reparacion" FOREIGN KEY ("id_nota_reparacion") REFERENCES "repair_notes"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "quote_service_types" ADD CONSTRAINT "FK_quote_service_types_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "quote_service_types" ADD CONSTRAINT "FK_quote_service_types_id_cotizacion" FOREIGN KEY ("id_cotizacion") REFERENCES "quotes"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "quote_service_types" ADD CONSTRAINT "FK_quote_service_types_id_tipo_servicio" FOREIGN KEY ("id_tipo_servicio") REFERENCES "service_types"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "repair_note_payments" ADD CONSTRAINT "FK_repair_note_payments_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "repair_note_payments" ADD CONSTRAINT "FK_repair_note_payments_id_nota_reparacion" FOREIGN KEY ("id_nota_reparacion") REFERENCES "repair_notes"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "cash_sessions" ADD CONSTRAINT "FK_cash_sessions_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "cash_sessions" ADD CONSTRAINT "FK_cash_sessions_local" FOREIGN KEY ("local_id") REFERENCES "branches"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "cash_movements" ADD CONSTRAINT "FK_cash_movements_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
@@ -175,9 +191,15 @@ export class Init1794891049009 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "layaway_items" ADD CONSTRAINT "FK_layaway_items_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "layaway_items" ADD CONSTRAINT "FK_076f2e9c0960a41a192c9fdb246" FOREIGN KEY ("id_apartado") REFERENCES "layaways"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "layaway_items" ADD CONSTRAINT "FK_27c39dd59e9da87938aa630b354" FOREIGN KEY ("id_item_inventario") REFERENCES "inventory_items"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "customer_payments" ADD CONSTRAINT "FK_customer_payments_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "customer_payments" ADD CONSTRAINT "FK_customer_payments_local" FOREIGN KEY ("local_id") REFERENCES "branches"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "customer_payments" ADD CONSTRAINT "FK_customer_payments_id_cliente" FOREIGN KEY ("id_cliente") REFERENCES "customers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "customer_payments" DROP CONSTRAINT "FK_customer_payments_id_cliente"`);
+        await queryRunner.query(`ALTER TABLE "customer_payments" DROP CONSTRAINT "FK_customer_payments_local"`);
+        await queryRunner.query(`ALTER TABLE "customer_payments" DROP CONSTRAINT "FK_customer_payments_tenant"`);
         await queryRunner.query(`ALTER TABLE "layaway_items" DROP CONSTRAINT "FK_27c39dd59e9da87938aa630b354"`);
         await queryRunner.query(`ALTER TABLE "layaway_items" DROP CONSTRAINT "FK_076f2e9c0960a41a192c9fdb246"`);
         await queryRunner.query(`ALTER TABLE "layaway_items" DROP CONSTRAINT "FK_layaway_items_tenant"`);
@@ -216,6 +238,12 @@ export class Init1794891049009 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "cash_movements" DROP CONSTRAINT "FK_cash_movements_tenant"`);
         await queryRunner.query(`ALTER TABLE "cash_sessions" DROP CONSTRAINT "FK_cash_sessions_local"`);
         await queryRunner.query(`ALTER TABLE "cash_sessions" DROP CONSTRAINT "FK_cash_sessions_tenant"`);
+        await queryRunner.query(`ALTER TABLE "repair_note_payments" DROP CONSTRAINT "FK_repair_note_payments_id_nota_reparacion"`);
+        await queryRunner.query(`ALTER TABLE "repair_note_payments" DROP CONSTRAINT "FK_repair_note_payments_tenant"`);
+        await queryRunner.query(`ALTER TABLE "quote_service_types" DROP CONSTRAINT "FK_quote_service_types_id_tipo_servicio"`);
+        await queryRunner.query(`ALTER TABLE "quote_service_types" DROP CONSTRAINT "FK_quote_service_types_id_cotizacion"`);
+        await queryRunner.query(`ALTER TABLE "quote_service_types" DROP CONSTRAINT "FK_quote_service_types_tenant"`);
+        await queryRunner.query(`ALTER TABLE "quotes" DROP CONSTRAINT "FK_quotes_id_nota_reparacion"`);
         await queryRunner.query(`ALTER TABLE "quote_items" DROP CONSTRAINT "FK_quote_items_id_cotizacion"`);
         await queryRunner.query(`ALTER TABLE "quote_items" DROP CONSTRAINT "FK_quote_items_tenant"`);
         await queryRunner.query(`ALTER TABLE "quotes" DROP CONSTRAINT "FK_quotes_local"`);
@@ -255,6 +283,9 @@ export class Init1794891049009 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "usuarios" DROP CONSTRAINT "FK_usuarios_tenant"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_layaway_items_tenant"`);
         await queryRunner.query(`DROP TABLE "layaway_items"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_customer_payments_tenant"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_customer_payments_cliente"`);
+        await queryRunner.query(`DROP TABLE "customer_payments"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_layaways_tenant"`);
         await queryRunner.query(`DROP TABLE "layaways"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_inventory_reservations_tenant"`);
@@ -292,6 +323,13 @@ export class Init1794891049009 implements MigrationInterface {
         await queryRunner.query(`DROP INDEX "public"."IDX_cash_sessions_tenant"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_cash_sessions_local"`);
         await queryRunner.query(`DROP TABLE "cash_sessions"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_repair_note_payments_tenant"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_repair_note_payments_id_nota_reparacion"`);
+        await queryRunner.query(`DROP TABLE "repair_note_payments"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_quote_service_types_tenant"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_quote_service_types_id_cotizacion"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_quote_service_types_id_tipo_servicio"`);
+        await queryRunner.query(`DROP TABLE "quote_service_types"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_quote_items_tenant"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_quote_items_id_cotizacion"`);
         await queryRunner.query(`DROP TABLE "quote_items"`);
