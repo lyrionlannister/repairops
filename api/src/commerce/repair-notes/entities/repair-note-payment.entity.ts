@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from "typeorm";
+import { Entity, Column, ManyToOne, JoinColumn, Index, Check } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 import { RepairNote } from "./repair-note.entity.js";
@@ -14,6 +14,9 @@ export type RepairNotePaymentMethod = "efectivo" | "tarjeta" | "transferencia" |
 @Entity("repair_note_payments")
 @Index("IDX_repair_note_payments_tenant", ["tenantId"])
 @Index("IDX_repair_note_payments_id_nota_reparacion", ["repairNoteId"])
+@Check("CHK_repair_note_payments_tipo", `"tipo" IN ('advance', 'delivery')`)
+@Check("CHK_repair_note_payments_metodo", `"metodo" IN ('efectivo', 'tarjeta', 'transferencia', 'credito')`)
+@Check("CHK_repair_note_payments_monto", `"monto" > 0`)
 export class RepairNotePayment extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

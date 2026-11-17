@@ -1,4 +1,4 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
+import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, Check } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 import { Branch } from "../../../identity/branches/entities/branch.entity.js";
@@ -11,6 +11,8 @@ export type QuoteKind = "product" | "repair";
 @Entity("quotes")
 @Index("IDX_quotes_tenant", ["tenantId"])
 @Index("IDX_quotes_local", ["localId"])
+@Check("CHK_quotes_tipo", `"tipo" IN ('product', 'repair')`)
+@Check("CHK_quotes_reparacion_datos", `"tipo" = 'product' OR ("marca" IS NOT NULL AND "modelo" IS NOT NULL AND "falla_reportada" IS NOT NULL)`)
 export class Quote extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

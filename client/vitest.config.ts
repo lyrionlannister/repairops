@@ -15,5 +15,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // El unico test que habia (dashboard-metrics) quedo obsoleto: el dashboard
+    // ya se calcula en el servidor. Sin esto, "no test files" hace fallar el CI.
+    passWithNoTests: true,
   },
 });
