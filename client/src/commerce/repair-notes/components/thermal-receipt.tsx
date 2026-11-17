@@ -1,4 +1,5 @@
 import Barcode from "react-barcode";
+import { QRCodeSVG } from "qrcode.react";
 import type { RepairNoteRecord } from "../hooks/use-repair-notes";
 import type { LocalRecord } from "../../../app_platform/local/hooks/use-local";
 import { fmtCurrency } from "../utils/format";
@@ -93,6 +94,26 @@ export const ThermalReceipt: React.FC<ThermalReceiptProps> = ({ note, local, ser
           margin={0}
         />
       </div>
+
+      {note.whatsappQrUrl && (
+        <>
+          <div style={{ borderTop: "1px dashed #000", margin: "4mm 0 2mm", textAlign: "center", fontSize: 8, lineHeight: 0 }}>
+            <span style={{ background: "#fff", padding: "0 2mm", position: "relative", top: "-1.2mm" }}>✂ CORTAR AQUÍ</span>
+          </div>
+          <div style={{ textAlign: "center", fontWeight: 700, fontSize: widthMm === 58 ? 10 : 11 }}>CONSULTA TU NOTA POR WHATSAPP</div>
+          <div style={{ display: "flex", justifyContent: "center", margin: "2mm 0" }}>
+            <QRCodeSVG
+              value={note.whatsappQrUrl}
+              level="L"
+              marginSize={0}
+              fgColor="#000000"
+              bgColor="#ffffff"
+              style={{ width: widthMm === 58 ? "31mm" : "37mm", height: widthMm === 58 ? "31mm" : "37mm" }}
+            />
+          </div>
+          <div style={{ textAlign: "center", fontSize: 9 }}>Escanea y envía el mensaje. Ref. {note.publicRef}</div>
+        </>
+      )}
     </div>
   );
 };

@@ -2,6 +2,8 @@ import { container } from "tsyringe";
 import AppDataSource, { appDataSourceOptions } from "../config/data-source.js";
 import { redisClient } from "../config/redis-client.js";
 import { REDIS_CLIENT } from "./tokens.js";
+import { MEDIA_STORAGE } from "../../messaging/chats/storage/media-storage.js";
+import { createMediaStorage } from "../../messaging/chats/storage/create-media-storage.js";
 import { repositoryToken, type EntityConstructor } from "./repository-token.js";
 
 // Un repositorio de TypeORM por Entity es todo lo que el contenedor necesita
@@ -17,4 +19,5 @@ export function registerRepositories(): void {
     container.registerInstance(repositoryToken(entity), AppDataSource.getRepository(entity));
   }
   container.registerInstance(REDIS_CLIENT, redisClient);
+  container.registerInstance(MEDIA_STORAGE, createMediaStorage());
 }

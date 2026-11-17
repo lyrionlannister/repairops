@@ -8,7 +8,7 @@ export class LocalController {
 
   get = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const config = await this.localService.getConfig();
+      const config = await this.localService.getConfigWithPalette();
       res.status(200).json(config);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

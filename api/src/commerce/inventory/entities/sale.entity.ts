@@ -1,9 +1,10 @@
-import { Entity, Column, CreateDateColumn, Unique } from "typeorm";
+import { Entity, Column, CreateDateColumn, Index, Unique } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
 export type SaleOrigin = "counter" | "repair_note" | "quote";
 
 @Entity("sales")
+@Index("IDX_sales_tenant_created", ["tenantId", "createdAt"])
 @Unique(["tenantId", "saleNumber"])
 @Unique(["tenantId", "idempotencyKey"])
 export class Sale extends BaseEntity {

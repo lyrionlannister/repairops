@@ -12,7 +12,9 @@ import { RepairNoteItem } from "../entities/repair-note-item.entity.js";
 import { RepairNoteServiceType } from "../entities/repair-note-service-type.entity.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
-import { WhatsappSendService } from "../../../messaging/whatsapp-official/services/whatsapp-send.service.js";
+import { WhatsappAccountService } from "../../../messaging/whatsapp-official/services/whatsapp-account.service.js";
+import { buildNoteQrUrl } from "../../../messaging/whatsapp-official/utils/note-qr-url.js";
+import { generatePublicRef } from "../utils/public-ref.js";
 
 // tenantId/controlNumber los agrega create() desde el contexto/consecutivo
 // (nunca el caller); totalValue/status/requiresAdvance/deviceOff/
@@ -27,11 +29,11 @@ type DefaultedOnCreate =
   | "hasExtendedWarranty";
 type CreatePayload = Omit<
   RepairNote,
-  "id" | "publicId" | "tenantId" | "controlNumber" | "createdAt" | "updatedAt" | DefaultedOnCreate
+  "id" | "publicId" | "tenantId" | "controlNumber" | "publicRef" | "createdAt" | "updatedAt" | DefaultedOnCreate
 > &
   Partial<Pick<RepairNote, DefaultedOnCreate>>;
 type UpdatePayload = Partial<
-  Omit<RepairNote, "id" | "publicId" | "tenantId" | "controlNumber" | "createdAt" | "updatedAt">
+  Omit<RepairNote, "id" | "publicId" | "tenantId" | "controlNumber" | "publicRef" | "createdAt" | "updatedAt">
 >;
 
 export interface RepairNoteItemInput {
@@ -58,7 +60,7 @@ export class RepairNoteService {
     private inventoryService: InventoryService,
     private repairNoteServiceTypeDao: RepairNoteServiceTypeDao,
     private serviceTypeDao: ServiceTypeDao,
-    private whatsappSendService: WhatsappSendService,
+    private whatsappAccountService: WhatsappAccountService,
     private inventoryReservationService: InventoryReservationService,
   ) {}
 
@@ -104,8 +106,34 @@ export class RepairNoteService {
     const controlNumber = await this.localService.consumeControlNumber();
     const tenantId = getCurrentTenantId();
 
+    // public_ref es unico en toda la tabla: ante un choque (1 en ~10^12) se
+    // reintenta la transaccion completa con otra referencia.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.createWithRef(data, items, serviceTypeIds, controlNumber, tenantId);
+      } catch (error) {
+        const isRefCollision =
+          (error as { code?: string; constraint?: string }).code === "23505" &&
+          (error as { constraint?: string }).constraint === "UQ_repair_notes_public_ref";
+        if (!isRefCollision || attempt >= 5) throw error;
+      }
+    }
+  }
+
+  private async createWithRef(
+    data: CreatePayload,
+    items: RepairNoteItemInput[],
+    serviceTypeIds: string[],
+    controlNumber: number,
+    tenantId: string,
+  ): Promise<RepairNote> {
     return AppDataSource.transaction(async (manager) => {
-      const note = manager.create(RepairNote, { ...data, controlNumber, tenantId } as Partial<RepairNote>);
+      const note = manager.create(RepairNote, {
+        ...data,
+        controlNumber,
+        tenantId,
+        publicRef: generatePublicRef(),
+      } as Partial<RepairNote>);
       const savedNote = await manager.save(note);
       const committed = isCommitted(savedNote.status);
 
@@ -177,7 +205,6 @@ export class RepairNoteService {
 
         return saved;
       });
-      await this.notifyIfJustMarkedDone(previousStatus, savedNote);
       return savedNote;
     }
 
@@ -254,7 +281,6 @@ export class RepairNoteService {
 
       return savedNote;
     });
-    await this.notifyIfJustMarkedDone(previousStatus, savedNote);
     return savedNote;
   }
 
@@ -270,18 +296,20 @@ export class RepairNoteService {
     }
   }
 
-  // Avisa al cliente (plantilla `order_ready`) la primera vez que la nota
-  // pasa a "done" -- nunca en un guardado posterior que la deje igual. Corre
-  // fuera de cualquier transaccion de BD (es una llamada HTTP a Meta) y
-  // nunca tumba el guardado de la nota ya confirmado: una falla de WhatsApp
-  // queda registrada en WhatsappOutboundMessage, no aqui.
-  private async notifyIfJustMarkedDone(previousStatus: string | undefined, note: RepairNote | null): Promise<void> {
-    if (!note || note.status !== "done" || previousStatus === "done") return;
-    try {
-      await this.whatsappSendService.notifyOrderReady(note);
-    } catch {
-      // swallow: ver comentario de arriba.
-    }
+  // URL del QR impreso en la nota (wa.me con el mensaje prellenado), o null si el
+  // taller aun no tiene numero de WhatsApp conectado. Unica fuente: el cliente y
+  // el PDF solo dibujan lo que devuelve esto.
+  async getWhatsappQrUrl(note: Pick<RepairNote, "controlNumber" | "publicRef">): Promise<string | null> {
+    const [displayPhoneNumber, local] = await Promise.all([
+      this.whatsappAccountService.getDisplayPhoneNumber(),
+      this.localService.getConfig(),
+    ]);
+    return buildNoteQrUrl({
+      displayPhoneNumber,
+      controlNumber: note.controlNumber,
+      localName: local.name,
+      publicRef: note.publicRef,
+    });
   }
 
   // Cancelar libera las reservas activas (si la nota aun no estaba

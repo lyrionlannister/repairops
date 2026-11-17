@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
+import { generatePublicRef } from "../../../../src/commerce/repair-notes/utils/public-ref.js";
 import { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
 import { RepairNoteItem } from "../../../../src/commerce/repair-notes/entities/repair-note-item.entity.js";
 import { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
@@ -21,7 +22,10 @@ import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/serv
 import { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
 import { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/daos/repair-note-service-type.dao.js";
 import { ReportsService } from "../../../../src/reporting/reports/services/reports.service.js";
-import { dateOnly } from "../../../../src/reporting/reports/utils/report-period.utils.js";
+import { ReportsDao } from "../../../../src/reporting/reports/daos/reports.dao.js";
+import { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
+import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
+import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 const today = () => new Date().toISOString().split("T")[0] as string;
@@ -56,15 +60,10 @@ describe("ReportsService", () => {
     serviceTypeDao = new ServiceTypeDao(AppDataSource.getRepository(ServiceType));
     repairNoteServiceTypeDao = new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType));
     reportsService = new ReportsService(
-      repairNoteDao,
-      repairNoteItemDao,
-      saleDao,
-      saleItemDao,
-      inventoryItemDao,
+      new ReportsDao(AppDataSource.getRepository(RepairNote)),
       userDao,
       revenueAttributionService,
-      serviceTypeDao,
-      repairNoteServiceTypeDao,
+      new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
     );
   });
 
@@ -108,6 +107,7 @@ describe("ReportsService", () => {
           totalValue: 500,
           receivedAt: today(),
           assignedEmployeeId: employee.id,
+          publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
       await runWithTenant(basisTenant, () =>
@@ -184,6 +184,7 @@ describe("ReportsService", () => {
           totalValue: 200,
           receivedAt: "2026-01-10",
           assignedEmployeeId: employee.id,
+          publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
       await runWithTenant(periodTenant, () =>
@@ -196,6 +197,7 @@ describe("ReportsService", () => {
           totalValue: 9999,
           receivedAt: "2026-02-15",
           assignedEmployeeId: employee.id,
+          publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
 
@@ -287,7 +289,7 @@ describe("ReportsService", () => {
       );
 
       expect(report.data).toHaveLength(1);
-      expect(report.data[0]?.key).toBe(dateOnly(sale.createdAt));
+      expect(report.data[0]?.key).toBe(new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" }));
       expect(report.data[0]?.revenue).toBe(8);
     });
   });
@@ -309,6 +311,7 @@ describe("ReportsService", () => {
           totalValue: 200,
           receivedAt: today(),
           status: "received",
+          publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
       await runWithTenant(typeTenant, () =>
@@ -325,6 +328,7 @@ describe("ReportsService", () => {
           totalValue: 300,
           receivedAt: today(),
           status: "done",
+          publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
       await runWithTenant(typeTenant, () =>
@@ -334,7 +338,7 @@ describe("ReportsService", () => {
         repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: maintenanceType.id } as Partial<RepairNoteServiceType>),
       );
 
-      const report = await runWithTenant(typeTenant, () => reportsService.getRepairNotesByType({}));
+      const report = await runWithTenant(typeTenant, () => reportsService.getRepairNotesByType(WIDE_PERIOD));
 
       expect(report.totalNotes).toBe(2);
       expect(report.totalRevenue).toBe(500);

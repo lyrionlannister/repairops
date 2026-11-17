@@ -11,3 +11,8 @@ export const formatRelativeTime = (dateValue: string): string => {
   if (days < 7) return `hace ${days} d`;
   return date.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
 };
+
+// Formato de un importe decimal (cadena) para pintarlo. Es solo presentacion: el
+// cliente no suma ni compara dinero.
+const MONEY = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const formatMoney = (amount: string): string => MONEY.format(Number(amount));

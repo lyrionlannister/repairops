@@ -2,6 +2,7 @@ import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { CHATS_ERROR_MESSAGES } from "../constants/chats.constants.js";
 import { ChatsService } from "../services/chats.service.js";
+import { ChatMediaService } from "../services/chat-media.service.js";
 import { humanModeService } from "../../../app_platform/human-mode/human-mode.service.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -14,6 +15,7 @@ import { WhatsappSendService, WhatsappWindowClosedError } from "../../whatsapp-o
 export class ChatsController {
   constructor(
     private chatsService: ChatsService,
+    private chatMediaService: ChatMediaService,
     private whatsappAccountService: WhatsappAccountService,
     private whatsappSendService: WhatsappSendService,
   ) {}
@@ -42,6 +44,28 @@ export class ChatsController {
     } catch (error) {
       console.error("Error obteniendo mensajes", error);
       res.status(500).json({ error: CHATS_ERROR_MESSAGES.MESSAGES_LIST });
+    }
+  }
+
+  // Entrega el archivo por el API (nunca una URL del bucket). La busqueda del
+  // mensaje es del tenant del contexto, asi que un id de otro tenant da 404.
+  async getMedia(req: Request, res: Response): Promise<void> {
+    try {
+      const sessionId = String(req.params.sessionId ?? "");
+      const mediaId = String(req.params.mediaId ?? "");
+      const message = await this.chatsService.findMediaMessage(sessionId, mediaId);
+      const stored = message?.mediaKey ? await this.chatMediaService.read(message.mediaKey) : null;
+      if (!message || !stored) {
+        res.status(404).json({ error: "Archivo no encontrado" });
+        return;
+      }
+      res.setHeader("Content-Type", message.mediaMime ?? stored.contentType);
+      res.setHeader("Content-Disposition", "attachment");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.status(200).send(stored.body);
+    } catch (error) {
+      console.error("Error entregando archivo de chat", error instanceof Error ? error.message : error);
+      res.status(500).json({ error: "No se pudo obtener el archivo" });
     }
   }
 

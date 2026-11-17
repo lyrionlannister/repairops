@@ -2,7 +2,7 @@ import { LessThan, Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
-import { ChatDirection, ChatMessage, ChatSender } from "../entities/chat-message.entity.js";
+import { ChatDirection, ChatMessage, ChatMessageType, ChatSender } from "../entities/chat-message.entity.js";
 
 export interface ConversationRow {
   sessionId: string;
@@ -18,6 +18,13 @@ export interface RecordChatMessageInput {
   sender: ChatSender;
   body: string;
   waMessageId?: string | null;
+  repairNoteId?: string | null;
+  messageType?: ChatMessageType;
+  mediaKey?: string | null;
+  mediaMime?: string | null;
+  mediaSize?: number | null;
+  locationLat?: string | null;
+  locationLng?: string | null;
 }
 
 // Un solo statement: el mensaje y sus contadores diarios (chat_daily_stats,
@@ -26,19 +33,20 @@ export interface RecordChatMessageInput {
 // contadores tampoco se tocan.
 const RECORD_SQL = `
   WITH ins AS (
-    INSERT INTO chat_messages (tenant_id, contact_phone, direction, sender, body, wa_message_id)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO chat_messages (tenant_id, contact_phone, direction, sender, body, wa_message_id, repair_note_id,
+                               message_type, media_key, media_mime, media_size, location_lat, location_lng)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT (tenant_id, wa_message_id) WHERE wa_message_id IS NOT NULL DO NOTHING
     RETURNING created_at
   ), stat AS (
     INSERT INTO chat_daily_stats (tenant_id, day, messages, last_message_at)
-    SELECT $1, (created_at AT TIME ZONE 'UTC')::date, 1, created_at FROM ins
+    SELECT $1, (created_at AT TIME ZONE COALESCE((SELECT zona_horaria FROM local_config WHERE tenant_id = $1), 'America/Mexico_City'))::date, 1, created_at FROM ins
     ON CONFLICT (tenant_id, day) DO UPDATE
       SET messages = chat_daily_stats.messages + 1, last_message_at = EXCLUDED.last_message_at
     RETURNING 1
   )
   INSERT INTO chat_daily_contacts (tenant_id, day, contact_phone)
-  SELECT $1, (created_at AT TIME ZONE 'UTC')::date, $2 FROM ins
+  SELECT $1, (created_at AT TIME ZONE COALESCE((SELECT zona_horaria FROM local_config WHERE tenant_id = $1), 'America/Mexico_City'))::date, $2 FROM ins
   ON CONFLICT DO NOTHING
 `;
 
@@ -56,6 +64,13 @@ export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
       input.sender,
       input.body,
       input.waMessageId ?? null,
+      input.repairNoteId ?? null,
+      input.messageType ?? "text",
+      input.mediaKey ?? null,
+      input.mediaMime ?? null,
+      input.mediaSize ?? null,
+      input.locationLat ?? null,
+      input.locationLng ?? null,
     ]);
   }
 
@@ -79,6 +94,16 @@ export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
 
   async getMessagesByContact(contactPhone: string): Promise<ChatMessage[]> {
     return this.scoped().andWhere("entity.contactPhone = :contactPhone", { contactPhone }).orderBy("entity.id", "ASC").getMany();
+  }
+
+  // Mensaje con archivo del tenant del contexto y de esa conversacion (por public_id).
+  async findMediaMessage(contactPhone: string, publicId: string): Promise<ChatMessage | null> {
+    return this.scoped()
+      .andWhere("entity.contactPhone = :contactPhone AND entity.publicId = :publicId AND entity.mediaKey IS NOT NULL", {
+        contactPhone,
+        publicId,
+      })
+      .getOne();
   }
 
   // Gate de la ventana de 24h de WhatsappSendService.sendFreeText: solo el

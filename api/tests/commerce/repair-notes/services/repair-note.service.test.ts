@@ -13,7 +13,7 @@ import { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteService } from "../../../../src/commerce/repair-notes/services/repair-note.service.js";
-import type { WhatsappSendService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
+import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
@@ -36,7 +36,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
   let reservationDao: InventoryReservationDao;
   const tenantId = `${Date.now()}3`;
 
-  const buildRepairNoteService = (whatsappSendService: WhatsappSendService) => {
+  const buildRepairNoteService = (whatsappAccountService: WhatsappAccountService) => {
     const inventoryReservationService = new InventoryReservationService(reservationDao, inventoryService);
     return new RepairNoteService(
       new RepairNoteDao(AppDataSource.getRepository(RepairNote)),
@@ -45,7 +45,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
       inventoryService,
       new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
       new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
-      whatsappSendService,
+      whatsappAccountService,
       inventoryReservationService,
     );
   };
@@ -56,7 +56,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
     reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
     inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
-    repairNoteService = buildRepairNoteService({ notifyOrderReady: async () => null } as unknown as WhatsappSendService);
+    repairNoteService = buildRepairNoteService({ getDisplayPhoneNumber: async () => null } as unknown as WhatsappAccountService);
   });
 
   afterAll(async () => {
@@ -161,8 +161,6 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
   });
 
   it("consumes the active reservation into a real stock movement the first time the note moves to done, never again after that", async () => {
-    const notifyOrderReady = vi.fn().mockResolvedValue(null);
-    const serviceWithNotifySpy = buildRepairNoteService({ notifyOrderReady } as unknown as WhatsappSendService);
 
     const item = await runWithTenant(tenantId, () =>
       inventoryService.create({ localId: "1", name: "Bateria Done", sku: "A52-BAT-DONE", kind: "part", costPrice: 150, salePrice: 300 }),
@@ -170,7 +168,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 4 }));
 
     const note = await runWithTenant(tenantId, () =>
-      serviceWithNotifySpy.create(
+      repairNoteService.create(
         {
           customerName: "Cliente Listo",
           contactNumber: "5215500000000",
@@ -185,20 +183,16 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
     );
     expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(4); // reservado, no descontado
 
-    await runWithTenant(tenantId, () => serviceWithNotifySpy.update(note.id, { status: "done" }));
-    expect(notifyOrderReady).toHaveBeenCalledTimes(1);
-    expect(notifyOrderReady).toHaveBeenCalledWith(expect.objectContaining({ id: note.id, status: "done" }));
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" }));
 
     expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3); // ahora si, consumido real
-    const [noteItem] = await runWithTenant(tenantId, () => serviceWithNotifySpy.getItems(note.id));
+    const [noteItem] = await runWithTenant(tenantId, () => repairNoteService.getItems(note.id));
     const reservation = await runWithTenant(tenantId, () => reservationDao.findByRelatedEntity("repair_note_item", noteItem.id));
     expect(reservation?.status).toBe("consumed");
     expect(reservation?.consumedMovementId).not.toBeNull();
 
-    // Guardar la nota otra vez sin salir de "done" no debe volver a avisar
-    // ni a consumir una segunda vez.
-    await runWithTenant(tenantId, () => serviceWithNotifySpy.update(note.id, { technicianNotes: "revisado de nuevo" }));
-    expect(notifyOrderReady).toHaveBeenCalledTimes(1);
+    // Guardar la nota otra vez sin salir de "done" no debe consumir una segunda vez.
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { technicianNotes: "revisado de nuevo" }));
     expect((await runWithTenant(tenantId, () => inventoryService.getById(item.id)))?.quantityOnHand).toBe(3);
   });
 

@@ -7,6 +7,12 @@ export interface Message {
   content: string;
   type: string;
   fromMe: boolean;
+  messageType: string;
+  // Solo si el mensaje trae un archivo descargable.
+  mediaId?: string;
+  mediaMime?: string;
+  mediaSize?: number;
+  location?: { lat: string; lng: string };
 }
 
 export function useMessages(sessionId: string | null) {
@@ -40,5 +46,22 @@ export function useMessages(sessionId: string | null) {
     fetchMessages().catch(console.error);
   }, [fetchMessages]);
 
-  return { messages, loading, error };
+  // El archivo se pide por el API (nunca hay una URL del bucket) y se baja como adjunto.
+  const downloadMedia = useCallback(
+    async (message: Message): Promise<boolean> => {
+      if (!sessionId || !message.mediaId) return false;
+      const response = await apiClient(`/chats/${encodeURIComponent(sessionId)}/media/${message.mediaId}`);
+      if (!response.ok) return false;
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `archivo-${message.id}`;
+      link.click();
+      URL.revokeObjectURL(url);
+      return true;
+    },
+    [apiClient, sessionId],
+  );
+
+  return { messages, loading, error, downloadMedia };
 }

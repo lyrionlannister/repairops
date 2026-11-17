@@ -15,7 +15,7 @@ export const ChatsPage: React.FC = () => {
   const { conversations, loading: loadingConversations, error: convError } = useConversations();
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const { search, setSearch, filtered } = useChatsPage(conversations);
-  const { messages, loading: loadingMessages } = useMessages(selectedSessionId);
+  const { messages, loading: loadingMessages, downloadMedia } = useMessages(selectedSessionId);
   const { isHumanMode, toggling, sending, activate, deactivate, sendMessage } =
     useHumanMode(selectedSessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -175,7 +175,7 @@ export const ChatsPage: React.FC = () => {
               </div>
             ) : (
               messages.map((msg) => (
-                <MessageBubble key={msg.id} content={msg.content} fromMe={msg.fromMe} />
+                <MessageBubble key={msg.id} message={msg} onDownload={downloadMedia} />
               ))
             )}
             <div ref={messagesEndRef} />

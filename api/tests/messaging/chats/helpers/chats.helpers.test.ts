@@ -7,10 +7,6 @@ import {
 import type { ConversationRow } from "../../../../src/messaging/chats/daos/chat-message.dao.js";
 
 describe("normalizePhone", () => {
-  it("strips the WhatsApp @c.us suffix", () => {
-    expect(normalizePhone("5215512345678@c.us")).toBe("5215512345678");
-  });
-
   it("leaves a session id without the suffix untouched", () => {
     expect(normalizePhone("5215512345678")).toBe("5215512345678");
   });

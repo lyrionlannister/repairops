@@ -49,7 +49,10 @@ export const useReports = () => {
     async (periodStart: string, periodEnd: string) => {
       setLoading(true);
       setError(null);
-      const query = `periodStart=${periodStart}&periodEnd=${periodEnd}`;
+      // Sin fechas, el API usa el mes en curso hasta hoy en la zona horaria del taller.
+      const query = new URLSearchParams(
+        Object.entries({ periodStart, periodEnd }).filter(([, value]) => value),
+      ).toString();
       try {
         const [performanceRes, accessoryRes, byTypeRes] = await Promise.all([
           apiClient(`/reports/employee-performance?${query}`),

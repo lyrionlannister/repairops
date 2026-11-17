@@ -39,6 +39,11 @@ export class WhatsappAccount extends BaseEntity {
   @Column({ type: "boolean", default: true, name: "owned_by_platform" })
   ownedByPlatform!: boolean;
 
+  // Numero al que escribe el cliente (solo digitos, con codigo de pais). Sale de
+  // Meta (GET /{phone_number_id}?fields=display_phone_number) y arma el QR de la nota.
+  @Column({ type: "varchar", length: 32, nullable: true, name: "display_phone_number" })
+  displayPhoneNumber?: string | null;
+
   @Column({ type: "varchar", length: 20, default: "connected", name: "status" })
   status!: WhatsappAccountStatus;
 

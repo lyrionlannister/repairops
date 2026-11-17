@@ -77,12 +77,12 @@ describe("WhatsappWebhookController.receive", () => {
 
     await controller.receive(req, res);
 
-    expect(service.handleIncomingMessage).toHaveBeenCalledWith({
+    expect(service.handleIncomingMessage).toHaveBeenCalledWith(expect.objectContaining({
       phoneNumberId: "phone-1",
       from: "5215500000000",
       body: "hola",
       contactName: "Ana",
-    });
+    }));
     expect(res.sendStatus).toHaveBeenCalledWith(200);
   });
 });

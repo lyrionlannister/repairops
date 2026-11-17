@@ -4,11 +4,15 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Unique,
+  Index,
 } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
 @Entity("repair_notes")
 @Unique(["tenantId", "controlNumber"])
+@Index("IDX_repair_notes_tenant_received", ["tenantId", "receivedAt"])
+@Index("IDX_repair_notes_tenant_status", ["tenantId", "status"])
+@Index("UQ_repair_notes_public_ref", ["publicRef"], { unique: true })
 export class RepairNote extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -21,6 +25,11 @@ export class RepairNote extends BaseEntity {
 
   @Column({ type: "int", name: "numero_control" })
   controlNumber!: number;
+
+  // Referencia publica para consultar la nota por WhatsApp (QR impreso). Unica
+  // en toda la tabla: asi se resuelve el tenant en la cuenta compartida.
+  @Column({ type: "varchar", length: 8, nullable: false, name: "public_ref" })
+  publicRef!: string;
 
   @Column({ type: "varchar", length: 255, nullable: false, name: "nombre_cliente" })
   customerName!: string;

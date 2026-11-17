@@ -1,4 +1,4 @@
-import { Entity, Column, CreateDateColumn } from "typeorm";
+import { Entity, Column, CreateDateColumn, Index } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
 export type CashMovementType = "income" | "expense";
@@ -6,6 +6,7 @@ export type CashMovementMethod = "efectivo" | "tarjeta" | "transferencia";
 export type CashMovementRelatedEntityType = "repair_note" | "quote" | "sale" | "return" | "layaway" | "manual";
 
 @Entity("cash_movements")
+@Index("IDX_cash_movements_tenant_created", ["tenantId", "createdAt"])
 export class CashMovement extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

@@ -6,7 +6,6 @@ export const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
-export const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export const formatMoney = (value: number, currency: string) =>
   `${value.toLocaleString("es-MX", { minimumFractionDigits: 2 })} ${currency}`;

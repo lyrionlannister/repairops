@@ -12,8 +12,8 @@ export interface ConversationCountPoint {
 // Lecturas de las estadisticas de chat sobre los contadores, no sobre
 // chat_messages (que solo conserva 24h). Todas filtran por el tenant del
 // contexto.
-// shortcut: "hoy"/semana en UTC, pasa a zona horaria del tenant con
-// Local.timezone (modulo dashboard).
+// El dia de cada contador y "hoy"/semana se calculan en la zona horaria del
+// tenant (local_config.zona_horaria).
 @singleton()
 export class ChatStatsDao {
   constructor(@inject(repositoryToken(ChatDailyStat)) private repository: Repository<ChatDailyStat>) {}
@@ -25,8 +25,8 @@ export class ChatStatsDao {
         TO_CHAR(d, 'YYYY-MM-DD') AS bucket,
         COALESCE(s.messages, 0)::int AS count
       FROM generate_series(
-        (now() AT TIME ZONE 'UTC')::date - 29,
-        (now() AT TIME ZONE 'UTC')::date,
+        (now() AT TIME ZONE COALESCE((SELECT zona_horaria FROM local_config WHERE tenant_id = $1), 'America/Mexico_City'))::date - 29,
+        (now() AT TIME ZONE COALESCE((SELECT zona_horaria FROM local_config WHERE tenant_id = $1), 'America/Mexico_City'))::date,
         INTERVAL '1 day'
       ) AS d
       LEFT JOIN chat_daily_stats s ON s.tenant_id = $1 AND s.day = d::date
@@ -61,7 +61,7 @@ export class ChatStatsDao {
       `
       SELECT COUNT(DISTINCT contact_phone)::int AS count
       FROM chat_daily_contacts
-      WHERE tenant_id = $1 AND day >= DATE_TRUNC('week', now() AT TIME ZONE 'UTC')::date
+      WHERE tenant_id = $1 AND day >= DATE_TRUNC('week', now() AT TIME ZONE COALESCE((SELECT zona_horaria FROM local_config WHERE tenant_id = $1), 'America/Mexico_City'))::date
       `,
       [getCurrentTenantId()],
     );

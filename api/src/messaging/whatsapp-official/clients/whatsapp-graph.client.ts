@@ -143,6 +143,17 @@ export async function sendTextMessage(
 // Valida credenciales de una cuenta propia por taller (ver plan Fase 4,
 // Checkpoint 6) ANTES de guardarlas: confirma que el token tiene permiso
 // sobre phoneNumberId y acceso al wabaId dado, sin persistir nada todavia.
+// Numero visible de la cuenta (ej. "+52 1 55 1234 5678") reducido a digitos: es lo que
+// va en https://wa.me/<numero>. Falla con claridad si Meta no lo devuelve.
+export async function getDisplayPhoneNumber(phoneNumberId: string, accessToken: string): Promise<string> {
+  const body = await graphFetch(`/${phoneNumberId}?fields=display_phone_number`, accessToken);
+  const digits = String(body?.display_phone_number ?? "").replace(/\D/g, "");
+  if (!digits) {
+    throw new WhatsappGraphApiError("Meta no devolvió display_phone_number para la cuenta", 502, body);
+  }
+  return digits;
+}
+
 export async function verifyAccountCredentials(
   wabaId: string,
   phoneNumberId: string,
@@ -188,4 +199,43 @@ export async function sendTemplateMessage(
       },
     }),
   });
+}
+
+export interface MediaInfo {
+  url: string;
+  mimeType: string;
+  sha256: string | null;
+  fileSize: number | null;
+}
+
+// GET /{media-id} devuelve una URL temporal; la descarga exige el mismo token.
+export async function getMediaInfo(mediaId: string, accessToken: string): Promise<MediaInfo> {
+  const body = await graphFetch(`/${mediaId}`, accessToken);
+  if (!body?.url || !body?.mime_type) {
+    throw new WhatsappGraphApiError("Meta no devolvió la URL del archivo", 502, null);
+  }
+  return {
+    url: String(body.url),
+    mimeType: String(body.mime_type),
+    sha256: body.sha256 ? String(body.sha256) : null,
+    fileSize: body.file_size != null ? Number(body.file_size) : null,
+  };
+}
+
+// Descarga con tope de bytes: aborta en cuanto se pasa, sin cargar todo en memoria.
+export async function downloadMedia(url: string, accessToken: string, maxBytes: number): Promise<Buffer> {
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!response.ok) {
+    throw new WhatsappGraphApiError(`La descarga del archivo respondió ${response.status}`, response.status, null);
+  }
+  const declared = Number(response.headers.get("content-length") ?? 0);
+  if (declared > maxBytes) throw new WhatsappGraphApiError("Archivo demasiado grande", 413, null);
+  const chunks: Buffer[] = [];
+  let received = 0;
+  for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
+    received += chunk.length;
+    if (received > maxBytes) throw new WhatsappGraphApiError("Archivo demasiado grande", 413, null);
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
 }

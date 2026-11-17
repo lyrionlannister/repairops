@@ -1,4 +1,5 @@
 import {
+  Check,
   Entity,
   Column,
   CreateDateColumn,
@@ -7,6 +8,7 @@ import {
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 
 @Entity("local_config")
+@Check("CHK_local_config_color_marca", `"color_marca" IS NULL OR "color_marca" ~ '^#[0-9a-f]{6}$'`)
 export class Local extends BaseEntity {
   @Column({ type: "bigint", nullable: false, unique: true, name: "tenant_id" })
   tenantId!: string;
@@ -73,6 +75,16 @@ export class Local extends BaseEntity {
   // Tamaño de ticket que imprime este local por defecto: 58mm, 80mm o carta.
   @Column({ type: "varchar", length: 10, default: "80mm", name: "formato_ticket" })
   defaultTicketSize!: "58mm" | "80mm" | "letter";
+
+  // Color de marca (#rrggbb en minusculas). NULL = paleta azul de siempre. La
+  // paleta derivada se calcula en el API (utils/brand-palette.ts), nunca aqui.
+  @Column({ type: "varchar", length: 7, nullable: true, name: "color_marca" })
+  brandColor?: string | null;
+
+  // Zona horaria IANA del taller: define que es "hoy", la semana y el mes en el
+  // dashboard y los reportes (nunca el reloj del navegador ni UTC).
+  @Column({ type: "varchar", length: 64, default: "America/Mexico_City", name: "zona_horaria" })
+  timeZone!: string;
 
   @Column({ type: "text", nullable: true, name: "clausula_garantia" })
   warrantyClause?: string | null;

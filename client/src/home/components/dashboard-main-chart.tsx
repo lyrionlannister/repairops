@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import Chart from "react-apexcharts";
-import type { BusinessSeriesPoint } from "../utils/dashboard-metrics";
+import type { BusinessSeriesPoint } from "../hooks/use-dashboard-page";
 import { buildBusinessAreaOptions } from "../utils/chart-options";
 
 interface DashboardMainChartProps {

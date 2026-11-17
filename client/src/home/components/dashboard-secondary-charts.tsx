@@ -9,7 +9,8 @@ interface DashboardSecondaryChartsProps {
   dailyCategories: string[];
   monthLabels: string[];
   year: number;
-  monthlyBusinessSeries: { salesData: number[]; repairsData: number[] };
+  // null cuando el rol no ve importes: la gráfica de dinero no se pinta.
+  monthlyBusinessSeries: { salesData: number[]; repairsData: number[] } | null;
   currencyFormatter: Intl.NumberFormat;
 }
 
@@ -53,6 +54,7 @@ export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
       </div>
     </div>
 
+    {monthlyBusinessSeries && (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6">
       <div className="mb-1">
         <h3 className="text-base font-semibold text-brand-600 dark:text-brand-400">Ventas vs. reparaciones (mes)</h3>
@@ -70,5 +72,6 @@ export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
         />
       </div>
     </div>
+    )}
   </div>
 );

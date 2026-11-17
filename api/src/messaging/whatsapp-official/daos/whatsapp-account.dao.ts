@@ -14,15 +14,14 @@ export class WhatsappAccountDao extends TenantScopedDao<WhatsappAccount> {
     return this.findOne({});
   }
 
-  async findByPhoneNumberId(phoneNumberId: string): Promise<WhatsappAccount | null> {
-    // Webhook entrante de Meta no trae tenantId -- resuelve por
-    // phoneNumberId sin pasar por scoped(), que exige tenant ya conocido
-    // (ver plan Fase 4, Checkpoint 4).
-    return this.repository.findOneBy({ phoneNumberId });
+  // La cuenta piloto es compartida: varias filas (una por tenant) con el mismo
+  // phone_number_id. El resolvedor decide cual aplica (ver WhatsappTenantResolver).
+  async findAllByPhoneNumberId(phoneNumberId: string): Promise<WhatsappAccount[]> {
+    return this.repository.findBy({ phoneNumberId });
   }
 
   async connectOwnAccount(
-    credentials: Pick<WhatsappAccount, "wabaId" | "phoneNumberId" | "accessToken">,
+    credentials: Pick<WhatsappAccount, "wabaId" | "phoneNumberId" | "accessToken" | "displayPhoneNumber">,
   ): Promise<WhatsappAccount> {
     // Reemplaza las credenciales de la fila existente del tenant -- nunca
     // inserta una segunda, tenant_id es unique (ver plan Fase 4, Checkpoint 6).

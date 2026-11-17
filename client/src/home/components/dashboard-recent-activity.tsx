@@ -1,17 +1,16 @@
 import type { FC } from "react";
 import { Banknote, Wrench } from "lucide-react";
 import type { ActivityItem } from "../hooks/use-dashboard-page";
-import { formatRelativeTime } from "../utils/format";
+import { formatMoney, formatRelativeTime } from "../utils/format";
 
 interface DashboardRecentActivityProps {
   recentActivity: ActivityItem[];
-  currencyFormatter: Intl.NumberFormat;
 }
 
-export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ recentActivity, currencyFormatter }) => (
+export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ recentActivity }) => (
   <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/3 sm:p-6">
     <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Actividad reciente</h3>
-    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Últimas ventas y notas de reparación</p>
+    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Últimos movimientos de caja</p>
     {recentActivity.length === 0 ? (
       <p className="mt-4 text-sm text-gray-400 dark:text-gray-500">Sin actividad registrada todavía.</p>
     ) : (
@@ -21,13 +20,13 @@ export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ rece
             <div className="flex items-center gap-3">
               <div
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                  item.kind === "sale" ? "bg-emerald-100 dark:bg-emerald-500/10" : "bg-blue-100 dark:bg-blue-500/10"
+                  item.kind === "repair" ? "bg-blue-100 dark:bg-blue-500/10" : "bg-emerald-100 dark:bg-emerald-500/10"
                 }`}
               >
-                {item.kind === "sale" ? (
-                  <Banknote className="size-4 text-emerald-600 dark:text-emerald-400" />
-                ) : (
+                {item.kind === "repair" ? (
                   <Wrench className="size-4 text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <Banknote className="size-4 text-emerald-600 dark:text-emerald-400" />
                 )}
               </div>
               <div>
@@ -36,9 +35,9 @@ export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ rece
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm font-semibold text-gray-800 dark:text-white/90">
-                {currencyFormatter.format(item.amount)}
-              </p>
+              {item.amount !== undefined && (
+                <p className="text-sm font-semibold text-gray-800 dark:text-white/90">{formatMoney(item.amount)}</p>
+              )}
               <p className="text-xs text-gray-400 dark:text-gray-500">{formatRelativeTime(item.date)}</p>
             </div>
           </div>

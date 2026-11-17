@@ -1,221 +1,127 @@
 import { useApiClient } from "@common/hooks/use-api-client";
+import { useBranch } from "@common/hooks/use-branch";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { buildDailyBusinessSeries, buildMonthlyBusinessSeries, summarizeDashboardMetrics } from "../utils/dashboard-metrics";
+import { dayLabel, formatLastInteraction, toChartValue } from "../utils/dashboard-metrics";
 
 export type Point = { bucket: string; count: number };
-
 export type Trend = { pct: number; up: boolean };
+export type BusinessSeriesPoint = { bucket: string; sales: number; repairs: number };
 
 export type ActivityItem = {
   id: string;
-  kind: "sale" | "repair";
+  kind: "sale" | "repair" | "other";
   title: string;
   subtitle: string;
-  amount: number;
+  // Solo owner/admin: el API no manda importes a los demás roles.
+  amount?: string;
   date: string;
 };
 
-const REPAIR_STATUS_LABELS: Record<string, string> = {
-  received: "Recibido",
-  in_repair: "En reparación",
-  done: "Listo",
-  delivered: "Entregado",
-  cancelled: "Cancelado",
-};
+// Respuesta de GET /dashboard/summary. Los importes llegan como cadenas decimales.
+interface SummaryResponse {
+  counts: { openRepairNotes: number; criticalStockItems: number; openCashSessions: number };
+  chat: { todayCount: number; weekCount: number; lastAt: string | null };
+  activity: Array<{ id: string; kind: ActivityItem["kind"]; title: string; subtitle: string; amount?: string; occurredAt: string }>;
+  money?: {
+    today: string;
+    week: string;
+    month: string;
+    salesToday: string;
+    todayTrend: Trend | null;
+    monthTrend: Trend | null;
+  };
+}
 
-const toStr = (value: unknown): string => (typeof value === "string" ? value : "");
-const toNum = (value: unknown): number => {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
+interface SeriesResponse {
+  chat: Point[];
+  business?: Array<{ bucket: string; sales: string; repairs: string }>;
+}
 
-// shortcut: pct de cambio no definido cuando el periodo previo es 0 (division
-// por cero); en ese caso se omite el badge en vez de mostrar un % inventado.
-const computeTrend = (current: number, previous: number): Trend | null => {
-  if (!previous) return null;
-  const pct = ((current - previous) / previous) * 100;
-  return { pct: Math.round(Math.abs(pct)), up: current >= previous };
-};
+const MONTH_LABELS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-const MONTH_LABELS = [
-  "ene",
-  "feb",
-  "mar",
-  "abr",
-  "may",
-  "jun",
-  "jul",
-  "ago",
-  "sep",
-  "oct",
-  "nov",
-  "dic",
-];
+const EMPTY_COUNTS = { openRepairNotes: 0, criticalStockItems: 0, openCashSessions: 0 };
 
+// Dos peticiones al cargar (resumen y serie diaria) más la serie mensual del año
+// elegido; todo el cálculo (zona horaria del taller, dinero cobrado) ya viene hecho.
 export const useDashboardPage = () => {
   const { apiClient } = useApiClient();
-  const [daily, setDaily] = useState<Point[]>([]);
-  const [monthly, setMonthly] = useState<Point[]>([]);
-  const [weekCount, setWeekCount] = useState(0);
-  const [lastAt, setLastAt] = useState<string | null>(null);
+  const { activeBranchId } = useBranch();
   const [year, setYear] = useState(new Date().getFullYear());
-  const [businessMetrics, setBusinessMetrics] = useState(() =>
-    summarizeDashboardMetrics([], [], [], []),
+  const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [daily, setDaily] = useState<SeriesResponse | null>(null);
+  const [monthly, setMonthly] = useState<SeriesResponse | null>(null);
+
+  const load = useCallback(
+    async <T,>(path: string, set: (value: T) => void) => {
+      const response = await apiClient(path);
+      if (response.ok) set((await response.json()) as T);
+    },
+    [apiClient],
   );
-  const [repairNotes, setRepairNotes] = useState<Array<Record<string, unknown>>>([]);
-  const [sales, setSales] = useState<Array<Record<string, unknown>>>([]);
 
-  const loadStats = useCallback(async () => {
-    const [dailyRes, monthlyRes, weekRes, lastRes] = await Promise.all([
-      apiClient("/chats/stats/daily"),
-      apiClient(`/chats/stats/monthly?year=${year}`),
-      apiClient("/chats/stats/weekly"),
-      apiClient("/chats/stats/last-interaction"),
-    ]);
-
-    if (dailyRes.ok) setDaily((await dailyRes.json()) as Point[]);
-    if (monthlyRes.ok) setMonthly((await monthlyRes.json()) as Point[]);
-    if (weekRes.ok) setWeekCount(((await weekRes.json()) as { count: number }).count);
-    if (lastRes.ok) setLastAt(((await lastRes.json()) as { lastAt: string | null }).lastAt);
-  }, [apiClient, year]);
-
-  const loadBusinessStats = useCallback(async () => {
-    const [repairNotesRes, salesRes, inventoryRes, cashSessionsRes] = await Promise.all([
-      apiClient("/repair-notes"),
-      apiClient("/sales"),
-      apiClient("/inventory"),
-      apiClient("/cash/sessions"),
-    ]);
-
-    const repairNotesData = repairNotesRes.ok ? ((await repairNotesRes.json()) as Array<Record<string, unknown>>) : [];
-    const salesData = salesRes.ok ? ((await salesRes.json()) as Array<Record<string, unknown>>) : [];
-    const inventory = inventoryRes.ok ? ((await inventoryRes.json()) as Array<Record<string, unknown>>) : [];
-    const cashSessions = cashSessionsRes.ok ? ((await cashSessionsRes.json()) as Array<Record<string, unknown>>) : [];
-
-    setRepairNotes(repairNotesData);
-    setSales(salesData);
-    setBusinessMetrics(
-      summarizeDashboardMetrics(
-        repairNotesData as Parameters<typeof summarizeDashboardMetrics>[0],
-        salesData as Parameters<typeof summarizeDashboardMetrics>[1],
-        inventory as Parameters<typeof summarizeDashboardMetrics>[2],
-        cashSessions as Parameters<typeof summarizeDashboardMetrics>[3],
-      ),
-    );
-  }, [apiClient]);
+  const branchQuery = activeBranchId ? `&branchId=${encodeURIComponent(activeBranchId)}` : "";
 
   useEffect(() => {
-    loadStats().catch(console.error);
-    loadBusinessStats().catch(console.error);
-  }, [loadBusinessStats, loadStats]);
+    load<SummaryResponse>(`/dashboard/summary?${branchQuery.slice(1)}`, setSummary).catch(console.error);
+    load<SeriesResponse>(`/dashboard/series?granularity=day${branchQuery}`, setDaily).catch(console.error);
+  }, [load, branchQuery]);
 
-  const totalYear = useMemo(() => monthly.reduce((sum, point) => sum + point.count, 0), [monthly]);
+  useEffect(() => {
+    load<SeriesResponse>(`/dashboard/series?granularity=month&year=${year}${branchQuery}`, setMonthly).catch(console.error);
+  }, [load, year, branchQuery]);
 
-  const todayCount = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return daily.find((point) => point.bucket === today)?.count ?? 0;
-  }, [daily]);
+  const showMoney = Boolean(summary?.money);
 
-  const lastInteraction = useMemo(() => {
-    if (!lastAt) return "Sin datos";
-    const date = new Date(lastAt);
-    const dd = String(date.getDate()).padStart(2, "0");
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const yyyy = date.getFullYear();
-    const hh = String(date.getHours()).padStart(2, "0");
-    const min = String(date.getMinutes()).padStart(2, "0");
-    return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
-  }, [lastAt]);
-
-  const dailyCategories = useMemo(
-    () => daily.map((point) => {
-      const [, mm, dd] = point.bucket.split("-");
-      return `${dd}/${mm}`;
+  const businessMetrics = useMemo(
+    () => ({
+      todayRevenue: summary?.money?.today ?? "0",
+      weeklyRevenue: summary?.money?.week ?? "0",
+      monthlyRevenue: summary?.money?.month ?? "0",
+      ...(summary?.counts ?? EMPTY_COUNTS),
     }),
+    [summary],
+  );
+
+  const dailyBusinessSeries = useMemo<BusinessSeriesPoint[]>(
+    () => (daily?.business ?? []).map((p) => ({ bucket: p.bucket, sales: toChartValue(p.sales), repairs: toChartValue(p.repairs) })),
     [daily],
   );
 
-  const dailyBusinessSeries = useMemo(
-    () => buildDailyBusinessSeries(repairNotes as Parameters<typeof buildDailyBusinessSeries>[0], sales as Parameters<typeof buildDailyBusinessSeries>[1]),
-    [repairNotes, sales],
+  const monthlyBusinessSeries = useMemo(() => {
+    const months = monthly?.business ?? [];
+    return {
+      salesData: months.map((m) => toChartValue(m.sales)),
+      repairsData: months.map((m) => toChartValue(m.repairs)),
+    };
+  }, [monthly]);
+
+  const dailyChat = useMemo(() => daily?.chat ?? [], [daily]);
+  const monthlyChat = useMemo(() => monthly?.chat ?? [], [monthly]);
+
+  const recentActivity = useMemo<ActivityItem[]>(
+    () => (summary?.activity ?? []).map((item) => ({ ...item, date: item.occurredAt })),
+    [summary],
   );
-
-  const dailyBusinessCategories = useMemo(
-    () => dailyBusinessSeries.map((p) => {
-      const [, mm, dd] = p.bucket.split("-");
-      return `${dd}/${mm}`;
-    }),
-    [dailyBusinessSeries],
-  );
-
-  const monthlyBusinessSeries = useMemo(
-    () => buildMonthlyBusinessSeries(repairNotes as Parameters<typeof buildMonthlyBusinessSeries>[0], sales as Parameters<typeof buildMonthlyBusinessSeries>[1], year),
-    [repairNotes, sales, year],
-  );
-
-  // Hoy vs. ayer: siempre comparable, dailyBusinessSeries trae 30 dias fijos.
-  const todayDelta = useMemo(() => {
-    if (dailyBusinessSeries.length < 2) return null;
-    const today = dailyBusinessSeries[dailyBusinessSeries.length - 1];
-    const yesterday = dailyBusinessSeries[dailyBusinessSeries.length - 2];
-    return computeTrend(today.sales + today.repairs, yesterday.sales + yesterday.repairs);
-  }, [dailyBusinessSeries]);
-
-  // Este mes vs. mes anterior: solo si el filtro de año es el actual y no es
-  // enero (el mes anterior caeria en otro anio, fuera de monthlyBusinessSeries).
-  const monthDelta = useMemo(() => {
-    const now = new Date();
-    if (year !== now.getFullYear()) return null;
-    const monthIndex = now.getMonth();
-    if (monthIndex === 0) return null;
-    const current = monthlyBusinessSeries.salesData[monthIndex] + monthlyBusinessSeries.repairsData[monthIndex];
-    const previous = monthlyBusinessSeries.salesData[monthIndex - 1] + monthlyBusinessSeries.repairsData[monthIndex - 1];
-    return computeTrend(current, previous);
-  }, [year, monthlyBusinessSeries]);
-
-  const recentActivity = useMemo<ActivityItem[]>(() => {
-    const saleItems: ActivityItem[] = sales.map((sale) => ({
-      id: toStr(sale.id) || `sale-${toStr(sale.saleNumber)}`,
-      kind: "sale",
-      title: toStr(sale.customerName) || `Venta #${toStr(sale.saleNumber)}`,
-      subtitle: "Venta",
-      amount: toNum(sale.totalValue),
-      date: toStr(sale.createdAt),
-    }));
-    const repairItems: ActivityItem[] = repairNotes.map((note) => ({
-      id: toStr(note.id) || `repair-${toStr(note.controlNumber)}`,
-      kind: "repair",
-      title: toStr(note.customerName) || `Nota #${toStr(note.controlNumber)}`,
-      subtitle: REPAIR_STATUS_LABELS[toStr(note.status)] ?? toStr(note.status),
-      amount: toNum(note.totalValue),
-      date: toStr(note.receivedAt) || toStr(note.createdAt),
-    }));
-
-    return [...saleItems, ...repairItems]
-      .filter((item) => item.date)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 8);
-  }, [sales, repairNotes]);
 
   return {
-    daily,
-    monthly,
-    weekCount,
-    lastAt,
-    year,
-    businessMetrics,
-    totalYear,
-    todayCount,
-    lastInteraction,
-    dailyCategories,
+    daily: dailyChat,
+    monthly: monthlyChat,
+    weekCount: summary?.chat.weekCount ?? 0,
+    todayCount: summary?.chat.todayCount ?? 0,
+    lastInteraction: formatLastInteraction(summary?.chat.lastAt ?? null),
+    totalYear: useMemo(() => monthlyChat.reduce((sum, point) => sum + point.count, 0), [monthlyChat]),
+    dailyCategories: useMemo(() => dailyChat.map((p) => dayLabel(p.bucket)), [dailyChat]),
+    dailyBusinessCategories: useMemo(() => dailyBusinessSeries.map((p) => dayLabel(p.bucket)), [dailyBusinessSeries]),
     monthLabels: MONTH_LABELS,
+    year,
     setYear,
+    showMoney,
+    businessMetrics,
     dailyBusinessSeries,
-    dailyBusinessCategories,
     monthlyBusinessSeries,
-    todayDelta,
-    monthDelta,
+    todayDelta: summary?.money?.todayTrend ?? null,
+    monthDelta: summary?.money?.monthTrend ?? null,
     recentActivity,
   };
 };

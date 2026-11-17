@@ -6,6 +6,7 @@ import type { Local } from "../../../../src/app_platform/local/entities/local.en
 function makeNote(overrides: Partial<RepairNote> = {}): RepairNote {
   return {
     controlNumber: 42,
+    publicRef: "7F3K2A9B",
     customerName: "Juan Pérez",
     contactNumber: "5551234567",
     brand: "Samsung",
@@ -31,11 +32,25 @@ function makeNote(overrides: Partial<RepairNote> = {}): RepairNote {
 }
 
 describe("toRepairNotePdfData", () => {
-  it("convierte valores decimales (string) de Postgres a number", () => {
-    const data = toRepairNotePdfData(makeNote(), null);
+  it("entrega el dinero como cadenas decimales exactas y calcula el saldo sin Number", () => {
+    const data = toRepairNotePdfData(makeNote({ totalValue: "0.30" as never, advanceValue: "0.10" as never }), null);
 
-    expect(data.totalValue).toBe(500);
-    expect(data.advanceValue).toBe(100);
+    expect(data.totalValue).toBe("0.30");
+    expect(data.advanceValue).toBe("0.10");
+    expect(data.balance).toBe("0.20");
+  });
+
+  it("sin anticipo el saldo es el total", () => {
+    const data = toRepairNotePdfData(makeNote({ requiresAdvance: false }), null);
+
+    expect(data.balance).toBe("500.00");
+  });
+
+  it("lleva la URL del QR y la ref publica tal como las entrega el servicio", () => {
+    const data = toRepairNotePdfData(makeNote(), null, { qrUrl: "https://wa.me/5215512345678?text=x" });
+
+    expect(data.qrUrl).toBe("https://wa.me/5215512345678?text=x");
+    expect(data.publicRef).toBe("7F3K2A9B");
   });
 
   it("usa null en vez de undefined para campos opcionales ausentes", () => {
@@ -57,7 +72,7 @@ describe("toRepairNotePdfData", () => {
   });
 
   it("usa el nombre de empleado resuelto cuando se pasa como tercer argumento", () => {
-    const data = toRepairNotePdfData(makeNote(), null, "Luis Guzmán");
+    const data = toRepairNotePdfData(makeNote(), null, { assignedEmployeeName: "Luis Guzmán" });
 
     expect(data.assignedEmployeeName).toBe("Luis Guzmán");
   });
@@ -78,5 +93,12 @@ describe("toRepairNotePdfData", () => {
     const data = toRepairNotePdfData(makeNote(), null);
 
     expect(data.local).toEqual({ name: null, address: null, phone: null, logo: null });
+    expect(data.palette.dark).toBe("#1e40af");
+  });
+
+  it("usa la paleta derivada del color de marca del local", () => {
+    const data = toRepairNotePdfData(makeNote(), { brandColor: "#0f766e" } as Local);
+
+    expect(data.palette.base).toBe("#0f766e");
   });
 });

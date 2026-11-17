@@ -7,6 +7,8 @@ import { Label } from "@ui/inputs/label";
 import { TextArea } from "@ui/textarea/textarea";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
+import { BrandColorField } from "../components/brand-color-field";
+import { TIME_ZONES } from "../utils/time-zones";
 import { useLocal } from "../hooks/use-local";
 import { useLocalPage } from "../hooks/use-local-page";
 
@@ -24,6 +26,7 @@ export const LocalPage = () => {
     handleAttributionBasisChange,
     handleSubmit,
     removeLogo,
+    setBrandColor,
   } = useLocalPage({
     local,
     loading,
@@ -68,6 +71,10 @@ export const LocalPage = () => {
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
             </div>
           </div>
+
+          <hr className="border-gray-100 dark:border-gray-800" />
+
+          <BrandColorField value={form.brandColor} palette={local?.brandPalette ?? null} disabled={saving} onChange={setBrandColor} />
 
           <hr className="border-gray-100 dark:border-gray-800" />
 
@@ -133,6 +140,23 @@ export const LocalPage = () => {
                 <option value="80mm">Térmico 80mm</option>
                 <option value="letter">Carta</option>
               </select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-gray-500">Zona horaria</Label>
+              <select
+                name="timeZone"
+                value={form.timeZone}
+                onChange={handleChange}
+                disabled={saving}
+                className="mt-1 block w-full rounded-xl border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-700 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              >
+                {TIME_ZONES.map((zone) => (
+                  <option key={zone.value} value={zone.value}>
+                    {zone.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-400">Define qué es "hoy", la semana y el mes en el panel y los reportes.</p>
             </div>
             <div className="sm:col-span-2">
               <Label className="text-gray-500">Cláusula de garantía (aparece impresa en el ticket)</Label>

@@ -6,6 +6,9 @@ export type RepairNoteStatus = "received" | "in_repair" | "done" | "delivered" |
 export interface RepairNoteRecord {
   id: string;
   controlNumber: number;
+  publicRef: string;
+  // URL wa.me del QR impreso; la arma el API. null si el taller no tiene numero de WhatsApp.
+  whatsappQrUrl?: string | null;
   customerName: string;
   contactNumber?: string;
   brand: string;

@@ -14,6 +14,7 @@ export const HomePage: React.FC = () => {
     monthly,
     weekCount,
     year,
+    showMoney,
     businessMetrics,
     totalYear,
     todayCount,
@@ -45,31 +46,33 @@ export const HomePage: React.FC = () => {
       <div>
         <h2 className="mb-4 text-base font-semibold text-gray-800 dark:text-white/90">Negocio</h2>
         <div className="flex flex-col gap-4 md:gap-6">
-          <DashboardRevenueCards
-            monthlyRevenue={businessMetrics.monthlyRevenue}
-            todayRevenue={businessMetrics.todayRevenue}
-            monthDelta={monthDelta}
-            todayDelta={todayDelta}
-            currencyFormatter={currencyFormatter}
-          />
+          {showMoney && (
+            <DashboardRevenueCards
+              monthlyRevenue={businessMetrics.monthlyRevenue}
+              todayRevenue={businessMetrics.todayRevenue}
+              monthDelta={monthDelta}
+              todayDelta={todayDelta}
+            />
+          )}
 
           <DashboardSecondaryStats
-            weeklyRevenue={businessMetrics.weeklyRevenue}
+            weeklyRevenue={showMoney ? businessMetrics.weeklyRevenue : null}
             openRepairNotes={businessMetrics.openRepairNotes}
             criticalStockItems={businessMetrics.criticalStockItems}
             openCashSessions={businessMetrics.openCashSessions}
-            currencyFormatter={currencyFormatter}
           />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 md:gap-6">
-            <div className="lg:col-span-2">
-              <DashboardMainChart
-                dailyBusinessSeries={dailyBusinessSeries}
-                dailyBusinessCategories={dailyBusinessCategories}
-                currencyFormatter={currencyFormatter}
-              />
-            </div>
-            <DashboardRecentActivity recentActivity={recentActivity} currencyFormatter={currencyFormatter} />
+            {showMoney && (
+              <div className="lg:col-span-2">
+                <DashboardMainChart
+                  dailyBusinessSeries={dailyBusinessSeries}
+                  dailyBusinessCategories={dailyBusinessCategories}
+                  currencyFormatter={currencyFormatter}
+                />
+              </div>
+            )}
+            <DashboardRecentActivity recentActivity={recentActivity} />
           </div>
         </div>
       </div>
@@ -89,7 +92,7 @@ export const HomePage: React.FC = () => {
         dailyCategories={dailyCategories}
         monthLabels={monthLabels}
         year={year}
-        monthlyBusinessSeries={monthlyBusinessSeries}
+        monthlyBusinessSeries={showMoney ? monthlyBusinessSeries : null}
         currencyFormatter={currencyFormatter}
       />
     </PageShell>

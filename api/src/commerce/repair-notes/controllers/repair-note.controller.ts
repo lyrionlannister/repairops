@@ -33,7 +33,7 @@ export class RepairNoteController {
         res.status(404).json({ error: "Nota no encontrada" });
         return;
       }
-      res.status(200).json(note);
+      res.status(200).json({ ...note, whatsappQrUrl: await this.repairNoteService.getWhatsappQrUrl(note) });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -120,7 +120,8 @@ export class RepairNoteController {
         ? await this.authService.getEmployeeName(note.assignedEmployeeId)
         : null;
       const serviceTypeNames = await this.repairNoteService.getServiceTypeNames(note.id);
-      const data = toRepairNotePdfData(note, local, assignedEmployeeName, serviceTypeNames);
+      const qrUrl = await this.repairNoteService.getWhatsappQrUrl(note);
+      const data = toRepairNotePdfData(note, local, { assignedEmployeeName, serviceTypeNames, qrUrl });
       const buffer = await this.pdfRendererService.render(RepairNoteDocument, { data });
 
       res.setHeader("Content-Type", "application/pdf");

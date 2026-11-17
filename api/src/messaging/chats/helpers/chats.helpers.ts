@@ -3,9 +3,9 @@ import { ChatDirection } from "../entities/chat-message.entity.js";
 import { ConversationDto, MessageDto } from "../types/chats.types.js";
 
 // Telefono tal como se guarda y se usa de clave de conversacion: solo
-// digitos (Meta manda wa_id sin "+"; el cliente puede pegar "@c.us" o "+").
+// digitos (Meta manda wa_id sin "+"; el cliente puede pegar "+" o espacios).
 export function normalizePhone(value: string): string {
-  return value.replace(/@c\.us$/, "").replace(/\D/g, "");
+  return value.replace(/\D/g, "");
 }
 
 // El cliente de chat conserva el vocabulario "human"/"ai": un entrante es del
@@ -30,9 +30,16 @@ export function toConversationDto(
 
 export function toMessageDto(entry: {
   id: string | number;
+  publicId?: string;
   contactPhone: string;
   body: string;
   direction: ChatDirection;
+  messageType?: string;
+  mediaKey?: string | null;
+  mediaMime?: string | null;
+  mediaSize?: number | null;
+  locationLat?: string | null;
+  locationLng?: string | null;
 }): MessageDto {
   return {
     id: Number(entry.id),
@@ -40,5 +47,8 @@ export function toMessageDto(entry: {
     content: entry.body,
     type: toClientType(entry.direction),
     fromMe: entry.direction === "outbound",
+    messageType: entry.messageType ?? "text",
+    ...(entry.mediaKey && entry.publicId ? { mediaId: entry.publicId, mediaMime: entry.mediaMime ?? undefined, mediaSize: entry.mediaSize ?? undefined } : {}),
+    ...(entry.locationLat && entry.locationLng ? { location: { lat: entry.locationLat, lng: entry.locationLng } } : {}),
   };
 }

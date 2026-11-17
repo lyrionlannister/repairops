@@ -22,7 +22,7 @@ describe("LocalService.updateConfig", () => {
     const result = await service.updateConfig({ name: "Mi Taller" });
 
     expect(dao.update).toHaveBeenCalledWith("local-1", { name: "Mi Taller" });
-    expect(result).toEqual({ id: "local-1", name: "Mi Taller" });
+    expect(result).toMatchObject({ id: "local-1", name: "Mi Taller" });
   });
 });
 
@@ -43,5 +43,35 @@ describe("LocalService.consumeControlNumber", () => {
 
     const service = new LocalService(dao);
     await expect(service.consumeControlNumber()).resolves.toBe(9);
+  });
+});
+
+describe("LocalService.updateConfig brandColor", () => {
+  async function save(brandColor: unknown) {
+    const dao = makeDao();
+    vi.mocked(dao.findOrCreate).mockResolvedValue(mockEntity<Local>({ id: "local-1" }));
+    vi.mocked(dao.update).mockImplementation(async (_id, data) => mockEntity<Local>({ id: "local-1", ...data }));
+    const service = new LocalService(dao);
+    return { dao, service, run: () => service.updateConfig({ brandColor } as Partial<Local>) };
+  }
+
+  it("normaliza a minusculas y devuelve la paleta derivada", async () => {
+    const { dao, run } = await save("#2563EB");
+    const result = await run();
+    expect(dao.update).toHaveBeenCalledWith("local-1", { brandColor: "#2563eb" });
+    expect(result.brandPalette.base).toBe("#2563eb");
+  });
+
+  it("null restablece y devuelve la paleta por defecto", async () => {
+    const { dao, run } = await save(null);
+    const result = await run();
+    expect(dao.update).toHaveBeenCalledWith("local-1", { brandColor: null });
+    expect(result.brandPalette.dark).toBe("#1e40af");
+  });
+
+  it.each(["red", "#12345", "#gggggg", "123456", 42])("rechaza %s", async (value) => {
+    const { dao, run } = await save(value);
+    await expect(run()).rejects.toThrow("#RRGGBB");
+    expect(dao.update).not.toHaveBeenCalled();
   });
 });

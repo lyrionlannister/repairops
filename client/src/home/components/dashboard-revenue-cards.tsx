@@ -2,13 +2,13 @@ import type { FC } from "react";
 import { Wallet, Banknote } from "lucide-react";
 import type { Trend } from "../hooks/use-dashboard-page";
 import { TrendBadge } from "./trend-badge";
+import { formatMoney } from "../utils/format";
 
 interface DashboardRevenueCardsProps {
-  monthlyRevenue: number;
-  todayRevenue: number;
+  monthlyRevenue: string;
+  todayRevenue: string;
   monthDelta: Trend | null;
   todayDelta: Trend | null;
-  currencyFormatter: Intl.NumberFormat;
 }
 
 export const DashboardRevenueCards: FC<DashboardRevenueCardsProps> = ({
@@ -16,7 +16,6 @@ export const DashboardRevenueCards: FC<DashboardRevenueCardsProps> = ({
   todayRevenue,
   monthDelta,
   todayDelta,
-  currencyFormatter,
 }) => (
   <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 md:gap-5">
     <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 p-6 shadow-theme-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg lg:col-span-2">
@@ -26,7 +25,7 @@ export const DashboardRevenueCards: FC<DashboardRevenueCardsProps> = ({
       <div className="mt-5 flex items-end justify-between">
         <div>
           <span className="text-sm text-white/80">Ventas este mes</span>
-          <h4 className="mt-2 text-3xl font-bold text-white">{currencyFormatter.format(monthlyRevenue)}</h4>
+          <h4 className="mt-2 text-3xl font-bold text-white">{formatMoney(monthlyRevenue)}</h4>
         </div>
         <TrendBadge trend={monthDelta} inverted />
       </div>
@@ -40,7 +39,7 @@ export const DashboardRevenueCards: FC<DashboardRevenueCardsProps> = ({
         <div>
           <span className="text-sm text-gray-500 dark:text-gray-400">Ingreso del día</span>
           <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-            {currencyFormatter.format(todayRevenue)}
+            {formatMoney(todayRevenue)}
           </h4>
         </div>
         <TrendBadge trend={todayDelta} />

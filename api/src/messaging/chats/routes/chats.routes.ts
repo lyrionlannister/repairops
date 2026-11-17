@@ -18,6 +18,7 @@ export function createChatsRouter(chatsController: ChatsController): Router {
   router.post("/:sessionId/transfer", (req, res) => chatsController.activateTransfer(req, res));
   router.delete("/:sessionId/transfer", (req, res) => chatsController.deactivateTransfer(req, res));
   router.post("/:sessionId/messages", (req, res) => chatsController.sendMessage(req, res));
+  router.get("/:sessionId/media/:mediaId", (req, res) => chatsController.getMedia(req, res));
   router.get("/:sessionId", (req, res) => chatsController.getMessages(req, res));
 
   return router;

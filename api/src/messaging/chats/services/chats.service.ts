@@ -3,7 +3,7 @@ import { Repository } from "typeorm";
 import { ChatMessageDao } from "../daos/chat-message.dao.js";
 import { ChatStatsDao, ConversationCountPoint } from "../daos/chat-stats.dao.js";
 import { ContactName } from "../entities/contact-name.entity.js";
-import { ChatDirection, ChatSender } from "../entities/chat-message.entity.js";
+import { ChatDirection, ChatMessageType, ChatSender } from "../entities/chat-message.entity.js";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { normalizePhone, toConversationDto, toMessageDto } from "../helpers/chats.helpers.js";
@@ -15,6 +15,13 @@ export interface RecordMessageInput {
   sender: ChatSender;
   body: string;
   waMessageId?: string | null;
+  repairNoteId?: string | null;
+  messageType?: ChatMessageType;
+  mediaKey?: string | null;
+  mediaMime?: string | null;
+  mediaSize?: number | null;
+  locationLat?: string | null;
+  locationLng?: string | null;
 }
 
 @singleton()
@@ -27,6 +34,10 @@ export class ChatsService {
 
   async recordMessage(input: RecordMessageInput): Promise<void> {
     await this.chatMessageDao.record({ ...input, contactPhone: normalizePhone(input.contactPhone) });
+  }
+
+  async findMediaMessage(sessionId: string, publicId: string) {
+    return this.chatMessageDao.findMediaMessage(normalizePhone(sessionId), publicId);
   }
 
   async getConversations(): Promise<ConversationDto[]> {

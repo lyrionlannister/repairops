@@ -21,7 +21,7 @@ import { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteService } from "../../../../src/commerce/repair-notes/services/repair-note.service.js";
-import type { WhatsappSendService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
+import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
@@ -67,7 +67,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       inventoryService,
       new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType)),
       new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
-      { notifyOrderReady: async () => null } as unknown as WhatsappSendService,
+      { getDisplayPhoneNumber: async () => null } as unknown as WhatsappAccountService,
       inventoryReservationService,
     );
     const authService = new AuthService(

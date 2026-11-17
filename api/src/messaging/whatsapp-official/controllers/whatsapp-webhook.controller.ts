@@ -2,7 +2,7 @@ import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { WhatsappWebhookService } from "../services/whatsapp-webhook.service.js";
 import { verifyMetaSignature } from "../utils/verify-signature.js";
-import { extractIncomingTextMessages } from "../helpers/whatsapp-webhook.helpers.js";
+import { extractIncomingMessages } from "../helpers/whatsapp-webhook.helpers.js";
 import { requiredEnv } from "../../../core/config/env.js";
 
 @singleton()
@@ -33,7 +33,7 @@ export class WhatsappWebhookController {
     }
 
     try {
-      const messages = extractIncomingTextMessages(req.body);
+      const messages = extractIncomingMessages(req.body);
       for (const message of messages) {
         await this.whatsappWebhookService.handleIncomingMessage(message);
       }

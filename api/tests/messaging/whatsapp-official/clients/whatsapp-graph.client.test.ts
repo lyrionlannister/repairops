@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import {
   createTemplate,
+  getDisplayPhoneNumber,
   listTemplates,
   sendTextMessage,
   verifyAccountCredentials,
@@ -136,5 +137,29 @@ describe("whatsapp-graph.client", () => {
         verifyAccountCredentials("waba-1", "phone-1", "token-1"),
       ).rejects.toThrow(WhatsappGraphApiError);
     });
+  });
+});
+
+describe("getDisplayPhoneNumber", () => {
+  it("reduce el numero visible a digitos", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ display_phone_number: "+52 1 55 1234 5678", id: "p1" }) }),
+    );
+    await expect(getDisplayPhoneNumber("p1", "tok")).resolves.toBe("5215512345678");
+    expect(String(vi.mocked(fetch).mock.calls[0]![0])).toContain("/p1?fields=display_phone_number");
+  });
+
+  it("falla con claridad si Meta no devuelve el numero", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: "p1" }) }));
+    await expect(getDisplayPhoneNumber("p1", "tok")).rejects.toThrow("display_phone_number");
+  });
+
+  it("propaga el error de Meta", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 400, json: async () => ({ error: { message: "token invalido" } }) }),
+    );
+    await expect(getDisplayPhoneNumber("p1", "tok")).rejects.toBeInstanceOf(WhatsappGraphApiError);
   });
 });
