@@ -121,5 +121,3 @@ export const signInNavbarItems = [
   },
 ];
 
-export const otherSignInItems = [];
-

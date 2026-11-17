@@ -6,10 +6,7 @@ import { AsideMenu } from "../components/menu/aside-menu";
 import { NavbarMenu } from "../components/menu/navbar-menu";
 import { SidebarProvider } from "../contexts/providers/sidebar-provider";
 import { BranchProvider } from "../contexts/providers/branch-provider";
-import {
-  signInNavbarItems,
-  otherSignInItems,
-} from "../../../config/app/navbar/sign-in-navbar-items";
+import { signInNavbarItems } from "../../../config/app/navbar/sign-in-navbar-items";
 import { Backdrop } from "../components/menu/backdrop";
 import { useCurrentUser } from "../hooks/use-current-user";
 
@@ -30,10 +27,7 @@ const LayoutContent: React.FC = () => {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <div>
-        <AsideMenu
-          navItems={visibleNavItems}
-          othersItems={otherSignInItems}
-        />
+        <AsideMenu navItems={visibleNavItems} />
         <Backdrop />
       </div>
       <div

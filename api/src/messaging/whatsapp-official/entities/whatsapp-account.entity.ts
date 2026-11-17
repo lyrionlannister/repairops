@@ -9,8 +9,7 @@ import { encryptedColumnTransformer } from "../../../core/security/encrypted-col
 
 export type WhatsappAccountStatus = "connected" | "disconnected";
 
-// Una fila por tenant -- reemplaza al status en memoria de whatsapp-web.js
-// (ver plan Fase 4, Checkpoint 1). Etapa 1: todas las filas apuntan a la
+// Una fila por tenant (ver plan Fase 4, Checkpoint 1). Etapa 1: todas las filas apuntan a la
 // misma cuenta piloto (ownedByPlatform: true); Etapa 2 agrega filas con
 // credenciales propias por taller capturadas a mano (no Embedded Signup --
 // requiere status de Meta Tech Provider, que aun no se tiene) sin cambiar
