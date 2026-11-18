@@ -19,7 +19,8 @@ export const LayawayFormPage: React.FC = () => {
   const { workingBranchId } = useBranch();
   // Solo items de la sucursal activa -- un apartado reserva stock fisico,
   // no tiene sentido reservar de una sucursal que el cajero no ve.
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(workingBranchId);
+  const { items: inventoryItems, fetchAll: fetchInventory } =
+    useBranchScopedInventory(workingBranchId);
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -39,9 +40,8 @@ export const LayawayFormPage: React.FC = () => {
     if (workingBranchId) fetchOpenSession(workingBranchId);
   }, [workingBranchId, fetchOpenSession]);
 
-  const { creditLimit, creditBalance, creditAvailable, creditLoaded, devices, activeLayaways } = useCustomerContext(
-    customerId || null,
-  );
+  const { creditLimit, creditBalance, creditAvailable, creditLoaded, devices, activeLayaways } =
+    useCustomerContext(customerId || null);
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -93,10 +93,19 @@ export const LayawayFormPage: React.FC = () => {
   );
 
   return (
-    <PageShell title="Nuevo apartado" description="Reserva productos para un cliente con un anticipo. El stock físico solo baja al completar.">
-      {(formError ?? error) && <Alert variant="error" title="Error" message={(formError ?? error)!} />}
+    <PageShell
+      title="Nuevo apartado"
+      description="Reserva productos para un cliente con un anticipo. El stock físico solo baja al completar."
+    >
+      {(formError ?? error) && (
+        <Alert variant="error" title="Error" message={(formError ?? error)!} />
+      )}
       {!loadingCashSession && !cashSession && (
-        <Alert variant="warning" title="Sin sesión de caja" message="Abre una sesión de caja en Caja antes de apartar." />
+        <Alert
+          variant="warning"
+          title="Sin sesión de caja"
+          message="Abre una sesión de caja en Caja antes de apartar."
+        />
       )}
 
       {hasContext ? (
@@ -117,4 +126,3 @@ export const LayawayFormPage: React.FC = () => {
     </PageShell>
   );
 };
-

@@ -74,7 +74,11 @@ export const QuoteForm: FC<QuoteFormProps> = ({
   onSubmit,
   onCancel,
 }) => (
-  <form ref={formRef} onSubmit={onSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
+  <form
+    ref={formRef}
+    onSubmit={onSubmit}
+    className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}
+  >
     <Stepper steps={QUOTE_FORM_STEPS} current={step} onStepClick={onStepClick} />
 
     <Step index={0} current={step}>

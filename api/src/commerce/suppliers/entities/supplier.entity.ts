@@ -1,4 +1,12 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
+import {
+  Entity,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 

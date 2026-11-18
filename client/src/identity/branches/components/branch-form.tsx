@@ -16,24 +16,51 @@ interface BranchFormProps {
   onCancel: () => void;
 }
 
-export const BranchForm: FC<BranchFormProps> = ({ form, loading, saving, isEdit, onChange, onSubmit, onCancel }) => (
+export const BranchForm: FC<BranchFormProps> = ({
+  form,
+  loading,
+  saving,
+  isEdit,
+  onChange,
+  onSubmit,
+  onCancel,
+}) => (
   <form
     onSubmit={onSubmit}
     className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3"
   >
     <div>
       <Label className="text-gray-500">Nombre</Label>
-      <Input name="name" value={form.name} onChange={onChange} placeholder="Ej. Sucursal Centro" required disabled={loading} />
+      <Input
+        name="name"
+        value={form.name}
+        onChange={onChange}
+        placeholder="Ej. Sucursal Centro"
+        required
+        disabled={loading}
+      />
     </div>
 
     <div>
       <Label className="text-gray-500">Dirección</Label>
-      <Input name="address" value={form.address} onChange={onChange} placeholder="Calle y número" disabled={loading} />
+      <Input
+        name="address"
+        value={form.address}
+        onChange={onChange}
+        placeholder="Calle y número"
+        disabled={loading}
+      />
     </div>
 
     <div>
       <Label className="text-gray-500">Teléfono</Label>
-      <Input name="phone" value={form.phone} onChange={onChange} placeholder="Ej. 833 123 4567" disabled={loading} />
+      <Input
+        name="phone"
+        value={form.phone}
+        onChange={onChange}
+        placeholder="Ej. 833 123 4567"
+        disabled={loading}
+      />
     </div>
 
     <div className="flex justify-end gap-2 pt-1">

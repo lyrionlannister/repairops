@@ -17,7 +17,7 @@ export const CustomerFormPage: React.FC = () => {
 
   const { customers, loading, saving, fetchAll, create, update } = useCustomers();
   const [form, setForm] = useState<CustomerFormData>(emptyForm);
-  const context = useCustomerContext(isEdit ? id ?? null : null);
+  const context = useCustomerContext(isEdit ? (id ?? null) : null);
 
   useEffect(() => {
     fetchAll();
@@ -43,7 +43,12 @@ export const CustomerFormPage: React.FC = () => {
 
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const payload = { name: form.name, phone: form.phone, email: form.email || null, creditLimit: Number(form.creditLimit) || 0 };
+    const payload = {
+      name: form.name,
+      phone: form.phone,
+      email: form.email || null,
+      creditLimit: Number(form.creditLimit) || 0,
+    };
     const ok = isEdit && id ? await update(id, payload) : Boolean(await create(payload));
     if (ok) navigate("/commerce/customers");
   };
@@ -57,11 +62,29 @@ export const CustomerFormPage: React.FC = () => {
     >
       {hasPanel ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <CustomerForm form={form} loading={loading} saving={saving} isEdit={isEdit} hasPanel onChange={handleChange} onSubmit={handleSubmit} onCancel={() => navigate("/commerce/customers")} />
+          <CustomerForm
+            form={form}
+            loading={loading}
+            saving={saving}
+            isEdit={isEdit}
+            hasPanel
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+            onCancel={() => navigate("/commerce/customers")}
+          />
           <CustomerContextPanel {...context} />
         </div>
       ) : (
-        <CustomerForm form={form} loading={loading} saving={saving} isEdit={isEdit} hasPanel={false} onChange={handleChange} onSubmit={handleSubmit} onCancel={() => navigate("/commerce/customers")} />
+        <CustomerForm
+          form={form}
+          loading={loading}
+          saving={saving}
+          isEdit={isEdit}
+          hasPanel={false}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          onCancel={() => navigate("/commerce/customers")}
+        />
       )}
     </PageShell>
   );

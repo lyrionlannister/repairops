@@ -32,7 +32,10 @@ export interface InventoryMovement {
   createdAt: string;
 }
 
-type CreateItemPayload = Omit<InventoryItem, "id" | "quantityOnHand" | "available" | "createdAt" | "updatedAt">;
+type CreateItemPayload = Omit<
+  InventoryItem,
+  "id" | "quantityOnHand" | "available" | "createdAt" | "updatedAt"
+>;
 
 export interface InventoryItemFormData {
   name: string;
@@ -150,7 +153,7 @@ export const useInventory = () => {
           throw new Error(
             details?.length
               ? details.join("\n")
-              : (body as { error?: string }).error ?? "Error al importar el archivo",
+              : ((body as { error?: string }).error ?? "Error al importar el archivo"),
           );
         }
         const result = (await res.json()) as { imported: number };
@@ -183,7 +186,12 @@ export const useInventory = () => {
   const registerMovement = useCallback(
     async (
       inventoryItemId: string,
-      data: { type: "in" | "out" | "adjustment"; quantity: number; reason?: string; createdByEmployeeId?: string },
+      data: {
+        type: "in" | "out" | "adjustment";
+        quantity: number;
+        reason?: string;
+        createdByEmployeeId?: string;
+      },
     ): Promise<boolean> => {
       setSaving(true);
       setError(null);

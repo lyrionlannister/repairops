@@ -16,7 +16,10 @@ import { RepairNoteCustomerSection } from "./repair-note-customer-section";
 import { RepairNoteDeviceSection } from "./repair-note-device-section";
 import { RepairNoteDatesSection } from "./repair-note-dates-section";
 import { RepairNoteItemLinesSection } from "./repair-note-item-lines-section";
-import { RepairNoteCostSection, RepairNoteWarrantySection } from "./repair-note-cost-warranty-section";
+import {
+  RepairNoteCostSection,
+  RepairNoteWarrantySection,
+} from "./repair-note-cost-warranty-section";
 import { RepairNoteStatusSection } from "./repair-note-status-section";
 
 export const REPAIR_NOTE_FORM_STEPS = ["Cliente", "Equipo", "Servicio", "Costo y garantía"];
@@ -114,7 +117,11 @@ export const RepairNoteForm: FC<RepairNoteFormProps> = ({
   onSubmit,
   onCancel,
 }) => (
-  <form ref={formRef} onSubmit={onSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
+  <form
+    ref={formRef}
+    onSubmit={onSubmit}
+    className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}
+  >
     <Stepper steps={REPAIR_NOTE_FORM_STEPS} current={step} onStepClick={onStepClick} />
 
     <Step index={0} current={step}>

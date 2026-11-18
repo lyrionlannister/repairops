@@ -34,7 +34,9 @@ export const SalesTable: FC<SalesTableProps> = ({
 }) => (
   <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
     {loading ? (
-      <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando ventas...</div>
+      <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        Cargando ventas...
+      </div>
     ) : filteredSales.length === 0 ? (
       <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">
         {sales.length === 0 ? "No hay ventas registradas." : "Sin resultados para la búsqueda."}
@@ -70,7 +72,9 @@ export const SalesTable: FC<SalesTableProps> = ({
               key={sale.id}
               className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50 dark:border-gray-800/50 dark:hover:bg-white/2"
             >
-              <TableCell className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">#{sale.saleNumber}</TableCell>
+              <TableCell className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
+                #{sale.saleNumber}
+              </TableCell>
               <TableCell className="px-4 py-4 text-sm font-medium text-gray-800 dark:text-white/90">
                 {sale.customerName ?? "Mostrador"}
               </TableCell>

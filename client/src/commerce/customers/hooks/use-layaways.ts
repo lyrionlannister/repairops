@@ -92,7 +92,11 @@ export const useLayaways = () => {
   );
 
   const complete = useCallback(
-    async (id: string, cashSessionId: string, payments: Array<{ method: LayawayMethod; amount: number }>): Promise<boolean> => {
+    async (
+      id: string,
+      cashSessionId: string,
+      payments: Array<{ method: LayawayMethod; amount: number }>,
+    ): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {

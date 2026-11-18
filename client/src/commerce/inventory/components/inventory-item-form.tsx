@@ -44,13 +44,26 @@ export const InventoryItemForm: FC<InventoryItemFormProps> = ({
   >
     <div>
       <Label className="text-gray-500">Nombre</Label>
-      <Input name="name" placeholder="Pantalla A52" value={form.name} onChange={onChange} required disabled={loading} />
+      <Input
+        name="name"
+        placeholder="Pantalla A52"
+        value={form.name}
+        onChange={onChange}
+        required
+        disabled={loading}
+      />
     </div>
 
     <div className="grid grid-cols-2 gap-3">
       <div>
         <Label className="text-gray-500">SKU</Label>
-        <Input name="sku" placeholder="Opcional" value={form.sku} onChange={onChange} disabled={loading} />
+        <Input
+          name="sku"
+          placeholder="Opcional"
+          value={form.sku}
+          onChange={onChange}
+          disabled={loading}
+        />
       </div>
       <div>
         <Label className="text-gray-500">Tipo</Label>
@@ -66,15 +79,38 @@ export const InventoryItemForm: FC<InventoryItemFormProps> = ({
     <div className="grid grid-cols-3 gap-3">
       <div>
         <Label className="text-gray-500">Precio de costo</Label>
-        <Input name="costPrice" type="number" placeholder="0.00" value={form.costPrice} onChange={onChange} required disabled={loading} />
+        <Input
+          name="costPrice"
+          type="number"
+          placeholder="0.00"
+          value={form.costPrice}
+          onChange={onChange}
+          required
+          disabled={loading}
+        />
       </div>
       <div>
         <Label className="text-gray-500">Precio de venta</Label>
-        <Input name="salePrice" type="number" placeholder="0.00" value={form.salePrice} onChange={onChange} required disabled={loading} />
+        <Input
+          name="salePrice"
+          type="number"
+          placeholder="0.00"
+          value={form.salePrice}
+          onChange={onChange}
+          required
+          disabled={loading}
+        />
       </div>
       <div>
         <Label className="text-gray-500">Stock mínimo</Label>
-        <Input name="minStock" type="number" placeholder="0" value={form.minStock} onChange={onChange} disabled={loading} />
+        <Input
+          name="minStock"
+          type="number"
+          placeholder="0"
+          value={form.minStock}
+          onChange={onChange}
+          disabled={loading}
+        />
       </div>
     </div>
 

@@ -42,11 +42,25 @@ export const PriceListItemForm: FC<PriceListItemFormProps> = ({
     <div className="grid grid-cols-2 gap-3">
       <div>
         <Label className="text-gray-500">Marca</Label>
-        <Input name="brand" placeholder="Samsung" value={form.brand} onChange={onChange} required disabled={loading} />
+        <Input
+          name="brand"
+          placeholder="Samsung"
+          value={form.brand}
+          onChange={onChange}
+          required
+          disabled={loading}
+        />
       </div>
       <div>
         <Label className="text-gray-500">Modelo</Label>
-        <Input name="model" placeholder="A32 5G" value={form.model} onChange={onChange} required disabled={loading} />
+        <Input
+          name="model"
+          placeholder="A32 5G"
+          value={form.model}
+          onChange={onChange}
+          required
+          disabled={loading}
+        />
       </div>
     </div>
 
@@ -60,16 +74,28 @@ export const PriceListItemForm: FC<PriceListItemFormProps> = ({
         disabled={loading}
         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
       >
-        <option value="" disabled>Seleccionar proveedor</option>
+        <option value="" disabled>
+          Seleccionar proveedor
+        </option>
         {suppliers.map((supplier) => (
-          <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+          <option key={supplier.id} value={supplier.id}>
+            {supplier.name}
+          </option>
         ))}
       </select>
     </div>
 
     <div>
       <Label className="text-gray-500">Precio</Label>
-      <Input name="price" type="number" placeholder="200" value={form.price} onChange={onChange} required disabled={loading} />
+      <Input
+        name="price"
+        type="number"
+        placeholder="200"
+        value={form.price}
+        onChange={onChange}
+        required
+        disabled={loading}
+      />
     </div>
 
     <div className="flex justify-end gap-2 pt-1">

@@ -127,10 +127,15 @@ export const RepairNoteFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? `Editar nota #${note?.controlNumber ?? ""}` : "Nueva nota de reparación"}
-      description={isEdit ? "Modifica los datos de la nota." : "Registra un nuevo equipo en el taller."}
+      description={
+        isEdit ? "Modifica los datos de la nota." : "Registra un nuevo equipo en el taller."
+      }
     >
-
-      <div className={showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"}>
+      <div
+        className={
+          showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"
+        }
+      >
         <RepairNoteForm
           formRef={formRef}
           step={step}
@@ -155,7 +160,9 @@ export const RepairNoteFormPage: React.FC = () => {
           onBrandChange={(value) => set("brand", value)}
           onModelChange={(value) => set("model", value)}
           onReportedFailureChange={(value) => set("reportedFailure", value)}
-          onServiceTypeIdsChange={(serviceTypeIds) => setForm((prev) => ({ ...prev, serviceTypeIds }))}
+          onServiceTypeIdsChange={(serviceTypeIds) =>
+            setForm((prev) => ({ ...prev, serviceTypeIds }))
+          }
           onDeviceOffChange={(value) => set("deviceOff", value)}
           onReceivedAtChange={(value) => set("receivedAt", value)}
           onDeliveryDateChange={(value) => set("deliveryDate", value)}
@@ -172,7 +179,9 @@ export const RepairNoteFormPage: React.FC = () => {
           onRequiresAdvanceToggle={() => set("requiresAdvance", !form.requiresAdvance)}
           onAdvanceValueChange={(value) => set("advanceValue", value)}
           advanceMethod={advanceMethod}
-          onAdvanceMethodChange={(value) => setAdvanceMethod(value as AdvancePaymentInput["method"])}
+          onAdvanceMethodChange={(value) =>
+            setAdvanceMethod(value as AdvancePaymentInput["method"])
+          }
           advanceEmployeeId={advanceEmployeeId}
           onAdvanceEmployeeIdChange={setAdvanceEmployeeId}
           onHasWarrantyToggle={() => set("hasWarranty", !form.hasWarranty)}
@@ -191,7 +200,9 @@ export const RepairNoteFormPage: React.FC = () => {
           onBack={back}
           onNext={next}
           onSubmit={handleSubmit}
-          onCancel={() => navigate(isEdit && id ? `/commerce/repair-notes/${id}` : "/commerce/repair-notes")}
+          onCancel={() =>
+            navigate(isEdit && id ? `/commerce/repair-notes/${id}` : "/commerce/repair-notes")
+          }
         />
 
         {showCustomerHistory && (
@@ -200,7 +211,6 @@ export const RepairNoteFormPage: React.FC = () => {
           </div>
         )}
       </div>
-
     </PageShell>
   );
 };

@@ -61,12 +61,16 @@ export const InventoryTransferForm: FC<InventoryTransferFormProps> = ({
           value={toItemId}
           onChange={onToItemIdChange}
           placeholder="Selecciona el producto de destino"
-          options={items.filter((i) => i.id !== fromItemId).map((i) => ({ value: i.id, label: itemLabel(i) }))}
+          options={items
+            .filter((i) => i.id !== fromItemId)
+            .map((i) => ({ value: i.id, label: itemLabel(i) }))}
         />
       </div>
     </div>
     {sameBranch && (
-      <p className="text-sm text-red-500">El item origen y destino pertenecen a la misma sucursal.</p>
+      <p className="text-sm text-red-500">
+        El item origen y destino pertenecen a la misma sucursal.
+      </p>
     )}
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div>
@@ -75,7 +79,11 @@ export const InventoryTransferForm: FC<InventoryTransferFormProps> = ({
       </div>
       <div>
         <Label className="text-gray-500">Motivo (opcional)</Label>
-        <Input value={reason} onChange={(e) => onReasonChange(e.target.value)} placeholder="Opcional" />
+        <Input
+          value={reason}
+          onChange={(e) => onReasonChange(e.target.value)}
+          placeholder="Opcional"
+        />
       </div>
     </div>
     <Button type="submit" variant="primary" className="w-full" disabled={disabled}>

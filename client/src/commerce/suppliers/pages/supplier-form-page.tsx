@@ -8,7 +8,13 @@ import { useSupplierContext } from "../hooks/use-supplier-context";
 import { SupplierContextPanel } from "../components/supplier-context-panel";
 import { SupplierForm } from "../components/supplier-form";
 
-const emptyForm: SupplierFormData = { name: "", phone: "", email: "", address: "", contactName: "" };
+const emptyForm: SupplierFormData = {
+  name: "",
+  phone: "",
+  email: "",
+  address: "",
+  contactName: "",
+};
 
 export const SupplierFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,7 +23,7 @@ export const SupplierFormPage: React.FC = () => {
 
   const { suppliers, loading, saving, fetchAll, create, update, setActive } = useSuppliers();
   const [form, setForm] = useState<SupplierFormData>(emptyForm);
-  const context = useSupplierContext(isEdit ? id ?? null : null);
+  const context = useSupplierContext(isEdit ? (id ?? null) : null);
 
   const supplier = isEdit && id ? suppliers.find((s) => s.id === id) : undefined;
 
@@ -62,7 +68,6 @@ export const SupplierFormPage: React.FC = () => {
       title={isEdit ? "Editar proveedor" : "Nuevo proveedor"}
       description={isEdit ? "Modifica los datos del proveedor." : "Registra un nuevo proveedor."}
     >
-
       <div className={isEdit ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-xl"}>
         <SupplierForm
           form={form}
@@ -81,4 +86,3 @@ export const SupplierFormPage: React.FC = () => {
     </PageShell>
   );
 };
-

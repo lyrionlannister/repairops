@@ -59,7 +59,9 @@ export const LayawaysPage: React.FC = () => {
       return;
     }
     setNoCashError(false);
-    await complete(completingId, cashSession.id, [{ method: completeMethod, amount: Number(completeAmount) || 0 }]);
+    await complete(completingId, cashSession.id, [
+      { method: completeMethod, amount: Number(completeAmount) || 0 },
+    ]);
     setCompletingId(null);
   };
 
@@ -74,15 +76,27 @@ export const LayawaysPage: React.FC = () => {
       title="Apartados"
       description="Reserva productos para un cliente con un anticipo. El stock físico solo baja al completar."
       action={
-        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/layaways/new")}>
+        <Button
+          variant="primary"
+          startIcon={<Plus className="size-4" />}
+          onClick={() => navigate("/commerce/layaways/new")}
+        >
           Nuevo apartado
         </Button>
       }
     >
-      {noCashError && <Alert variant="warning" title="Sin sesión de caja" message="Abre una sesión de caja en Caja antes de completar un apartado." />}
+      {noCashError && (
+        <Alert
+          variant="warning"
+          title="Sin sesión de caja"
+          message="Abre una sesión de caja en Caja antes de completar un apartado."
+        />
+      )}
       <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
         {layaways.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay apartados registrados.</div>
+          <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            No hay apartados registrados.
+          </div>
         ) : (
           <ScrollTable
             className="min-w-160"
@@ -97,30 +111,54 @@ export const LayawaysPage: React.FC = () => {
             }
             header={
               <tr>
-                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Cliente</th>
-                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Total</th>
-                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Vence</th>
-                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Estado</th>
-                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Acciones</th>
+                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+                  Cliente
+                </th>
+                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+                  Total
+                </th>
+                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+                  Vence
+                </th>
+                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+                  Estado
+                </th>
+                <th className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+                  Acciones
+                </th>
               </tr>
             }
           >
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {pageItems.map((l) => (
                 <tr key={l.id}>
-                  <td className="px-5 py-4 text-gray-800 dark:text-gray-200">{customerName(l.customerId)}</td>
-                  <td className="px-5 py-4 text-gray-600 dark:text-gray-300">{formatMoney(l.totalValue)}</td>
+                  <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
+                    {customerName(l.customerId)}
+                  </td>
+                  <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
+                    {formatMoney(l.totalValue)}
+                  </td>
                   <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
                     {l.expiresAt} {l.status === "open" && `(${daysUntil(l.expiresAt)}d)`}
                   </td>
-                  <td className="px-5 py-4 text-gray-600 dark:text-gray-300">{STATUS_LABELS[l.status]}</td>
+                  <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
+                    {STATUS_LABELS[l.status]}
+                  </td>
                   <td className="px-5 py-4 text-right">
                     {l.status === "open" && (
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openCompleteModal(l)} className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600" title="Completar">
+                        <button
+                          onClick={() => openCompleteModal(l)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600"
+                          title="Completar"
+                        >
                           <PackageCheck className="size-4" />
                         </button>
-                        <button onClick={() => setCancelId(l.id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500" title="Cancelar">
+                        <button
+                          onClick={() => setCancelId(l.id)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                          title="Cancelar"
+                        >
                           <Ban className="size-4" />
                         </button>
                       </div>
@@ -142,11 +180,14 @@ export const LayawaysPage: React.FC = () => {
                 className="h-11 rounded-lg md:h-9 border border-gray-300 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
                 {[10, 25, 50].map((size) => (
-                  <option key={size} value={size}>{size}</option>
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
                 ))}
               </select>
               <span>
-                Mostrando {startIndex + 1}–{Math.min(startIndex + pageSize, totalItems)} de {totalItems}
+                Mostrando {startIndex + 1}–{Math.min(startIndex + pageSize, totalItems)} de{" "}
+                {totalItems}
               </span>
             </div>
             <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
@@ -154,13 +195,25 @@ export const LayawaysPage: React.FC = () => {
         )}
       </div>
 
-      <Modal isOpen={Boolean(completingId)} onClose={() => setCompletingId(null)} className="max-w-md p-6">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Completar apartado</h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Registra el pago del saldo restante.</p>
+      <Modal
+        isOpen={Boolean(completingId)}
+        onClose={() => setCompletingId(null)}
+        className="max-w-md p-6"
+      >
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Completar apartado
+        </h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Registra el pago del saldo restante.
+        </p>
         <div className="mt-4 space-y-3">
           <div>
             <Label className="text-gray-500">Monto</Label>
-            <Input type="number" value={completeAmount} onChange={(e) => setCompleteAmount(e.target.value)} />
+            <Input
+              type="number"
+              value={completeAmount}
+              onChange={(e) => setCompleteAmount(e.target.value)}
+            />
           </div>
           <div>
             <Label className="text-gray-500">Método</Label>
@@ -172,7 +225,12 @@ export const LayawaysPage: React.FC = () => {
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setCompletingId(null)} disabled={saving}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setCompletingId(null)}
+            disabled={saving}
+          >
             Cancelar
           </Button>
           <Button type="button" variant="primary" onClick={handleComplete} disabled={saving}>
@@ -193,4 +251,3 @@ export const LayawaysPage: React.FC = () => {
     </PageShell>
   );
 };
-

@@ -54,7 +54,6 @@ export const InventoryTransfersPage: React.FC = () => {
       title="Transferencias entre sucursales"
       description="Pasa unidades de un producto a su equivalente en otra sucursal. No crea productos nuevos."
     >
-
       <InventoryTransferForm
         items={items}
         itemLabel={itemLabel}
@@ -75,13 +74,23 @@ export const InventoryTransfersPage: React.FC = () => {
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
         <h2 className="mb-3 text-lg font-medium text-gray-800 dark:text-white/90">Historial</h2>
         <div className="space-y-2">
-          {transfers.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">Sin transferencias todavía.</p>}
+          {transfers.length === 0 && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">Sin transferencias todavía.</p>
+          )}
           {transfers.map((t) => (
-            <div key={t.id} className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+            <div
+              key={t.id}
+              className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300"
+            >
               <span>
                 {t.quantity} {t.quantity === 1 ? "unidad" : "unidades"} de{" "}
-                <strong className="font-medium text-gray-800 dark:text-white/90">{itemNameById(t.fromInventoryItemId)}</strong>{" "}
-                a <strong className="font-medium text-gray-800 dark:text-white/90">{itemNameById(t.toInventoryItemId)}</strong>
+                <strong className="font-medium text-gray-800 dark:text-white/90">
+                  {itemNameById(t.fromInventoryItemId)}
+                </strong>{" "}
+                a{" "}
+                <strong className="font-medium text-gray-800 dark:text-white/90">
+                  {itemNameById(t.toInventoryItemId)}
+                </strong>
                 {t.reason ? ` · ${t.reason}` : ""}
               </span>
               <span className="text-gray-400">{formatDate(t.createdAt)}</span>
@@ -92,4 +101,3 @@ export const InventoryTransfersPage: React.FC = () => {
     </PageShell>
   );
 };
-

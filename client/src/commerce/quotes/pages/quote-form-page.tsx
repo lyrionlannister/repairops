@@ -47,7 +47,8 @@ export const QuoteFormPage: React.FC = () => {
   // La cotizacion pertenece a form.localId -- mismo criterio que RepairNote,
   // no mostrar items de una sucursal distinta a la que cotiza.
   const quoteLocalId = form.localId || workingBranchId;
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(quoteLocalId);
+  const { items: inventoryItems, fetchAll: fetchInventory } =
+    useBranchScopedInventory(quoteLocalId);
 
   const {
     itemLines,
@@ -99,7 +100,8 @@ export const QuoteFormPage: React.FC = () => {
     }
   }, [isEdit, workingBranchId, form.localId]);
 
-  const set = (field: keyof QuoteFormData, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+  const set = (field: keyof QuoteFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
 
   const { step, isLast, formRef, next, back, goTo } = useFormSteps(QUOTE_FORM_STEPS.length);
 
@@ -124,16 +126,25 @@ export const QuoteFormPage: React.FC = () => {
   const { otherQuotes } = useQuoteCustomerHistory(showCustomerHistory ? form.customerId : null, id);
 
   if (loading && isEdit) {
-    return <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando cotización...</div>;
+    return (
+      <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        Cargando cotización...
+      </div>
+    );
   }
 
   return (
     <PageShell
       title={isEdit ? "Editar cotización" : "Nueva cotización"}
-      description={isEdit ? "Modifica los datos de la cotización." : "Genera una cotización para un cliente."}
+      description={
+        isEdit ? "Modifica los datos de la cotización." : "Genera una cotización para un cliente."
+      }
     >
-
-      <div className={showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"}>
+      <div
+        className={
+          showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"
+        }
+      >
         <QuoteForm
           formRef={formRef}
           step={step}
@@ -159,7 +170,9 @@ export const QuoteFormPage: React.FC = () => {
           onBrandChange={(value) => set("brand", value)}
           onModelChange={(value) => set("model", value)}
           onReportedFailureChange={(value) => set("reportedFailure", value)}
-          onServiceTypeIdsChange={(serviceTypeIds) => setForm((prev) => ({ ...prev, serviceTypeIds }))}
+          onServiceTypeIdsChange={(serviceTypeIds) =>
+            setForm((prev) => ({ ...prev, serviceTypeIds }))
+          }
           itemLines={itemLines}
           inventoryItems={inventoryItems}
           onInventoryItemChange={handleInventoryItemChange}

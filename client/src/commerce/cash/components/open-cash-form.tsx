@@ -23,7 +23,9 @@ export const OpenCashForm: FC<OpenCashFormProps> = ({
 }) => (
   <div className="max-w-md space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Abrir caja</p>
-    <p className="text-xs text-gray-500 dark:text-gray-400">No hay una sesión de caja abierta para este local.</p>
+    <p className="text-xs text-gray-500 dark:text-gray-400">
+      No hay una sesión de caja abierta para este local.
+    </p>
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <Label className="text-gray-500">Saldo de apertura</Label>
@@ -38,7 +40,11 @@ export const OpenCashForm: FC<OpenCashFormProps> = ({
       </div>
       <div>
         <Label className="text-gray-500">Empleado que abre</Label>
-        <EmployeeSelect value={openedByEmployeeId} onChange={onOpenedByEmployeeIdChange} disabled={saving} />
+        <EmployeeSelect
+          value={openedByEmployeeId}
+          onChange={onOpenedByEmployeeIdChange}
+          disabled={saving}
+        />
       </div>
       <Button type="submit" variant="primary" className="w-full" disabled={saving}>
         {saving ? "Abriendo..." : "Abrir caja"}

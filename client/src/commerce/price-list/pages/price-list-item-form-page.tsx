@@ -28,7 +28,12 @@ export const PriceListItemFormPage: React.FC = () => {
     if (!isEdit || !id) return;
     const item = items.find((i) => i.id === id);
     if (item) {
-      setForm({ brand: item.brand, model: item.model, price: String(item.price), supplierId: item.supplierId });
+      setForm({
+        brand: item.brand,
+        model: item.model,
+        price: String(item.price),
+        supplierId: item.supplierId,
+      });
     }
   }, [isEdit, id, items]);
 
@@ -57,7 +62,11 @@ export const PriceListItemFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? "Editar producto" : "Nuevo producto"}
-      description={isEdit ? "Modifica los datos del producto." : "Agrega un nuevo producto a la lista de precios."}
+      description={
+        isEdit
+          ? "Modifica los datos del producto."
+          : "Agrega un nuevo producto a la lista de precios."
+      }
     >
       <div className={selectedSupplier ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : undefined}>
         <PriceListItemForm
@@ -73,7 +82,9 @@ export const PriceListItemFormPage: React.FC = () => {
           onCancel={() => navigate("/commerce/price-list")}
         />
 
-        {selectedSupplier && <PriceListSupplierPanel supplierName={selectedSupplier.name} otherItems={otherItems} />}
+        {selectedSupplier && (
+          <PriceListSupplierPanel supplierName={selectedSupplier.name} otherItems={otherItems} />
+        )}
       </div>
     </PageShell>
   );

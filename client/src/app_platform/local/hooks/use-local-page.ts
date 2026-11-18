@@ -95,7 +95,9 @@ export const useLocalPage = ({
     }
   }, [local]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -133,7 +135,9 @@ export const useLocalPage = ({
 
       setAttributionMessage("Base de atribución actualizada correctamente.");
     } catch (err) {
-      setAttributionMessage(err instanceof Error ? err.message : "No se pudo guardar la base de atribución.");
+      setAttributionMessage(
+        err instanceof Error ? err.message : "No se pudo guardar la base de atribución.",
+      );
     } finally {
       setAttributionSaving(false);
     }

@@ -19,7 +19,7 @@ export const BranchFormPage: React.FC = () => {
   const { branches, loading, saving, fetchAll, create, update } = useBranches();
   const { refreshBranches } = useBranch();
   const [form, setForm] = useState<BranchFormData>(emptyForm);
-  const context = useBranchContext(isEdit ? id ?? null : null);
+  const context = useBranchContext(isEdit ? (id ?? null) : null);
 
   useEffect(() => {
     fetchAll();
@@ -28,7 +28,8 @@ export const BranchFormPage: React.FC = () => {
   useEffect(() => {
     if (!isEdit || !id) return;
     const branch = branches.find((b) => b.id === id);
-    if (branch) setForm({ name: branch.name, address: branch.address ?? "", phone: branch.phone ?? "" });
+    if (branch)
+      setForm({ name: branch.name, address: branch.address ?? "", phone: branch.phone ?? "" });
   }, [isEdit, id, branches]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +63,6 @@ export const BranchFormPage: React.FC = () => {
       title={isEdit ? "Editar sucursal" : "Nueva sucursal"}
       description={isEdit ? "Modifica los datos de la sucursal." : "Registra una nueva sucursal."}
     >
-
       {isEdit && id ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">{formCard}</div>
@@ -76,4 +76,3 @@ export const BranchFormPage: React.FC = () => {
     </PageShell>
   );
 };
-

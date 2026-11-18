@@ -25,7 +25,11 @@ export const SalesPage: React.FC = () => {
       title="Ventas"
       description="Historial de ventas registradas."
       action={
-        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/sales/new")}>
+        <Button
+          variant="primary"
+          startIcon={<Plus className="size-4" />}
+          onClick={() => navigate("/commerce/sales/new")}
+        >
           Venta rápida
         </Button>
       }

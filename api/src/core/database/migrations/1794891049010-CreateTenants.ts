@@ -19,6 +19,8 @@ export class CreateTenants1794891049010 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE "tenants"`);
+    await queryRunner.query(`
+          DROP TABLE "tenants"
+        `);
   }
 }

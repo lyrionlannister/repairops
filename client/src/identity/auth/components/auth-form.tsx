@@ -9,8 +9,7 @@ import { AUTH_REDIRECT_DELAY_MS, INITIAL_AUTH_FORM_DATA } from "../constants/aut
 import { updateAuthFormField } from "../helpers/auth-form.helpers";
 
 export const AuthForm: React.FC = () => {
-  const { login, loading, clearError, clearSuccess } =
-    useLogin();
+  const { login, loading, clearError, clearSuccess } = useLogin();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<LoginPayload>(INITIAL_AUTH_FORM_DATA);
@@ -43,7 +42,6 @@ export const AuthForm: React.FC = () => {
               Ingresa a tu cuenta
             </h1>
           </div>
-
 
           <div>
             <form onSubmit={handleSubmit}>
@@ -87,12 +85,7 @@ export const AuthForm: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full"
-                    variant="primary"
-                  >
+                  <Button type="submit" disabled={loading} className="w-full" variant="primary">
                     {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
                   </Button>
                 </div>
@@ -104,4 +97,3 @@ export const AuthForm: React.FC = () => {
     </div>
   );
 };
-

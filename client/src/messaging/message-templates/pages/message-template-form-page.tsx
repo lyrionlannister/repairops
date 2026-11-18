@@ -23,7 +23,8 @@ export const MessageTemplateFormPage: React.FC = () => {
   useEffect(() => {
     if (!isEdit || !id) return;
     const template = templates.find((t) => t.id === id);
-    if (template) setForm({ key: template.key, text: template.text, description: template.description ?? "" });
+    if (template)
+      setForm({ key: template.key, text: template.text, description: template.description ?? "" });
   }, [isEdit, id, templates]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -33,16 +34,21 @@ export const MessageTemplateFormPage: React.FC = () => {
 
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const ok = isEdit && id
-      ? await update(id, { text: form.text, description: form.description })
-      : await create({ key: form.key, text: form.text, description: form.description });
+    const ok =
+      isEdit && id
+        ? await update(id, { text: form.text, description: form.description })
+        : await create({ key: form.key, text: form.text, description: form.description });
     if (ok) navigate("/messaging/message-templates");
   };
 
   return (
     <PageShell
       title={isEdit ? "Editar template" : "Nuevo template"}
-      description={isEdit ? "Modifica el mensaje predefinido." : "Crea un nuevo mensaje predefinido para el agente de WhatsApp."}
+      description={
+        isEdit
+          ? "Modifica el mensaje predefinido."
+          : "Crea un nuevo mensaje predefinido para el agente de WhatsApp."
+      }
     >
       <MessageTemplateForm
         form={form}

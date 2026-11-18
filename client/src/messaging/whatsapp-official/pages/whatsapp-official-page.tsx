@@ -54,10 +54,11 @@ export const WhatsappOfficialPage = () => {
         </Button>
       }
     >
-
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
         <div className="flex items-center justify-between">
-          <h2 className="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">Cuenta conectada</h2>
+          <h2 className="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">
+            Cuenta conectada
+          </h2>
           <Button
             variant="outline"
             onClick={() => {
@@ -75,7 +76,9 @@ export const WhatsappOfficialPage = () => {
             <Badge color={account.status === "connected" ? "success" : "error"}>
               {account.status === "connected" ? "Conectada" : "Desconectada"}
             </Badge>
-            <span className="text-sm text-gray-600 dark:text-gray-300">{account.phoneNumberId}</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {account.phoneNumberId}
+            </span>
             {account.ownedByPlatform && (
               <span className="text-xs text-gray-400">(cuenta piloto compartida)</span>
             )}
@@ -111,4 +114,3 @@ export const WhatsappOfficialPage = () => {
     </PageShell>
   );
 };
-

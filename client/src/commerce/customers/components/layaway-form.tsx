@@ -13,7 +13,8 @@ import type { LayawayMethod } from "../hooks/use-layaways";
 import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
 import { METHOD_LABELS, formatMoney } from "../utils/format";
 
-const FORM_CARD_CLASS = "space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3";
+const FORM_CARD_CLASS =
+  "space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3";
 
 interface LayawayFormProps {
   hasContext: boolean;
@@ -60,7 +61,10 @@ export const LayawayForm: FC<LayawayFormProps> = ({
   onSubmit,
   onCancel,
 }) => (
-  <form onSubmit={onSubmit} className={hasContext ? `${FORM_CARD_CLASS} lg:col-span-2` : FORM_CARD_CLASS}>
+  <form
+    onSubmit={onSubmit}
+    className={hasContext ? `${FORM_CARD_CLASS} lg:col-span-2` : FORM_CARD_CLASS}
+  >
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div>
         <Label className="text-gray-500">Cliente</Label>
@@ -86,14 +90,27 @@ export const LayawayForm: FC<LayawayFormProps> = ({
               value={line.inventoryItemId}
               onChange={(value) => onItemChange(index, value)}
               placeholder="Selecciona un producto"
-              options={inventoryItems.map((i) => ({ value: i.id, label: `${i.name} (disponible: ${i.available})` }))}
+              options={inventoryItems.map((i) => ({
+                value: i.id,
+                label: `${i.name} (disponible: ${i.available})`,
+              }))}
             />
           </div>
           <div className="w-full sm:w-24">
-            <Input type="number" placeholder="Cant." value={line.quantity} onChange={(e) => onUpdateLine(index, { quantity: e.target.value })} />
+            <Input
+              type="number"
+              placeholder="Cant."
+              value={line.quantity}
+              onChange={(e) => onUpdateLine(index, { quantity: e.target.value })}
+            />
           </div>
           <div className="w-full sm:w-32">
-            <Input type="number" placeholder="Precio" value={line.unitPrice} onChange={(e) => onUpdateLine(index, { unitPrice: e.target.value })} />
+            <Input
+              type="number"
+              placeholder="Precio"
+              value={line.unitPrice}
+              onChange={(e) => onUpdateLine(index, { unitPrice: e.target.value })}
+            />
           </div>
         </div>
       ))}
@@ -106,7 +123,11 @@ export const LayawayForm: FC<LayawayFormProps> = ({
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div>
         <Label className="text-gray-500">Anticipo</Label>
-        <Input type="number" value={depositAmount} onChange={(e) => onDepositAmountChange(e.target.value)} />
+        <Input
+          type="number"
+          value={depositAmount}
+          onChange={(e) => onDepositAmountChange(e.target.value)}
+        />
       </div>
       <div>
         <Label className="text-gray-500">Método del anticipo</Label>
@@ -120,7 +141,9 @@ export const LayawayForm: FC<LayawayFormProps> = ({
 
     <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
       <span className="text-sm text-gray-500 dark:text-gray-400">Valor total</span>
-      <span className="text-xl font-semibold text-gray-800 dark:text-white/90">{formatMoney(totalValue)}</span>
+      <span className="text-xl font-semibold text-gray-800 dark:text-white/90">
+        {formatMoney(totalValue)}
+      </span>
     </div>
 
     <div className="flex justify-end gap-2">

@@ -32,11 +32,18 @@ export const LocalPage = () => {
   });
 
   if (loading) {
-    return <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando configuración...</div>;
+    return (
+      <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        Cargando configuración...
+      </div>
+    );
   }
 
   return (
-    <PageShell title="Configuración del Local" description="Datos que aparecerán en las notas de reparación impresas.">
+    <PageShell
+      title="Configuración del Local"
+      description="Datos que aparecerán en las notas de reparación impresas."
+    >
       <LocalSettingsForm
         local={local}
         form={form}

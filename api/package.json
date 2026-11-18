@@ -19,7 +19,9 @@
     "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/core/config/migration-data-source.ts",
     "migration:run:prod": "typeorm migration:run -d dist/core/config/migration-data-source.js",
     "schema:log": "tsx ./node_modules/typeorm/cli.js schema:log -d src/core/config/migration-data-source.ts",
-    "schema:check": "pnpm migration:run && pnpm schema:log | tee schema-check.log && grep -q 'Your schema is up to date' schema-check.log"
+    "schema:check": "pnpm migration:run && pnpm schema:log | tee schema-check.log && grep -q 'Your schema is up to date' schema-check.log",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [],
   "author": "",
@@ -58,6 +60,8 @@
     "concurrently": "^10.0.7",
     "dependency-cruiser": "^16.10.4",
     "nodemon": "^3.1.14",
+    "prettier": "^3.10.1",
+    "sql-formatter": "^15.9.0",
     "supertest": "^7.3.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.23.15",

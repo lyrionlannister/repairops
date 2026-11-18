@@ -40,7 +40,11 @@ export const MessageTemplateForm: FC<MessageTemplateFormProps> = ({
         disabled={isEdit || loading}
         required
       />
-      {!isEdit && <p className="mt-1 text-xs text-gray-400">Identificador en snake_case, no se puede cambiar después.</p>}
+      {!isEdit && (
+        <p className="mt-1 text-xs text-gray-400">
+          Identificador en snake_case, no se puede cambiar después.
+        </p>
+      )}
     </div>
 
     <div>

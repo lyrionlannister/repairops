@@ -18,7 +18,9 @@ export class LayawayController {
 
   getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      const branchId = await this.branchAccess.resolveReadBranch(
+        queryString(req.query["branchId"]),
+      );
       res.status(200).json(await this.service.getAll(branchId));
     } catch (error: any) {
       sendError(res, error, 500);
@@ -61,7 +63,11 @@ export class LayawayController {
         res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
-      const layaway = await this.service.complete(req.params["id"] as string, dto.payments, dto.cashSessionId);
+      const layaway = await this.service.complete(
+        req.params["id"] as string,
+        dto.payments,
+        dto.cashSessionId,
+      );
       res.status(200).json(layaway);
     } catch (error: any) {
       sendError(res, error, 400);

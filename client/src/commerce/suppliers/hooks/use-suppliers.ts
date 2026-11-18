@@ -13,7 +13,10 @@ export interface Supplier {
   updatedAt: string;
 }
 
-export type SupplierPayload = Pick<Supplier, "name" | "phone" | "email" | "address" | "contactName">;
+export type SupplierPayload = Pick<
+  Supplier,
+  "name" | "phone" | "email" | "address" | "contactName"
+>;
 
 export interface SupplierFormData {
   name: string;

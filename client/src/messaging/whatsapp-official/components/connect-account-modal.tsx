@@ -27,11 +27,12 @@ export const ConnectAccountModal: FC<ConnectAccountModalProps> = ({
   onSubmit,
 }) => (
   <Modal isOpen={isOpen} onClose={onClose} className="max-w-md p-6 sm:p-8 mx-4">
-    <h2 className="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-100">Conectar cuenta propia</h2>
+    <h2 className="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-100">
+      Conectar cuenta propia
+    </h2>
     <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-      Pega las credenciales de tu WABA generadas en Meta Business Manager. Usa un token de
-      sistema permanente, no uno de usuario de corta duración -- se validan contra Meta antes de
-      guardarse.
+      Pega las credenciales de tu WABA generadas en Meta Business Manager. Usa un token de sistema
+      permanente, no uno de usuario de corta duración -- se validan contra Meta antes de guardarse.
     </p>
     <form onSubmit={onSubmit} className="mt-4 space-y-4">
       <div>

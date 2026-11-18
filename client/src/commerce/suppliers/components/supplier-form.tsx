@@ -40,27 +40,59 @@ export const SupplierForm: FC<SupplierFormProps> = ({
     <div className="grid gap-4 sm:grid-cols-2">
       <div>
         <Label className="text-gray-500">Nombre</Label>
-        <Input name="name" value={form.name} onChange={onChange} placeholder="Ej. Tecnomax" required disabled={loading} />
+        <Input
+          name="name"
+          value={form.name}
+          onChange={onChange}
+          placeholder="Ej. Tecnomax"
+          required
+          disabled={loading}
+        />
       </div>
 
       <div>
         <Label className="text-gray-500">Teléfono</Label>
-        <Input name="phone" value={form.phone} onChange={onChange} placeholder="Ej. 3195083168" disabled={loading} />
+        <Input
+          name="phone"
+          value={form.phone}
+          onChange={onChange}
+          placeholder="Ej. 3195083168"
+          disabled={loading}
+        />
       </div>
 
       <div>
         <Label className="text-gray-500">Email</Label>
-        <Input type="email" name="email" value={form.email} onChange={onChange} placeholder="Ej. contacto@tecnomax.com" disabled={loading} />
+        <Input
+          type="email"
+          name="email"
+          value={form.email}
+          onChange={onChange}
+          placeholder="Ej. contacto@tecnomax.com"
+          disabled={loading}
+        />
       </div>
 
       <div>
         <Label className="text-gray-500">Nombre de contacto</Label>
-        <Input name="contactName" value={form.contactName} onChange={onChange} placeholder="Ej. Juan Pérez" disabled={loading} />
+        <Input
+          name="contactName"
+          value={form.contactName}
+          onChange={onChange}
+          placeholder="Ej. Juan Pérez"
+          disabled={loading}
+        />
       </div>
 
       <div className="sm:col-span-2">
         <Label className="text-gray-500">Dirección</Label>
-        <Input name="address" value={form.address} onChange={onChange} placeholder="Calle y número" disabled={loading} />
+        <Input
+          name="address"
+          value={form.address}
+          onChange={onChange}
+          placeholder="Calle y número"
+          disabled={loading}
+        />
       </div>
     </div>
 
@@ -68,7 +100,9 @@ export const SupplierForm: FC<SupplierFormProps> = ({
       <div className="flex items-center justify-between rounded-xl border border-gray-200 p-3 dark:border-gray-700">
         <div>
           <Label className="text-gray-500">Activo</Label>
-          <p className="text-xs text-gray-400">Un proveedor inactivo no aparece para elegir en productos nuevos.</p>
+          <p className="text-xs text-gray-400">
+            Un proveedor inactivo no aparece para elegir en productos nuevos.
+          </p>
         </div>
         <Toggle checked={supplier.isActive} onChange={onToggleActive} disabled={saving} />
       </div>

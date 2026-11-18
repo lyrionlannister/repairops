@@ -36,22 +36,49 @@ export const CustomerForm: FC<CustomerFormProps> = ({
   >
     <div>
       <Label className="text-gray-500">Nombre</Label>
-      <Input name="name" value={form.name} onChange={onChange} placeholder="Ej. Juan Pérez" required disabled={loading} />
+      <Input
+        name="name"
+        value={form.name}
+        onChange={onChange}
+        placeholder="Ej. Juan Pérez"
+        required
+        disabled={loading}
+      />
     </div>
 
     <div>
       <Label className="text-gray-500">Teléfono</Label>
-      <Input name="phone" value={form.phone} onChange={onChange} placeholder="Ej. 833 123 4567" required disabled={loading} />
+      <Input
+        name="phone"
+        value={form.phone}
+        onChange={onChange}
+        placeholder="Ej. 833 123 4567"
+        required
+        disabled={loading}
+      />
     </div>
 
     <div>
       <Label className="text-gray-500">Email (opcional)</Label>
-      <Input name="email" type="email" value={form.email} onChange={onChange} placeholder="cliente@correo.com" disabled={loading} />
+      <Input
+        name="email"
+        type="email"
+        value={form.email}
+        onChange={onChange}
+        placeholder="cliente@correo.com"
+        disabled={loading}
+      />
     </div>
 
     <div>
       <Label className="text-gray-500">Límite de crédito</Label>
-      <Input name="creditLimit" type="number" value={form.creditLimit} onChange={onChange} disabled={loading} />
+      <Input
+        name="creditLimit"
+        type="number"
+        value={form.creditLimit}
+        onChange={onChange}
+        disabled={loading}
+      />
     </div>
 
     <div className="flex justify-end gap-2 pt-1">

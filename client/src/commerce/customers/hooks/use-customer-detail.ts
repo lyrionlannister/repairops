@@ -40,15 +40,29 @@ export const useCustomerDetail = () => {
   const { sales, fetchAll: fetchSales } = useSales();
   const { layaways, fetchAll: fetchLayaways } = useLayaways();
   const { workingBranchId } = useBranch();
-  const { payments, saving: savingPayment, error: paymentError, fetchPayments, registerPayment, clearError: clearPaymentError } =
-    useCustomerPayments();
+  const {
+    payments,
+    saving: savingPayment,
+    error: paymentError,
+    fetchPayments,
+    registerPayment,
+    clearError: clearPaymentError,
+  } = useCustomerPayments();
 
   const [debts, setDebts] = useState<CustomerDebts | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
-  const [profileDraft, setProfileDraft] = useState<ProfileDraft>({ name: "", phone: "", email: "" });
+  const [profileDraft, setProfileDraft] = useState<ProfileDraft>({
+    name: "",
+    phone: "",
+    email: "",
+  });
   const [creditDraft, setCreditDraft] = useState("");
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentForm, setPaymentForm] = useState<{ amount: string; method: CustomerPaymentMethod; createdByEmployeeId: string }>({
+  const [paymentForm, setPaymentForm] = useState<{
+    amount: string;
+    method: CustomerPaymentMethod;
+    createdByEmployeeId: string;
+  }>({
     amount: "",
     method: "efectivo",
     createdByEmployeeId: "",

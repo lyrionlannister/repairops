@@ -33,7 +33,7 @@ export const InventoryItemFormPage: React.FC = () => {
 
   const { items, loading, saving, fetchAll, create, update } = useInventory();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
-  const { movements, marginPercent } = useInventoryItemContext(isEdit ? id ?? null : null);
+  const { movements, marginPercent } = useInventoryItemContext(isEdit ? (id ?? null) : null);
 
   const prefill = (location.state as InventoryPrefillState | null)?.prefillFromPriceList;
   const [form, setForm] = useState<InventoryItemFormData>(
@@ -105,9 +105,10 @@ export const InventoryItemFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? "Editar producto" : "Nuevo producto"}
-      description={isEdit ? "Modifica los datos del producto." : "Registra un nuevo producto en el inventario."}
+      description={
+        isEdit ? "Modifica los datos del producto." : "Registra un nuevo producto en el inventario."
+      }
     >
-
       <div className={hasPanel ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "max-w-xl"}>
         <div className={hasPanel ? "lg:col-span-2" : undefined}>{formCard}</div>
 
@@ -120,4 +121,3 @@ export const InventoryItemFormPage: React.FC = () => {
     </PageShell>
   );
 };
-

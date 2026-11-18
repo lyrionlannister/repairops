@@ -23,9 +23,12 @@ export const InventoryImportModal: FC<InventoryImportModalProps> = ({
   onSubmit,
 }) => (
   <Modal isOpen={isOpen} onClose={onClose} className="max-w-md p-6 sm:p-8 mx-4">
-    <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-gray-100">Importar inventario</h2>
+    <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-gray-100">
+      Importar inventario
+    </h2>
     <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-      Columnas esperadas: nombre, sku (opcional), tipo (accesorio/refacción), precio costo, precio venta, cantidad (opcional).
+      Columnas esperadas: nombre, sku (opcional), tipo (accesorio/refacción), precio costo, precio
+      venta, cantidad (opcional).
     </p>
     <form onSubmit={onSubmit} className="space-y-4">
       <div
