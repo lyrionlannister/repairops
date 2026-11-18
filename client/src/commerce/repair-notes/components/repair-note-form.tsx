@@ -55,7 +55,7 @@ interface RepairNoteFormProps {
   onRequiresAdvanceToggle: () => void;
   onAdvanceValueChange: (value: string) => void;
   advanceMethod: AdvancePaymentInput["method"];
-  onAdvanceMethodChange: (value: AdvancePaymentInput["method"]) => void;
+  onAdvanceMethodChange: (value: string) => void;
   advanceEmployeeId: string;
   onAdvanceEmployeeIdChange: (value: string) => void;
   onHasWarrantyToggle: () => void;
