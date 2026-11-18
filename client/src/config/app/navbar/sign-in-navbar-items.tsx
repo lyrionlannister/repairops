@@ -57,6 +57,7 @@ export const signInNavbarItems = [
     new: false,
     subItems: [
       { name: "Venta Rápida", path: "/commerce/sales/new" },
+      { name: "Ventas", path: "/commerce/sales" },
       { name: "Apartados", path: "/commerce/layaways" },
       { name: "Devoluciones", path: "/commerce/returns" },
       { name: "Cotizaciones", path: "/commerce/quotes" },

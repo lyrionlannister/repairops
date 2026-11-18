@@ -20,6 +20,7 @@ import { ImportPriceListPage } from "../commerce/price-list/pages/import-price-l
 import { InventoryPage } from "../commerce/inventory/pages/inventory-page";
 import { InventoryItemFormPage } from "../commerce/inventory/pages/inventory-item-form-page";
 import { QuickSalePage } from "../commerce/inventory/pages/quick-sale-page";
+import { SalesPage } from "../commerce/inventory/pages/sales-page";
 import { ReturnPage } from "../commerce/returns/pages/return-page";
 import { InventoryTransfersPage } from "../commerce/inventory/pages/inventory-transfers-page";
 import { InventoryCountPage } from "../commerce/inventory/pages/inventory-count-page";
@@ -189,6 +190,10 @@ export const protectedRoutes = [
   {
     path: "/commerce/sales/new",
     element: <QuickSalePage />,
+  },
+  {
+    path: "/commerce/sales",
+    element: <SalesPage />,
   },
   {
     path: "/commerce/returns",
