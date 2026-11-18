@@ -34,6 +34,16 @@ export interface InventoryMovement {
 
 type CreateItemPayload = Omit<InventoryItem, "id" | "quantityOnHand" | "available" | "createdAt" | "updatedAt">;
 
+export interface InventoryItemFormData {
+  name: string;
+  sku: string;
+  kind: InventoryItemKind;
+  costPrice: string;
+  salePrice: string;
+  minStock: string;
+  supplierId: string;
+}
+
 export const useInventory = () => {
   const { apiClient } = useApiClient();
   const [items, setItems] = useState<InventoryItem[]>([]);

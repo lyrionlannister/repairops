@@ -7,6 +7,13 @@ export interface PriceListSupplier {
   phone: string;
 }
 
+export interface PriceListItemFormData {
+  brand: string;
+  model: string;
+  price: string;
+  supplierId: string;
+}
+
 export interface PriceListItem {
   id: string;
   brand: string;

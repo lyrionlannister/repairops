@@ -96,7 +96,7 @@ export const ReturnPage: React.FC = () => {
     setIdempotencyKey(newIdempotencyKey());
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!sale || !cashSession || activeLines.length === 0 || !reason) return;
 

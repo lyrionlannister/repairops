@@ -112,7 +112,7 @@ export const useCustomerDetail = () => {
     setPaymentModalOpen(true);
   };
 
-  const submitPayment = async (e: React.FormEvent) => {
+  const submitPayment = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!id || !workingBranchId) return;
     const ok = await registerPayment(id, {

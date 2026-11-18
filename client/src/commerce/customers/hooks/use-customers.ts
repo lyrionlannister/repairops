@@ -25,6 +25,13 @@ export interface CustomerDeviceHistoryEntry {
   notesCount: number;
 }
 
+export interface CustomerFormData {
+  name: string;
+  phone: string;
+  email: string;
+  creditLimit: string;
+}
+
 export const useCustomers = () => {
   const { apiClient } = useApiClient();
   const [customers, setCustomers] = useState<Customer[]>([]);

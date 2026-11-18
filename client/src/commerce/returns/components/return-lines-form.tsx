@@ -21,7 +21,7 @@ interface ReturnLinesFormProps {
   onLineChange: (saleItemId: string, patch: Partial<LineDraft>) => void;
   onRefundMethodChange: (method: RefundMethod) => void;
   onReasonChange: (value: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const ReturnLinesForm: FC<ReturnLinesFormProps> = ({

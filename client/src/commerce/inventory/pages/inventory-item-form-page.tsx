@@ -1,38 +1,20 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 
-import { Button } from "@ui/button/button";
-import { Input } from "@ui/inputs/input";
-import { Label } from "@ui/inputs/label";
-import { Select } from "@ui/select/select";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useBranch } from "@common/hooks/use-branch";
 
-import { useInventory, type InventoryItemKind } from "../hooks/use-inventory";
+import { useInventory, type InventoryItemFormData } from "../hooks/use-inventory";
 import { useInventoryItemContext } from "../hooks/use-inventory-item-context";
 import { InventoryItemContextPanel } from "../components/inventory-item-context-panel";
+import { InventoryItemForm } from "../components/inventory-item-form";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
 
 interface InventoryPrefillState {
   prefillFromPriceList?: { name: string; costPrice: string; supplierId: string };
 }
 
-interface InventoryFormState {
-  name: string;
-  sku: string;
-  kind: InventoryItemKind;
-  costPrice: string;
-  salePrice: string;
-  minStock: string;
-  supplierId: string;
-}
-
-const KIND_LABELS: Record<InventoryItemKind, string> = {
-  accessory: "Accesorio",
-  part: "Parte",
-};
-
-const emptyForm: InventoryFormState = {
+const emptyForm: InventoryItemFormData = {
   name: "",
   sku: "",
   kind: "accessory",
@@ -54,7 +36,7 @@ export const InventoryItemFormPage: React.FC = () => {
   const { movements, marginPercent } = useInventoryItemContext(isEdit ? id ?? null : null);
 
   const prefill = (location.state as InventoryPrefillState | null)?.prefillFromPriceList;
-  const [form, setForm] = useState<InventoryFormState>(
+  const [form, setForm] = useState<InventoryItemFormData>(
     prefill ? { ...emptyForm, ...prefill } : emptyForm,
   );
 
@@ -84,7 +66,7 @@ export const InventoryItemFormPage: React.FC = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!workingBranchId) return;
 
@@ -106,66 +88,18 @@ export const InventoryItemFormPage: React.FC = () => {
   const hasPanel = isEdit && Boolean(id);
 
   const formCard = (
-    <form
+    <InventoryItemForm
+      form={form}
+      loading={loading}
+      saving={saving}
+      isEdit={isEdit}
+      suppliers={suppliers}
+      onChange={handleChange}
+      onKindChange={(kind) => setForm((prev) => ({ ...prev, kind }))}
+      onSupplierChange={(supplierId) => setForm((prev) => ({ ...prev, supplierId }))}
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3"
-    >
-      <div>
-        <Label className="text-gray-500">Nombre</Label>
-        <Input name="name" placeholder="Pantalla A52" value={form.name} onChange={handleChange} required disabled={loading} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-gray-500">SKU</Label>
-          <Input name="sku" placeholder="Opcional" value={form.sku} onChange={handleChange} disabled={loading} />
-        </div>
-        <div>
-          <Label className="text-gray-500">Tipo</Label>
-          <Select
-            value={form.kind}
-            onChange={(value) => setForm((prev) => ({ ...prev, kind: value as InventoryItemKind }))}
-            disabled={loading}
-            options={Object.entries(KIND_LABELS).map(([value, label]) => ({ value, label }))}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        <div>
-          <Label className="text-gray-500">Precio de costo</Label>
-          <Input name="costPrice" type="number" placeholder="0.00" value={form.costPrice} onChange={handleChange} required disabled={loading} />
-        </div>
-        <div>
-          <Label className="text-gray-500">Precio de venta</Label>
-          <Input name="salePrice" type="number" placeholder="0.00" value={form.salePrice} onChange={handleChange} required disabled={loading} />
-        </div>
-        <div>
-          <Label className="text-gray-500">Stock mínimo</Label>
-          <Input name="minStock" type="number" placeholder="0" value={form.minStock} onChange={handleChange} disabled={loading} />
-        </div>
-      </div>
-
-      <div>
-        <Label className="text-gray-500">Proveedor</Label>
-        <Select
-          value={form.supplierId}
-          onChange={(value) => setForm((prev) => ({ ...prev, supplierId: value }))}
-          disabled={loading}
-          placeholder="Sin proveedor (opcional)"
-          options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
-        />
-      </div>
-
-      <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="outline" onClick={() => navigate("/commerce/inventory")}>
-          Cancelar
-        </Button>
-        <Button type="submit" variant="primary" disabled={saving}>
-          {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear producto"}
-        </Button>
-      </div>
-    </form>
+      onCancel={() => navigate("/commerce/inventory")}
+    />
   );
 
   return (

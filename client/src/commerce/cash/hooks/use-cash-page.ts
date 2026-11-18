@@ -95,13 +95,13 @@ export const useCashPage = ({
     }
   }, [session, fetchMovements, fetchSummary]);
 
-  const handleOpen = async (event: React.FormEvent) => {
+  const handleOpen = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!branchId) return;
     await openSession(branchId, Number(openingBalance) || 0, openedByEmployeeId || undefined);
   };
 
-  const handleRegisterMovement = async (event: React.FormEvent) => {
+  const handleRegisterMovement = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!session) return;
 
@@ -137,7 +137,7 @@ export const useCashPage = ({
     setShowCloseAuthorizerField(false);
   };
 
-  const handleClose = async (event: React.FormEvent) => {
+  const handleClose = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!session) return;
 

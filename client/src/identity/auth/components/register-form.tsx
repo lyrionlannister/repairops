@@ -26,7 +26,7 @@ export const RegisterForm: React.FC = () => {
     setFormData((prev) => updateRegisterFormField(prev, name, value));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     clearError();
     clearSuccess();

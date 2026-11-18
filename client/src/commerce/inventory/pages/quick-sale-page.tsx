@@ -93,7 +93,7 @@ export const QuickSalePage: React.FC = () => {
     resetCart();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
       !workingBranchId ||

@@ -4,13 +4,11 @@ import { useQuotes, type QuoteFormData } from "../hooks/use-quotes";
 import { useQuoteCustomerHistory } from "../hooks/use-quote-customer-history";
 import { useQuoteItemLines } from "../hooks/use-quote-item-lines";
 import { QuoteCustomerHistoryPanel } from "../components/quote-customer-history-panel";
-import { QuoteCustomerSection } from "../components/quote-customer-section";
-import { QuoteKindDeviceSection } from "../components/quote-kind-device-section";
-import { QuoteItemLinesSection } from "../components/quote-item-lines-section";
+import { QuoteForm, QUOTE_FORM_STEPS } from "../components/quote-form";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useBranch } from "@common/hooks/use-branch";
-import { Button } from "@ui/button/button";
 import { PageShell } from "@common/components/page-shell/page-shell";
+import { useFormSteps } from "@common/hooks/use-form-steps";
 
 const INITIAL_FORM: QuoteFormData = {
   localId: "",
@@ -103,8 +101,12 @@ export const QuoteFormPage: React.FC = () => {
 
   const set = (field: keyof QuoteFormData, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const { step, isLast, formRef, next, back, goTo } = useFormSteps(QUOTE_FORM_STEPS.length);
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Enter en un paso intermedio avanza en lugar de guardar.
+    if (!isLast) return next();
     clearError();
     const items = buildItemsPayload();
     if (isEdit && id) {
@@ -132,62 +134,43 @@ export const QuoteFormPage: React.FC = () => {
     >
 
       <div className={showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"}>
-        <form onSubmit={handleSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
-          <QuoteCustomerSection
-            customerId={form.customerId}
-            customerName={form.customerName}
-            contactNumber={form.contactNumber}
-            validUntil={form.validUntil}
-            createdByEmployeeId={form.createdByEmployeeId}
-            saving={saving}
-            onCustomerChange={(customerId, customer) =>
-              setForm((prev) => ({
-                ...prev,
-                customerId,
-                customerName: customer ? customer.name : prev.customerName,
-                contactNumber: customer ? customer.phone : prev.contactNumber,
-              }))
-            }
-            onCustomerNameChange={(value) => set("customerName", value)}
-            onContactNumberChange={(value) => set("contactNumber", value)}
-            onValidUntilChange={(value) => set("validUntil", value)}
-            onCreatedByEmployeeIdChange={(value) => set("createdByEmployeeId", value)}
-          />
-
-          <QuoteKindDeviceSection
-            kind={form.kind}
-            brand={form.brand}
-            model={form.model}
-            reportedFailure={form.reportedFailure}
-            serviceTypeIds={form.serviceTypeIds}
-            saving={saving}
-            disabled={isEdit}
-            onKindChange={(kind) => setForm((prev) => ({ ...prev, kind }))}
-            onBrandChange={(value) => set("brand", value)}
-            onModelChange={(value) => set("model", value)}
-            onReportedFailureChange={(value) => set("reportedFailure", value)}
-            onServiceTypeIdsChange={(serviceTypeIds) => setForm((prev) => ({ ...prev, serviceTypeIds }))}
-          />
-
-          <QuoteItemLinesSection
-            itemLines={itemLines}
-            inventoryItems={inventoryItems}
-            saving={saving}
-            onInventoryItemChange={handleInventoryItemChange}
-            onLineChange={updateItemLine}
-            onAddLine={addItemLine}
-            onRemoveLine={removeItemLine}
-          />
-
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate("/commerce/quotes")} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear cotización"}
-            </Button>
-          </div>
-        </form>
+        <QuoteForm
+          formRef={formRef}
+          step={step}
+          isLast={isLast}
+          onStepClick={goTo}
+          form={form}
+          saving={saving}
+          isEdit={isEdit}
+          showCustomerHistory={showCustomerHistory}
+          onCustomerChange={(customerId, customer) =>
+            setForm((prev) => ({
+              ...prev,
+              customerId,
+              customerName: customer ? customer.name : prev.customerName,
+              contactNumber: customer ? customer.phone : prev.contactNumber,
+            }))
+          }
+          onCustomerNameChange={(value) => set("customerName", value)}
+          onContactNumberChange={(value) => set("contactNumber", value)}
+          onValidUntilChange={(value) => set("validUntil", value)}
+          onCreatedByEmployeeIdChange={(value) => set("createdByEmployeeId", value)}
+          onKindChange={(kind) => setForm((prev) => ({ ...prev, kind }))}
+          onBrandChange={(value) => set("brand", value)}
+          onModelChange={(value) => set("model", value)}
+          onReportedFailureChange={(value) => set("reportedFailure", value)}
+          onServiceTypeIdsChange={(serviceTypeIds) => setForm((prev) => ({ ...prev, serviceTypeIds }))}
+          itemLines={itemLines}
+          inventoryItems={inventoryItems}
+          onInventoryItemChange={handleInventoryItemChange}
+          onLineChange={updateItemLine}
+          onAddLine={addItemLine}
+          onRemoveLine={removeItemLine}
+          onBack={back}
+          onNext={next}
+          onSubmit={handleSubmit}
+          onCancel={() => navigate("/commerce/quotes")}
+        />
 
         {showCustomerHistory && (
           <div className="lg:col-span-1 space-y-4">

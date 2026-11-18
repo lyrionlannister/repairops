@@ -14,7 +14,7 @@ interface InventoryMovementModalProps {
   saving: boolean;
   onClose: () => void;
   onFormChange: (updater: (prev: InventoryMovementForm) => InventoryMovementForm) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const InventoryMovementModal: FC<InventoryMovementModalProps> = ({

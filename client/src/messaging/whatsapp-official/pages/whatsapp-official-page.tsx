@@ -6,11 +6,9 @@ import { useWhatsappTemplates } from "../hooks/use-whatsapp-templates";
 import { useCurrentUser } from "@common/hooks/use-current-user";
 import { Badge } from "@ui/badge/badge";
 import { Button } from "@ui/button/button";
-import { Input } from "@ui/inputs/input";
-import { Label } from "@ui/inputs/label";
-import { Modal } from "@ui/modal/modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { TemplateCatalogSection } from "../components/template-catalog-section";
+import { ConnectAccountModal } from "../components/connect-account-modal";
 import { useTemplateStatusByEntry } from "../hooks/use-template-status-by-entry";
 import { EMPTY_CONNECT_FORM } from "../utils/format";
 
@@ -33,7 +31,7 @@ export const WhatsappOfficialPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleConnectAccount = async (event: React.FormEvent) => {
+  const handleConnectAccount = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const ok = await connectAccount(connectForm);
     if (ok) {
@@ -87,56 +85,14 @@ export const WhatsappOfficialPage = () => {
         )}
       </div>
 
-      <Modal
+      <ConnectAccountModal
         isOpen={isConnectOpen}
         onClose={() => setIsConnectOpen(false)}
-        className="max-w-md p-6 sm:p-8 mx-4"
-      >
-        <h2 className="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-100">Conectar cuenta propia</h2>
-        <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-          Pega las credenciales de tu WABA generadas en Meta Business Manager. Usa un token de
-          sistema permanente, no uno de usuario de corta duración -- se validan contra Meta antes de
-          guardarse.
-        </p>
-        <form onSubmit={handleConnectAccount} className="mt-4 space-y-4">
-          <div>
-            <Label className="text-gray-500">WABA ID</Label>
-            <Input
-              value={connectForm.wabaId}
-              onChange={(event) => setConnectForm((prev) => ({ ...prev, wabaId: event.target.value }))}
-              required
-              disabled={connecting}
-            />
-          </div>
-          <div>
-            <Label className="text-gray-500">Phone Number ID</Label>
-            <Input
-              value={connectForm.phoneNumberId}
-              onChange={(event) => setConnectForm((prev) => ({ ...prev, phoneNumberId: event.target.value }))}
-              required
-              disabled={connecting}
-            />
-          </div>
-          <div>
-            <Label className="text-gray-500">Access Token</Label>
-            <Input
-              type="password"
-              value={connectForm.accessToken}
-              onChange={(event) => setConnectForm((prev) => ({ ...prev, accessToken: event.target.value }))}
-              required
-              disabled={connecting}
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={() => setIsConnectOpen(false)} disabled={connecting}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" disabled={connecting}>
-              {connecting ? "Validando con Meta..." : "Conectar"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        form={connectForm}
+        onFormChange={setConnectForm}
+        connecting={connecting}
+        onSubmit={handleConnectAccount}
+      />
 
       <TemplateCatalogSection
         scope="tenant"

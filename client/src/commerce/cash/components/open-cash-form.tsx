@@ -10,7 +10,7 @@ interface OpenCashFormProps {
   saving: boolean;
   onOpeningBalanceChange: (value: string) => void;
   onOpenedByEmployeeIdChange: (value: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const OpenCashForm: FC<OpenCashFormProps> = ({

@@ -1,0 +1,147 @@
+import type { FC, RefObject } from "react";
+
+import { Button } from "@ui/button/button";
+import { Step, Stepper } from "@ui/stepper/stepper";
+
+import type { Customer } from "@commerce/customers/hooks/use-customers";
+import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
+import type { QuoteFormData } from "../hooks/use-quotes";
+import type { QuoteItemLine } from "../hooks/use-quote-item-lines";
+import { QuoteCustomerSection } from "./quote-customer-section";
+import { QuoteKindDeviceSection } from "./quote-kind-device-section";
+import { QuoteItemLinesSection } from "./quote-item-lines-section";
+
+export const QUOTE_FORM_STEPS = ["Cliente", "Tipo y equipo", "Items"];
+
+interface QuoteFormProps {
+  formRef: RefObject<HTMLFormElement | null>;
+  step: number;
+  isLast: boolean;
+  onStepClick: (step: number) => void;
+  form: QuoteFormData;
+  saving: boolean;
+  isEdit: boolean;
+  showCustomerHistory: boolean;
+  onCustomerChange: (customerId: string, customer: Customer | null) => void;
+  onCustomerNameChange: (value: string) => void;
+  onContactNumberChange: (value: string) => void;
+  onValidUntilChange: (value: string) => void;
+  onCreatedByEmployeeIdChange: (value: string) => void;
+  onKindChange: (kind: QuoteFormData["kind"]) => void;
+  onBrandChange: (value: string) => void;
+  onModelChange: (value: string) => void;
+  onReportedFailureChange: (value: string) => void;
+  onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
+  itemLines: QuoteItemLine[];
+  inventoryItems: InventoryItem[];
+  onInventoryItemChange: (index: number, inventoryItemId: string) => void;
+  onLineChange: (index: number, patch: Partial<QuoteItemLine>) => void;
+  onAddLine: () => void;
+  onRemoveLine: (index: number) => void;
+  onBack: () => void;
+  onNext: () => void;
+  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
+  onCancel: () => void;
+}
+
+export const QuoteForm: FC<QuoteFormProps> = ({
+  formRef,
+  step,
+  isLast,
+  onStepClick,
+  form,
+  saving,
+  isEdit,
+  showCustomerHistory,
+  onCustomerChange,
+  onCustomerNameChange,
+  onContactNumberChange,
+  onValidUntilChange,
+  onCreatedByEmployeeIdChange,
+  onKindChange,
+  onBrandChange,
+  onModelChange,
+  onReportedFailureChange,
+  onServiceTypeIdsChange,
+  itemLines,
+  inventoryItems,
+  onInventoryItemChange,
+  onLineChange,
+  onAddLine,
+  onRemoveLine,
+  onBack,
+  onNext,
+  onSubmit,
+  onCancel,
+}) => (
+  <form ref={formRef} onSubmit={onSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
+    <Stepper steps={QUOTE_FORM_STEPS} current={step} onStepClick={onStepClick} />
+
+    <Step index={0} current={step}>
+      <QuoteCustomerSection
+        customerId={form.customerId}
+        customerName={form.customerName}
+        contactNumber={form.contactNumber}
+        validUntil={form.validUntil}
+        createdByEmployeeId={form.createdByEmployeeId}
+        saving={saving}
+        onCustomerChange={onCustomerChange}
+        onCustomerNameChange={onCustomerNameChange}
+        onContactNumberChange={onContactNumberChange}
+        onValidUntilChange={onValidUntilChange}
+        onCreatedByEmployeeIdChange={onCreatedByEmployeeIdChange}
+      />
+    </Step>
+
+    <Step index={1} current={step}>
+      <QuoteKindDeviceSection
+        kind={form.kind}
+        brand={form.brand}
+        model={form.model}
+        reportedFailure={form.reportedFailure}
+        serviceTypeIds={form.serviceTypeIds}
+        saving={saving}
+        disabled={isEdit}
+        onKindChange={onKindChange}
+        onBrandChange={onBrandChange}
+        onModelChange={onModelChange}
+        onReportedFailureChange={onReportedFailureChange}
+        onServiceTypeIdsChange={onServiceTypeIdsChange}
+      />
+    </Step>
+
+    <Step index={2} current={step}>
+      <QuoteItemLinesSection
+        itemLines={itemLines}
+        inventoryItems={inventoryItems}
+        saving={saving}
+        onInventoryItemChange={onInventoryItemChange}
+        onLineChange={onLineChange}
+        onAddLine={onAddLine}
+        onRemoveLine={onRemoveLine}
+      />
+    </Step>
+
+    <div className="flex justify-between gap-3">
+      <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
+        Cancelar
+      </Button>
+      <div className="flex gap-3">
+        {step > 0 && (
+          <Button type="button" variant="outline" onClick={onBack} disabled={saving}>
+            Atrás
+          </Button>
+        )}
+        {isLast ? (
+          <Button key="submit" type="submit" variant="primary" disabled={saving}>
+            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear cotización"}
+          </Button>
+        ) : (
+          <Button key="next" type="button" variant="primary" onClick={onNext}>
+            Siguiente
+          </Button>
+        )}
+      </div>
+    </div>
+  </form>
+);

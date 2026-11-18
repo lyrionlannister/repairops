@@ -15,7 +15,7 @@ interface RegisterMovementModalProps {
   cashRoundingUnit: number | undefined;
   onClose: () => void;
   onFormChange: (updater: (prev: CashMovementForm) => CashMovementForm) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({

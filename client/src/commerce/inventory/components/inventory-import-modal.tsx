@@ -10,7 +10,7 @@ interface InventoryImportModalProps {
   saving: boolean;
   onClose: () => void;
   onFileSelected: (file: File) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const InventoryImportModal: FC<InventoryImportModalProps> = ({

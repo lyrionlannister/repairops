@@ -22,7 +22,7 @@ interface RegisterPaymentModalProps {
   error: string | null;
   onFormChange: (updater: (prev: RegisterPaymentForm) => RegisterPaymentForm) => void;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const RegisterPaymentModal: FC<RegisterPaymentModalProps> = ({
