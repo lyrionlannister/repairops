@@ -1,30 +1,25 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
-import { Button } from "@ui/button/button";
-import { Input } from "@ui/inputs/input";
-import { Label } from "@ui/inputs/label";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
-import { useSuppliers } from "../hooks/use-suppliers";
+import { useSuppliers, type SupplierFormData } from "../hooks/use-suppliers";
 import { useSupplierContext } from "../hooks/use-supplier-context";
 import { SupplierContextPanel } from "../components/supplier-context-panel";
+import { SupplierForm } from "../components/supplier-form";
 
-interface SupplierFormState {
-  name: string;
-  phone: string;
-}
-
-const emptyForm: SupplierFormState = { name: "", phone: "" };
+const emptyForm: SupplierFormData = { name: "", phone: "", email: "", address: "", contactName: "" };
 
 export const SupplierFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { suppliers, loading, saving, fetchAll, create, update } = useSuppliers();
-  const [form, setForm] = useState<SupplierFormState>(emptyForm);
+  const { suppliers, loading, saving, fetchAll, create, update, setActive } = useSuppliers();
+  const [form, setForm] = useState<SupplierFormData>(emptyForm);
   const context = useSupplierContext(isEdit ? id ?? null : null);
+
+  const supplier = isEdit && id ? suppliers.find((s) => s.id === id) : undefined;
 
   useEffect(() => {
     fetchAll();
@@ -32,8 +27,16 @@ export const SupplierFormPage: React.FC = () => {
 
   useEffect(() => {
     if (!isEdit || !id) return;
-    const supplier = suppliers.find((s) => s.id === id);
-    if (supplier) setForm({ name: supplier.name, phone: supplier.phone ?? "" });
+    const found = suppliers.find((s) => s.id === id);
+    if (found) {
+      setForm({
+        name: found.name,
+        phone: found.phone ?? "",
+        email: found.email ?? "",
+        address: found.address ?? "",
+        contactName: found.contactName ?? "",
+      });
+    }
   }, [isEdit, id, suppliers]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,11 +44,16 @@ export const SupplierFormPage: React.FC = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const ok = isEdit && id
-      ? await update(id, { name: form.name, phone: form.phone })
-      : await create({ name: form.name, phone: form.phone });
+    const payload = {
+      name: form.name,
+      phone: form.phone,
+      email: form.email || null,
+      address: form.address || null,
+      contactName: form.contactName || null,
+    };
+    const ok = isEdit && id ? await update(id, payload) : await create(payload);
     if (ok) navigate("/commerce/suppliers");
   };
 
@@ -56,32 +64,17 @@ export const SupplierFormPage: React.FC = () => {
     >
 
       <div className={isEdit ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-xl"}>
-        <form
+        <SupplierForm
+          form={form}
+          loading={loading}
+          saving={saving}
+          isEdit={isEdit}
+          supplier={supplier}
+          onChange={handleChange}
           onSubmit={handleSubmit}
-          className={[
-            "space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3",
-            isEdit ? "lg:col-span-2" : "",
-          ].join(" ")}
-        >
-          <div>
-            <Label className="text-gray-500">Nombre</Label>
-            <Input name="name" value={form.name} onChange={handleChange} placeholder="Ej. Tecnomax" required disabled={loading} />
-          </div>
-
-          <div>
-            <Label className="text-gray-500">Teléfono</Label>
-            <Input name="phone" value={form.phone} onChange={handleChange} placeholder="Ej. 3195083168" disabled={loading} />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={() => navigate("/commerce/suppliers")}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" disabled={saving}>
-              {isEdit ? "Guardar cambios" : "Crear proveedor"}
-            </Button>
-          </div>
-        </form>
+          onCancel={() => navigate("/commerce/suppliers")}
+          onToggleActive={() => supplier && setActive(supplier.id, !supplier.isActive)}
+        />
 
         {isEdit && <SupplierContextPanel {...context} />}
       </div>

@@ -18,6 +18,18 @@ export class Supplier extends BaseEntity {
   @Column({ type: "varchar", length: 20, nullable: false, name: "telefono" })
   phone!: string;
 
+  @Column({ type: "varchar", length: 255, nullable: true, name: "email" })
+  email?: string | null;
+
+  @Column({ type: "varchar", length: 500, nullable: true, name: "direccion" })
+  address?: string | null;
+
+  @Column({ type: "varchar", length: 255, nullable: true, name: "nombre_contacto" })
+  contactName?: string | null;
+
+  @Column({ type: "boolean", default: true, name: "activo" })
+  isActive!: boolean;
+
   @CreateDateColumn({
     name: "fecha_creacion",
     default: () => "CURRENT_TIMESTAMP",

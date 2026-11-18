@@ -66,4 +66,18 @@ export class SupplierController {
       sendError(res, error, 500);
     }
   };
+
+  setActive = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const id = req.params["id"] as string;
+      const supplier = await this.service.setActive(id, Boolean(req.body.isActive));
+      if (!supplier) {
+        res.status(404).json({ error: "Proveedor no encontrado" });
+        return;
+      }
+      res.status(200).json(supplier);
+    } catch (error: any) {
+      sendError(res, error, 400);
+    }
+  };
 }
