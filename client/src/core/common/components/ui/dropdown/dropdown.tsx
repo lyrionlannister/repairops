@@ -12,13 +12,16 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement).closest(".dropdown-toggle")
-      ) {
-        onClose();
-      }
+      const el = dropdownRef.current;
+      if (!el) return;
+      // Una copia responsiva oculta por CSS (ej. el selector de sucursal duplicado
+      // para mobile/desktop en NavbarMenu) nunca contiene el click real, aunque
+      // comparta el mismo onClose: sin este chequeo cierra -- y descarta -- el
+      // click dentro de la copia que sí se ve.
+      if (el.offsetParent === null) return;
+      if (el.contains(event.target as Node)) return;
+      if ((event.target as HTMLElement).closest(".dropdown-toggle")) return;
+      onClose();
     };
 
     document.addEventListener("mousedown", handleClickOutside);
