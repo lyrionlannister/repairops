@@ -109,6 +109,7 @@ export class ReturnService {
     return AppDataSource.transaction(async (manager) => {
       const newReturn = manager.create(Return, {
         tenantId,
+        localId: session.localId,
         saleId: sale.id,
         returnNumber,
         cashSessionId: data.cashSessionId,

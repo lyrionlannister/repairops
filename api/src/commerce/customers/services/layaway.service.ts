@@ -47,8 +47,8 @@ export class LayawayService {
     private reservationService: InventoryReservationService,
   ) {}
 
-  async getAll(): Promise<Layaway[]> {
-    return this.layawayDao.findAllOrdered();
+  async getAll(branchId?: string | null): Promise<Layaway[]> {
+    return this.layawayDao.findAllOrdered(branchId);
   }
 
   async getItems(layawayId: string): Promise<LayawayItem[]> {
@@ -117,6 +117,7 @@ export class LayawayService {
     return AppDataSource.transaction(async (manager) => {
       const layaway = manager.create(Layaway, {
         tenantId,
+        localId: session.localId,
         customerId: data.customerId,
         status: "open",
         totalValue: totalValue.toNumber(),

@@ -10,7 +10,9 @@ export class LayawayDao extends TenantScopedDao<Layaway> {
     super(repository);
   }
 
-  async findAllOrdered(): Promise<Layaway[]> {
-    return this.scoped().orderBy("entity.createdAt", "DESC").getMany();
+  async findAllOrdered(branchId?: string | null): Promise<Layaway[]> {
+    return this.scoped()
+      .andWhere(branchId ? "entity.localId = :branchId" : "1 = 1", { branchId })
+      .orderBy("entity.createdAt", "DESC").getMany();
   }
 }

@@ -3,6 +3,7 @@ import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Customer } from "./customer.entity.js";
 import type { CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
+import { Branch } from "../../../identity/branches/entities/branch.entity.js";
 
 export type LayawayStatus = "open" | "completed" | "cancelled" | "expired";
 
@@ -14,6 +15,7 @@ export type LayawayStatus = "open" | "completed" | "cancelled" | "expired";
 // Rama Cliente).
 @Entity("layaways")
 @Index("IDX_layaways_tenant", ["tenantId"])
+@Index("IDX_layaways_local", ["localId"])
 export class Layaway extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -21,6 +23,17 @@ export class Layaway extends BaseEntity {
   @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
   @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_layaways_tenant" })
   tenant?: Tenant;
+
+  // Tomado de la sesion de caja usada para cobrar el anticipo (ya validada
+  // contra el alcance del usuario) -- nunca un campo elegido libremente por
+  // el cliente, igual criterio que CashMovement.cashSessionId.
+  @Column({ type: "bigint", nullable: false, name: "local_id" })
+  localId!: string;
+
+  // NO ACTION: una sucursal con datos no se borra, se desactiva.
+  @ManyToOne(() => Branch, { onDelete: "NO ACTION" })
+  @JoinColumn({ name: "local_id", foreignKeyConstraintName: "FK_layaways_local" })
+  branch?: Branch;
 
   @Column({ type: "bigint", nullable: false, name: "id_cliente" })
   customerId!: string;

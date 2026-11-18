@@ -6,15 +6,20 @@ import { LayawayService } from "../services/layaway.service.js";
 import { OpenLayawayDto } from "../dtos/open-layaway.dto.js";
 import { CompleteLayawayDto } from "../dtos/complete-layaway.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
-import { sendError } from "../../../core/http/error-response.js";
+import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
 
 @singleton()
 export class LayawayController {
-  constructor(private service: LayawayService) {}
+  constructor(
+    private service: LayawayService,
+    private branchAccess: BranchAccessService,
+  ) {}
 
-  getAll = async (_req: Request, res: Response): Promise<void> => {
+  getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getAll());
+      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      res.status(200).json(await this.service.getAll(branchId));
     } catch (error: any) {
       sendError(res, error, 500);
     }
