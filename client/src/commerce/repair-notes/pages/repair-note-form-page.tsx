@@ -111,8 +111,6 @@ export const RepairNoteFormPage: React.FC = () => {
     }
   };
 
-  // Panel de historial solo aplica editando una nota con cliente real
-  // seleccionado (customerId), nunca en alta ni con solo nombre libre.
   const showCustomerHistory = isEdit && Boolean(form.customerId);
   const { otherNotes } = useRepairNoteCustomerHistory(form.customerId || null, id);
 

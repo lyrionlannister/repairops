@@ -41,17 +41,25 @@ interface RepairNoteDeliveryModalProps {
   onSubmit: () => void;
 }
 
-const SummaryRow: FC<{ label: string; value: string; strong?: boolean }> = ({ label, value, strong }) => (
+const SummaryRow: FC<{ label: string; value: string; strong?: boolean }> = ({
+  label,
+  value,
+  strong,
+}) => (
   <div className="flex items-center justify-between text-sm">
     <span className="text-gray-500 dark:text-gray-400">{label}</span>
-    <span className={strong ? "text-lg font-bold text-gray-800 dark:text-white/90" : "font-medium text-gray-800 dark:text-white/90"}>
+    <span
+      className={
+        strong
+          ? "text-lg font-bold text-gray-800 dark:text-white/90"
+          : "font-medium text-gray-800 dark:text-white/90"
+      }
+    >
       {value}
     </span>
   </div>
 );
 
-// Entrega de la nota: resumen de lo cobrado y lo pendiente, y el pago del saldo.
-// Lo que se registra aquí es el movimiento (o la deuda, si se deja a crédito).
 export const RepairNoteDeliveryModal: FC<RepairNoteDeliveryModalProps> = ({
   isOpen,
   note,
@@ -75,21 +83,27 @@ export const RepairNoteDeliveryModal: FC<RepairNoteDeliveryModalProps> = ({
   onSubmit,
 }) => (
   <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-6">
-    <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Entregar nota #{note?.controlNumber}</h3>
+    <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+      Entregar nota #{note?.controlNumber}
+    </h3>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
       {note?.customerName} · {note?.brand} {note?.model}
     </p>
 
     <div className="mt-4 space-y-2 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
       <SummaryRow label="Total de la reparación" value={formatCurrency(total)} />
-      {advancePaid > 0 && <SummaryRow label="Anticipo cobrado" value={`− ${formatCurrency(advancePaid)}`} />}
+      {advancePaid > 0 && (
+        <SummaryRow label="Anticipo cobrado" value={`− ${formatCurrency(advancePaid)}`} />
+      )}
       <div className="border-t border-gray-200 pt-2 dark:border-gray-800">
         <SummaryRow label="Saldo pendiente" value={formatCurrency(balance)} strong />
       </div>
     </div>
 
     {balance === 0 ? (
-      <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">No hay saldo por cobrar: la nota ya está pagada.</p>
+      <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+        No hay saldo por cobrar: la nota ya está pagada.
+      </p>
     ) : (
       <div className="mt-4 space-y-3">
         <Label className="text-gray-500">Pago</Label>
@@ -144,14 +158,17 @@ export const RepairNoteDeliveryModal: FC<RepairNoteDeliveryModalProps> = ({
             <Label className="text-gray-500">Cobra</Label>
             <EmployeeSelect value={employeeId} onChange={onEmployeeChange} disabled={saving} />
             {!hasCashSession && (
-              <p className="mt-1.5 text-sm text-red-500">No hay una caja abierta en esta sucursal. Ábrela en Caja para cobrar.</p>
+              <p className="mt-1.5 text-sm text-red-500">
+                No hay una caja abierta en esta sucursal. Ábrela en Caja para cobrar.
+              </p>
             )}
           </div>
         )}
 
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Pagos registrados: {formatCurrency(paymentsSum)} de {formatCurrency(balance)}.
-          {hasCashPayment && " Efectivo, tarjeta y transferencia entran como ingreso en la caja abierta."}
+          {hasCashPayment &&
+            " Efectivo, tarjeta y transferencia entran como ingreso en la caja abierta."}
         </p>
       </div>
     )}
@@ -162,7 +179,12 @@ export const RepairNoteDeliveryModal: FC<RepairNoteDeliveryModalProps> = ({
       <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
         Cancelar
       </Button>
-      <Button type="button" variant="primary" onClick={onSubmit} disabled={saving || Boolean(problem)}>
+      <Button
+        type="button"
+        variant="primary"
+        onClick={onSubmit}
+        disabled={saving || Boolean(problem)}
+      >
         {saving ? "Guardando..." : balance === 0 ? "Entregar" : "Cobrar y entregar"}
       </Button>
     </div>
