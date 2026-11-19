@@ -12,28 +12,24 @@ import {
 import { updateRegisterFormField } from "../helpers/auth-form.helpers";
 
 export const RegisterForm: React.FC = () => {
-  const { register, loading, clearError, clearSuccess } =
-    useRegister();
+  const { register, loading, clearError, clearSuccess } = useRegister();
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState<RegisterPayload>(
-    INITIAL_REGISTER_FORM_DATA,
-  );
+  const [formData, setFormData] = useState<RegisterPayload>(INITIAL_REGISTER_FORM_DATA);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => updateRegisterFormField(prev, name, value));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     clearError();
     clearSuccess();
 
     const result = await register(formData);
     if (result) {
-      // Registro exitoso, redirigir a login o dashboard
       setTimeout(() => {
         navigate("/identity/sign-in", { replace: true });
       }, REGISTER_REDIRECT_DELAY_MS);
@@ -52,7 +48,6 @@ export const RegisterForm: React.FC = () => {
               Completa los siguientes datos para registrarte
             </p>
           </div>
-
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
@@ -123,12 +118,7 @@ export const RegisterForm: React.FC = () => {
               </div>
 
               <div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full"
-                  variant="primary"
-                >
+                <Button type="submit" disabled={loading} className="w-full" variant="primary">
                   {loading ? "Registrando..." : "Registrarse"}
                 </Button>
               </div>
@@ -151,4 +141,3 @@ export const RegisterForm: React.FC = () => {
     </div>
   );
 };
-

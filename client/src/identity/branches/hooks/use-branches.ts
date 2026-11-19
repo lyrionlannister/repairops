@@ -11,6 +11,12 @@ export interface Branch {
   updatedAt: string;
 }
 
+export interface BranchFormData {
+  name: string;
+  address: string;
+  phone: string;
+}
+
 export const useBranches = () => {
   const { apiClient } = useApiClient();
   const [branches, setBranches] = useState<Branch[]>([]);

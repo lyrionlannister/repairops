@@ -25,6 +25,13 @@ export interface CustomerDeviceHistoryEntry {
   notesCount: number;
 }
 
+export interface CustomerFormData {
+  name: string;
+  phone: string;
+  email: string;
+  creditLimit: string;
+}
+
 export const useCustomers = () => {
   const { apiClient } = useApiClient();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -61,7 +68,9 @@ export const useCustomers = () => {
   );
 
   const create = useCallback(
-    async (data: Pick<Customer, "name" | "phone" | "email" | "creditLimit">): Promise<Customer | null> => {
+    async (
+      data: Pick<Customer, "name" | "phone" | "email" | "creditLimit">,
+    ): Promise<Customer | null> => {
       setSaving(true);
       setError(null);
       try {
@@ -88,7 +97,10 @@ export const useCustomers = () => {
   );
 
   const update = useCallback(
-    async (id: string, data: Pick<Customer, "name" | "phone" | "email" | "creditLimit">): Promise<boolean> => {
+    async (
+      id: string,
+      data: Pick<Customer, "name" | "phone" | "email" | "creditLimit">,
+    ): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {

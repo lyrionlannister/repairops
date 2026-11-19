@@ -29,9 +29,6 @@ export interface ProfileDraft {
   email: string;
 }
 
-// Ficha de un cliente: sus datos (editables aquí mismo), su crédito (límite, lo que
-// debe y lo disponible), las deudas que lo componen y su historial de notas, ventas y
-// apartados. Hace los fetch y los cálculos; los componentes solo pintan.
 export const useCustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { apiClient } = useApiClient();
@@ -40,15 +37,29 @@ export const useCustomerDetail = () => {
   const { sales, fetchAll: fetchSales } = useSales();
   const { layaways, fetchAll: fetchLayaways } = useLayaways();
   const { workingBranchId } = useBranch();
-  const { payments, saving: savingPayment, error: paymentError, fetchPayments, registerPayment, clearError: clearPaymentError } =
-    useCustomerPayments();
+  const {
+    payments,
+    saving: savingPayment,
+    error: paymentError,
+    fetchPayments,
+    registerPayment,
+    clearError: clearPaymentError,
+  } = useCustomerPayments();
 
   const [debts, setDebts] = useState<CustomerDebts | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
-  const [profileDraft, setProfileDraft] = useState<ProfileDraft>({ name: "", phone: "", email: "" });
+  const [profileDraft, setProfileDraft] = useState<ProfileDraft>({
+    name: "",
+    phone: "",
+    email: "",
+  });
   const [creditDraft, setCreditDraft] = useState("");
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentForm, setPaymentForm] = useState<{ amount: string; method: CustomerPaymentMethod; createdByEmployeeId: string }>({
+  const [paymentForm, setPaymentForm] = useState<{
+    amount: string;
+    method: CustomerPaymentMethod;
+    createdByEmployeeId: string;
+  }>({
     amount: "",
     method: "efectivo",
     createdByEmployeeId: "",
@@ -112,7 +123,7 @@ export const useCustomerDetail = () => {
     setPaymentModalOpen(true);
   };
 
-  const submitPayment = async (e: React.FormEvent) => {
+  const submitPayment = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!id || !workingBranchId) return;
     const ok = await registerPayment(id, {

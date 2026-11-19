@@ -17,14 +17,15 @@ export class WhatsappTemplateCatalogController {
   constructor(private whatsappTemplateCatalogService: WhatsappTemplateCatalogService) {}
 
   private handleError(error: any, res: Response): void {
-    if (error instanceof WhatsappTemplateCatalogConflictError || error instanceof WhatsappGraphApiError) {
+    if (
+      error instanceof WhatsappTemplateCatalogConflictError ||
+      error instanceof WhatsappGraphApiError
+    ) {
       sendError(res, error, 400);
       return;
     }
     sendError(res, error, 500);
   }
-
-  // -- Empresa --
 
   list = async (_req: Request, res: Response): Promise<void> => {
     try {
@@ -56,7 +57,10 @@ export class WhatsappTemplateCatalogController {
         res.status(400).json({ error: validationErrors(errors) });
         return;
       }
-      const entry = await this.whatsappTemplateCatalogService.update(req.params["id"] as string, dto);
+      const entry = await this.whatsappTemplateCatalogService.update(
+        req.params["id"] as string,
+        dto,
+      );
       if (!entry) {
         res.status(404).json({ error: "Plantilla no encontrada" });
         return;
@@ -79,8 +83,6 @@ export class WhatsappTemplateCatalogController {
       this.handleError(error, res);
     }
   };
-
-  // -- Sistema (isPlatformAdmin) --
 
   listSystem = async (_req: Request, res: Response): Promise<void> => {
     try {
@@ -112,7 +114,10 @@ export class WhatsappTemplateCatalogController {
         res.status(400).json({ error: validationErrors(errors) });
         return;
       }
-      const entry = await this.whatsappTemplateCatalogService.updateSystem(req.params["id"] as string, dto);
+      const entry = await this.whatsappTemplateCatalogService.updateSystem(
+        req.params["id"] as string,
+        dto,
+      );
       if (!entry) {
         res.status(404).json({ error: "Plantilla no encontrada" });
         return;
@@ -125,7 +130,9 @@ export class WhatsappTemplateCatalogController {
 
   removeSystem = async (req: Request, res: Response): Promise<void> => {
     try {
-      const deleted = await this.whatsappTemplateCatalogService.deleteSystem(req.params["id"] as string);
+      const deleted = await this.whatsappTemplateCatalogService.deleteSystem(
+        req.params["id"] as string,
+      );
       if (!deleted) {
         res.status(404).json({ error: "Plantilla no encontrada" });
         return;

@@ -23,7 +23,6 @@ export const createWhatsappTemplateCatalogRouter = (
   router.patch("/system/:id", requirePlatformAdmin, controller.updateSystem);
   router.delete("/system/:id", requirePlatformAdmin, controller.removeSystem);
 
-  // Empresa (tenant actual)
   router.get("/", controller.list);
   router.post("/", canWriteCatalog, controller.create);
   router.patch("/:id", canWriteCatalog, controller.update);

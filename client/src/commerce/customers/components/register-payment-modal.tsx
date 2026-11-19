@@ -22,7 +22,7 @@ interface RegisterPaymentModalProps {
   error: string | null;
   onFormChange: (updater: (prev: RegisterPaymentForm) => RegisterPaymentForm) => void;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const RegisterPaymentModal: FC<RegisterPaymentModalProps> = ({
@@ -37,7 +37,9 @@ export const RegisterPaymentModal: FC<RegisterPaymentModalProps> = ({
 }) => (
   <Modal isOpen={isOpen} onClose={onClose} className="max-w-md p-6 sm:p-8 mx-4">
     <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-gray-100">Registrar abono</h2>
-    <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">Debe {balance.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}.</p>
+    <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+      Debe {balance.toLocaleString("es-MX", { style: "currency", currency: "MXN" })}.
+    </p>
     <form onSubmit={onSubmit} className="space-y-4">
       {error && <p className="text-sm text-red-500">{error}</p>}
       <div>
@@ -57,7 +59,9 @@ export const RegisterPaymentModal: FC<RegisterPaymentModalProps> = ({
         <Label className="text-gray-500">Método</Label>
         <Select
           value={form.method}
-          onChange={(value) => onFormChange((prev) => ({ ...prev, method: value as CustomerPaymentMethod }))}
+          onChange={(value) =>
+            onFormChange((prev) => ({ ...prev, method: value as CustomerPaymentMethod }))
+          }
           disabled={saving}
           options={Object.entries(METHOD_LABELS).map(([value, label]) => ({ value, label }))}
         />
@@ -66,7 +70,9 @@ export const RegisterPaymentModal: FC<RegisterPaymentModalProps> = ({
         <Label className="text-gray-500">Quién cobra</Label>
         <EmployeeSelect
           value={form.createdByEmployeeId}
-          onChange={(employeeId) => onFormChange((prev) => ({ ...prev, createdByEmployeeId: employeeId }))}
+          onChange={(employeeId) =>
+            onFormChange((prev) => ({ ...prev, createdByEmployeeId: employeeId }))
+          }
           disabled={saving}
         />
       </div>
@@ -74,7 +80,11 @@ export const RegisterPaymentModal: FC<RegisterPaymentModalProps> = ({
         <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
           Cancelar
         </Button>
-        <Button type="submit" variant="primary" disabled={saving || !form.createdByEmployeeId || !form.amount}>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={saving || !form.createdByEmployeeId || !form.amount}
+        >
           {saving ? "Guardando..." : "Registrar"}
         </Button>
       </div>

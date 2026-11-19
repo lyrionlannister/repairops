@@ -15,7 +15,7 @@ interface RegisterMovementModalProps {
   cashRoundingUnit: number | undefined;
   onClose: () => void;
   onFormChange: (updater: (prev: CashMovementForm) => CashMovementForm) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
@@ -28,14 +28,18 @@ export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
   onSubmit,
 }) => (
   <Modal isOpen={isOpen} onClose={onClose} className="max-w-md p-6 sm:p-8 mx-4">
-    <h2 className="mb-5 text-lg font-semibold text-gray-800 dark:text-gray-100">Registrar movimiento</h2>
+    <h2 className="mb-5 text-lg font-semibold text-gray-800 dark:text-gray-100">
+      Registrar movimiento
+    </h2>
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-gray-500">Tipo</Label>
           <Select
             value={movementForm.type}
-            onChange={(value) => onFormChange((prev) => ({ ...prev, type: value as typeof movementForm.type }))}
+            onChange={(value) =>
+              onFormChange((prev) => ({ ...prev, type: value as typeof movementForm.type }))
+            }
             disabled={saving}
             options={[
               { value: "income", label: "Ingreso" },
@@ -47,7 +51,9 @@ export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
           <Label className="text-gray-500">Método</Label>
           <Select
             value={movementForm.method}
-            onChange={(value) => onFormChange((prev) => ({ ...prev, method: value as typeof movementForm.method }))}
+            onChange={(value) =>
+              onFormChange((prev) => ({ ...prev, method: value as typeof movementForm.method }))
+            }
             disabled={saving}
             options={Object.entries(METHOD_LABELS).map(([value, label]) => ({ value, label }))}
           />
@@ -65,7 +71,9 @@ export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
           disabled={saving}
         />
         {movementForm.method === "efectivo" && Number(cashRoundingUnit) > 0 && (
-          <p className="mt-1 text-xs text-gray-400">Se redondeará al múltiplo de {cashRoundingUnit} más cercano.</p>
+          <p className="mt-1 text-xs text-gray-400">
+            Se redondeará al múltiplo de {cashRoundingUnit} más cercano.
+          </p>
         )}
       </div>
       <div>
@@ -81,7 +89,9 @@ export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
         <Label className="text-gray-500">Empleado</Label>
         <EmployeeSelect
           value={movementForm.createdByEmployeeId}
-          onChange={(employeeId) => onFormChange((prev) => ({ ...prev, createdByEmployeeId: employeeId }))}
+          onChange={(employeeId) =>
+            onFormChange((prev) => ({ ...prev, createdByEmployeeId: employeeId }))
+          }
           disabled={saving}
         />
       </div>
@@ -89,7 +99,11 @@ export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
         <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
           Cancelar
         </Button>
-        <Button type="submit" variant="primary" disabled={saving || !movementForm.createdByEmployeeId}>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={saving || !movementForm.createdByEmployeeId}
+        >
           {saving ? "Guardando..." : "Registrar"}
         </Button>
       </div>

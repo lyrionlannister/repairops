@@ -9,23 +9,14 @@ import {
   type RepairNoteFormData,
   type RepairNoteStatus,
 } from "../hooks/use-repair-notes";
-import { Button } from "@ui/button/button";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useRepairNoteCustomerHistory } from "../hooks/use-repair-note-customer-history";
 import { useRepairNoteItemLines } from "../hooks/use-repair-note-item-lines";
 import { useKnownBrands } from "../hooks/use-known-brands";
 import { RepairNoteCustomerHistoryPanel } from "../components/repair-note-customer-history-panel";
-import { RepairNoteCustomerSection } from "../components/repair-note-customer-section";
-import { RepairNoteDeviceSection } from "../components/repair-note-device-section";
-import { RepairNoteDatesSection } from "../components/repair-note-dates-section";
-import { RepairNoteItemLinesSection } from "../components/repair-note-item-lines-section";
-import { RepairNoteCostSection, RepairNoteWarrantySection } from "../components/repair-note-cost-warranty-section";
-import { RepairNoteStatusSection } from "../components/repair-note-status-section";
-import { Step, Stepper } from "@ui/stepper/stepper";
+import { RepairNoteForm, REPAIR_NOTE_FORM_STEPS } from "../components/repair-note-form";
 import { useFormSteps } from "@common/hooks/use-form-steps";
 import { noteToForm } from "../utils/note-to-form";
-
-const STEPS = ["Cliente", "Equipo", "Servicio", "Costo y garantía"];
 
 export const RepairNoteFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -97,9 +88,9 @@ export const RepairNoteFormPage: React.FC = () => {
   const set = (field: keyof RepairNoteFormData, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  const { step, isLast, formRef, next, back, goTo } = useFormSteps(STEPS.length);
+  const { step, isLast, formRef, next, back, goTo } = useFormSteps(REPAIR_NOTE_FORM_STEPS.length);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Enter en un paso intermedio avanza en lugar de guardar.
     if (!isLast) return next();
@@ -120,8 +111,6 @@ export const RepairNoteFormPage: React.FC = () => {
     }
   };
 
-  // Panel de historial solo aplica editando una nota con cliente real
-  // seleccionado (customerId), nunca en alta ni con solo nombre libre.
   const showCustomerHistory = isEdit && Boolean(form.customerId);
   const { otherNotes } = useRepairNoteCustomerHistory(form.customerId || null, id);
 
@@ -136,146 +125,83 @@ export const RepairNoteFormPage: React.FC = () => {
   return (
     <PageShell
       title={isEdit ? `Editar nota #${note?.controlNumber ?? ""}` : "Nueva nota de reparación"}
-      description={isEdit ? "Modifica los datos de la nota." : "Registra un nuevo equipo en el taller."}
+      description={
+        isEdit ? "Modifica los datos de la nota." : "Registra un nuevo equipo en el taller."
+      }
     >
-
-      <div className={showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"}>
-        <form ref={formRef} onSubmit={handleSubmit} className={showCustomerHistory ? "space-y-6 lg:col-span-2" : "space-y-6"}>
-          <Stepper steps={STEPS} current={step} onStepClick={goTo} />
-
-          <Step index={0} current={step}>
-          <RepairNoteCustomerSection
-            customerId={form.customerId}
-            customerName={form.customerName}
-            contactNumber={form.contactNumber}
-            saving={saving}
-            onCustomerChange={(customerId, customer) =>
-              setForm((prev) => ({
-                ...prev,
-                customerId,
-                customerName: customer ? customer.name : prev.customerName,
-                contactNumber: customer ? customer.phone : prev.contactNumber,
-              }))
-            }
-            onCustomerNameChange={(value) => set("customerName", value)}
-            onContactNumberChange={(value) => set("contactNumber", value)}
-          />
-
-          </Step>
-
-          <Step index={1} current={step}>
-          <RepairNoteDeviceSection
-            brand={form.brand}
-            model={form.model}
-            reportedFailure={form.reportedFailure}
-            serviceTypeIds={form.serviceTypeIds}
-            deviceOff={form.deviceOff}
-            knownBrands={knownBrands}
-            saving={saving}
-            onBrandChange={(value) => set("brand", value)}
-            onModelChange={(value) => set("model", value)}
-            onReportedFailureChange={(value) => set("reportedFailure", value)}
-            onServiceTypeIdsChange={(serviceTypeIds) => setForm((prev) => ({ ...prev, serviceTypeIds }))}
-            onDeviceOffChange={(value) => set("deviceOff", value)}
-          />
-
-          </Step>
-
-          <Step index={2} current={step}>
-          <RepairNoteDatesSection
-            receivedAt={form.receivedAt}
-            deliveryDate={form.deliveryDate}
-            assignedEmployeeId={form.assignedEmployeeId}
-            technicianNotes={form.technicianNotes}
-            additionalFindings={form.additionalFindings}
-            isEdit={isEdit}
-            saving={saving}
-            onReceivedAtChange={(value) => set("receivedAt", value)}
-            onDeliveryDateChange={(value) => set("deliveryDate", value)}
-            onAssignedEmployeeIdChange={(value) => set("assignedEmployeeId", value)}
-            onTechnicianNotesChange={(value) => set("technicianNotes", value)}
-            onAdditionalFindingsChange={(value) => set("additionalFindings", value)}
-          />
-
-          <RepairNoteItemLinesSection
-            itemLines={itemLines}
-            inventoryItems={inventoryItems}
-            saving={saving}
-            onItemChange={handleItemChange}
-            onLineChange={updateItemLine}
-            onAddLine={addItemLine}
-            onRemoveLine={removeItemLine}
-          />
-
-          </Step>
-
-          <Step index={3} current={step}>
-          <RepairNoteCostSection
-            totalValue={form.totalValue}
-            requiresAdvance={form.requiresAdvance}
-            advanceValue={form.advanceValue}
-            saving={saving}
-            onTotalValueChange={(value) => set("totalValue", value)}
-            onRequiresAdvanceToggle={() => set("requiresAdvance", !form.requiresAdvance)}
-            onAdvanceValueChange={(value) => set("advanceValue", value)}
-            advanceLocked={isEdit && Boolean(note?.requiresAdvance) && Number(note?.advanceValue) > 0}
-            advanceMethod={isEdit ? undefined : advanceMethod}
-            advanceEmployeeId={advanceEmployeeId}
-            onAdvanceMethodChange={isEdit ? undefined : (value) => setAdvanceMethod(value as AdvancePaymentInput["method"])}
-            onAdvanceEmployeeChange={isEdit ? undefined : setAdvanceEmployeeId}
-          />
-
-          <RepairNoteWarrantySection
-            hasWarranty={form.hasWarranty}
-            hasExtendedWarranty={form.hasExtendedWarranty}
-            extendedWarrantyDays={form.extendedWarrantyDays}
-            saving={saving}
-            onHasWarrantyToggle={() => set("hasWarranty", !form.hasWarranty)}
-            onHasExtendedWarrantyToggle={() => set("hasExtendedWarranty", !form.hasExtendedWarranty)}
-            onExtendedWarrantyDaysChange={(value) => set("extendedWarrantyDays", value)}
-          />
-
-          {isEdit && (
-            <RepairNoteStatusSection
-              status={form.status}
-              saving={saving}
-              onStatusChange={(newStatus: RepairNoteStatus) =>
-                setForm((prev) => ({
-                  ...prev,
-                  status: newStatus,
-                  deliveryDate:
-                    newStatus === "delivered" && !prev.deliveryDate
-                      ? new Date().toISOString().split("T")[0]
-                      : prev.deliveryDate,
-                }))
-              }
-            />
-          )}
-
-          </Step>
-
-          <div className="flex justify-between gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate(isEdit && id ? `/commerce/repair-notes/${id}` : "/commerce/repair-notes")} disabled={saving}>
-              Cancelar
-            </Button>
-            <div className="flex gap-3">
-              {step > 0 && (
-                <Button type="button" variant="outline" onClick={back} disabled={saving}>
-                  Atrás
-                </Button>
-              )}
-              {isLast ? (
-                <Button type="submit" variant="primary" disabled={saving}>
-                  {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear nota"}
-                </Button>
-              ) : (
-                <Button type="button" variant="primary" onClick={next}>
-                  Siguiente
-                </Button>
-              )}
-            </div>
-          </div>
-        </form>
+      <div
+        className={
+          showCustomerHistory ? "grid grid-cols-1 gap-6 lg:grid-cols-3" : "mx-auto w-full max-w-2xl"
+        }
+      >
+        <RepairNoteForm
+          formRef={formRef}
+          step={step}
+          isLast={isLast}
+          onStepClick={goTo}
+          form={form}
+          note={note}
+          saving={saving}
+          isEdit={isEdit}
+          showCustomerHistory={showCustomerHistory}
+          knownBrands={knownBrands}
+          onCustomerChange={(customerId, customer) =>
+            setForm((prev) => ({
+              ...prev,
+              customerId,
+              customerName: customer ? customer.name : prev.customerName,
+              contactNumber: customer ? customer.phone : prev.contactNumber,
+            }))
+          }
+          onCustomerNameChange={(value) => set("customerName", value)}
+          onContactNumberChange={(value) => set("contactNumber", value)}
+          onBrandChange={(value) => set("brand", value)}
+          onModelChange={(value) => set("model", value)}
+          onReportedFailureChange={(value) => set("reportedFailure", value)}
+          onServiceTypeIdsChange={(serviceTypeIds) =>
+            setForm((prev) => ({ ...prev, serviceTypeIds }))
+          }
+          onDeviceOffChange={(value) => set("deviceOff", value)}
+          onReceivedAtChange={(value) => set("receivedAt", value)}
+          onDeliveryDateChange={(value) => set("deliveryDate", value)}
+          onAssignedEmployeeIdChange={(value) => set("assignedEmployeeId", value)}
+          onTechnicianNotesChange={(value) => set("technicianNotes", value)}
+          onAdditionalFindingsChange={(value) => set("additionalFindings", value)}
+          itemLines={itemLines}
+          inventoryItems={inventoryItems}
+          onItemChange={handleItemChange}
+          onLineChange={updateItemLine}
+          onAddLine={addItemLine}
+          onRemoveLine={removeItemLine}
+          onTotalValueChange={(value) => set("totalValue", value)}
+          onRequiresAdvanceToggle={() => set("requiresAdvance", !form.requiresAdvance)}
+          onAdvanceValueChange={(value) => set("advanceValue", value)}
+          advanceMethod={advanceMethod}
+          onAdvanceMethodChange={(value) =>
+            setAdvanceMethod(value as AdvancePaymentInput["method"])
+          }
+          advanceEmployeeId={advanceEmployeeId}
+          onAdvanceEmployeeIdChange={setAdvanceEmployeeId}
+          onHasWarrantyToggle={() => set("hasWarranty", !form.hasWarranty)}
+          onHasExtendedWarrantyToggle={() => set("hasExtendedWarranty", !form.hasExtendedWarranty)}
+          onExtendedWarrantyDaysChange={(value) => set("extendedWarrantyDays", value)}
+          onStatusChange={(newStatus: RepairNoteStatus) =>
+            setForm((prev) => ({
+              ...prev,
+              status: newStatus,
+              deliveryDate:
+                newStatus === "delivered" && !prev.deliveryDate
+                  ? new Date().toISOString().split("T")[0]
+                  : prev.deliveryDate,
+            }))
+          }
+          onBack={back}
+          onNext={next}
+          onSubmit={handleSubmit}
+          onCancel={() =>
+            navigate(isEdit && id ? `/commerce/repair-notes/${id}` : "/commerce/repair-notes")
+          }
+        />
 
         {showCustomerHistory && (
           <div className="lg:col-span-1 space-y-4">
@@ -283,7 +209,6 @@ export const RepairNoteFormPage: React.FC = () => {
           </div>
         )}
       </div>
-
     </PageShell>
   );
 };

@@ -7,6 +7,13 @@ export interface PriceListSupplier {
   phone: string;
 }
 
+export interface PriceListItemFormData {
+  brand: string;
+  model: string;
+  price: string;
+  supplierId: string;
+}
+
 export interface PriceListItem {
   id: string;
   brand: string;
@@ -61,8 +68,8 @@ export const usePriceList = () => {
         }
         const created: PriceListItem = await res.json();
         setItems((prev) =>
-          [...prev, created].sort((a, b) =>
-            a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model),
+          [...prev, created].sort(
+            (a, b) => a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model),
           ),
         );
         return true;

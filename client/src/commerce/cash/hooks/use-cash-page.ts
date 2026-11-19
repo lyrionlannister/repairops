@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 
-import type { CashMovementMethod, CashMovementType, CashSessionRecord, CashSummary } from "./use-cash";
+import type {
+  CashMovementMethod,
+  CashMovementType,
+  CashSessionRecord,
+  CashSummary,
+} from "./use-cash";
 
 export type CashMovementForm = {
   type: CashMovementType;
@@ -40,14 +45,25 @@ export const useCashPage = ({
   local: { id: string } | null;
   branchId: string;
   session: CashSessionRecord | null;
-  movements: Array<{ id: string; type: CashMovementType; method: CashMovementMethod; amount: number; note: string | null; createdAt: string }>
+  movements: Array<{
+    id: string;
+    type: CashMovementType;
+    method: CashMovementMethod;
+    amount: number;
+    note: string | null;
+    createdAt: string;
+  }>;
   summary: CashSummary | null;
   loading: boolean;
   saving: boolean;
   error: string | null;
   fetchLocal: () => Promise<void>;
   fetchOpenSession: (localId: string) => Promise<CashSessionRecord | null>;
-  openSession: (localId: string, openingBalance: number, openedByEmployeeId?: string) => Promise<boolean>;
+  openSession: (
+    localId: string,
+    openingBalance: number,
+    openedByEmployeeId?: string,
+  ) => Promise<boolean>;
   closeSession: (
     id: string,
     closingBalance: number,
@@ -95,13 +111,13 @@ export const useCashPage = ({
     }
   }, [session, fetchMovements, fetchSummary]);
 
-  const handleOpen = async (event: React.FormEvent) => {
+  const handleOpen = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!branchId) return;
     await openSession(branchId, Number(openingBalance) || 0, openedByEmployeeId || undefined);
   };
 
-  const handleRegisterMovement = async (event: React.FormEvent) => {
+  const handleRegisterMovement = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!session) return;
 
@@ -125,7 +141,8 @@ export const useCashPage = ({
   useEffect(() => {
     if (!error) return;
     if (error.includes("motivo")) setShowCloseReasonField(true);
-    if (error.includes("autorización") || error.includes("rol owner")) setShowCloseAuthorizerField(true);
+    if (error.includes("autorización") || error.includes("rol owner"))
+      setShowCloseAuthorizerField(true);
   }, [error]);
 
   const resetCloseForm = () => {
@@ -137,7 +154,7 @@ export const useCashPage = ({
     setShowCloseAuthorizerField(false);
   };
 
-  const handleClose = async (event: React.FormEvent) => {
+  const handleClose = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!session) return;
 

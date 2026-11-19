@@ -7,7 +7,6 @@ interface CustomerPaymentsCardProps {
   payments: CustomerPaymentRecord[];
 }
 
-// Historial de abonos del cliente, junto a sus deudas (CustomerDebtsCard).
 export const CustomerPaymentsCard: FC<CustomerPaymentsCardProps> = ({ payments }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
     <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Abonos</h3>
@@ -23,11 +22,17 @@ export const CustomerPaymentsCard: FC<CustomerPaymentsCardProps> = ({ payments }
                 <HandCoins className="size-4" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{METHOD_LABELS[payment.method]}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{formatDay(payment.createdAt)}</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                  {METHOD_LABELS[payment.method]}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {formatDay(payment.createdAt)}
+                </p>
               </div>
             </div>
-            <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{formatMoney(payment.amount)}</span>
+            <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              {formatMoney(payment.amount)}
+            </span>
           </li>
         ))}
       </ul>

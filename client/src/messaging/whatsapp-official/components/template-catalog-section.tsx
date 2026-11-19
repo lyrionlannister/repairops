@@ -16,13 +16,21 @@ import { Select } from "@ui/select/select";
 import { TextArea } from "@ui/textarea/textarea";
 import { Modal } from "@ui/modal/modal";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
-import { EMPTY_CATALOG_FORM, CATEGORY_OPTIONS, STATUS_BADGE, parseVariables } from "../utils/format";
+import {
+  EMPTY_CATALOG_FORM,
+  CATEGORY_OPTIONS,
+  STATUS_BADGE,
+  parseVariables,
+} from "../utils/format";
 
 interface TemplateCatalogSectionProps {
   scope: "tenant" | "system";
   title: string;
   description: string;
-  statusByEntryId?: Map<string, { status: WhatsappTemplateSyncStatus; lastSyncedAt: string | null }>;
+  statusByEntryId?: Map<
+    string,
+    { status: WhatsappTemplateSyncStatus; lastSyncedAt: string | null }
+  >;
 }
 
 // Una plantilla con disparador automático (ej. order_ready) muestra el aviso
@@ -65,7 +73,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
     setIsFormOpen(true);
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const variables = parseVariables(form.variablesText);
     const ok = editingEntry
@@ -99,7 +107,6 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
         </Button>
       </div>
 
-
       {loading && entries.length === 0 ? (
         <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando...</div>
       ) : entries.length === 0 ? (
@@ -111,15 +118,25 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
         <ScrollTable
           header={
             <tr>
-              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Plantilla</th>
-              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Categoría</th>
+              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
+                Plantilla
+              </th>
+              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
+                Categoría
+              </th>
               {statusByEntryId && (
                 <>
-                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Status en Meta</th>
-                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Última sincronización</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
+                    Status en Meta
+                  </th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
+                    Última sincronización
+                  </th>
                 </>
               )}
-              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
+                Acciones
+              </th>
             </tr>
           }
         >
@@ -131,22 +148,30 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
                 <tr key={entry.id}>
                   <td className="px-5 py-4 text-gray-700 dark:text-gray-300">
                     <div className="min-w-0 text-right xl:text-left">
-                    <div className="font-medium">{entry.key}</div>
-                    <div className="text-xs text-gray-400">{entry.metaName}</div>
-                    {entry.triggerEvent && (
-                      <div className="mt-0.5 text-xs text-gray-400">Disparador automático: {entry.triggerEvent}</div>
-                    )}
-                    {!entry.enabled && <Badge color="error">Deshabilitada</Badge>}
+                      <div className="font-medium">{entry.key}</div>
+                      <div className="text-xs text-gray-400">{entry.metaName}</div>
+                      {entry.triggerEvent && (
+                        <div className="mt-0.5 text-xs text-gray-400">
+                          Disparador automático: {entry.triggerEvent}
+                        </div>
+                      )}
+                      {!entry.enabled && <Badge color="error">Deshabilitada</Badge>}
                     </div>
                   </td>
                   <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{entry.category}</td>
                   {statusByEntryId && (
                     <>
                       <td className="px-5 py-4">
-                        {badge ? <Badge color={badge.color}>{badge.label}</Badge> : <span className="text-xs text-gray-400">Sin sincronizar</span>}
+                        {badge ? (
+                          <Badge color={badge.color}>{badge.label}</Badge>
+                        ) : (
+                          <span className="text-xs text-gray-400">Sin sincronizar</span>
+                        )}
                       </td>
                       <td className="px-5 py-4 text-xs text-gray-400">
-                        {liveStatus?.lastSyncedAt ? new Date(liveStatus.lastSyncedAt).toLocaleString() : "—"}
+                        {liveStatus?.lastSyncedAt
+                          ? new Date(liveStatus.lastSyncedAt).toLocaleString()
+                          : "—"}
                       </td>
                     </>
                   )}
@@ -177,7 +202,11 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
         </ScrollTable>
       )}
 
-      <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} className="max-w-lg p-6 sm:p-8 mx-4">
+      <Modal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        className="max-w-lg p-6 sm:p-8 mx-4"
+      >
         <h2 className="mb-5 text-lg font-semibold text-gray-800 dark:text-gray-100">
           {editingEntry ? "Editar plantilla" : "Nueva plantilla"}
         </h2>
@@ -207,7 +236,9 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
               <Label className="text-gray-500">Categoría</Label>
               <Select
                 value={form.category}
-                onChange={(value) => setForm((prev) => ({ ...prev, category: value as WhatsappTemplateCategory }))}
+                onChange={(value) =>
+                  setForm((prev) => ({ ...prev, category: value as WhatsappTemplateCategory }))
+                }
                 disabled={saving || !!editingEntry}
                 options={CATEGORY_OPTIONS}
               />
@@ -237,7 +268,9 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
             <Input
               placeholder="nombre, modelo"
               value={form.variablesText}
-              onChange={(event) => setForm((prev) => ({ ...prev, variablesText: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, variablesText: event.target.value }))
+              }
               disabled={saving}
             />
             <p className="mt-1 text-xs text-gray-400">
@@ -245,7 +278,12 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
             </p>
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)} disabled={saving}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsFormOpen(false)}
+              disabled={saving}
+            >
               Cancelar
             </Button>
             <Button type="submit" variant="primary" disabled={saving}>

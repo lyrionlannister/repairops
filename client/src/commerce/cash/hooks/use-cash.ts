@@ -68,7 +68,11 @@ export const useCash = () => {
   );
 
   const openSession = useCallback(
-    async (localId: string, openingBalance: number, openedByEmployeeId?: string): Promise<boolean> => {
+    async (
+      localId: string,
+      openingBalance: number,
+      openedByEmployeeId?: string,
+    ): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {
@@ -79,7 +83,9 @@ export const useCash = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string | string[] }).error?.toString() ?? "Error al abrir caja");
+          throw new Error(
+            (body as { error?: string | string[] }).error?.toString() ?? "Error al abrir caja",
+          );
         }
         setSession((await res.json()) as CashSessionRecord);
         setClosedSession(null);
@@ -111,7 +117,9 @@ export const useCash = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string | string[] }).error?.toString() ?? "Error al cerrar caja");
+          throw new Error(
+            (body as { error?: string | string[] }).error?.toString() ?? "Error al cerrar caja",
+          );
         }
         const closed = (await res.json()) as CashSessionRecord;
         setSession(null);
@@ -149,7 +157,7 @@ export const useCash = () => {
         if (!res.ok) return;
         setSummary((await res.json()) as CashSummary);
       } catch {
-        // noop
+        // noop: la pantalla ya tiene un estado anterior razonable
       }
     },
     [apiClient],
@@ -179,7 +187,8 @@ export const useCash = () => {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(
-            (body as { error?: string | string[] }).error?.toString() ?? "Error al registrar movimiento",
+            (body as { error?: string | string[] }).error?.toString() ??
+              "Error al registrar movimiento",
           );
         }
         await Promise.all([fetchMovements(sessionId), fetchSummary(sessionId)]);

@@ -12,7 +12,9 @@ import { updateTemplate, deleteTemplate } from "../clients/whatsapp-graph.client
 // constraint (ver plan Fase 4, Checkpoint 7, Tarea 7.2).
 export class WhatsappTemplateCatalogConflictError extends Error {}
 
-function buildPatch(dto: UpdateWhatsappTemplateCatalogEntryDto): Partial<WhatsappTemplateCatalogEntry> {
+function buildPatch(
+  dto: UpdateWhatsappTemplateCatalogEntryDto,
+): Partial<WhatsappTemplateCatalogEntry> {
   const patch: Partial<WhatsappTemplateCatalogEntry> = {};
   if (dto.text !== undefined) patch.text = dto.text;
   if (dto.variables !== undefined) patch.variables = dto.variables;
@@ -28,8 +30,6 @@ export class WhatsappTemplateCatalogService {
     private whatsappAccountService: WhatsappAccountService,
   ) {}
 
-  // -- Empresa (tenant actual) --
-
   async listForTenant(): Promise<WhatsappTemplateCatalogEntry[]> {
     return this.whatsappTemplateCatalogEntryDao.getOrSeedDefaultsForTenant();
   }
@@ -37,12 +37,20 @@ export class WhatsappTemplateCatalogService {
   async create(dto: CreateWhatsappTemplateCatalogEntryDto): Promise<WhatsappTemplateCatalogEntry> {
     const existing = await this.whatsappTemplateCatalogEntryDao.findAllForTenant();
     if (existing.some((e) => e.key === dto.key)) {
-      throw new WhatsappTemplateCatalogConflictError(`Ya existe una plantilla con key "${dto.key}"`);
+      throw new WhatsappTemplateCatalogConflictError(
+        `Ya existe una plantilla con key "${dto.key}"`,
+      );
     }
     if (existing.some((e) => e.metaName === dto.metaName)) {
-      throw new WhatsappTemplateCatalogConflictError(`Ya existe una plantilla con metaName "${dto.metaName}"`);
+      throw new WhatsappTemplateCatalogConflictError(
+        `Ya existe una plantilla con metaName "${dto.metaName}"`,
+      );
     }
-    return this.whatsappTemplateCatalogEntryDao.createForTenant({ ...dto, triggerEvent: null, enabled: true });
+    return this.whatsappTemplateCatalogEntryDao.createForTenant({
+      ...dto,
+      triggerEvent: null,
+      enabled: true,
+    });
   }
 
   // Solo texto/variables/enabled son editables. Si la plantilla ya está
@@ -50,7 +58,10 @@ export class WhatsappTemplateCatalogService {
   // se manda también allá -- Meta reinicia su revisión, por eso el status
   // local vuelve a PENDING. Si todavía no se sincronizó nunca, el siguiente
   // reconcile la crea ya con el texto nuevo, sin paso aparte.
-  async update(id: string, dto: UpdateWhatsappTemplateCatalogEntryDto): Promise<WhatsappTemplateCatalogEntry | null> {
+  async update(
+    id: string,
+    dto: UpdateWhatsappTemplateCatalogEntryDto,
+  ): Promise<WhatsappTemplateCatalogEntry | null> {
     const entry = await this.whatsappTemplateCatalogEntryDao.findByIdForTenant(id);
     if (!entry) return null;
 
@@ -65,7 +76,10 @@ export class WhatsappTemplateCatalogService {
         text: patch.text ?? entry.text,
         variables: patch.variables ?? entry.variables,
       });
-      await this.whatsappTemplateStatusDao.update(status.id, { status: "PENDING", lastSyncedAt: new Date() });
+      await this.whatsappTemplateStatusDao.update(status.id, {
+        status: "PENDING",
+        lastSyncedAt: new Date(),
+      });
     }
 
     return this.whatsappTemplateCatalogEntryDao.updateForTenant(id, patch);
@@ -87,7 +101,6 @@ export class WhatsappTemplateCatalogService {
     return this.whatsappTemplateCatalogEntryDao.deleteForTenant(id);
   }
 
-  // -- Sistema (isPlatformAdmin) --
   // Boundary de Checkpoint 7: todavía no existe una WhatsappAccount de
   // sistema (sin tenant) -- estas filas son CRUD puro en DB, sin llamar a
   // Meta. Cuando exista un consumidor real (ej. Fase 6), ese checkpoint
@@ -97,15 +110,25 @@ export class WhatsappTemplateCatalogService {
     return this.whatsappTemplateCatalogEntryDao.findAllSystem();
   }
 
-  async createSystem(dto: CreateWhatsappTemplateCatalogEntryDto): Promise<WhatsappTemplateCatalogEntry> {
+  async createSystem(
+    dto: CreateWhatsappTemplateCatalogEntryDto,
+  ): Promise<WhatsappTemplateCatalogEntry> {
     const existing = await this.whatsappTemplateCatalogEntryDao.findAllSystem();
     if (existing.some((e) => e.key === dto.key)) {
-      throw new WhatsappTemplateCatalogConflictError(`Ya existe una plantilla de sistema con key "${dto.key}"`);
+      throw new WhatsappTemplateCatalogConflictError(
+        `Ya existe una plantilla de sistema con key "${dto.key}"`,
+      );
     }
     if (existing.some((e) => e.metaName === dto.metaName)) {
-      throw new WhatsappTemplateCatalogConflictError(`Ya existe una plantilla de sistema con metaName "${dto.metaName}"`);
+      throw new WhatsappTemplateCatalogConflictError(
+        `Ya existe una plantilla de sistema con metaName "${dto.metaName}"`,
+      );
     }
-    return this.whatsappTemplateCatalogEntryDao.createSystem({ ...dto, triggerEvent: null, enabled: true });
+    return this.whatsappTemplateCatalogEntryDao.createSystem({
+      ...dto,
+      triggerEvent: null,
+      enabled: true,
+    });
   }
 
   async updateSystem(

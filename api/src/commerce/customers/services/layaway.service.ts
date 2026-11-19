@@ -47,8 +47,8 @@ export class LayawayService {
     private reservationService: InventoryReservationService,
   ) {}
 
-  async getAll(): Promise<Layaway[]> {
-    return this.layawayDao.findAllOrdered();
+  async getAll(branchId?: string | null): Promise<Layaway[]> {
+    return this.layawayDao.findAllOrdered(branchId);
   }
 
   async getItems(layawayId: string): Promise<LayawayItem[]> {
@@ -103,7 +103,10 @@ export class LayawayService {
       if (!inventoryItem) throw new Error("Item de inventario no encontrado");
     }
 
-    const totalValue = data.items.reduce((sum, item) => sum.plus(new Decimal(item.unitPrice).times(item.quantity)), new Decimal(0));
+    const totalValue = data.items.reduce(
+      (sum, item) => sum.plus(new Decimal(item.unitPrice).times(item.quantity)),
+      new Decimal(0),
+    );
     const depositAmount = new Decimal(data.depositAmount);
     if (depositAmount.lessThanOrEqualTo(0)) {
       throw new Error("El anticipo debe ser mayor a 0");
@@ -117,6 +120,7 @@ export class LayawayService {
     return AppDataSource.transaction(async (manager) => {
       const layaway = manager.create(Layaway, {
         tenantId,
+        localId: session.localId,
         customerId: data.customerId,
         status: "open",
         totalValue: totalValue.toNumber(),
@@ -167,7 +171,11 @@ export class LayawayService {
   // Paga el saldo restante: consume las reservas (stock real baja) y
   // registra un segundo CashMovement "income" -- nunca crea una Sale (ver
   // comentario de la entidad).
-  async complete(layawayId: string, payments: CompletePaymentInput[], cashSessionId: string): Promise<Layaway> {
+  async complete(
+    layawayId: string,
+    payments: CompletePaymentInput[],
+    cashSessionId: string,
+  ): Promise<Layaway> {
     const layaway = await this.getById(layawayId);
     if (!layaway) throw new Error("Apartado no encontrado");
     if (layaway.status === "expired") throw new Error("El apartado ya venció");
@@ -221,7 +229,8 @@ export class LayawayService {
   async cancel(layawayId: string): Promise<Layaway> {
     const layaway = await this.getById(layawayId);
     if (!layaway) throw new Error("Apartado no encontrado");
-    if (layaway.status === "completed") throw new Error("No se puede cancelar un apartado ya completado");
+    if (layaway.status === "completed")
+      throw new Error("No se puede cancelar un apartado ya completado");
     if (layaway.status === "cancelled") throw new Error("El apartado ya está cancelado");
     if (layaway.status === "expired") throw new Error("El apartado ya venció");
 
@@ -233,7 +242,10 @@ export class LayawayService {
         await this.reservationService.release(manager, "layaway_item", item.id);
       }
       await manager.update(Layaway, layawayId, { status: "cancelled", cancelledAt: new Date() });
-      return (await manager.findOneBy(Layaway, { id: layawayId, tenantId } as unknown as FindOptionsWhere<Layaway>)) as Layaway;
+      return (await manager.findOneBy(Layaway, {
+        id: layawayId,
+        tenantId,
+      } as unknown as FindOptionsWhere<Layaway>)) as Layaway;
     });
   }
 }

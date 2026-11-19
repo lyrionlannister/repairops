@@ -14,7 +14,10 @@ import { requireJwtSecret } from "../jwt-secret.js";
 import { allowSystemScope, runWithTenant } from "../../../core/tenancy/tenant-context.js";
 import { ServiceTypeService } from "../../../commerce/service-types/services/service-type.service.js";
 import { BranchService } from "../../branches/services/branch.service.js";
-import { UserBranchService, type BranchAssignment } from "../../branches/services/user-branch.service.js";
+import {
+  UserBranchService,
+  type BranchAssignment,
+} from "../../branches/services/user-branch.service.js";
 
 const { sign } = jwt;
 
@@ -41,7 +44,6 @@ export class AuthService {
       throw new Error("Email ya registrado");
     }
 
-    // crear el Tenant corre en scope de sistema, explicito.
     const tenant = await allowSystemScope(() =>
       this.tenantRepository.save(this.tenantRepository.create({ name: data.email })),
     );
@@ -72,7 +74,10 @@ export class AuthService {
 
   // Cada usuario sale con sus sucursales (branchIds y la principal); el owner no tiene filas.
   async getAllUsers(): Promise<Array<Omit<User, "password"> & BranchAssignment>> {
-    const [users, assignments] = await Promise.all([this.userDao.findAll(), this.userBranchService.getAssignments()]);
+    const [users, assignments] = await Promise.all([
+      this.userDao.findAll(),
+      this.userBranchService.getAssignments(),
+    ]);
     return users.map(({ password, ...rest }) => ({
       ...rest,
       ...(assignments.get(String(rest.id)) ?? { branchIds: [], primaryBranchId: null }),
@@ -89,7 +94,11 @@ export class AuthService {
 
     // Las sucursales se validan antes de crear nada: un usuario sin sucursal no puede operar.
     const role = data.role ?? "employee";
-    const assignment = await this.userBranchService.normalize(role, data.branchIds, data.primaryBranchId);
+    const assignment = await this.userBranchService.normalize(
+      role,
+      data.branchIds,
+      data.primaryBranchId,
+    );
 
     const hashedPassword = await hash(data.password, 10);
 
@@ -111,7 +120,10 @@ export class AuthService {
   // A diferencia de createEmployee, password es opcional: solo se re-hashea
   // y reemplaza si llega no vacio, nunca se borra la contrasena actual por
   // dejar el campo en blanco en el form de edicion.
-  async updateEmployee(id: string, data: UpdateEmployeeDto): Promise<Omit<User, "password"> | null> {
+  async updateEmployee(
+    id: string,
+    data: UpdateEmployeeDto,
+  ): Promise<Omit<User, "password"> | null> {
     const existingUser = await this.userDao.findByEmail(data.email);
     if (existingUser && existingUser.id !== id) {
       throw new Error("Email ya registrado");
@@ -123,7 +135,8 @@ export class AuthService {
     const assignment = await this.userBranchService.normalize(
       role,
       data.branchIds ?? current?.branchIds,
-      data.primaryBranchId ?? (data.branchIds ? undefined : (current?.primaryBranchId ?? undefined)),
+      data.primaryBranchId ??
+        (data.branchIds ? undefined : (current?.primaryBranchId ?? undefined)),
     );
 
     const updatePayload: Partial<User> = {
@@ -175,16 +188,12 @@ export class AuthService {
     return rest;
   }
 
-  async login(
-    data: LoginUserDto,
-  ): Promise<{ user: Omit<User, "password">; token: string }> {
+  async login(data: LoginUserDto): Promise<{ user: Omit<User, "password">; token: string }> {
     // findByEmail necesita tenant en contexto, pero en login todavia no se
     // sabe el tenant del usuario: se busca en scope de sistema por email
     // (unico campo sin ambiguedad antes de autenticar) y luego se re-entra
     // al tenant real para el resto de la operacion.
-    const user = await allowSystemScope(() =>
-      this.userDao.findByEmailAcrossTenants(data.email),
-    );
+    const user = await allowSystemScope(() => this.userDao.findByEmailAcrossTenants(data.email));
     if (!user) {
       throw new Error("Email no registrado");
     }

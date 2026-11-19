@@ -6,8 +6,6 @@ import { usePdfPreview } from "@common/hooks/use-pdf-preview";
 import { useLocal, type TicketSize } from "../../../app_platform/local/hooks/use-local";
 import { useRepairNotes } from "./use-repair-notes";
 
-// Datos de la página de impresión: el térmico se arma en el navegador (altura
-// variable), la carta es el PDF del API.
 export const useRepairNotePrintPage = () => {
   const { id } = useParams<{ id: string }>();
   const { note, loading: loadingNote, fetchNote, fetchNoteServiceTypeIds } = useRepairNotes();
@@ -22,7 +20,6 @@ export const useRepairNotePrintPage = () => {
     fetchServiceTypes();
   }, [id, fetchNote, fetchLocal, fetchServiceTypes]);
 
-  // Por defecto, el tamaño configurado en "Mi Local"; se puede cambiar aquí mismo.
   useEffect(() => {
     if (local && ticketSize === null) setTicketSize(local.defaultTicketSize);
   }, [local, ticketSize]);
@@ -31,7 +28,9 @@ export const useRepairNotePrintPage = () => {
     if (!note) return;
     fetchNoteServiceTypeIds(note.id).then((ids) => {
       const nameById = new Map(serviceTypes.map((t) => [t.id, t.name]));
-      setServiceTypeNames(ids.map((typeId) => nameById.get(typeId)).filter((n): n is string => Boolean(n)));
+      setServiceTypeNames(
+        ids.map((typeId) => nameById.get(typeId)).filter((n): n is string => Boolean(n)),
+      );
     });
   }, [note, serviceTypes, fetchNoteServiceTypeIds]);
 

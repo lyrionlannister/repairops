@@ -21,13 +21,7 @@ import { SaleCartTotals } from "../components/sale-cart-totals";
 import { SalePaymentsSection } from "../components/sale-payments-section";
 
 export const QuickSalePage: React.FC = () => {
-  const {
-    queue: offlineQueue,
-    isOnline,
-    syncing,
-    submitOrQueue,
-    sync,
-  } = useOfflineSalesQueue();
+  const { queue: offlineQueue, isOnline, syncing, submitOrQueue, sync } = useOfflineSalesQueue();
   const { showToast } = useToast();
   const [creating, setCreating] = useState(false);
   const { workingBranchId } = useBranch();
@@ -35,11 +29,7 @@ export const QuickSalePage: React.FC = () => {
   // stock que el cajero no puede ver ni reponer desde aqui.
   const { items: inventoryItems, fetchAll: fetchInventory } =
     useBranchScopedInventory(workingBranchId);
-  const {
-    session: cashSession,
-    loading: loadingCashSession,
-    fetchOpenSession,
-  } = useCash();
+  const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
   const { local, fetchLocal } = useLocal();
   const { customers, fetchAll: fetchCustomers } = useCustomers();
 
@@ -93,14 +83,9 @@ export const QuickSalePage: React.FC = () => {
     resetCart();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (
-      !workingBranchId ||
-      !cashSession ||
-      !paymentsMatchTotal ||
-      hasCreditoWithoutCustomer
-    )
+    if (!workingBranchId || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer)
       return;
     if (validLines.length === 0) return;
 
@@ -175,10 +160,7 @@ export const QuickSalePage: React.FC = () => {
         />
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3"
-      >
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         <div className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 lg:col-span-2">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
@@ -193,10 +175,7 @@ export const QuickSalePage: React.FC = () => {
             </div>
             <div>
               <Label className="text-gray-500">Empleado</Label>
-              <EmployeeSelect
-                value={createdByEmployeeId}
-                onChange={setCreatedByEmployeeId}
-              />
+              <EmployeeSelect value={createdByEmployeeId} onChange={setCreatedByEmployeeId} />
             </div>
           </div>
 
@@ -248,12 +227,7 @@ export const QuickSalePage: React.FC = () => {
             type="submit"
             variant="primary"
             className="w-full"
-            disabled={
-              creating ||
-              !cashSession ||
-              !paymentsMatchTotal ||
-              hasCreditoWithoutCustomer
-            }
+            disabled={creating || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer}
           >
             <ShoppingCart className="mr-1.5 size-4" />
             {creating ? "Registrando..." : "Registrar venta"}

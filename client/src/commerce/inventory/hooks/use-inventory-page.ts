@@ -73,7 +73,7 @@ export const useInventoryPage = ({
     setImportFile(null);
   };
 
-  const handleImportSubmit = async (event: React.FormEvent) => {
+  const handleImportSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!importFile || !branchId) return;
 
@@ -94,7 +94,7 @@ export const useInventoryPage = ({
     setMovementForm(emptyMovementForm);
   };
 
-  const handleMovementSubmit = async (event: React.FormEvent) => {
+  const handleMovementSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!movementItem) return;
 

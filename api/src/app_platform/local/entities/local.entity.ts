@@ -1,4 +1,12 @@
-import { Check, Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
+import {
+  Check,
+  Entity,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
@@ -63,7 +71,13 @@ export class Local extends BaseEntity {
   // Diferencia de efectivo que un cierre de caja puede tener sin que un
   // owner/admin la autorice (monto fijo, no porcentaje -- ver
   // SPEC-fase3-pos-dinero.md, Open Question 1). Configurable por tenant.
-  @Column({ type: "decimal", precision: 10, scale: 2, default: 50, name: "tope_diferencia_caja_sin_autorizar" })
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    default: 50,
+    name: "tope_diferencia_caja_sin_autorizar",
+  })
   maxUnauthorizedCashVariance!: number;
 
   // Valor por defecto del plan (MARKET=MX, CURRENCY=MXN, cap. 9/10). Configurable
@@ -71,7 +85,6 @@ export class Local extends BaseEntity {
   @Column({ type: "varchar", length: 3, default: "MXN", name: "moneda" })
   currency!: string;
 
-  // Tamaño de ticket que imprime este local por defecto: 58mm, 80mm o carta.
   @Column({ type: "varchar", length: 10, default: "80mm", name: "formato_ticket" })
   defaultTicketSize!: "58mm" | "80mm" | "letter";
 

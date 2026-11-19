@@ -3,10 +3,6 @@ import { useEffect, useMemo } from "react";
 import { useCustomers } from "./use-customers";
 import { useLayaways } from "./use-layaways";
 
-/**
- * Datos de contexto de un cliente (crédito, equipos, apartados) para la ficha de edición.
- * Hace el fetch, filtra y calcula; el componente que lo pinta solo recibe el resultado.
- */
 export const useCustomerContext = (customerId: string | null) => {
   const { devices, creditBalances, fetchDevices, fetchCreditBalance } = useCustomers();
   const { layaways, fetchAll: fetchLayaways } = useLayaways();
@@ -25,7 +21,8 @@ export const useCustomerContext = (customerId: string | null) => {
   const creditLoaded = Boolean(credit);
 
   const activeLayaways = useMemo(
-    () => (customerId ? layaways.filter((l) => l.customerId === customerId && l.status === "open") : []),
+    () =>
+      customerId ? layaways.filter((l) => l.customerId === customerId && l.status === "open") : [],
     [layaways, customerId],
   );
 

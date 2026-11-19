@@ -17,7 +17,7 @@ interface CloseCashModalProps {
   onCloseReasonChange: (value: string) => void;
   onCloseAuthorizedByEmployeeIdChange: (value: string) => void;
   onCancel: () => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const CloseCashModal: FC<CloseCashModalProps> = ({

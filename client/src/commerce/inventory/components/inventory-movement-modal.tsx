@@ -14,7 +14,7 @@ interface InventoryMovementModalProps {
   saving: boolean;
   onClose: () => void;
   onFormChange: (updater: (prev: InventoryMovementForm) => InventoryMovementForm) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const InventoryMovementModal: FC<InventoryMovementModalProps> = ({
@@ -26,7 +26,9 @@ export const InventoryMovementModal: FC<InventoryMovementModalProps> = ({
   onSubmit,
 }) => (
   <Modal isOpen={movementItem !== null} onClose={onClose} className="max-w-md p-6 sm:p-8 mx-4">
-    <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-gray-100">Registrar movimiento</h2>
+    <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-gray-100">
+      Registrar movimiento
+    </h2>
     <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">{movementItem?.name}</p>
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
@@ -34,7 +36,9 @@ export const InventoryMovementModal: FC<InventoryMovementModalProps> = ({
           <Label className="text-gray-500">Tipo</Label>
           <Select
             value={movementForm.type}
-            onChange={(value) => onFormChange((prev) => ({ ...prev, type: value as typeof movementForm.type }))}
+            onChange={(value) =>
+              onFormChange((prev) => ({ ...prev, type: value as typeof movementForm.type }))
+            }
             disabled={saving}
             options={[
               { value: "in", label: "Entrada" },
@@ -49,7 +53,9 @@ export const InventoryMovementModal: FC<InventoryMovementModalProps> = ({
             type="number"
             placeholder="Ej. 5"
             value={movementForm.quantity}
-            onChange={(event) => onFormChange((prev) => ({ ...prev, quantity: event.target.value }))}
+            onChange={(event) =>
+              onFormChange((prev) => ({ ...prev, quantity: event.target.value }))
+            }
             required
             disabled={saving}
           />
@@ -68,7 +74,9 @@ export const InventoryMovementModal: FC<InventoryMovementModalProps> = ({
         <Label className="text-gray-500">Empleado</Label>
         <EmployeeSelect
           value={movementForm.createdByEmployeeId}
-          onChange={(employeeId) => onFormChange((prev) => ({ ...prev, createdByEmployeeId: employeeId }))}
+          onChange={(employeeId) =>
+            onFormChange((prev) => ({ ...prev, createdByEmployeeId: employeeId }))
+          }
           disabled={saving}
         />
       </div>

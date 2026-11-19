@@ -18,8 +18,6 @@ export interface DetailItemLine {
   unitPrice: number;
 }
 
-// Datos de la vista individual de una nota: la nota, sus productos, tipos de
-// servicio y técnico ya resueltos a nombres, más las acciones (cancelar/eliminar).
 export const useRepairNoteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -39,7 +37,9 @@ export const useRepairNoteDetail = () => {
   } = useRepairNotes();
   const { employees, fetchAll: fetchEmployees } = useEmployees();
   const { serviceTypes, fetchAll: fetchServiceTypes } = useServiceTypes();
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(note?.localId || workingBranchId);
+  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(
+    note?.localId || workingBranchId,
+  );
 
   const [itemRecords, setItemRecords] = useState<RepairNoteItemRecord[]>([]);
   const [serviceTypeIds, setServiceTypeIds] = useState<string[]>([]);
@@ -61,7 +61,15 @@ export const useRepairNoteDetail = () => {
     fetchEmployees();
     fetchServiceTypes();
     fetchInventory();
-  }, [id, fetchNote, fetchNoteItems, fetchNoteServiceTypeIds, fetchEmployees, fetchServiceTypes, fetchInventory]);
+  }, [
+    id,
+    fetchNote,
+    fetchNoteItems,
+    fetchNoteServiceTypeIds,
+    fetchEmployees,
+    fetchServiceTypes,
+    fetchInventory,
+  ]);
 
   const technicianName = useMemo(() => {
     const employee = employees.find((e) => e.id === note?.assignedEmployeeId);
@@ -70,7 +78,9 @@ export const useRepairNoteDetail = () => {
 
   const serviceTypeNames = useMemo(() => {
     const nameById = new Map(serviceTypes.map((t) => [t.id, t.name]));
-    return serviceTypeIds.map((typeId) => nameById.get(typeId)).filter((n): n is string => Boolean(n));
+    return serviceTypeIds
+      .map((typeId) => nameById.get(typeId))
+      .filter((n): n is string => Boolean(n));
   }, [serviceTypes, serviceTypeIds]);
 
   const itemLines = useMemo<DetailItemLine[]>(
@@ -99,7 +109,6 @@ export const useRepairNoteDetail = () => {
     setBusy(false);
   }, [id, confirm, cancelNote, deleteNote, fetchNote, navigate]);
 
-  // Avanza la nota al siguiente estado. Entregar además abre el cobro del saldo.
   const next = note ? NEXT_STATUS[note.status] : undefined;
   const advance = useCallback(async () => {
     if (!id || !next) return;

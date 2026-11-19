@@ -10,6 +10,7 @@ export const createSupplierRouter = (controller: SupplierController): Router => 
   router.get("/:id", controller.getById);
   router.post("/", controller.create);
   router.patch("/:id", controller.update);
+  router.patch("/:id/active", controller.setActive);
   router.delete("/:id", controller.delete);
   return router;
 };

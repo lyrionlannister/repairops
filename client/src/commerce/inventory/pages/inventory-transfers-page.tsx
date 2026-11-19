@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
-import { ArrowRightLeft } from "lucide-react";
 import { useInventory } from "../hooks/use-inventory";
 import { useInventoryTransfers } from "../hooks/use-inventory-transfers";
 import { useInventoryTransferLabels } from "../hooks/use-inventory-transfer-labels";
 import { useBranches } from "@identity/branches/hooks/use-branches";
-import { Button } from "@ui/button/button";
-import { Input } from "@ui/inputs/input";
-import { Label } from "@ui/inputs/label";
-import { Select } from "@ui/select/select";
 import { PageShell } from "@common/components/page-shell/page-shell";
+import { InventoryTransferForm } from "../components/inventory-transfer-form";
+import { formatDate } from "../utils/format";
 
 export const InventoryTransfersPage: React.FC = () => {
   const { items, fetchAll: fetchItems } = useInventory();
@@ -32,7 +29,7 @@ export const InventoryTransfersPage: React.FC = () => {
   const toItem = items.find((i) => i.id === toItemId);
   const sameBranch = Boolean(fromItem && toItem && fromItem.localId === toItem.localId);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!fromItemId || !toItemId || Number(quantity) <= 0 || sameBranch) return;
 
@@ -57,68 +54,46 @@ export const InventoryTransfersPage: React.FC = () => {
       title="Transferencias entre sucursales"
       description="Pasa unidades de un producto a su equivalente en otra sucursal. No crea productos nuevos."
     >
-
-      <form
+      <InventoryTransferForm
+        items={items}
+        itemLabel={itemLabel}
+        fromItemId={fromItemId}
+        onFromItemIdChange={setFromItemId}
+        toItemId={toItemId}
+        onToItemIdChange={setToItemId}
+        sameBranch={sameBranch}
+        quantity={quantity}
+        onQuantityChange={setQuantity}
+        reason={reason}
+        onReasonChange={setReason}
+        creating={creating}
+        disabled={creating || !fromItemId || !toItemId || Number(quantity) <= 0 || sameBranch}
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3"
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <Label className="text-gray-500">Item origen</Label>
-            <Select
-              value={fromItemId}
-              onChange={setFromItemId}
-              placeholder="Selecciona el producto de origen"
-              options={items.map((i) => ({ value: i.id, label: itemLabel(i) }))}
-            />
-          </div>
-          <div>
-            <Label className="text-gray-500">Item destino</Label>
-            <Select
-              value={toItemId}
-              onChange={setToItemId}
-              placeholder="Selecciona el producto de destino"
-              options={items.filter((i) => i.id !== fromItemId).map((i) => ({ value: i.id, label: itemLabel(i) }))}
-            />
-          </div>
-        </div>
-        {sameBranch && (
-          <p className="text-sm text-red-500">El item origen y destino pertenecen a la misma sucursal.</p>
-        )}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <Label className="text-gray-500">Cantidad</Label>
-            <Input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-          </div>
-          <div>
-            <Label className="text-gray-500">Motivo (opcional)</Label>
-            <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Opcional" />
-          </div>
-        </div>
-        <Button
-          type="submit"
-          variant="primary"
-          className="w-full"
-          disabled={creating || !fromItemId || !toItemId || Number(quantity) <= 0 || sameBranch}
-        >
-          <ArrowRightLeft className="mr-1.5 size-4" />
-          {creating ? "Transfiriendo..." : "Transferir"}
-        </Button>
-      </form>
+      />
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
         <h2 className="mb-3 text-lg font-medium text-gray-800 dark:text-white/90">Historial</h2>
         <div className="space-y-2">
-          {transfers.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">Sin transferencias todavía.</p>}
+          {transfers.length === 0 && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">Sin transferencias todavía.</p>
+          )}
           {transfers.map((t) => (
-            <div key={t.id} className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+            <div
+              key={t.id}
+              className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300"
+            >
               <span>
                 {t.quantity} {t.quantity === 1 ? "unidad" : "unidades"} de{" "}
-                <strong className="font-medium text-gray-800 dark:text-white/90">{itemNameById(t.fromInventoryItemId)}</strong>{" "}
-                a <strong className="font-medium text-gray-800 dark:text-white/90">{itemNameById(t.toInventoryItemId)}</strong>
+                <strong className="font-medium text-gray-800 dark:text-white/90">
+                  {itemNameById(t.fromInventoryItemId)}
+                </strong>{" "}
+                a{" "}
+                <strong className="font-medium text-gray-800 dark:text-white/90">
+                  {itemNameById(t.toInventoryItemId)}
+                </strong>
                 {t.reason ? ` · ${t.reason}` : ""}
               </span>
-              <span className="text-gray-400">{new Date(t.createdAt).toLocaleString("es-MX")}</span>
+              <span className="text-gray-400">{formatDate(t.createdAt)}</span>
             </div>
           ))}
         </div>
@@ -126,4 +101,3 @@ export const InventoryTransfersPage: React.FC = () => {
     </PageShell>
   );
 };
-

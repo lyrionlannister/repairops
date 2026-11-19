@@ -2,7 +2,12 @@ import { LessThan, Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
-import { ChatDirection, ChatMessage, ChatMessageType, ChatSender } from "../entities/chat-message.entity.js";
+import {
+  ChatDirection,
+  ChatMessage,
+  ChatMessageType,
+  ChatSender,
+} from "../entities/chat-message.entity.js";
 
 export interface ConversationRow {
   sessionId: string;
@@ -93,16 +98,21 @@ export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
   }
 
   async getMessagesByContact(contactPhone: string): Promise<ChatMessage[]> {
-    return this.scoped().andWhere("entity.contactPhone = :contactPhone", { contactPhone }).orderBy("entity.id", "ASC").getMany();
+    return this.scoped()
+      .andWhere("entity.contactPhone = :contactPhone", { contactPhone })
+      .orderBy("entity.id", "ASC")
+      .getMany();
   }
 
-  // Mensaje con archivo del tenant del contexto y de esa conversacion (por public_id).
   async findMediaMessage(contactPhone: string, publicId: string): Promise<ChatMessage | null> {
     return this.scoped()
-      .andWhere("entity.contactPhone = :contactPhone AND entity.publicId = :publicId AND entity.mediaKey IS NOT NULL", {
-        contactPhone,
-        publicId,
-      })
+      .andWhere(
+        "entity.contactPhone = :contactPhone AND entity.publicId = :publicId AND entity.mediaKey IS NOT NULL",
+        {
+          contactPhone,
+          publicId,
+        },
+      )
       .getOne();
   }
 
@@ -111,7 +121,9 @@ export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
   async findLastInboundAt(contactPhone: string): Promise<Date | null> {
     const row = await this.scoped()
       .select("MAX(entity.createdAt)", "lastAt")
-      .andWhere("entity.contactPhone = :contactPhone AND entity.direction = 'inbound'", { contactPhone })
+      .andWhere("entity.contactPhone = :contactPhone AND entity.direction = 'inbound'", {
+        contactPhone,
+      })
       .getRawOne<{ lastAt: Date | null }>();
     return row?.lastAt ? new Date(row.lastAt) : null;
   }

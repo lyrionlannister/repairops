@@ -2,7 +2,6 @@ import type { FC } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 
-// Vuelve a la página inmediatamente anterior del historial.
 export const BackButton: FC = () => {
   const navigate = useNavigate();
 

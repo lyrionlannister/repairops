@@ -21,7 +21,7 @@ interface ReturnLinesFormProps {
   onLineChange: (saleItemId: string, patch: Partial<LineDraft>) => void;
   onRefundMethodChange: (method: RefundMethod) => void;
   onReasonChange: (value: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }
 
 export const ReturnLinesForm: FC<ReturnLinesFormProps> = ({
@@ -44,8 +44,12 @@ export const ReturnLinesForm: FC<ReturnLinesFormProps> = ({
     className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3"
   >
     <div className="flex items-center justify-between">
-      <h2 className="text-lg font-medium text-gray-800 dark:text-white/90">Venta #{sale.saleNumber}</h2>
-      <span className="text-sm text-gray-500 dark:text-gray-400">Total: {formatMoney(sale.totalValue)}</span>
+      <h2 className="text-lg font-medium text-gray-800 dark:text-white/90">
+        Venta #{sale.saleNumber}
+      </h2>
+      <span className="text-sm text-gray-500 dark:text-gray-400">
+        Total: {formatMoney(sale.totalValue)}
+      </span>
     </div>
 
     <div className="space-y-3">
@@ -57,8 +61,9 @@ export const ReturnLinesForm: FC<ReturnLinesFormProps> = ({
         return (
           <div key={item.id} className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="flex-1 text-sm text-gray-600 dark:text-gray-300">
-              {(item.lineType === "inventory_item" ? itemNames[item.referenceId] : undefined) ?? (item.lineType === "inventory_item" ? "Producto" : "Servicio")} · cant. {item.quantity} ·{" "}
-              {formatMoney(item.unitPrice)} c/u
+              {(item.lineType === "inventory_item" ? itemNames[item.referenceId] : undefined) ??
+                (item.lineType === "inventory_item" ? "Producto" : "Servicio")}{" "}
+              · cant. {item.quantity} · {formatMoney(item.unitPrice)} c/u
               {returned > 0 && <span className="text-amber-500"> · ya devuelto: {returned}</span>}
             </div>
             <div className="w-full sm:w-24">
@@ -95,13 +100,19 @@ export const ReturnLinesForm: FC<ReturnLinesFormProps> = ({
       </div>
       <div>
         <Label className="text-gray-500">Motivo</Label>
-        <Input placeholder="Motivo de la devolución" value={reason} onChange={(e) => onReasonChange(e.target.value)} />
+        <Input
+          placeholder="Motivo de la devolución"
+          value={reason}
+          onChange={(e) => onReasonChange(e.target.value)}
+        />
       </div>
     </div>
 
     <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
       <span className="text-sm text-gray-500 dark:text-gray-400">Total a reembolsar</span>
-      <span className="text-xl font-semibold text-gray-800 dark:text-white/90">{formatMoney(totalRefunded)}</span>
+      <span className="text-xl font-semibold text-gray-800 dark:text-white/90">
+        {formatMoney(totalRefunded)}
+      </span>
     </div>
 
     <Button type="submit" variant="primary" className="w-full" disabled={saving || !canSubmit}>

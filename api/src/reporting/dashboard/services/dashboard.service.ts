@@ -64,65 +64,79 @@ export class DashboardService {
     const { timeZone } = await this.localService.getConfig();
     const withMoney = MONEY_ROLES.includes(role);
 
-    return this.cached(`summary:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`, async () => {
-      const [income, counts, activity, daily, weekCount, lastAt] = await Promise.all([
-        withMoney ? this.dashboardDao.getIncomeSummary(timeZone, branch) : Promise.resolve(null),
-        this.dashboardDao.getOperationalCounts(branch),
-        this.dashboardDao.getRecentActivity(branch),
-        this.chatsService.getConversationCountsByDay(),
-        this.chatsService.getWeekSessionCount(),
-        this.chatsService.getLastInteractionAt(),
-      ]);
+    return this.cached(
+      `summary:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`,
+      async () => {
+        const [income, counts, activity, daily, weekCount, lastAt] = await Promise.all([
+          withMoney ? this.dashboardDao.getIncomeSummary(timeZone, branch) : Promise.resolve(null),
+          this.dashboardDao.getOperationalCounts(branch),
+          this.dashboardDao.getRecentActivity(branch),
+          this.chatsService.getConversationCountsByDay(),
+          this.chatsService.getWeekSessionCount(),
+          this.chatsService.getLastInteractionAt(),
+        ]);
 
-      const summary: DashboardSummary = {
-        timeZone,
-        counts,
-        chat: { todayCount: daily[daily.length - 1]?.count ?? 0, weekCount, lastAt },
-        activity: activity.map(({ amount, ...row }) => (withMoney ? { ...row, amount } : row)),
-      };
-      if (income) {
-        summary.money = {
-          today: income.today,
-          week: income.week,
-          month: income.month,
-          salesToday: income.salesToday,
-          todayTrend: trendOf(income.today, income.yesterday),
-          monthTrend: trendOf(income.month, income.previousMonth),
+        const summary: DashboardSummary = {
+          timeZone,
+          counts,
+          chat: { todayCount: daily[daily.length - 1]?.count ?? 0, weekCount, lastAt },
+          activity: activity.map(({ amount, ...row }) => (withMoney ? { ...row, amount } : row)),
         };
-      }
-      return summary;
-    });
+        if (income) {
+          summary.money = {
+            today: income.today,
+            week: income.week,
+            month: income.month,
+            salesToday: income.salesToday,
+            todayTrend: trendOf(income.today, income.yesterday),
+            monthTrend: trendOf(income.month, income.previousMonth),
+          };
+        }
+        return summary;
+      },
+    );
   }
 
-  async getSeries(role: UserRole, query: { granularity?: string; year?: string; branchId?: string }): Promise<DashboardSeries> {
+  async getSeries(
+    role: UserRole,
+    query: { granularity?: string; year?: string; branchId?: string },
+  ): Promise<DashboardSeries> {
     const branch = this.parseBranch(query.branchId);
     const granularity = query.granularity === "month" ? "month" : "day";
     const { timeZone } = await this.localService.getConfig();
     const withMoney = MONEY_ROLES.includes(role);
 
     if (granularity === "day") {
-      return this.cached(`series:day:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`, async () => {
-        const [rows, chat] = await Promise.all([
-          withMoney ? this.dashboardDao.getDailySeries(timeZone, branch) : Promise.resolve(null),
-          this.chatsService.getConversationCountsByDay(),
-        ]);
-        return { granularity, chat, ...(rows ? { business: rows } : {}) };
-      });
+      return this.cached(
+        `series:day:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`,
+        async () => {
+          const [rows, chat] = await Promise.all([
+            withMoney ? this.dashboardDao.getDailySeries(timeZone, branch) : Promise.resolve(null),
+            this.chatsService.getConversationCountsByDay(),
+          ]);
+          return { granularity, chat, ...(rows ? { business: rows } : {}) };
+        },
+      );
     }
 
     const year = this.parseYear(query.year, timeZone);
-    return this.cached(`series:month:${year}:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`, async () => {
-      const [rows, chat] = await Promise.all([
-        withMoney ? this.dashboardDao.getMonthlySeries(timeZone, branch, year) : Promise.resolve(null),
-        this.chatsService.getConversationCountsByMonth(year),
-      ]);
-      const business = rows?.map((row) => ({
-        bucket: `${year}-${String(row.month).padStart(2, "0")}`,
-        sales: row.sales,
-        repairs: row.repairs,
-      }));
-      return { granularity, year, chat, ...(business ? { business } : {}) };
-    });
+    return this.cached(
+      `series:month:${year}:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`,
+      async () => {
+        const [rows, chat] = await Promise.all([
+          withMoney
+            ? this.dashboardDao.getMonthlySeries(timeZone, branch, year)
+            : Promise.resolve(null),
+          this.chatsService.getConversationCountsByMonth(year),
+        ]);
+        const business = rows?.map((row) => ({
+          bucket: `${year}-${String(row.month).padStart(2, "0")}`,
+          sales: row.sales,
+          repairs: row.repairs,
+        }));
+        return { granularity, year, chat, ...(business ? { business } : {}) };
+      },
+    );
   }
 
   private parseBranch(branchId: string | undefined): string | null {
@@ -134,7 +148,8 @@ export class DashboardService {
   private parseYear(year: string | undefined, timeZone: string): number {
     if (!year) return Number(localDay(timeZone).slice(0, 4));
     const parsed = Number(year);
-    if (!Number.isInteger(parsed) || parsed < 2000 || parsed > 2100) throw new DashboardValidationError("Año inválido");
+    if (!Number.isInteger(parsed) || parsed < 2000 || parsed > 2100)
+      throw new DashboardValidationError("Año inválido");
     return parsed;
   }
 
@@ -145,15 +160,11 @@ export class DashboardService {
     try {
       const hit = await redisClient.get(key);
       if (hit) return JSON.parse(hit) as T;
-    } catch {
-      // sin cache
-    }
+    } catch {}
     const value = await compute();
     try {
       await redisClient.set(key, JSON.stringify(value), "EX", CACHE_TTL_SECONDS);
-    } catch {
-      // sin cache
-    }
+    } catch {}
     return value;
   }
 }

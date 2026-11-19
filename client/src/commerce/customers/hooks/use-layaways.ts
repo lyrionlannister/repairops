@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
+import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 
 export type LayawayStatus = "open" | "completed" | "cancelled" | "expired";
 export type LayawayMethod = "efectivo" | "tarjeta" | "transferencia";
@@ -50,11 +51,13 @@ export const useLayaways = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const branchQuery = useBranchQuery();
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient("/layaways");
+      const res = await apiClient(`/layaways${branchQuery}`);
       if (!res.ok) throw new Error("Error al cargar apartados");
       setLayaways(await res.json());
     } catch (err) {
@@ -62,7 +65,7 @@ export const useLayaways = () => {
     } finally {
       setLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, branchQuery]);
 
   const open = useCallback(
     async (data: OpenLayawayPayload): Promise<LayawayRecord | null> => {
@@ -89,7 +92,11 @@ export const useLayaways = () => {
   );
 
   const complete = useCallback(
-    async (id: string, cashSessionId: string, payments: Array<{ method: LayawayMethod; amount: number }>): Promise<boolean> => {
+    async (
+      id: string,
+      cashSessionId: string,
+      payments: Array<{ method: LayawayMethod; amount: number }>,
+    ): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {

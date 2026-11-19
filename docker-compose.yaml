@@ -1,50 +1,42 @@
 services:
-  nginx:
-    image: docker.io/library/nginx:alpine
-    container_name: repairops-nginx
-    ports:
-      - "${NGINX_HTTP_PORT:-8080}:80"
-      - "${NGINX_HTTPS_PORT:-8443}:443"
-    volumes:
-      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./infra/nginx/certs:/etc/nginx/certs:ro
-    depends_on:
-      - api
-      - automation
-      - client
-
-  client:
+  postgres:
     build:
-      context: ./client
+      context: ./infra/database
       dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?VITE_API_BASE_URL is required}
-    image: repairops-client
-    container_name: repairops-client
-
-  api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: repairops-api
+    container_name: repairops-postgres
     env_file:
-      - ./api/.env
-    environment:
-      # Siempre production en el contenedor -- este corre dist/ compilado, no
-      # src/ con ts-node. env_file no trae NODE_ENV a propósito; si lo
-      # trajera y pisara este ENV NODE_ENV=production del Dockerfile,
-      # migration-data-source.ts buscaría migraciones en src/*.ts (que no
-      # existe en la imagen runtime), encontraría cero, y el boot truena en el seed.
-      NODE_ENV: production
+      - ./infra/database/.env
     ports:
-      - "${APP_PORT:?APP_PORT is required}:${APP_CONTAINER_PORT:?APP_CONTAINER_PORT is required}"
+      - "${POSTGRES_PORT:?POSTGRES_PORT is required}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    build:
+      context: ./infra/redis
+    container_name: repairops-redis
+    env_file:
+      - ./infra/redis/.env
+    ports:
+      - "${REDIS_PORT:?REDIS_PORT is required}:6379"
+    volumes:
+      - redis_data:/data
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-      automation:
-        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --user $$REDIS_USER --pass $$REDIS_PASSWORD --no-auth-warning ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   automation:
     build:
@@ -61,46 +53,76 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:5678/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
-  postgres:
+  api:
     build:
-      context: ./infra/database
+      context: ./api
       dockerfile: Dockerfile
-    container_name: repairops-postgres
+    container_name: repairops-api
     env_file:
-      - ./infra/database/.env
+      - ./api/.env
+    environment:
+      NODE_ENV: production
     ports:
-      - "${POSTGRES_PORT:?POSTGRES_PORT is required}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./infra/database/init:/docker-entrypoint-initdb.d:ro
+      - "${APP_PORT:?APP_PORT is required}:${APP_CONTAINER_PORT:?APP_CONTAINER_PORT is required}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      automation:
+        condition: service_healthy
     healthcheck:
-      # $$ (no ${...}) -- se resuelve en el shell DEL CONTENEDOR via env_file,
-      # no en la sustitucion de Compose (que no tiene por que conocer POSTGRES_USER).
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/health', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
-  redis:
+  client:
     build:
-      context: ./infra/redis
-    container_name: repairops-redis
-    env_file:
-      - ./infra/redis/.env
-    ports:
-      - "${REDIS_PORT:?REDIS_PORT is required}:6379"
-    volumes:
-      - redis_data:/data
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?VITE_API_BASE_URL is required}
+    image: repairops-client
+    container_name: repairops-client
+    depends_on:
+      api:
+        condition: service_healthy
     healthcheck:
-      # $$ -- mismo motivo que en postgres arriba.
-      test: ["CMD-SHELL", "redis-cli --user $$REDIS_USER --pass $$REDIS_PASSWORD --no-auth-warning ping"]
-      interval: 10s
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1/ || exit 1"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+
+  nginx:
+    image: docker.io/library/nginx:alpine
+    container_name: repairops-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-8080}:80"
+      - "${NGINX_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./infra/nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      automation:
+        condition: service_healthy
+      client:
+        condition: service_healthy
 
 volumes:
   postgres_data:
   redis_data:
   automation_data:
-

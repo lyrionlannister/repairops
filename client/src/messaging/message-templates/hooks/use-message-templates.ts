@@ -10,6 +10,12 @@ export interface MessageTemplate {
   updatedAt: string;
 }
 
+export interface MessageTemplateFormData {
+  key: string;
+  text: string;
+  description: string;
+}
+
 export const useMessageTemplates = () => {
   const { apiClient } = useApiClient();
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);

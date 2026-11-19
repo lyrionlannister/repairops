@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { useReturns, type SaleWithItems, type SaleListItem, type RefundMethod } from "../hooks/use-returns";
+import {
+  useReturns,
+  type SaleWithItems,
+  type SaleListItem,
+  type RefundMethod,
+} from "../hooks/use-returns";
 import { useInventory } from "@commerce/inventory/hooks/use-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useBranch } from "@common/hooks/use-branch";
@@ -11,8 +16,15 @@ import { ReturnLinesForm } from "../components/return-lines-form";
 import { newIdempotencyKey } from "../utils/format";
 
 export const ReturnPage: React.FC = () => {
-  const { searching, saving, findSaleByNumber, findSaleById, listSalesByCustomer, getReturnedQuantities, create } =
-    useReturns();
+  const {
+    searching,
+    saving,
+    findSaleByNumber,
+    findSaleById,
+    listSalesByCustomer,
+    getReturnedQuantities,
+    create,
+  } = useReturns();
   const { workingBranchId } = useBranch();
   const { items: inventoryItems, fetchAll: fetchInventory } = useInventory();
   useEffect(() => {
@@ -60,7 +72,9 @@ export const ReturnPage: React.FC = () => {
     }
     const returned = await getReturnedQuantities(found.id);
     setAlreadyReturned(returned);
-    setLines(found.items.map((item) => ({ saleItemId: item.id, quantity: "0", refundAmount: "0.00" })));
+    setLines(
+      found.items.map((item) => ({ saleItemId: item.id, quantity: "0", refundAmount: "0.00" })),
+    );
     setSale(found);
   };
 
@@ -96,7 +110,7 @@ export const ReturnPage: React.FC = () => {
     setIdempotencyKey(newIdempotencyKey());
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!sale || !cashSession || activeLines.length === 0 || !reason) return;
 
@@ -143,7 +157,6 @@ export const ReturnPage: React.FC = () => {
         customerSaleId={customerSaleId}
         onSelectCustomerSale={handleSelectCustomerSale}
       />
-
 
       {sale && (
         <ReturnLinesForm
