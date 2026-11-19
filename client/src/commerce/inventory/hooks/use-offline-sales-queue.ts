@@ -12,7 +12,10 @@ function nextLocalFolioNumber(): number {
   const current = Number(localStorage.getItem(COUNTER_KEY) ?? "0") + 1;
   try {
     localStorage.setItem(COUNTER_KEY, String(current));
-  } catch {}
+  } catch {
+    // noop: si no persiste, el folio provisional no sobrevive un reload --
+    // no es critico, el folio real lo da el servidor al sincronizar.
+  }
   return current;
 }
 

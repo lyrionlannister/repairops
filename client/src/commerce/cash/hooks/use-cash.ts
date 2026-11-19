@@ -156,7 +156,9 @@ export const useCash = () => {
         const res = await apiClient(`/cash/sessions/${sessionId}/summary`);
         if (!res.ok) return;
         setSummary((await res.json()) as CashSummary);
-      } catch {}
+      } catch {
+        // noop: la pantalla ya tiene un estado anterior razonable
+      }
     },
     [apiClient],
   );
