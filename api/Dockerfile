@@ -27,4 +27,4 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "pnpm migration:run:prod && pnpm start"]
+CMD ["sh", "-c", "node dist/core/startup/wait-for-dependencies.js && pnpm migration:run:prod && pnpm start"]

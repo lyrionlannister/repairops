@@ -1,6 +1,9 @@
 import { optionalEnv } from "../../core/config/env.js";
 
-const WEBHOOK_URL = optionalEnv("IMPORT_STAGING_WEBHOOK_URL", "http://n8n:5678/webhook/import-staging");
+const WEBHOOK_URL = optionalEnv(
+  "IMPORT_STAGING_WEBHOOK_URL",
+  "http://automation:5678/webhook/import-staging",
+);
 const API_INTERNAL_URL = optionalEnv("API_INTERNAL_URL", "http://api:3000");
 
 /**
