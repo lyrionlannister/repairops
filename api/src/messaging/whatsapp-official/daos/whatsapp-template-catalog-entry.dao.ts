@@ -16,12 +16,11 @@ import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 @singleton()
 export class WhatsappTemplateCatalogEntryDao extends BaseDao<WhatsappTemplateCatalogEntry> {
   constructor(
-    @inject(repositoryToken(WhatsappTemplateCatalogEntry)) repository: Repository<WhatsappTemplateCatalogEntry>,
+    @inject(repositoryToken(WhatsappTemplateCatalogEntry))
+    repository: Repository<WhatsappTemplateCatalogEntry>,
   ) {
     super(repository);
   }
-
-  // -- Empresa (tenant actual) --
 
   async findAllForTenant(): Promise<WhatsappTemplateCatalogEntry[]> {
     const tenantId = getCurrentTenantId();
@@ -50,7 +49,10 @@ export class WhatsappTemplateCatalogEntryDao extends BaseDao<WhatsappTemplateCat
 
   async findByKeyForTenant(key: string): Promise<WhatsappTemplateCatalogEntry | null> {
     const tenantId = getCurrentTenantId();
-    return this.repository.findOneBy({ tenantId, key } as FindOptionsWhere<WhatsappTemplateCatalogEntry>);
+    return this.repository.findOneBy({
+      tenantId,
+      key,
+    } as FindOptionsWhere<WhatsappTemplateCatalogEntry>);
   }
 
   async findByIdForTenant(id: string): Promise<WhatsappTemplateCatalogEntry | null> {
@@ -81,8 +83,6 @@ export class WhatsappTemplateCatalogEntryDao extends BaseDao<WhatsappTemplateCat
     if (!existing) return false;
     return super.delete(id);
   }
-
-  // -- Sistema (sin tenant, isPlatformAdmin) --
 
   async findAllSystem(): Promise<WhatsappTemplateCatalogEntry[]> {
     return this.repository.find({ where: { tenantId: IsNull() } });

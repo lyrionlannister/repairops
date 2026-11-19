@@ -2,8 +2,6 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 import type { MediaStorage, StoredMedia } from "./media-storage.js";
 
-// Implementacion sobre el sistema de archivos: desarrollo local y pruebas
-// (MEDIA_STORAGE=fs). El tipo de contenido se guarda junto al archivo.
 export class FsMediaStorage implements MediaStorage {
   private readonly root: string;
 
@@ -21,7 +19,10 @@ export class FsMediaStorage implements MediaStorage {
   async get(key: string): Promise<StoredMedia | null> {
     const path = this.pathOf(key);
     try {
-      const [body, contentType] = await Promise.all([readFile(path), readFile(`${path}.type`, "utf8")]);
+      const [body, contentType] = await Promise.all([
+        readFile(path),
+        readFile(`${path}.type`, "utf8"),
+      ]);
       return { body, contentType };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;

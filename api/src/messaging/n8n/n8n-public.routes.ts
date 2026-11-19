@@ -37,7 +37,6 @@ export const createN8nPublicRouter = (
   const withTenant = <T>(tenantId: string, fn: () => Promise<T>): Promise<T> =>
     runWithTenant(tenantId, fn);
 
-  // GET /api/v1/n8n/:tenantId/message-templates/:key
   router.get("/:tenantId/message-templates/:key", async (req, res) => {
     try {
       const template = await withTenant(req.params.tenantId, () =>
@@ -54,7 +53,6 @@ export const createN8nPublicRouter = (
     }
   });
 
-  // GET /api/v1/n8n/:tenantId/products/search?model=Samsung+A15&supplier=tecnomax
   router.get("/:tenantId/products/search", async (req, res) => {
     try {
       const model = (req.query.model as string | undefined)?.trim();
@@ -68,9 +66,7 @@ export const createN8nPublicRouter = (
       let items = await withTenant(req.params.tenantId, () => priceListDao.searchByModel(model));
 
       if (supplier) {
-        items = items.filter((item) =>
-          item.supplier.name.toLowerCase().includes(supplier),
-        );
+        items = items.filter((item) => item.supplier.name.toLowerCase().includes(supplier));
       }
 
       res.status(200).json(
@@ -87,7 +83,6 @@ export const createN8nPublicRouter = (
     }
   });
 
-  // GET /api/v1/n8n/:tenantId/repair-notes/:controlNumber
   router.get("/:tenantId/repair-notes/:controlNumber", async (req, res) => {
     try {
       const controlNumber = parseInt(req.params.controlNumber, 10);
