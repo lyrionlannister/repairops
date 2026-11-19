@@ -21,13 +21,10 @@ export const PageShell = ({
   children,
 }: PageShellProps) => {
   const { pathname } = useLocation();
-  // El botón de regresar está en todas las páginas menos Inicio.
   const showBack = pathname !== "/home";
 
   return (
-    <div
-      className={`flex flex-col ${scrollHeader ? "" : "flex-1 min-h-0"}`}
-    >
+    <div className={`flex flex-col ${scrollHeader ? "" : "flex-1 min-h-0"}`}>
       <PageMeta title={title} description={description} />
 
       <div className="flex shrink-0 flex-col gap-4 pb-6 sm:flex-row sm:items-center sm:justify-between">
@@ -52,4 +49,3 @@ export const PageShell = ({
     </div>
   );
 };
-
