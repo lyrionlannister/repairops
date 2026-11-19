@@ -12,9 +12,7 @@ function nextLocalFolioNumber(): number {
   const current = Number(localStorage.getItem(COUNTER_KEY) ?? "0") + 1;
   try {
     localStorage.setItem(COUNTER_KEY, String(current));
-  } catch {
-    // noop
-  }
+  } catch {}
   return current;
 }
 
@@ -52,7 +50,9 @@ function writeQueue(queue: QueuedSale[]): void {
 export const useOfflineSalesQueue = () => {
   const { apiClient } = useApiClient();
   const [queue, setQueue] = useState<QueuedSale[]>(() => readQueue());
-  const [isOnline, setIsOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
@@ -103,7 +103,9 @@ export const useOfflineSalesQueue = () => {
           if (!res.ok) {
             const body = await res.json().catch(() => ({}));
             const message = (body as { error?: string }).error ?? "Error al sincronizar";
-            current = current.map((q) => (q.idempotencyKey === item.idempotencyKey ? { ...q, lastError: message } : q));
+            current = current.map((q) =>
+              q.idempotencyKey === item.idempotencyKey ? { ...q, lastError: message } : q,
+            );
             writeQueue(current);
             setQueue(current);
             break;
@@ -136,7 +138,9 @@ export const useOfflineSalesQueue = () => {
   // real de encolar nunca depende de isOnline: siempre se intenta el POST de
   // verdad, y solo se encola si la propia llamada falla por red.
   const submitOrQueue = useCallback(
-    async (payload: CreateSalePayload): Promise<{ sale: Sale } | { queued: QueuedSale } | { error: string }> => {
+    async (
+      payload: CreateSalePayload,
+    ): Promise<{ sale: Sale } | { queued: QueuedSale } | { error: string }> => {
       try {
         const res = await apiClient("/sales", {
           method: "POST",

@@ -16,7 +16,6 @@ interface CustomerCreditCardProps {
   onSave: () => void;
 }
 
-// Crédito del cliente: cuánto puede deber (límite editable), cuánto debe ya y cuánto le queda.
 export const CustomerCreditCard: FC<CustomerCreditCardProps> = ({
   limit,
   balance,
@@ -34,12 +33,18 @@ export const CustomerCreditCard: FC<CustomerCreditCardProps> = ({
     <div className="mt-4 grid grid-cols-3 gap-3 text-center">
       {[
         { label: "Límite", value: formatMoney(limit) },
-        { label: "Debe", value: formatMoney(balance), tone: balance > 0 ? "text-red-600 dark:text-red-400" : "" },
+        {
+          label: "Debe",
+          value: formatMoney(balance),
+          tone: balance > 0 ? "text-red-600 dark:text-red-400" : "",
+        },
         { label: "Disponible", value: formatMoney(available) },
       ].map(({ label, value, tone }) => (
         <div key={label} className="rounded-xl bg-gray-50 p-3 dark:bg-white/5">
           <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-          <p className={`mt-1 text-sm font-bold text-gray-800 dark:text-white/90 ${tone ?? ""}`}>{value}</p>
+          <p className={`mt-1 text-sm font-bold text-gray-800 dark:text-white/90 ${tone ?? ""}`}>
+            {value}
+          </p>
         </div>
       ))}
     </div>
@@ -52,7 +57,9 @@ export const CustomerCreditCard: FC<CustomerCreditCardProps> = ({
         />
       </div>
       <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-        {limit > 0 ? `${Math.round(usedPct)}% del límite en uso` : "Sin crédito: no se le puede fiar."}
+        {limit > 0
+          ? `${Math.round(usedPct)}% del límite en uso`
+          : "Sin crédito: no se le puede fiar."}
       </p>
     </div>
 
@@ -65,7 +72,14 @@ export const CustomerCreditCard: FC<CustomerCreditCardProps> = ({
     >
       <div className="flex-1">
         <Label className="text-gray-500">Límite de crédito ($)</Label>
-        <Input type="number" min="0" step="0.01" value={draft} onChange={(e) => onDraftChange(e.target.value)} disabled={saving} />
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          value={draft}
+          onChange={(e) => onDraftChange(e.target.value)}
+          disabled={saving}
+        />
       </div>
       <Button type="submit" variant="primary" disabled={saving || !dirty}>
         {saving ? "Guardando..." : "Guardar límite"}

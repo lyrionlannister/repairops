@@ -29,9 +29,6 @@ export interface ProfileDraft {
   email: string;
 }
 
-// Ficha de un cliente: sus datos (editables aquí mismo), su crédito (límite, lo que
-// debe y lo disponible), las deudas que lo componen y su historial de notas, ventas y
-// apartados. Hace los fetch y los cálculos; los componentes solo pintan.
 export const useCustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { apiClient } = useApiClient();

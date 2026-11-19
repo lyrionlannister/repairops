@@ -2,7 +2,10 @@ import { useState } from "react";
 import type { FC, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { Eye } from "lucide-react";
-import { STATUS_CONFIG, type RepairNoteRecord } from "@commerce/repair-notes/hooks/use-repair-notes";
+import {
+  STATUS_CONFIG,
+  type RepairNoteRecord,
+} from "@commerce/repair-notes/hooks/use-repair-notes";
 import type { Sale } from "@commerce/inventory/hooks/use-sales";
 import type { LayawayRecord } from "../hooks/use-layaways";
 import { STATUS_LABELS, formatDay, formatMoney } from "../utils/format";
@@ -15,8 +18,11 @@ interface CustomerHistoryCardProps {
   layaways: LayawayRecord[];
 }
 
-
-const MiniTable: FC<{ head: string[]; empty: string; rows: ReactNode[][] }> = ({ head, empty, rows }) =>
+const MiniTable: FC<{ head: string[]; empty: string; rows: ReactNode[][] }> = ({
+  head,
+  empty,
+  rows,
+}) =>
   rows.length === 0 ? (
     <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{empty}</p>
   ) : (
@@ -25,7 +31,10 @@ const MiniTable: FC<{ head: string[]; empty: string; rows: ReactNode[][] }> = ({
         <thead>
           <tr className="border-b border-gray-200 dark:border-gray-800">
             {head.map((h) => (
-              <th key={h} className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+              <th
+                key={h}
+                className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400"
+              >
                 {h}
               </th>
             ))}
@@ -33,7 +42,10 @@ const MiniTable: FC<{ head: string[]; empty: string; rows: ReactNode[][] }> = ({
         </thead>
         <tbody>
           {rows.map((cells, index) => (
-            <tr key={index} className="border-b border-gray-100 last:border-0 dark:border-gray-800/50">
+            <tr
+              key={index}
+              className="border-b border-gray-100 last:border-0 dark:border-gray-800/50"
+            >
               {cells.map((cell, i) => (
                 <td key={i} className="px-3 py-3 text-center text-gray-700 dark:text-gray-300">
                   {cell}
@@ -46,7 +58,6 @@ const MiniTable: FC<{ head: string[]; empty: string; rows: ReactNode[][] }> = ({
     </div>
   );
 
-// Historial del cliente: sus reparaciones, ventas y apartados, en pestañas.
 export const CustomerHistoryCard: FC<CustomerHistoryCardProps> = ({ notes, sales, layaways }) => {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("notes");
@@ -85,7 +96,10 @@ export const CustomerHistoryCard: FC<CustomerHistoryCardProps> = ({ notes, sales
           rows={notes.map((n) => [
             `#${n.controlNumber}`,
             `${n.brand} ${n.model}`,
-            <span key="s" className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CONFIG[n.status]?.className ?? ""}`}>
+            <span
+              key="s"
+              className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CONFIG[n.status]?.className ?? ""}`}
+            >
               {STATUS_CONFIG[n.status]?.label ?? n.status}
             </span>,
             formatDay(n.receivedAt),
@@ -105,7 +119,11 @@ export const CustomerHistoryCard: FC<CustomerHistoryCardProps> = ({ notes, sales
         <MiniTable
           head={["Folio", "Fecha", "Total"]}
           empty="Aún no tiene ventas."
-          rows={sales.map((s) => [`#${s.saleNumber}`, formatDay(s.createdAt), formatMoney(Number(s.totalValue))])}
+          rows={sales.map((s) => [
+            `#${s.saleNumber}`,
+            formatDay(s.createdAt),
+            formatMoney(Number(s.totalValue)),
+          ])}
         />
       )}
       {tab === "layaways" && (

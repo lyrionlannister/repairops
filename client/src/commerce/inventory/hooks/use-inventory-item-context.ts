@@ -1,10 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useInventory, type InventoryMovement } from "./use-inventory";
 
-/**
- * Datos de contexto de un item de inventario (historial de movimientos + margen)
- * para mostrarse en un panel lateral junto al formulario de edición.
- */
 export const useInventoryItemContext = (itemId: string | null) => {
   const { items, movements, fetchAll, fetchMovements } = useInventory();
 
@@ -19,7 +15,10 @@ export const useInventoryItemContext = (itemId: string | null) => {
   const currentItem = useMemo(() => items.find((i) => i.id === itemId), [items, itemId]);
 
   const sortedMovements = useMemo<InventoryMovement[]>(
-    () => [...movements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    () =>
+      [...movements].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
     [movements],
   );
 

@@ -7,7 +7,6 @@ export interface QuoteHistoryEntry {
   totalValue: number;
 }
 
-// Historial de otras cotizaciones del mismo cliente, excluyendo la que se edita.
 export const useQuoteCustomerHistory = (customerId: string | null, excludeId?: string) => {
   const { quotes, fetchQuotes } = useQuotes();
 

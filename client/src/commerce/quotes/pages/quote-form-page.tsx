@@ -107,7 +107,6 @@ export const QuoteFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Enter en un paso intermedio avanza en lugar de guardar.
     if (!isLast) return next();
     clearError();
     const items = buildItemsPayload();
@@ -120,8 +119,6 @@ export const QuoteFormPage: React.FC = () => {
     }
   };
 
-  // Panel de historial solo aplica editando una cotizacion con cliente real
-  // seleccionado (customerId), nunca en alta ni con solo nombre libre.
   const showCustomerHistory = isEdit && Boolean(form.customerId);
   const { otherQuotes } = useQuoteCustomerHistory(showCustomerHistory ? form.customerId : null, id);
 

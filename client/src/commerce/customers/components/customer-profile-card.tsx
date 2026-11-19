@@ -18,7 +18,6 @@ interface CustomerProfileCardProps {
   onSave: () => void;
 }
 
-// Datos del cliente: se leen aquí y se editan en el mismo lugar, sin salir de la ficha.
 export const CustomerProfileCard: FC<CustomerProfileCardProps> = ({
   customer,
   editing,
@@ -50,16 +49,31 @@ export const CustomerProfileCard: FC<CustomerProfileCardProps> = ({
       >
         <div>
           <Label className="text-gray-500">Nombre</Label>
-          <Input required value={draft.name} onChange={(e) => onDraftChange({ ...draft, name: e.target.value })} disabled={saving} />
+          <Input
+            required
+            value={draft.name}
+            onChange={(e) => onDraftChange({ ...draft, name: e.target.value })}
+            disabled={saving}
+          />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label className="text-gray-500">Teléfono</Label>
-            <Input required value={draft.phone} onChange={(e) => onDraftChange({ ...draft, phone: e.target.value })} disabled={saving} />
+            <Input
+              required
+              value={draft.phone}
+              onChange={(e) => onDraftChange({ ...draft, phone: e.target.value })}
+              disabled={saving}
+            />
           </div>
           <div>
             <Label className="text-gray-500">Email (opcional)</Label>
-            <Input type="email" value={draft.email} onChange={(e) => onDraftChange({ ...draft, email: e.target.value })} disabled={saving} />
+            <Input
+              type="email"
+              value={draft.email}
+              onChange={(e) => onDraftChange({ ...draft, email: e.target.value })}
+              disabled={saving}
+            />
           </div>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
@@ -84,7 +98,11 @@ export const CustomerProfileCard: FC<CustomerProfileCardProps> = ({
           <dt className="flex size-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
             <Mail className="size-4" />
           </dt>
-          <dd className={customer.email ? "font-medium text-gray-800 dark:text-white/90" : "text-gray-400"}>
+          <dd
+            className={
+              customer.email ? "font-medium text-gray-800 dark:text-white/90" : "text-gray-400"
+            }
+          >
             {customer.email || "Sin email"}
           </dd>
         </div>
