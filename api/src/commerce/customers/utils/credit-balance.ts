@@ -12,7 +12,11 @@ import { CustomerPayment } from "../entities/customer-payment.entity.js";
 // venta, la entrega de una nota, el registro de un abono y la ficha del
 // cliente vean el mismo número. Nunca negativo (un cliente no "sobra" crédito
 // por abonar de más; eso es un error de captura, no saldo a favor).
-export async function sumCreditBalance(manager: EntityManager, tenantId: string, customerId: string): Promise<number> {
+export async function sumCreditBalance(
+  manager: EntityManager,
+  tenantId: string,
+  customerId: string,
+): Promise<number> {
   const sales = await manager
     .createQueryBuilder(SalePayment, "payment")
     .innerJoin(Sale, "sale", "sale.id = payment.saleId AND sale.tenantId = :tenantId", { tenantId })
@@ -24,7 +28,9 @@ export async function sumCreditBalance(manager: EntityManager, tenantId: string,
 
   const notes = await manager
     .createQueryBuilder(RepairNotePayment, "payment")
-    .innerJoin(RepairNote, "note", "note.id = payment.repairNoteId AND note.tenantId = :tenantId", { tenantId })
+    .innerJoin(RepairNote, "note", "note.id = payment.repairNoteId AND note.tenantId = :tenantId", {
+      tenantId,
+    })
     .select("COALESCE(SUM(payment.amount), 0)", "total")
     .where("payment.tenantId = :tenantId", { tenantId })
     .andWhere("payment.method = 'credito'")
@@ -50,8 +56,11 @@ export interface CreditDebtRow {
   amount: string;
 }
 
-// Cada pago a crédito, de venta o de nota, más reciente primero.
-export async function listCreditDebts(manager: EntityManager, tenantId: string, customerId: string): Promise<CreditDebtRow[]> {
+export async function listCreditDebts(
+  manager: EntityManager,
+  tenantId: string,
+  customerId: string,
+): Promise<CreditDebtRow[]> {
   const sales = await manager
     .createQueryBuilder(SalePayment, "payment")
     .innerJoin(Sale, "sale", "sale.id = payment.saleId AND sale.tenantId = :tenantId", { tenantId })
@@ -65,7 +74,9 @@ export async function listCreditDebts(manager: EntityManager, tenantId: string, 
 
   const notes = await manager
     .createQueryBuilder(RepairNotePayment, "payment")
-    .innerJoin(RepairNote, "note", "note.id = payment.repairNoteId AND note.tenantId = :tenantId", { tenantId })
+    .innerJoin(RepairNote, "note", "note.id = payment.repairNoteId AND note.tenantId = :tenantId", {
+      tenantId,
+    })
     .select("note.controlNumber", "reference")
     .addSelect("payment.createdAt", "date")
     .addSelect("payment.amount", "amount")
@@ -75,8 +86,18 @@ export async function listCreditDebts(manager: EntityManager, tenantId: string, 
     .getRawMany<{ reference: string; date: Date; amount: string }>();
 
   const rows: CreditDebtRow[] = [
-    ...sales.map((r) => ({ kind: "sale" as const, reference: Number(r.reference), date: new Date(r.date).toISOString(), amount: r.amount })),
-    ...notes.map((r) => ({ kind: "repair_note" as const, reference: Number(r.reference), date: new Date(r.date).toISOString(), amount: r.amount })),
+    ...sales.map((r) => ({
+      kind: "sale" as const,
+      reference: Number(r.reference),
+      date: new Date(r.date).toISOString(),
+      amount: r.amount,
+    })),
+    ...notes.map((r) => ({
+      kind: "repair_note" as const,
+      reference: Number(r.reference),
+      date: new Date(r.date).toISOString(),
+      amount: r.amount,
+    })),
   ];
   return rows.sort((a, b) => (a.date < b.date ? 1 : -1));
 }
