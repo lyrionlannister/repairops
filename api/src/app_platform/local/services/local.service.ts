@@ -2,7 +2,11 @@ import { singleton } from "tsyringe";
 import { LocalDao } from "../daos/local.dao.js";
 import { Local } from "../entities/local.entity.js";
 import { rasterizeLogoIfSvg } from "../../../core/common/utils/rasterize-logo.js";
-import { buildBrandPalette, BRAND_COLOR_PATTERN, type BrandPalette } from "../utils/brand-palette.js";
+import {
+  buildBrandPalette,
+  BRAND_COLOR_PATTERN,
+  type BrandPalette,
+} from "../utils/brand-palette.js";
 
 export class LocalValidationError extends Error {}
 
@@ -16,7 +20,6 @@ export class LocalService {
     return this.localDao.findOrCreate();
   }
 
-  // Lo que ve el cliente: la configuracion mas la paleta ya derivada.
   async getConfigWithPalette(): Promise<LocalWithPalette> {
     return this.withPalette(await this.getConfig());
   }
@@ -26,7 +29,8 @@ export class LocalService {
       throw new LocalValidationError("El nombre del local es obligatorio");
     }
     const payload: Partial<Local> = { ...data };
-    if (payload.brandColor !== undefined) payload.brandColor = this.normalizeBrandColor(payload.brandColor);
+    if (payload.brandColor !== undefined)
+      payload.brandColor = this.normalizeBrandColor(payload.brandColor);
     if (payload.timeZone !== undefined) payload.timeZone = this.validateTimeZone(payload.timeZone);
     if (payload.logo) payload.logo = await rasterizeLogoIfSvg(payload.logo);
 
