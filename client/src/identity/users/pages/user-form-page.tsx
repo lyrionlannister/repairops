@@ -43,7 +43,6 @@ export const UserFormPage: React.FC = () => {
     if (user) setForm(userToForm(user));
   }, [isEdit, id, users]);
 
-  // Usuario nuevo: arranca en la sucursal en la que está trabajando el owner.
   useEffect(() => {
     if (isEdit || !workingBranchId) return;
     setForm((prev) =>

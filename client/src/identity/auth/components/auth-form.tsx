@@ -26,7 +26,6 @@ export const AuthForm: React.FC = () => {
 
     const result = await login(formData);
     if (result) {
-      // Login exitoso, redirigir al dashboard
       setTimeout(() => {
         navigate("/", { replace: true });
       }, AUTH_REDIRECT_DELAY_MS);

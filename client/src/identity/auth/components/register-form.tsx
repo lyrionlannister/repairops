@@ -30,7 +30,6 @@ export const RegisterForm: React.FC = () => {
 
     const result = await register(formData);
     if (result) {
-      // Registro exitoso, redirigir a login o dashboard
       setTimeout(() => {
         navigate("/identity/sign-in", { replace: true });
       }, REGISTER_REDIRECT_DELAY_MS);
