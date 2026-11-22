@@ -1,5 +1,4 @@
 import type { FC } from "react";
-import { EmployeeSelect } from "@common/components/employee-select";
 import { Modal } from "@ui/modal/modal";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
@@ -75,25 +74,11 @@ export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
           disabled={saving}
         />
       </div>
-      <div>
-        <Label className="text-gray-500">Empleado</Label>
-        <EmployeeSelect
-          value={movementForm.createdByEmployeeId}
-          onChange={(employeeId) =>
-            onFormChange((prev) => ({ ...prev, createdByEmployeeId: employeeId }))
-          }
-          disabled={saving}
-        />
-      </div>
       <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
           Cancelar
         </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={saving || !movementForm.createdByEmployeeId}
-        >
+        <Button type="submit" variant="primary" disabled={saving}>
           {saving ? "Guardando..." : "Registrar"}
         </Button>
       </div>

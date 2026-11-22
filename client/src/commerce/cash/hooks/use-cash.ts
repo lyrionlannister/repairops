@@ -1,6 +1,12 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-import type { CashSessionRecord, CashMovementRecord, CashSummary, CashMovementType, CashMovementMethod } from "../types/cash";
+import type {
+  CashSessionRecord,
+  CashMovementRecord,
+  CashSummary,
+  CashMovementType,
+  CashMovementMethod,
+} from "../types/cash";
 
 export const useCash = () => {
   const { apiClient } = useApiClient();
@@ -33,18 +39,14 @@ export const useCash = () => {
   );
 
   const openSession = useCallback(
-    async (
-      localId: string,
-      openingBalance: number,
-      openedByEmployeeId?: string,
-    ): Promise<boolean> => {
+    async (localId: string, openingBalance: number): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {
         const res = await apiClient("/cash/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ localId, openingBalance, openedByEmployeeId }),
+          body: JSON.stringify({ localId, openingBalance }),
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
@@ -136,7 +138,6 @@ export const useCash = () => {
         method: CashMovementMethod;
         amount: number;
         note?: string;
-        createdByEmployeeId: string;
         relatedEntityType?: "repair_note" | "quote" | "sale" | "manual";
         relatedEntityId?: string;
       },

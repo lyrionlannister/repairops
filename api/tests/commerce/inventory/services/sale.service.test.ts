@@ -24,6 +24,7 @@ import { CashSessionDao } from "../../../../src/commerce/cash/daos/cash-session.
 import { CashMovement } from "../../../../src/commerce/cash/entities/cash-movement.entity.js";
 import { CashMovementDao } from "../../../../src/commerce/cash/daos/cash-movement.dao.js";
 import { CashService } from "../../../../src/commerce/cash/services/cash.service.js";
+import { effectivePermissions } from "../../../../src/identity/authz/permissions.js";
 import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
@@ -90,15 +91,19 @@ describe("SaleService.create", () => {
   // tenant, mismo local, por simplicidad de la configuración de impuesto/
   // descuento compartida en beforeAll).
   const openSession = () => runWithTenant(tenantId, () => cashService.openSession("1", 0));
+  const owner = { userId: "1", roles: ["owner"], permissions: effectivePermissions(["owner"], false) };
   const closeSession = (id: string) =>
-    runWithTenant(tenantId, async () => {
-      const session = await cashSessionDao.findById(id);
-      const summary = await cashService.getSummary(id);
-      const expectedCashBalance = new Decimal(session!.openingBalance)
-        .plus(summary.byMethod.efectivo.income)
-        .minus(summary.byMethod.efectivo.expense);
-      return cashService.closeSession(id, expectedCashBalance.toNumber());
-    });
+    runWithTenant(
+      tenantId,
+      async () => {
+        const session = await cashSessionDao.findById(id);
+        const cash = (await cashService.getSummary(id))!.byMethod.efectivo!;
+        const expectedCashBalance = new Decimal(session!.openingBalance).plus(cash.income).minus(cash.expense);
+        return cashService.closeSession(id, expectedCashBalance.toNumber());
+      },
+      null,
+      owner,
+    );
 
   it("rolls back the whole sale when one item lacks stock", async () => {
     const session = await openSession();

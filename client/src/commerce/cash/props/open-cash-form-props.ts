@@ -1,8 +1,8 @@
 export interface OpenCashFormProps {
   openingBalance: string;
-  openedByEmployeeId: string;
+  suggestedBalance: string | null;
+  openerName: string;
   saving: boolean;
   onOpeningBalanceChange: (value: string) => void;
-  onOpenedByEmployeeIdChange: (value: string) => void;
   onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
 }

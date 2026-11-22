@@ -32,6 +32,7 @@ import { QuotesPage } from "../commerce/quotes/pages/quotes-page";
 import { QuoteFormPage } from "../commerce/quotes/pages/quote-form-page";
 import { QuotePrintPage } from "../commerce/quotes/pages/quote-print-page";
 import { CashPage } from "../commerce/cash/pages/cash-page";
+import { CashCutPrintPage } from "../commerce/cash/pages/cash-cut-print-page";
 import { SuppliersPage } from "../commerce/suppliers/pages/suppliers-page";
 import { SupplierFormPage } from "../commerce/suppliers/pages/supplier-form-page";
 import { BranchesPage } from "../identity/branches/pages/branches-page";
@@ -244,6 +245,10 @@ export const protectedRoutes = [
   {
     path: "/commerce/cash",
     element: <CashPage />,
+  },
+  {
+    path: "/commerce/cash/cuts/:id/print",
+    element: <CashCutPrintPage />,
   },
   {
     path: "/reporting/reports",

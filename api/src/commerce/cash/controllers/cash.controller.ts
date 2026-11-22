@@ -9,12 +9,18 @@ import { RegisterCashMovementDto } from "../dtos/register-cash-movement.dto.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
 import { sendError, queryString } from "../../../core/http/error-response.js";
+import { LocalService } from "../../../app_platform/local/services/local.service.js";
+import { PdfRendererService } from "../../../reporting/pdf/pdf-renderer.service.js";
+import { CashCutDocument } from "../../../reporting/pdf/documents/cash-cut.document.js";
+import { toCashCutPdfData } from "../../../reporting/pdf/documents/cash-cut.pdf-data.js";
 
 @singleton()
 export class CashController {
   constructor(
     private service: CashService,
     private branchAccess: BranchAccessService,
+    private localService: LocalService,
+    private pdfRendererService: PdfRendererService,
   ) {}
 
   getAllSessions = async (req: Request, res: Response): Promise<void> => {
@@ -61,7 +67,7 @@ export class CashController {
         return;
       }
       const localId = await this.branchAccess.resolveWriteBranch(dto.localId);
-      const session = await this.service.openSession(localId, dto.openingBalance, dto.openedByEmployeeId);
+      const session = await this.service.openSession(localId, dto.openingBalance);
       res.status(201).json(session);
     } catch (error: any) {
       sendError(res, error, 400);
@@ -90,7 +96,12 @@ export class CashController {
 
   getMovements = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getMovements(req.params["id"] as string));
+      const movements = await this.service.getMovements(req.params["id"] as string);
+      if (!movements) {
+        res.status(404).json({ error: "Sesión de caja no encontrada" });
+        return;
+      }
+      res.status(200).json(movements);
     } catch (error: any) {
       sendError(res, error, 500);
     }
@@ -110,7 +121,6 @@ export class CashController {
         method: dto.method,
         amount: dto.amount,
         note: dto.note,
-        createdByEmployeeId: dto.createdByEmployeeId,
         relatedEntityType: dto.relatedEntityType,
         relatedEntityId: dto.relatedEntityId,
       });
@@ -122,7 +132,69 @@ export class CashController {
 
   getSummary = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getSummary(req.params["id"] as string));
+      const summary = await this.service.getSummary(req.params["id"] as string);
+      if (!summary) {
+        res.status(404).json({ error: "Sesión de caja no encontrada" });
+        return;
+      }
+      res.status(200).json(summary);
+    } catch (error: any) {
+      sendError(res, error, 500);
+    }
+  };
+
+  getCuts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      res.status(200).json(await this.service.getCuts(branchId));
+    } catch (error: any) {
+      sendError(res, error, 500);
+    }
+  };
+
+  getLastCut = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      res.status(200).json(await this.service.getLastCut(branchId));
+    } catch (error: any) {
+      sendError(res, error, 500);
+    }
+  };
+
+  getVarianceStats = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      res.status(200).json(await this.service.getVarianceStats(branchId));
+    } catch (error: any) {
+      sendError(res, error, 500);
+    }
+  };
+
+  getCut = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const cut = await this.service.getCut(req.params["id"] as string);
+      if (!cut) {
+        res.status(404).json({ error: "Corte de caja no encontrado" });
+        return;
+      }
+      res.status(200).json(cut);
+    } catch (error: any) {
+      sendError(res, error, 500);
+    }
+  };
+
+  getCutPdf = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const cut = await this.service.getCut(req.params["id"] as string);
+      if (!cut) {
+        res.status(404).json({ error: "Corte de caja no encontrado" });
+        return;
+      }
+      const local = await this.localService.getConfig();
+      const buffer = await this.pdfRendererService.render(CashCutDocument, { data: toCashCutPdfData(cut, local) });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="corte-${cut.cut.id}.pdf"`);
+      res.status(200).send(buffer);
     } catch (error: any) {
       sendError(res, error, 500);
     }

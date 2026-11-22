@@ -38,7 +38,7 @@ export const useReportsPage = () => {
     if (session) fetchSummary(session.id);
   }, [session, fetchSummary]);
 
-  const cashIncomeCents = toCents(summary?.totalIncome ?? 0);
+  const cashIncomeCents = toCents(Number(summary?.totalIncome ?? 0));
   const expectedCents = toCents(repairNotesByType?.totalRevenue ?? 0) + toCents(accessorySales?.totalRevenue ?? 0);
   const differenceCents = cashIncomeCents - expectedCents;
 

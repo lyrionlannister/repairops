@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsIn, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import type { CashMovementMethod, CashMovementRelatedEntityType, CashMovementType } from "../entities/cash-movement.entity.js";
 
 const TYPES: CashMovementType[] = ["income", "expense"];
@@ -20,10 +20,6 @@ export class RegisterCashMovementDto {
   @IsOptional()
   @IsString()
   note?: string;
-
-  @IsNotEmpty({ message: "createdByEmployeeId requerido" })
-  @IsString()
-  createdByEmployeeId!: string;
 
   @IsOptional()
   @IsIn(RELATED_ENTITY_TYPES, { message: "relatedEntityType inválido" })

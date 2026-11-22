@@ -10,6 +10,11 @@ export const createCashRouter = (controller: CashController): Router => {
   router.use(authMiddleware, tenantMiddleware);
 
   router.get("/sessions", requirePermission("cash.read"), controller.getAllSessions);
+  router.get("/cuts", requirePermission("cash.authorize-variance"), controller.getCuts);
+  router.get("/cuts/last", requirePermission("cash.read"), controller.getLastCut);
+  router.get("/cuts/variance-stats", requirePermission("cash.authorize-variance"), controller.getVarianceStats);
+  router.get("/cuts/:id", requirePermission("cash.read"), controller.getCut);
+  router.get("/cuts/:id/pdf", requirePermission("cash.read"), controller.getCutPdf);
   router.get("/sessions/open", requirePermission("cash.read"), controller.getOpenSession);
   router.get("/sessions/:id", requirePermission("cash.read"), controller.getSessionById);
   router.post("/sessions", requirePermission("cash.operate"), controller.openSession);
