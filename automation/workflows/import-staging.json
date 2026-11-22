@@ -12,7 +12,10 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "import-staging"
     },
     {
@@ -24,7 +27,10 @@
       "name": "Extract From File",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -34,7 +40,10 @@
       "name": "Build context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -61,7 +70,10 @@
       "name": "AI: mapear columnas",
       "type": "n8n-nodes-base.openAi",
       "typeVersion": 1,
-      "position": [900, 300],
+      "position": [
+        900,
+        300
+      ],
       "credentials": {
         "openAiApi": {
           "id": "REPLACE_WITH_YOUR_OPENAI_CREDENTIAL",
@@ -77,7 +89,10 @@
       "name": "Parse AI response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
@@ -86,8 +101,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "X-Internal-Token", "value": "={{ $json.internalToken }}" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Internal-Token",
+              "value": "={{ $json.internalToken }}"
+            }
           ]
         },
         "sendBody": true,
@@ -98,15 +119,70 @@
       "name": "Callback a la API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     }
   ],
   "connections": {
-    "Webhook": { "main": [[{ "node": "Extract From File", "type": "main", "index": 0 }]] },
-    "Extract From File": { "main": [[{ "node": "Build context", "type": "main", "index": 0 }]] },
-    "Build context": { "main": [[{ "node": "AI: mapear columnas", "type": "main", "index": 0 }]] },
-    "AI: mapear columnas": { "main": [[{ "node": "Parse AI response", "type": "main", "index": 0 }]] },
-    "Parse AI response": { "main": [[{ "node": "Callback a la API", "type": "main", "index": 0 }]] }
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract From File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract From File": {
+      "main": [
+        [
+          {
+            "node": "Build context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build context": {
+      "main": [
+        [
+          {
+            "node": "AI: mapear columnas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: mapear columnas": {
+      "main": [
+        [
+          {
+            "node": "Parse AI response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI response": {
+      "main": [
+        [
+          {
+            "node": "Callback a la API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }
