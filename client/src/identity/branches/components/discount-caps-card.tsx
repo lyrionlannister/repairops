@@ -18,7 +18,7 @@ export const DiscountCapsCard: FC<DiscountCapsCardProps> = ({ form, loading, sav
     <div>
       <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">Topes de descuento</h3>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Porcentaje máximo por renglón al vender en esta sucursal. Vacío: ese rol no puede dar descuento. El dueño no
+        Porcentaje máximo por renglón al vender en esta sucursal. Vacío: ese rol no puede dar descuento. El administrador no
         tiene tope; con varios roles vale el mayor.
       </p>
     </div>

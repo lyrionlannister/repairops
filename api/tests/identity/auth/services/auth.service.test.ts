@@ -257,7 +257,7 @@ describe("AuthService.createEmployee", () => {
   });
 
   it.each([
-    [["owner", "cashier"], "El dueño no se combina con otros roles"],
+    [["owner", "cashier"], "El administrador no se combina con otros roles"],
     [[], "Elige al menos un rol"],
   ])("rechaza roles %j", async (roles, message) => {
     const userDao = { findByEmail: vi.fn().mockResolvedValue(null), create: vi.fn() } as unknown as UserDao;

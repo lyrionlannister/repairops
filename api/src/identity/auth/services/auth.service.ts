@@ -22,7 +22,7 @@ import {
 } from "../../branches/services/user-branch.service.js";
 import { BillingService } from "../../../app_platform/billing/services/billing.service.js";
 import { PlanLimitService } from "../../../app_platform/billing/services/plan-limit.service.js";
-import { effectivePermissions, type Permission } from "../../authz/permissions.js";
+import { effectivePermissions, roleCatalog, type Permission, type RoleCatalogEntry } from "../../authz/permissions.js";
 
 const { sign } = jwt;
 
@@ -233,6 +233,10 @@ export class AuthService {
     return this.toSessionUser(user);
   }
 
+  listRoles(): RoleCatalogEntry[] {
+    return roleCatalog();
+  }
+
   async toggleUserStatus(id: string): Promise<PublicUser | null> {
     const current = await this.userDao.findById(id);
     if (!current) return null;
@@ -293,14 +297,14 @@ export class AuthService {
     const unique = [...new Set(roles ?? [])];
     if (unique.length === 0) throw new UserRoleRuleError("Elige al menos un rol");
     if (unique.includes("owner") && unique.length > 1) {
-      throw new UserRoleRuleError("El dueño no se combina con otros roles");
+      throw new UserRoleRuleError("El administrador no se combina con otros roles");
     }
     return unique;
   }
 
   private async assertAnotherActiveOwner(userId: string): Promise<void> {
     if ((await this.userRoleDao.countActiveOwners(userId)) === 0) {
-      throw new UserRoleRuleError("El taller necesita al menos un dueño activo");
+      throw new UserRoleRuleError("El taller necesita al menos un administrador activo");
     }
   }
 }

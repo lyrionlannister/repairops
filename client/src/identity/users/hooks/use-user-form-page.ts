@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useBranch } from "@common/hooks/use-branch";
 import { useUsers, type UserRole } from "./use-users";
+import { useRolePermissions } from "./use-role-permissions";
 import { userToForm } from "../utils/user-to-form";
-import type { UserFormData } from "../types/users";
+import { buildUserSummary } from "../utils/user-summary";
+import type { UserFormData, UserTextField } from "../types/users";
 
 const INITIAL_FORM: UserFormData = {
   firstName: "",
@@ -24,6 +26,9 @@ export const useUserFormPage = (id: string | undefined) => {
   const { branches, workingBranchId } = useBranch();
   const [form, setForm] = useState<UserFormData>(INITIAL_FORM);
   const [showPassword, setShowPassword] = useState(false);
+  const { summary: permissionSummary, loading: permissionsLoading } = useRolePermissions(
+    form.roles,
+  );
   const editingUser = id ? users.find((u) => u.id === id) : undefined;
 
   useEffect(() => {
@@ -34,15 +39,18 @@ export const useUserFormPage = (id: string | undefined) => {
     if (editingUser) setForm(userToForm(editingUser));
   }, [editingUser]);
 
-  // Un usuario nuevo arranca en la sucursal de trabajo del dueño.
+  // Un usuario nuevo arranca en la sucursal de trabajo del administrador.
   useEffect(() => {
     if (isEdit || !workingBranchId) return;
     setForm((prev) =>
-      prev.branchIds.length > 0 ? prev : { ...prev, branchIds: [workingBranchId], primaryBranchId: workingBranchId },
+      prev.branchIds.length > 0
+        ? prev
+        : { ...prev, branchIds: [workingBranchId], primaryBranchId: workingBranchId },
     );
   }, [isEdit, workingBranchId]);
 
   const saving = creating || updating;
+  const userSummary = useMemo(() => buildUserSummary(form, branches), [form, branches]);
 
   const submit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -56,9 +64,12 @@ export const useUserFormPage = (id: string | undefined) => {
     branches,
     saving,
     disabled: loading || saving,
+    userSummary,
+    permissionSummary,
+    permissionsLoading,
     showPassword,
     togglePassword: () => setShowPassword((prev) => !prev),
-    setField: (field: Exclude<keyof UserFormData, "branchIds" | "roles">, value: string) =>
+    setField: (field: UserTextField, value: string) =>
       setForm((prev) => ({ ...prev, [field]: value })),
     setRoles: (roles: UserRole[]) => setForm((prev) => ({ ...prev, roles })),
     setBranchAssignment: (branchIds: string[], primaryBranchId: string) =>

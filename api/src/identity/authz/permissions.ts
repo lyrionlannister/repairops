@@ -1,4 +1,4 @@
-import type { UserRole } from "../auth/entities/user.entity.js";
+import { USER_ROLES, type UserRole } from "../auth/entities/user.entity.js";
 
 export const TENANT_PERMISSIONS = [
   "users.read",
@@ -131,4 +131,13 @@ export function effectivePermissions(
   const permissions = new Set<Permission>(roles.flatMap((role) => ROLE_PERMISSIONS[role]));
   if (isPlatformAdmin) PLATFORM_PERMISSIONS.forEach((permission) => permissions.add(permission));
   return permissions;
+}
+
+export interface RoleCatalogEntry {
+  role: UserRole;
+  permissions: readonly TenantPermission[];
+}
+
+export function roleCatalog(): RoleCatalogEntry[] {
+  return USER_ROLES.map((role) => ({ role, permissions: ROLE_PERMISSIONS[role] }));
 }

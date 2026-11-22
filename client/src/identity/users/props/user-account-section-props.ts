@@ -1,5 +1,4 @@
-import type { UserRole } from "../hooks/use-users";
-import type { UserFormData } from "../types/users";
+import type { UserFormData, UserTextField } from "../types/users";
 
 export interface UserAccountSectionProps {
   form: UserFormData;
@@ -7,6 +6,5 @@ export interface UserAccountSectionProps {
   disabled: boolean;
   showPassword: boolean;
   onTogglePassword: () => void;
-  onChange: (field: Exclude<keyof UserFormData, "branchIds" | "roles">, value: string) => void;
-  onRolesChange: (roles: UserRole[]) => void;
+  onChange: (field: UserTextField, value: string) => void;
 }

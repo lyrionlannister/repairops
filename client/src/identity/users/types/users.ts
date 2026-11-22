@@ -12,6 +12,8 @@ export interface UserFormData {
   primaryBranchId: string;
 }
 
+export type UserTextField = Exclude<keyof UserFormData, "branchIds" | "roles">;
+
 export interface UserRecord {
   id: string;
   firstName: string;

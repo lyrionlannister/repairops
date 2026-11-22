@@ -107,7 +107,7 @@ describe("reglas de roles de usuario", () => {
 
   it("no deja desactivar al último dueño activo", async () => {
     await expect(inTenant(() => service.toggleUserStatus(ownerId))).rejects.toThrow(
-      "al menos un dueño activo",
+      "al menos un administrador activo",
     );
   });
 

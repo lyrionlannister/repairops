@@ -3,6 +3,7 @@ import {
   effectivePermissions,
   PLATFORM_PERMISSIONS,
   ROLE_PERMISSIONS,
+  roleCatalog,
   TENANT_PERMISSIONS,
 } from "../../../src/identity/authz/permissions.js";
 
@@ -55,5 +56,16 @@ describe("mapa de permisos", () => {
     Object.values(ROLE_PERMISSIONS)
       .flat()
       .forEach((permission) => expect(catalog.has(permission)).toBe(true));
+  });
+
+  it("el catálogo de roles expone cada rol con sus permisos y nada de plataforma", () => {
+    const catalog = roleCatalog();
+    expect(catalog.map((entry) => entry.role).sort()).toEqual(Object.keys(ROLE_PERMISSIONS).sort());
+    catalog.forEach((entry) => {
+      expect(entry.permissions).toEqual(ROLE_PERMISSIONS[entry.role]);
+      entry.permissions.forEach((permission) =>
+        expect((PLATFORM_PERMISSIONS as readonly string[]).includes(permission)).toBe(false),
+      );
+    });
   });
 });

@@ -7,7 +7,7 @@ import type { UserFormData, UserRecord, CreateUserPayload, UpdateUserPayload, Pa
 
 export type { UserRole };
 export const ROLE_LABELS: Record<UserRole, string> = {
-  owner: "Dueño",
+  owner: "Administrador",
   cashier: "Cajero",
   technician: "Técnico",
   employee: "Recepción",
