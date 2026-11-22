@@ -8,7 +8,7 @@ export function env(name: string): string | undefined {
 
 export function requiredEnv(name: string): string {
   const value = env(name);
-  if (!value) throw new Error(`${name} is required`);
+  if (!value) throw new Error(`Falta la variable de entorno ${name}`);
   return value;
 }
 

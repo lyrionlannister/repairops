@@ -3,11 +3,11 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator
 
 export class QuoteItemInputDto {
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Producto inválido" })
   inventoryItemId?: string;
 
   @IsNotEmpty({ message: "Descripción requerida" })
-  @IsString()
+  @IsString({ message: "Descripción debe ser texto" })
   description!: string;
 
   @IsNumber({}, { message: "Cantidad debe ser numérica" })
@@ -15,6 +15,6 @@ export class QuoteItemInputDto {
   quantity!: number;
 
   @IsNumber({}, { message: "Precio unitario debe ser numérico" })
-  @Min(0)
+  @Min(0, { message: "Precio unitario debe ser mayor o igual a 0" })
   unitPrice!: number;
 }

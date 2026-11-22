@@ -2,15 +2,15 @@ import "reflect-metadata";
 import { IsNotEmpty, IsString } from "class-validator";
 
 export class ConnectWhatsappAccountDto {
-  @IsNotEmpty({ message: "wabaId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Cuenta de WhatsApp Business requerida" })
+  @IsString({ message: "Cuenta de WhatsApp Business inválida" })
   wabaId!: string;
 
-  @IsNotEmpty({ message: "phoneNumberId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "ID del número de teléfono requerido" })
+  @IsString({ message: "ID del número de teléfono inválido" })
   phoneNumberId!: string;
 
-  @IsNotEmpty({ message: "accessToken requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Token de acceso requerido" })
+  @IsString({ message: "Token de acceso debe ser texto" })
   accessToken!: string;
 }

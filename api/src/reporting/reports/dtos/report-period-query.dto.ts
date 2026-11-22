@@ -5,10 +5,10 @@ const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
 
 export class ReportPeriodQueryDto {
   @IsOptional()
-  @Matches(DATE_FORMAT, { message: "periodStart inválido, usa YYYY-MM-DD" })
+  @Matches(DATE_FORMAT, { message: "Inicio del periodo inválido, usa YYYY-MM-DD" })
   periodStart?: string;
 
   @IsOptional()
-  @Matches(DATE_FORMAT, { message: "periodEnd inválido, usa YYYY-MM-DD" })
+  @Matches(DATE_FORMAT, { message: "Fin del periodo inválido, usa YYYY-MM-DD" })
   periodEnd?: string;
 }

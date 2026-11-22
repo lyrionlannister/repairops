@@ -9,26 +9,26 @@ const CATEGORIES: WhatsappTemplateCategory[] = ["UTILITY", "MARKETING", "AUTHENT
 // tienen -- ningun consumidor lee un triggerEvent arbitrario creado a mano
 // todavia (ver plan Fase 4, Checkpoint 7, Boundary).
 export class CreateWhatsappTemplateCatalogEntryDto {
-  @IsNotEmpty({ message: "key requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Clave requerida" })
+  @IsString({ message: "Clave debe ser texto" })
   key!: string;
 
-  @IsNotEmpty({ message: "metaName requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Nombre en Meta requerido" })
+  @IsString({ message: "Nombre en Meta debe ser texto" })
   metaName!: string;
 
-  @IsIn(CATEGORIES, { message: "category inválida" })
+  @IsIn(CATEGORIES, { message: "Categoría inválida" })
   category!: WhatsappTemplateCategory;
 
-  @IsNotEmpty({ message: "language requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Idioma requerido" })
+  @IsString({ message: "Idioma debe ser texto" })
   language!: string;
 
-  @IsNotEmpty({ message: "text requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Texto requerido" })
+  @IsString({ message: "Texto inválido" })
   text!: string;
 
-  @IsArray({ message: "variables debe ser un arreglo" })
-  @IsString({ each: true })
+  @IsArray({ message: "Variables deben ser una lista" })
+  @IsString({ each: true, message: "Variables contienen un valor inválido" })
   variables!: string[];
 }

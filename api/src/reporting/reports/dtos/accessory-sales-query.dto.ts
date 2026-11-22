@@ -7,6 +7,6 @@ const GROUP_BY_VALUES: AccessorySalesGroupBy[] = ["item", "day", "week"];
 
 export class AccessorySalesQueryDto extends ReportPeriodQueryDto {
   @IsOptional()
-  @IsIn(GROUP_BY_VALUES, { message: "groupBy inválido, usa item|day|week" })
+  @IsIn(GROUP_BY_VALUES, { message: "Agrupación inválida, usa item|day|week" })
   groupBy?: AccessorySalesGroupBy;
 }

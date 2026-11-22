@@ -4,6 +4,6 @@ import { ReportPeriodQueryDto } from "./report-period-query.dto.js";
 
 export class EmployeePerformanceQueryDto extends ReportPeriodQueryDto {
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Empleado inválido" })
   employeeId?: string;
 }

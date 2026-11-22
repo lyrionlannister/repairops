@@ -12,10 +12,10 @@ export class RegisterMovementDto {
   quantity!: number;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Motivo debe ser texto" })
   reason?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Empleado que registra inválido" })
   createdByEmployeeId?: string;
 }

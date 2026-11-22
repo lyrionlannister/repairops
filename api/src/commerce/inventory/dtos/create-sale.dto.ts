@@ -22,11 +22,11 @@ const ORIGINS: SaleOrigin[] = ["counter", "repair_note", "quote"];
 const LINE_TYPES: SaleItemLineType[] = ["inventory_item", "service_type"];
 
 export class SaleItemInputDto {
-  @IsIn(LINE_TYPES, { message: "lineType inválido" })
+  @IsIn(LINE_TYPES, { message: "Tipo de renglón inválido" })
   lineType!: SaleItemLineType;
 
-  @IsNotEmpty({ message: "referenceId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Referencia requerida" })
+  @IsString({ message: "Referencia inválida" })
   referenceId!: string;
 
   @IsNumber({}, { message: "Cantidad debe ser numérica" })
@@ -34,12 +34,12 @@ export class SaleItemInputDto {
   quantity!: number;
 
   @IsNumber({}, { message: "Precio unitario debe ser numérico" })
-  @Min(0)
+  @Min(0, { message: "Precio unitario debe ser mayor o igual a 0" })
   unitPrice!: number;
 
   @IsOptional()
   @IsNumber({}, { message: "Descuento debe ser numérico" })
-  @Min(0)
+  @Min(0, { message: "Descuento debe ser mayor o igual a 0" })
   @Max(100, { message: "Descuento no puede superar 100%" })
   discountPercent?: number;
 }
@@ -55,57 +55,57 @@ export class PaymentInputDto {
   // Tarjeta en mostrador capturada a mano del terminal físico -- sin
   // llamada a ningún proveedor de pago (ver SPEC-fase3-pos-dinero.md).
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Referencia del proveedor debe ser texto" })
   providerReference?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Código de autorización debe ser texto" })
   providerAuthorizationCode?: string;
 }
 
 export class CreateSaleDto {
-  @IsNotEmpty({ message: "localId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Sucursal requerida" })
+  @IsString({ message: "Sucursal inválida" })
   localId!: string;
 
-  @IsNotEmpty({ message: "cashSessionId requerido: no se puede cobrar sin una sesión de caja abierta" })
-  @IsString()
+  @IsNotEmpty({ message: "Sesión de caja requerida: no se puede cobrar sin una sesión de caja abierta" })
+  @IsString({ message: "Sesión de caja inválida" })
   cashSessionId!: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Cliente inválido" })
   customerId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Nombre del cliente debe ser texto" })
   customerName?: string;
 
   @IsOptional()
   @IsIn(ORIGINS, { message: "Origen inválido" })
   origin?: SaleOrigin;
 
-  @IsArray()
+  @IsArray({ message: "Pagos deben ser una lista" })
   @ArrayMinSize(1, { message: "La venta debe tener al menos un pago" })
-  @ValidateNested({ each: true })
+  @ValidateNested({ each: true, message: "Pagos contienen un valor inválido" })
   @Type(() => PaymentInputDto)
   payments!: PaymentInputDto[];
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Empleado que registra inválido" })
   createdByEmployeeId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Clave de idempotencia debe ser texto" })
   idempotencyKey?: string;
 
   // El IVA no se asume: solo se cobra el taxRatePercent del local si se pide.
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: "Aplicar impuesto debe ser verdadero o falso" })
   applyTax?: boolean;
 
-  @IsArray()
+  @IsArray({ message: "Renglones deben ser una lista" })
   @ArrayMinSize(1, { message: "La venta debe tener al menos un item" })
-  @ValidateNested({ each: true })
+  @ValidateNested({ each: true, message: "Renglones contienen un valor inválido" })
   @Type(() => SaleItemInputDto)
   items!: SaleItemInputDto[];
 }

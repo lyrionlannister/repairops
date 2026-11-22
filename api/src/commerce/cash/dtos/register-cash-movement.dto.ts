@@ -18,14 +18,14 @@ export class RegisterCashMovementDto {
   amount!: number;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Nota debe ser texto" })
   note?: string;
 
   @IsOptional()
-  @IsIn(RELATED_ENTITY_TYPES, { message: "relatedEntityType inválido" })
+  @IsIn(RELATED_ENTITY_TYPES, { message: "Tipo de entidad relacionada inválido" })
   relatedEntityType?: CashMovementRelatedEntityType;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Entidad relacionada inválida" })
   relatedEntityId?: string;
 }

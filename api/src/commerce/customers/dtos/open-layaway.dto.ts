@@ -6,8 +6,8 @@ import type { CashMovementMethod } from "../../cash/entities/cash-movement.entit
 const DEPOSIT_METHODS: CashMovementMethod[] = ["efectivo", "tarjeta", "transferencia"];
 
 export class LayawayItemInputDto {
-  @IsNotEmpty({ message: "inventoryItemId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Producto requerido" })
+  @IsString({ message: "Producto inválido" })
   inventoryItemId!: string;
 
   @IsNumber({}, { message: "Cantidad debe ser numérica" })
@@ -15,36 +15,36 @@ export class LayawayItemInputDto {
   quantity!: number;
 
   @IsNumber({}, { message: "Precio unitario debe ser numérico" })
-  @Min(0)
+  @Min(0, { message: "Precio unitario debe ser mayor o igual a 0" })
   unitPrice!: number;
 }
 
 export class OpenLayawayDto {
-  @IsNotEmpty({ message: "customerId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Cliente requerido" })
+  @IsString({ message: "Cliente inválido" })
   customerId!: string;
 
-  @IsNotEmpty({ message: "cashSessionId requerido: no se puede abrir un apartado sin una sesión de caja abierta" })
-  @IsString()
+  @IsNotEmpty({ message: "Sesión de caja requerida: no se puede abrir un apartado sin una sesión de caja abierta" })
+  @IsString({ message: "Sesión de caja inválida" })
   cashSessionId!: string;
 
-  @IsNumber({}, { message: "depositAmount debe ser numérico" })
+  @IsNumber({}, { message: "Anticipo debe ser numérico" })
   @Min(0.01, { message: "El anticipo debe ser mayor a 0" })
   depositAmount!: number;
 
   @IsIn(DEPOSIT_METHODS, { message: "Método de anticipo inválido" })
   depositMethod!: CashMovementMethod;
 
-  @IsDateString({}, { message: "expiresAt debe ser una fecha válida" })
+  @IsDateString({}, { message: "Fecha de vencimiento debe ser una fecha válida" })
   expiresAt!: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Empleado que registra inválido" })
   createdByEmployeeId?: string;
 
-  @IsArray()
+  @IsArray({ message: "Renglones deben ser una lista" })
   @ArrayMinSize(1, { message: "El apartado debe tener al menos un item" })
-  @ValidateNested({ each: true })
+  @ValidateNested({ each: true, message: "Renglones contienen un valor inválido" })
   @Type(() => LayawayItemInputDto)
   items!: LayawayItemInputDto[];
 }
