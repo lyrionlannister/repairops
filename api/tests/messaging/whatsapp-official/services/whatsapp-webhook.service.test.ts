@@ -4,6 +4,7 @@ import type { WhatsappTenantResolver } from "../../../../src/messaging/whatsapp-
 import type { WhatsappSendService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-send.service.js";
 import type { ChatsService } from "../../../../src/messaging/chats/services/chats.service.js";
 import type { ChatMediaService } from "../../../../src/messaging/chats/services/chat-media.service.js";
+import type { WhatsappAutomationQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-automation-queue.service.js";
 import type { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import type { WhatsappAccount } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-account.entity.js";
 import type { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
@@ -30,7 +31,11 @@ const note = mockEntity<RepairNote>({
 
 function makeDeps(resolved: { account: WhatsappAccount; note: RepairNote | null } | null = { account, note }) {
   const tenantResolver = { resolve: vi.fn().mockResolvedValue(resolved) } as unknown as WhatsappTenantResolver;
-  const whatsappSendService = { sendFreeText: vi.fn().mockResolvedValue("wamid.out-1") } as unknown as WhatsappSendService;
+  const sendFreeText = vi.fn().mockResolvedValue("wamid.out-1");
+  const whatsappSendService = {
+    sendFreeText,
+    sendFreeTextOnce: vi.fn((_key: string, ...args: unknown[]) => sendFreeText(...args)),
+  } as unknown as WhatsappSendService;
   const chatsService = { recordMessage: vi.fn().mockResolvedValue(undefined) } as unknown as ChatsService;
   const localService = { getConfig: vi.fn().mockResolvedValue({ name: "Celulares Pérez" }) } as unknown as LocalService;
   const chatMediaService = {
@@ -43,6 +48,7 @@ function makeDeps(resolved: { account: WhatsappAccount; note: RepairNote | null 
     save: vi.fn(),
   } as any;
   const contactNameRepository = { save: vi.fn().mockResolvedValue(undefined) } as any;
+  const automationQueue = { enqueue: vi.fn().mockResolvedValue(undefined) } as unknown as WhatsappAutomationQueueService;
 
   const service = new WhatsappWebhookService(
     tenantResolver,
@@ -53,8 +59,17 @@ function makeDeps(resolved: { account: WhatsappAccount; note: RepairNote | null 
     excludedPhoneRepository,
     whatsappSettingsRepository,
     contactNameRepository,
+    automationQueue,
   );
-  return { service, chatMediaService, whatsappSendService, chatsService, excludedPhoneRepository, whatsappSettingsRepository };
+  return {
+    service,
+    chatMediaService,
+    whatsappSendService,
+    chatsService,
+    excludedPhoneRepository,
+    whatsappSettingsRepository,
+    automationQueue,
+  };
 }
 
 const incoming = {
@@ -174,6 +189,70 @@ describe("WhatsappWebhookService.handleIncomingMessage", () => {
 
     expect(chatsService.recordMessage).toHaveBeenCalledWith(expect.objectContaining({ direction: "inbound" }));
     expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+  });
+});
+
+describe("WhatsappWebhookService respuesta de estado idempotente", () => {
+  it("envia la respuesta de estado con una clave derivada del wamid entrante", async () => {
+    const { service, whatsappSendService } = makeDeps();
+    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
+
+    await service.handleIncomingMessage(incoming);
+
+    expect(whatsappSendService.sendFreeTextOnce).toHaveBeenCalledWith(
+      "status:wamid.in-1",
+      "phone-1",
+      "token-1",
+      "5215500000000",
+      READY_REPLY,
+      expect.any(Date),
+    );
+  });
+});
+
+describe("WhatsappWebhookService reenvio a n8n", () => {
+  it("encola el texto con el tenant y la cuenta resueltos por el API, sin el token", async () => {
+    const { service, automationQueue } = makeDeps({ account, note: null });
+    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
+
+    await service.handleIncomingMessage({ ...incoming, body: "hola" });
+
+    expect(automationQueue.enqueue).toHaveBeenCalledWith({
+      tenantId: "tenant-1",
+      accountId: "acc-1",
+      from: "5215500000000",
+      body: "hola",
+      repairNoteId: null,
+      sourceMessageId: "wamid.in-1",
+    });
+  });
+
+  it("con ref valido encola con la nota y ademas responde el estado", async () => {
+    const { service, automationQueue, whatsappSendService } = makeDeps();
+    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
+
+    await service.handleIncomingMessage(incoming);
+
+    expect(automationQueue.enqueue).toHaveBeenCalledWith(expect.objectContaining({ repairNoteId: "note-9" }));
+    expect(whatsappSendService.sendFreeText).toHaveBeenCalledTimes(1);
+  });
+
+  it("no encola en modo humano, con respuestas apagadas ni sin texto", async () => {
+    const human = makeDeps({ account, note: null });
+    vi.mocked(humanModeService.isActive).mockResolvedValue(true);
+    await human.service.handleIncomingMessage({ ...incoming, body: "hola" });
+
+    vi.mocked(humanModeService.isActive).mockResolvedValue(false);
+    const off = makeDeps({ account, note: null });
+    vi.mocked(off.whatsappSettingsRepository.findOneBy).mockResolvedValue({ tenantId: "tenant-1", aiRepliesEnabled: false });
+    await off.service.handleIncomingMessage({ ...incoming, body: "hola" });
+
+    const empty = makeDeps({ account, note: null });
+    await empty.service.handleIncomingMessage({ ...incoming, body: "  " });
+
+    expect(human.automationQueue.enqueue).not.toHaveBeenCalled();
+    expect(off.automationQueue.enqueue).not.toHaveBeenCalled();
+    expect(empty.automationQueue.enqueue).not.toHaveBeenCalled();
   });
 });
 

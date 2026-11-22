@@ -6,13 +6,14 @@ const redisPort = optionalEnvNumber("REDIS_PORT", 6379);
 const redisUser = env("REDIS_USER");
 const redisPassword = env("REDIS_PASSWORD");
 
-export const redisClient = new Redis({
+export const redisConnectionOptions = {
   host: redisHost,
   port: redisPort,
   username: redisUser,
   password: redisPassword,
-  lazyConnect: true,
-});
+};
+
+export const redisClient = new Redis({ ...redisConnectionOptions, lazyConnect: true });
 
 redisClient.on("error", (err: Error) => {
   console.error("Redis error:", err);

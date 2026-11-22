@@ -5,8 +5,11 @@ import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catal
 import { WhatsappAccountService } from "./whatsapp-account.service.js";
 import { WhatsappOutboundMessage } from "../entities/whatsapp-outbound-message.entity.js";
 import { sendTemplateMessage, sendTextMessage } from "../clients/whatsapp-graph.client.js";
+import { redisClient } from "../../../core/config/redis-client.js";
+import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+const SENT_MARKER_TTL_SECONDS = 24 * 60 * 60;
 
 // Distinta de un error de Meta/red (esas quedan en el log de la nota o se
 // devuelven como 500) -- el caller HTTP (ChatsController.sendMessage) la
@@ -124,6 +127,28 @@ export class WhatsappSendService {
     }
     const result = await sendTextMessage(phoneNumberId, accessToken, to, body);
     return result.messages?.[0]?.id ?? null;
+  }
+
+  // Para respuestas dentro de un job que se reintenta: la marca se guarda
+  // DESPUES de que Meta acepto el envio y se revisa ANTES, asi un reintento
+  // por una falla posterior (ej. al registrar el mensaje) no reenvia y recupera
+  // el wamid de salida. Solo queda abierto el lapso entre el envio y el SET.
+  async sendFreeTextOnce(
+    idempotencyKey: string,
+    phoneNumberId: string,
+    accessToken: string,
+    to: string,
+    body: string,
+    lastInboundAt: Date | null,
+  ): Promise<string | null> {
+    const markerKey = `wa_sent:${getCurrentTenantId()}:${idempotencyKey}`;
+    const sent = await redisClient.get(markerKey);
+    // "" = enviado, pero Meta no devolvio wamid.
+    if (sent !== null) return sent || null;
+
+    const waMessageId = await this.sendFreeText(phoneNumberId, accessToken, to, body, lastInboundAt);
+    await redisClient.set(markerKey, waMessageId ?? "", "EX", SENT_MARKER_TTL_SECONDS);
+    return waMessageId;
   }
 
   // Sin número de contacto no hay a quién avisar -- no es un error, la nota

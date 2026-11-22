@@ -2,6 +2,7 @@ import { singleton, inject } from "tsyringe";
 import { Repository } from "typeorm";
 import { WhatsappTenantResolver } from "./whatsapp-tenant-resolver.service.js";
 import { WhatsappSendService } from "./whatsapp-send.service.js";
+import { WhatsappAutomationQueueService } from "./whatsapp-automation-queue.service.js";
 import { ChatsService } from "../../chats/services/chats.service.js";
 import { ChatMediaService } from "../../chats/services/chat-media.service.js";
 import type { ChatMessageType } from "../../chats/entities/chat-message.entity.js";
@@ -30,9 +31,9 @@ export interface IncomingWhatsappMessage {
 // WhatsApp solo atiende: el cliente escribe primero (escaneando el QR de su
 // nota) y el API responde con texto libre, siempre dentro de la ventana de 24h.
 // Orden: resolver el tenant, exclusion, guardar el mensaje, interruptor de
-// respuestas automaticas, modo humano y, solo si el mensaje trae el ref de una
-// nota, responder con su estado. Sin ref el mensaje queda en el inbox para una
-// persona.
+// respuestas automaticas, modo humano, reenviar el texto a n8n (que acumula
+// rafagas y decide si responde) y, si el mensaje trae el ref de una nota,
+// responder con su estado.
 @singleton()
 export class WhatsappWebhookService {
   constructor(
@@ -44,6 +45,7 @@ export class WhatsappWebhookService {
     @inject(repositoryToken(ExcludedPhone)) private excludedPhoneRepository: Repository<ExcludedPhone>,
     @inject(repositoryToken(WhatsappSettings)) private whatsappSettingsRepository: Repository<WhatsappSettings>,
     @inject(repositoryToken(ContactName)) private contactNameRepository: Repository<ContactName>,
+    private whatsappAutomationQueueService: WhatsappAutomationQueueService,
   ) {}
 
   async handleIncomingMessage(message: IncomingWhatsappMessage): Promise<void> {
@@ -107,6 +109,19 @@ export class WhatsappWebhookService {
         return;
       }
 
+      // Cola aparte: n8n retiene cada llamada hasta 3 s sin mensajes nuevos
+      // del contacto, y esperarla aqui serializaria los mensajes y anularia el buffer.
+      if (message.body.trim()) {
+        await this.whatsappAutomationQueueService.enqueue({
+          tenantId: account.tenantId,
+          accountId: account.id,
+          from: message.from,
+          body: message.body,
+          repairNoteId: note?.id ?? null,
+          sourceMessageId: message.messageId,
+        });
+      }
+
       // Sin ref valido no se responde: un ref inexistente no recibe nada que
       // confirme o niegue que existe.
       if (!note) return;
@@ -117,13 +132,22 @@ export class WhatsappWebhookService {
 
       // Responde dentro de la misma llamada que recibio el mensaje: la ventana
       // de 24h siempre esta abierta.
-      const waMessageId = await this.whatsappSendService.sendFreeText(
-        account.phoneNumberId,
-        account.accessToken,
-        message.from,
-        reply,
-        new Date(),
-      );
+      const waMessageId = message.messageId
+        ? await this.whatsappSendService.sendFreeTextOnce(
+            `status:${message.messageId}`,
+            account.phoneNumberId,
+            account.accessToken,
+            message.from,
+            reply,
+            new Date(),
+          )
+        : await this.whatsappSendService.sendFreeText(
+            account.phoneNumberId,
+            account.accessToken,
+            message.from,
+            reply,
+            new Date(),
+          );
       await this.chatsService.recordMessage({
         contactPhone: message.from,
         direction: "outbound",
