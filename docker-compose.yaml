@@ -108,7 +108,7 @@ services:
     container_name: repairops-nginx
     ports:
       - "${NGINX_HTTP_PORT:-8080}:80"
-      - "${NGINX_HTTPS_PORT:-8443}:443"
+      - "${NGINX_HTTPS_PORT:-443}:443"
     volumes:
       - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./infra/nginx/certs:/etc/nginx/certs:ro
@@ -119,17 +119,23 @@ services:
         condition: service_healthy
       client:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   cloudflared:
-    image: docker.io/cloudflare/cloudflared:2025.2.0
+    image: docker.io/cloudflare/cloudflared:latest
     container_name: repairops-cloudflared
-    # Túnel gestionado desde el dashboard de Cloudflare (Zero Trust): las rutas
-    # públicas viven allá, no aquí. Solo debe publicarse el webhook de Meta.
-    command: tunnel --no-autoupdate run
     env_file:
       - ./infra/cloudflared/.env
+    command: tunnel --no-autoupdate run
     restart: unless-stopped
     depends_on:
+      nginx:
+        condition: service_healthy
       api:
         condition: service_healthy
 
@@ -137,3 +143,4 @@ volumes:
   postgres_data:
   redis_data:
   automation_data:
+  
