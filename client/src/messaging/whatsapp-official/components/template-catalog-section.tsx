@@ -27,6 +27,7 @@ interface TemplateCatalogSectionProps {
   scope: "tenant" | "system";
   title: string;
   description: string;
+  readOnly?: boolean;
   statusByEntryId?: Map<
     string,
     { status: WhatsappTemplateSyncStatus; lastSyncedAt: string | null }
@@ -40,6 +41,7 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
   scope,
   title,
   description,
+  readOnly = false,
   statusByEntryId,
 }) => {
   const { entries, loading, saving, fetchEntries, create, update, remove } =
@@ -102,9 +104,11 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h2>
           <p className="text-xs text-gray-400">{description}</p>
         </div>
-        <Button variant="outline" onClick={openCreateForm}>
-          Nueva plantilla
-        </Button>
+        {!readOnly && (
+          <Button variant="outline" onClick={openCreateForm}>
+            Nueva plantilla
+          </Button>
+        )}
       </div>
 
       {loading && entries.length === 0 ? (
@@ -134,9 +138,11 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
                   </th>
                 </>
               )}
-              <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
-                Acciones
-              </th>
+              {!readOnly && (
+                <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
+                  Acciones
+                </th>
+              )}
             </tr>
           }
         >
@@ -175,26 +181,28 @@ export const TemplateCatalogSection: React.FC<TemplateCatalogSectionProps> = ({
                       </td>
                     </>
                   )}
-                  <td className="px-5 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openEditForm(entry)}
-                        className="rounded-lg p-1.5 text-gray-400 hover:text-brand-500"
-                        aria-label="Editar"
-                      >
-                        <Pencil className="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeletingEntry(entry)}
-                        className="rounded-lg p-1.5 text-gray-400 hover:text-error-500"
-                        aria-label="Borrar"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    </div>
-                  </td>
+                  {!readOnly && (
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEditForm(entry)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:text-brand-500"
+                          aria-label="Editar"
+                        >
+                          <Pencil className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingEntry(entry)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:text-error-500"
+                          aria-label="Borrar"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               );
             })}

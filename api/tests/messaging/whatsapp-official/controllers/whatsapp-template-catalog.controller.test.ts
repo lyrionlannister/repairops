@@ -4,6 +4,7 @@ import { WhatsappTemplateCatalogController } from "../../../../src/messaging/wha
 import {
   WhatsappTemplateCatalogService,
   WhatsappTemplateCatalogConflictError,
+  WhatsappTemplateCatalogReadOnlyError,
 } from "../../../../src/messaging/whatsapp-official/services/whatsapp-template-catalog.service.js";
 import type { WhatsappTemplateCatalogEntry } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-template-catalog-entry.entity.js";
 import { WhatsappGraphApiError } from "../../../../src/messaging/whatsapp-official/clients/whatsapp-graph.client.js";
@@ -55,7 +56,9 @@ describe("WhatsappTemplateCatalogController -- empresa", () => {
 
   it("create returns 400 with the conflict message when the service rejects a duplicate", async () => {
     const service = makeService();
-    vi.mocked(service.create).mockRejectedValue(new WhatsappTemplateCatalogConflictError("Ya existe"));
+    vi.mocked(service.create).mockRejectedValue(
+      new WhatsappTemplateCatalogConflictError("Ya existe"),
+    );
     const controller = new WhatsappTemplateCatalogController(service);
     const res = makeRes();
 
@@ -65,9 +68,22 @@ describe("WhatsappTemplateCatalogController -- empresa", () => {
     expect(res.json).toHaveBeenCalledWith({ error: "Ya existe" });
   });
 
+  it("create returns 403 when the tenant still uses the shared pilot account", async () => {
+    const service = makeService();
+    vi.mocked(service.create).mockRejectedValue(new WhatsappTemplateCatalogReadOnlyError());
+    const controller = new WhatsappTemplateCatalogController(service);
+    const res = makeRes();
+
+    await controller.create(makeReq(validCreateBody), res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
   it("create returns 201 with the new entry on success", async () => {
     const service = makeService();
-    vi.mocked(service.create).mockResolvedValue(mockEntity<WhatsappTemplateCatalogEntry>({ id: "entry-1" }));
+    vi.mocked(service.create).mockResolvedValue(
+      mockEntity<WhatsappTemplateCatalogEntry>({ id: "entry-1" }),
+    );
     const controller = new WhatsappTemplateCatalogController(service);
     const res = makeRes();
 
@@ -126,7 +142,9 @@ describe("WhatsappTemplateCatalogController -- empresa", () => {
 describe("WhatsappTemplateCatalogController -- sistema", () => {
   it("createSystem returns 400 with the conflict message when the service rejects a duplicate", async () => {
     const service = makeService();
-    vi.mocked(service.createSystem).mockRejectedValue(new WhatsappTemplateCatalogConflictError("Ya existe"));
+    vi.mocked(service.createSystem).mockRejectedValue(
+      new WhatsappTemplateCatalogConflictError("Ya existe"),
+    );
     const controller = new WhatsappTemplateCatalogController(service);
     const res = makeRes();
 
@@ -137,7 +155,9 @@ describe("WhatsappTemplateCatalogController -- sistema", () => {
 
   it("listSystem returns 200 with the system entries", async () => {
     const service = makeService();
-    vi.mocked(service.listSystem).mockResolvedValue([mockEntity<WhatsappTemplateCatalogEntry>({ id: "sys-1" })]);
+    vi.mocked(service.listSystem).mockResolvedValue([
+      mockEntity<WhatsappTemplateCatalogEntry>({ id: "sys-1" }),
+    ]);
     const controller = new WhatsappTemplateCatalogController(service);
     const res = makeRes();
 

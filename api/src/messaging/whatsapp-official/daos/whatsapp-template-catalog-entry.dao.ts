@@ -12,7 +12,7 @@ import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 // tenantId a mano desde getCurrentTenantId() (mismo filtro que
 // TenantScopedDao aplicaria); los metodos "System" usan tenantId: null y
 // NUNCA llaman getCurrentTenantId() -- las rutas que los exponen estan
-// gateadas por requirePlatformAdmin, no por tenant (ver whatsapp-template-catalog.routes.ts).
+// gateadas por platform.templates.manage, no por tenant (ver whatsapp-template-catalog.routes.ts).
 @singleton()
 export class WhatsappTemplateCatalogEntryDao extends BaseDao<WhatsappTemplateCatalogEntry> {
   constructor(
@@ -82,6 +82,33 @@ export class WhatsappTemplateCatalogEntryDao extends BaseDao<WhatsappTemplateCat
     const existing = await this.findByIdForTenant(id);
     if (!existing) return false;
     return super.delete(id);
+  }
+
+  async copySystemToTenant(): Promise<WhatsappTemplateCatalogEntry[]> {
+    const [systemEntries, tenantEntries] = await Promise.all([
+      this.findAllSystem(),
+      this.findAllForTenant(),
+    ]);
+    const missing = systemEntries.filter(
+      (system) =>
+        !tenantEntries.some((own) => own.key === system.key || own.metaName === system.metaName),
+    );
+    const copies: WhatsappTemplateCatalogEntry[] = [];
+    for (const system of missing) {
+      copies.push(
+        await this.createForTenant({
+          key: system.key,
+          metaName: system.metaName,
+          category: system.category,
+          language: system.language,
+          text: system.text,
+          variables: system.variables,
+          triggerEvent: system.triggerEvent,
+          enabled: system.enabled,
+        }),
+      );
+    }
+    return copies;
   }
 
   async findAllSystem(): Promise<WhatsappTemplateCatalogEntry[]> {

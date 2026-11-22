@@ -3,6 +3,7 @@ import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catal
 import { WhatsappTemplateStatusDao } from "../daos/whatsapp-template-status.dao.js";
 import { WhatsappAccountService } from "./whatsapp-account.service.js";
 import { WhatsappTemplateCatalogEntry } from "../entities/whatsapp-template-catalog-entry.entity.js";
+import type { WhatsappAccount } from "../entities/whatsapp-account.entity.js";
 import { CreateWhatsappTemplateCatalogEntryDto } from "../dtos/create-whatsapp-template-catalog-entry.dto.js";
 import { UpdateWhatsappTemplateCatalogEntryDto } from "../dtos/update-whatsapp-template-catalog-entry.dto.js";
 import { updateTemplate, deleteTemplate } from "../clients/whatsapp-graph.client.js";
@@ -11,6 +12,14 @@ import { updateTemplate, deleteTemplate } from "../clients/whatsapp-graph.client
 // tocar la DB para responder 400 limpio, nunca el 500 crudo de la
 // constraint (ver plan Fase 4, Checkpoint 7, Tarea 7.2).
 export class WhatsappTemplateCatalogConflictError extends Error {}
+
+// Con la cuenta piloto compartida, las plantillas viven en el WABA de la
+// plataforma: un taller que las edite o borre afecta a todos los demas.
+export class WhatsappTemplateCatalogReadOnlyError extends Error {
+  constructor() {
+    super("Conecta tu propia cuenta de WhatsApp para administrar plantillas");
+  }
+}
 
 function buildPatch(
   dto: UpdateWhatsappTemplateCatalogEntryDto,
@@ -34,7 +43,14 @@ export class WhatsappTemplateCatalogService {
     return this.whatsappTemplateCatalogEntryDao.getOrSeedDefaultsForTenant();
   }
 
+  private async getManageableAccount(): Promise<WhatsappAccount> {
+    const account = await this.whatsappAccountService.getOrCreateForTenant();
+    if (account.ownedByPlatform) throw new WhatsappTemplateCatalogReadOnlyError();
+    return account;
+  }
+
   async create(dto: CreateWhatsappTemplateCatalogEntryDto): Promise<WhatsappTemplateCatalogEntry> {
+    await this.getManageableAccount();
     const existing = await this.whatsappTemplateCatalogEntryDao.findAllForTenant();
     if (existing.some((e) => e.key === dto.key)) {
       throw new WhatsappTemplateCatalogConflictError(
@@ -62,13 +78,13 @@ export class WhatsappTemplateCatalogService {
     id: string,
     dto: UpdateWhatsappTemplateCatalogEntryDto,
   ): Promise<WhatsappTemplateCatalogEntry | null> {
+    const account = await this.getManageableAccount();
     const entry = await this.whatsappTemplateCatalogEntryDao.findByIdForTenant(id);
     if (!entry) return null;
 
     const patch = buildPatch(dto);
     const status = await this.whatsappTemplateStatusDao.findByCatalogEntryId(entry.id);
     if (status?.metaTemplateId && (dto.text !== undefined || dto.variables !== undefined)) {
-      const account = await this.whatsappAccountService.getOrCreateForTenant();
       await updateTemplate(status.metaTemplateId, account.accessToken, {
         metaName: entry.metaName,
         category: entry.category,
@@ -89,12 +105,12 @@ export class WhatsappTemplateCatalogService {
   // sincronizado) se borra la fila local; si Meta rechaza, no se toca nada
   // local y se propaga su mensaje real.
   async delete(id: string): Promise<boolean> {
+    const account = await this.getManageableAccount();
     const entry = await this.whatsappTemplateCatalogEntryDao.findByIdForTenant(id);
     if (!entry) return false;
 
     const status = await this.whatsappTemplateStatusDao.findByCatalogEntryId(entry.id);
     if (status?.metaTemplateId) {
-      const account = await this.whatsappAccountService.getOrCreateForTenant();
       await deleteTemplate(account.wabaId, account.accessToken, entry.metaName);
     }
 

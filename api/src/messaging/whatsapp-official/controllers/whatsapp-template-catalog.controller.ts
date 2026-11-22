@@ -5,6 +5,7 @@ import { validate } from "class-validator";
 import {
   WhatsappTemplateCatalogService,
   WhatsappTemplateCatalogConflictError,
+  WhatsappTemplateCatalogReadOnlyError,
 } from "../services/whatsapp-template-catalog.service.js";
 import { CreateWhatsappTemplateCatalogEntryDto } from "../dtos/create-whatsapp-template-catalog-entry.dto.js";
 import { UpdateWhatsappTemplateCatalogEntryDto } from "../dtos/update-whatsapp-template-catalog-entry.dto.js";
@@ -17,6 +18,10 @@ export class WhatsappTemplateCatalogController {
   constructor(private whatsappTemplateCatalogService: WhatsappTemplateCatalogService) {}
 
   private handleError(error: any, res: Response): void {
+    if (error instanceof WhatsappTemplateCatalogReadOnlyError) {
+      sendError(res, error, 403);
+      return;
+    }
     if (
       error instanceof WhatsappTemplateCatalogConflictError ||
       error instanceof WhatsappGraphApiError

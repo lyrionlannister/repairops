@@ -42,6 +42,9 @@ export const WhatsappOfficialPage = () => {
   };
 
   const statusByEntryId = useTemplateStatusByEntry(templates);
+  // Remontar la seccion al conectar cuenta propia recarga las plantillas de
+  // sistema que el backend copio al taller en ese momento.
+  const catalogReadOnly = account?.ownedByPlatform !== false;
 
   return (
     <PageShell
@@ -98,9 +101,15 @@ export const WhatsappOfficialPage = () => {
       />
 
       <TemplateCatalogSection
+        key={catalogReadOnly ? "read-only" : "manageable"}
         scope="tenant"
         title="Plantillas de la empresa"
-        description="Plantillas de tu taller. Se sincronizan con tu cuenta de WhatsApp Business."
+        description={
+          catalogReadOnly
+            ? "Plantillas del sistema que usa la cuenta piloto compartida. Conecta tu propia cuenta para administrarlas."
+            : "Plantillas de tu taller. Se sincronizan con tu cuenta de WhatsApp Business."
+        }
+        readOnly={catalogReadOnly}
         statusByEntryId={statusByEntryId}
       />
 
