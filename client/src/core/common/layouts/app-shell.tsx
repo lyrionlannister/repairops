@@ -9,6 +9,7 @@ import { BranchProvider } from "../contexts/providers/branch-provider";
 import { signInNavbarItems } from "../../../config/app/navbar/sign-in-navbar-items";
 import { Backdrop } from "../components/menu/backdrop";
 import { usePermissions } from "../hooks/use-permissions";
+import { useLayoutResizeNotifier } from "../hooks/use-layout-resize-notifier";
 import { visibleNavItems } from "../utils/visible-nav-items";
 
 const LayoutContent: React.FC = () => {
@@ -16,6 +17,7 @@ const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const { canAny } = usePermissions();
   const navItems = visibleNavItems(signInNavbarItems, canAny);
+  const notifyLayoutResize = useLayoutResizeNotifier();
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
@@ -27,6 +29,7 @@ const LayoutContent: React.FC = () => {
         className={`flex min-h-0 min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out ${
           isExpanded || isHovered ? "lg:ml-72.5" : "lg:ml-22.5"
         } ${isMobileOpen ? "ml-0" : ""}`}
+        onTransitionEnd={notifyLayoutResize}
       >
         <NavbarMenu />
         <div className="custom-scrollbar flex w-full flex-1 flex-col overflow-y-auto p-4 md:p-6">
