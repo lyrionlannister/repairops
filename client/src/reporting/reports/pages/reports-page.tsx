@@ -1,4 +1,5 @@
 import { BarChart3 } from "lucide-react";
+import { EmptyState } from "@ui/table/empty-state";
 
 import { DatePicker } from "@ui/date-picker/date-picker";
 import { Label } from "@ui/inputs/label";
@@ -148,10 +149,7 @@ export const ReportsPage = () => {
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
         <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Productividad por empleado</h2>
         {!employeePerformance || employeePerformance.employees.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 p-8 text-center text-gray-400">
-            <BarChart3 className="size-10 opacity-40" />
-            <p className="text-sm">Sin datos en este período.</p>
-          </div>
+          <EmptyState icon={<BarChart3 />} title="Sin datos en este período." description="Prueba con otro rango de fechas." />
         ) : (
           <table className="w-full text-sm">
             <thead>

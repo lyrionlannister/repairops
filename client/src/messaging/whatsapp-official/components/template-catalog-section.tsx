@@ -3,6 +3,7 @@ import { MessageCircle } from "lucide-react";
 
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
+import { EmptyState } from "@ui/table/empty-state";
 
 import { useTemplateCatalogSection } from "../hooks/use-template-catalog-section";
 import { TemplateCatalogTable } from "./template-catalog-table";
@@ -38,10 +39,17 @@ export const TemplateCatalogSection: FC<TemplateCatalogSectionProps> = ({
       {catalog.loading && catalog.entries.length === 0 ? (
         <div className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando...</div>
       ) : catalog.entries.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 p-12 text-center text-gray-400">
-          <MessageCircle className="size-10 opacity-40" />
-          <p className="text-sm">Sin plantillas todavía.</p>
-        </div>
+        <EmptyState
+          icon={<MessageCircle />}
+          title="Sin plantillas todavía."
+          action={
+            !readOnly && (
+              <Button variant="primary" onClick={catalog.openCreateForm}>
+                Nueva plantilla
+              </Button>
+            )
+          }
+        />
       ) : (
         <TemplateCatalogTable
           entries={catalog.entries}
