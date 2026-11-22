@@ -1,5 +1,6 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
+import { bodyOf, optionalString } from "../../../core/http/request-body.js";
 import { CHATS_ERROR_MESSAGES } from "../constants/chats.constants.js";
 import { ChatsService } from "../services/chats.service.js";
 import { ChatMediaService } from "../services/chat-media.service.js";
@@ -170,7 +171,7 @@ export class ChatsController {
   async sendMessage(req: Request, res: Response): Promise<void> {
     try {
       const sessionId = Array.isArray(req.params.sessionId) ? req.params.sessionId[0] : req.params.sessionId;
-      const body = req.body?.body as string | undefined;
+      const body = optionalString(bodyOf(req).body);
       if (!(await this.chatsService.canAccess(sessionId, "reply"))) {
         res.status(404).json({ error: "Conversación no encontrada" });
         return;

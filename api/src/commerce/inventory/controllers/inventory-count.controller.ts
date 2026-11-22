@@ -1,5 +1,6 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
+import { bodyOf, optionalString } from "../../../core/http/request-body.js";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { InventoryCountService, InventoryCountCloseBlockedError } from "../services/inventory-count.service.js";
@@ -21,7 +22,7 @@ export class InventoryCountController {
       }
       const items = await this.service.getItems(count.id);
       res.status(200).json({ ...count, items });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -35,7 +36,7 @@ export class InventoryCountController {
         return;
       }
       res.status(201).json(await this.service.open(dto.branchId, dto.openedByEmployeeId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -50,16 +51,16 @@ export class InventoryCountController {
       }
       const updated = await this.service.setCounted(req.params["itemId"] as string, dto.countedQuantity, dto.reason);
       res.status(200).json(updated);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
 
   close = async (req: Request, res: Response): Promise<void> => {
     try {
-      const closed = await this.service.close(req.params["id"] as string, req.body?.closedByEmployeeId);
+      const closed = await this.service.close(req.params["id"] as string, optionalString(bodyOf(req).closedByEmployeeId));
       res.status(200).json(closed);
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof InventoryCountCloseBlockedError) {
         res.status(400).json({ error: error.message, missingReasonItemIds: error.missingReasonItemIds });
         return;

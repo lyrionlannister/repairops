@@ -15,13 +15,13 @@ export class CompleteLayawayPaymentDto {
 }
 
 export class CompleteLayawayDto {
-  @IsNotEmpty({ message: "cashSessionId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Sesión de caja requerida" })
+  @IsString({ message: "Sesión de caja inválida" })
   cashSessionId!: string;
 
-  @IsArray()
+  @IsArray({ message: "Pagos deben ser una lista" })
   @ArrayMinSize(1, { message: "Se requiere al menos un pago" })
-  @ValidateNested({ each: true })
+  @ValidateNested({ each: true, message: "Pagos contienen un valor inválido" })
   @Type(() => CompleteLayawayPaymentDto)
   payments!: CompleteLayawayPaymentDto[];
 }

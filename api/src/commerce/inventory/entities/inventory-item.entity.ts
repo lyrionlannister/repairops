@@ -46,10 +46,10 @@ export class InventoryItem extends BaseEntity {
   kind!: InventoryItemKind;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "precio_costo" })
-  costPrice!: number;
+  costPrice!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "precio_venta" })
-  salePrice!: number;
+  salePrice!: string;
 
   // Cacheado: la fuente de verdad es la suma del ledger en inventory_movements,
   // pero se mantiene esta columna actualizada atomicamente (ver

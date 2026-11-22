@@ -9,13 +9,13 @@ export class AssignSubscriptionDto {
   planKey!: PlanKey;
 
   @IsOptional()
-  @IsInt({ message: "extraUsers debe ser entero" })
-  @Min(0, { message: "extraUsers no puede ser negativo" })
+  @IsInt({ message: "Usuarios extra deben ser un número entero" })
+  @Min(0, { message: "Usuarios extra no pueden ser negativos" })
   extraUsers?: number;
 
   @IsOptional()
-  @IsInt({ message: "extraBranches debe ser entero" })
-  @Min(0, { message: "extraBranches no puede ser negativo" })
+  @IsInt({ message: "Sucursales extra deben ser un número entero" })
+  @Min(0, { message: "Sucursales extra no pueden ser negativas" })
   extraBranches?: number;
 
   @IsOptional()

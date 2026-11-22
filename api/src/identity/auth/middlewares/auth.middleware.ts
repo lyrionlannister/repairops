@@ -53,8 +53,8 @@ export const authMiddleware = (
     const { id, email, tenantId } = decoded as { id: string; email: string; tenantId: string };
     req.user = { id, email, tenantId };
     next();
-  } catch (error: any) {
-    if (error.name === "TokenExpiredError") {
+  } catch (error) {
+    if (error instanceof Error && error.name === "TokenExpiredError") {
       res.status(401).json({ error: "Sesion expirada" });
     } else {
       res.status(401).json({ error: "Token invalido" });

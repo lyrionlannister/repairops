@@ -1,12 +1,12 @@
 import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from "class-validator";
 
 export class CreateInventoryTransferDto {
-  @IsNotEmpty({ message: "fromInventoryItemId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Producto de origen requerido" })
+  @IsString({ message: "Producto de origen inválido" })
   fromInventoryItemId!: string;
 
-  @IsNotEmpty({ message: "toInventoryItemId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Producto de destino requerido" })
+  @IsString({ message: "Producto de destino inválido" })
   toInventoryItemId!: string;
 
   @IsInt({ message: "Cantidad debe ser un entero" })
@@ -14,10 +14,10 @@ export class CreateInventoryTransferDto {
   quantity!: number;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Motivo debe ser texto" })
   reason?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Empleado que registra inválido" })
   createdByEmployeeId?: string;
 }

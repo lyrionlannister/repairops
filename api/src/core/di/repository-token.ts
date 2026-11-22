@@ -2,6 +2,7 @@ import type { InjectionToken } from "tsyringe";
 import type { ObjectLiteral, Repository } from "typeorm";
 
 export type EntityConstructor<T extends ObjectLiteral = ObjectLiteral> = new (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- unknown[] rechaza constructores con parametros tipados.
   ...args: any[]
 ) => T;
 
@@ -21,5 +22,5 @@ export function repositoryToken<T extends ObjectLiteral>(
     token = Symbol(entity.name);
     tokensByEntity.set(entity, token);
   }
-  return token as unknown as InjectionToken<Repository<T>>;
+  return token;
 }

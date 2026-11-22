@@ -23,7 +23,7 @@ function makeItem(overrides: Partial<QuoteItem> = {}): QuoteItem {
 
 describe("toQuotePdfData", () => {
   it("entrega el dinero como cadenas decimales y calcula subtotales exactos", () => {
-    const data = toQuotePdfData(makeQuote(), [makeItem({ quantity: 3, unitPrice: "0.10" as never })], null);
+    const data = toQuotePdfData(makeQuote(), [makeItem({ quantity: 3, unitPrice: "0.10" })], null);
 
     expect(data.totalValue).toBe("600.00");
     expect(data.items).toEqual([{ description: "Pantalla", quantity: 3, unitPrice: "0.10", subtotal: "0.30" }]);

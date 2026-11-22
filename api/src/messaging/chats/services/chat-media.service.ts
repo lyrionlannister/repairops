@@ -40,7 +40,7 @@ export interface IngestMediaInput {
   accessToken: string;
 }
 
-const baseMime = (mime: string): string => mime.split(";")[0]!.trim().toLowerCase();
+const baseMime = (mime: string): string => mime.split(";")[0].trim().toLowerCase();
 
 // Baja el archivo de Meta (que solo lo conserva ~30 dias y exige el token de la
 // cuenta), lo valida y lo guarda en el almacen. Nunca lanza: ante cualquier

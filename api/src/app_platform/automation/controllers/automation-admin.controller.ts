@@ -1,5 +1,6 @@
 import { singleton } from "tsyringe";
 import type { Request, Response } from "express";
+import { bodyOf } from "../../../core/http/request-body.js";
 import { settingsService } from "../../../identity/settings/settings.service.js";
 import { parseAbsoluteUrl } from "../../../core/common/utils/absolute-url.js";
 import { sendError } from "../../../core/http/error-response.js";
@@ -17,19 +18,19 @@ export class AutomationAdminController {
 
   updateConfig = async (req: Request, res: Response): Promise<void> => {
     try {
-      const automationUrl = req.body?.automationUrl;
+      const { automationUrl } = bodyOf(req);
       if (typeof automationUrl !== "string" || !automationUrl.trim()) {
-        res.status(400).json({ error: "El campo automationUrl es requerido y debe ser string" });
+        res.status(400).json({ error: "La URL de automatización es requerida y debe ser texto" });
         return;
       }
       const parsedUrl = parseAbsoluteUrl(automationUrl.trim());
       if (!parsedUrl) {
-        res.status(400).json({ error: "automationUrl debe ser una URL absoluta válida" });
+        res.status(400).json({ error: "La URL de automatización debe ser una URL absoluta válida" });
         return;
       }
       if (!isAllowedAutomationDomain(parsedUrl.hostname)) {
         res.status(400).json({
-          error: "El dominio de automationUrl no está permitido",
+          error: "El dominio de la URL de automatización no está permitido",
           allowedDomains: AUTOMATION_ALLOWED_DOMAINS,
         });
         return;

@@ -39,7 +39,7 @@ export class AuthController {
         message: AUTH_MESSAGES.REGISTER_SUCCESS,
         user: userWithoutPassword,
       });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
@@ -48,7 +48,7 @@ export class AuthController {
     try {
       const users = await this.authService.getAllUsers();
       res.status(200).json(users);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
@@ -66,7 +66,7 @@ export class AuthController {
 
       const user = await this.authService.createEmployee(dto);
       res.status(201).json({ message: AUTH_MESSAGES.REGISTER_SUCCESS, user });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
@@ -89,7 +89,7 @@ export class AuthController {
         return;
       }
       res.status(200).json(user);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
@@ -102,7 +102,7 @@ export class AuthController {
         return;
       }
       res.status(200).json(user);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
@@ -115,7 +115,7 @@ export class AuthController {
     try {
       const employees = await this.authService.listEmployees();
       res.status(200).json(employees);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
@@ -129,7 +129,7 @@ export class AuthController {
         return;
       }
       res.status(200).json(user);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }
   };
@@ -158,12 +158,12 @@ export class AuthController {
         message: AUTH_MESSAGES.LOGIN_SUCCESS,
         user,
       });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 401, AUTH_MESSAGES.LOGIN_ERROR);
     }
   };
 
-  logout = async (_req: Request, res: Response): Promise<void> => {
+  logout = (_req: Request, res: Response): void => {
     res.clearCookie(ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE_OPTIONS);
     res.status(200).json({ message: AUTH_MESSAGES.LOGOUT_SUCCESS });
   };

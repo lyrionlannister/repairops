@@ -25,7 +25,7 @@ describe("acceso por sucursal", () => {
   let foreignBranch = "";
   let cashierA = "";
   let ownerA = "";
-  let ownerScope: BranchScope | null = null;
+  const ownerScope: BranchScope | null = null;
   let scopeA: BranchScope;
   let dao: RepairNoteDao;
   let access: BranchAccessService;
@@ -37,8 +37,8 @@ describe("acceso por sucursal", () => {
     await AppDataSource.initialize();
     const first = await setupStaff(AppDataSource, tenantId, ["owner", "cashier"]);
     branchA = first.branchId;
-    cashierA = first.userIds["cashier"] as string;
-    ownerA = first.userIds["owner"] as string;
+    cashierA = first.userIds["cashier"];
+    ownerA = first.userIds["owner"];
     tokens = first.tokens;
     [{ id: branchB }] = await AppDataSource.query(`INSERT INTO branches (tenant_id, nombre) VALUES ($1, 'B') RETURNING id::text AS id`, [tenantId]);
     foreignBranch = (await setupStaff(AppDataSource, otherTenantId, ["owner"])).branchId;
@@ -62,7 +62,7 @@ describe("acceso por sucursal", () => {
           receivedAt: "2026-01-01",
           receivedTime: "12:00",
           publicRef: generatePublicRef(),
-        } as Partial<RepairNote>),
+        }),
       );
     }
   });
@@ -90,8 +90,8 @@ describe("acceso por sucursal", () => {
 
     it("el personal no escribe en otra sucursal, y sin sucursal usa su principal", async () => {
       const base = { controlNumber: 99, customerName: "X", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", receivedTime: "12:00", publicRef: generatePublicRef() };
-      await expect(runWithTenant(tenantId, () => dao.create({ ...base, localId: branchB } as Partial<RepairNote>), scopeA)).rejects.toBeInstanceOf(BranchAccessError);
-      const created = await runWithTenant(tenantId, () => dao.create({ ...base, controlNumber: 100, publicRef: generatePublicRef() } as Partial<RepairNote>), scopeA);
+      await expect(runWithTenant(tenantId, () => dao.create({ ...base, localId: branchB }), scopeA)).rejects.toBeInstanceOf(BranchAccessError);
+      const created = await runWithTenant(tenantId, () => dao.create({ ...base, controlNumber: 100, publicRef: generatePublicRef() }), scopeA);
       expect(String(created.localId)).toBe(branchA);
     });
 

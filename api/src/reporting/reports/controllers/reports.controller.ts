@@ -29,7 +29,7 @@ export class ReportsController {
         return;
       }
       res.status(200).json(await this.service.getEmployeePerformance({ ...dto, branchId: await this.branchOf(req) }));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -43,7 +43,7 @@ export class ReportsController {
         return;
       }
       res.status(200).json(await this.service.getAccessorySales({ ...dto, branchId: await this.branchOf(req) }));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -57,7 +57,7 @@ export class ReportsController {
         return;
       }
       res.status(200).json(await this.service.getRepairNotesByType({ ...dto, branchId: await this.branchOf(req) }));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };

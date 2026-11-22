@@ -17,7 +17,7 @@ export class User extends BaseEntity {
   tenant?: Tenant;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true, name: "salario" })
-  salaryAmount!: number | null;
+  salaryAmount!: string | null;
 
   @Column({ type: "varchar", length: 20, nullable: true, name: "ciclo_pago" })
   payCycle!: PayCycle | null;

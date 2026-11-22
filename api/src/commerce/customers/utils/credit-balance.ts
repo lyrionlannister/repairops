@@ -5,6 +5,7 @@ import { SalePayment } from "../../payments/entities/sale-payment.entity.js";
 import { RepairNote } from "../../repair-notes/entities/repair-note.entity.js";
 import { RepairNotePayment } from "../../repair-notes/entities/repair-note-payment.entity.js";
 import { CustomerPayment } from "../entities/customer-payment.entity.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 
 // Saldo a crédito de un cliente: NUNCA cacheado. Es lo fiado (pagos "credito"
 // de sus ventas y notas de reparación, en cualquier sucursal -- el crédito es
@@ -16,7 +17,7 @@ export async function sumCreditBalance(
   manager: EntityManager,
   tenantId: string,
   customerId: string,
-): Promise<number> {
+): Promise<string> {
   const sales = await manager
     .createQueryBuilder(SalePayment, "payment")
     .innerJoin(Sale, "sale", "sale.id = payment.saleId AND sale.tenantId = :tenantId", { tenantId })
@@ -46,7 +47,7 @@ export async function sumCreditBalance(
 
   const debt = new Decimal(sales?.total ?? 0).plus(notes?.total ?? 0);
   const balance = debt.minus(payments?.total ?? 0);
-  return Decimal.max(0, balance).toNumber();
+  return toMoney(Decimal.max(0, balance));
 }
 
 export interface CreditDebtRow {

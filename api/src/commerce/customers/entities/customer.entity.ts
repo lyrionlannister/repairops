@@ -25,7 +25,7 @@ export class Customer extends BaseEntity {
   // cachea aqui -- se calcula sumando SalePayment.amount con method='credito'
   // de las ventas de este cliente (ver SalePaymentDao.sumCreditoForCustomer).
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0, name: "limite_credito" })
-  creditLimit!: number;
+  creditLimit!: string;
 
   @CreateDateColumn({
     name: "fecha_creacion",

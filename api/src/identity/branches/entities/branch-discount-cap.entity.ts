@@ -29,5 +29,5 @@ export class BranchDiscountCap extends BaseEntity {
   role!: UserRole;
 
   @Column({ type: "decimal", precision: 5, scale: 2, name: "max_discount_percent" })
-  maxDiscountPercent!: number;
+  maxDiscountPercent!: string;
 }

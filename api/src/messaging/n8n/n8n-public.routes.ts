@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import { MessageTemplateDao } from "../message-templates/daos/message-template.dao.js";
 import { PriceListDao } from "../../commerce/price-list/daos/price-list.dao.js";
 import { RepairNoteDao } from "../../commerce/repair-notes/daos/repair-note.dao.js";
@@ -13,7 +13,7 @@ import { env } from "../../core/config/env.js";
  * adivine la ruta -- el comentario anterior ("solo accesibles dentro de la
  * red Docker") no estaba garantizado por nada a nivel de nginx/compose.
  */
-export function requireInternalToken(req: any, res: any, next: any): void {
+export function requireInternalToken(req: Request, res: Response, next: NextFunction): void {
   const expected = env("N8N_INTERNAL_TOKEN");
   if (!expected) {
     res.status(500).json({ error: "N8N_INTERNAL_TOKEN no configurado" });

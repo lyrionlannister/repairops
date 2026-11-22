@@ -42,9 +42,9 @@ describe("ChatMessageDao archivos y ubicaciones", () => {
     const [saved] = await runWithTenant(tenantA, () => dao.getMessagesByContact(phone));
     expect(saved).toMatchObject({ messageType: "image", mediaMime: "image/jpeg", mediaSize: 123 });
 
-    const own = await runWithTenant(tenantA, () => dao.findMediaMessage(phone, saved!.publicId));
-    const foreign = await runWithTenant(tenantB, () => dao.findMediaMessage(phone, saved!.publicId));
-    const otherChat = await runWithTenant(tenantA, () => dao.findMediaMessage("5210000000000", saved!.publicId));
+    const own = await runWithTenant(tenantA, () => dao.findMediaMessage(phone, saved.publicId));
+    const foreign = await runWithTenant(tenantB, () => dao.findMediaMessage(phone, saved.publicId));
+    const otherChat = await runWithTenant(tenantA, () => dao.findMediaMessage("5210000000000", saved.publicId));
 
     expect(own?.mediaKey).toBe(`tenants/x/chat/${phone}/wamid.M1.jpg`);
     expect(foreign).toBeNull();

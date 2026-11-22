@@ -1,5 +1,6 @@
 import { singleton } from "tsyringe";
 import type { Request, Response } from "express";
+import { bodyOf } from "../../../core/http/request-body.js";
 import { settingsService } from "../../../identity/settings/settings.service.js";
 import { parseAbsoluteUrl } from "../../../core/common/utils/absolute-url.js";
 import { sendError } from "../../../core/http/error-response.js";
@@ -16,9 +17,9 @@ export class N8nIntegrationController {
 
   updateConfig = async (req: Request, res: Response): Promise<void> => {
     try {
-      const n8nEditorUrl = req.body?.n8nEditorUrl;
+      const { n8nEditorUrl } = bodyOf(req);
       if (typeof n8nEditorUrl !== "string" || !n8nEditorUrl.trim()) {
-        res.status(400).json({ error: "El campo n8nEditorUrl es requerido y debe ser string" });
+        res.status(400).json({ error: "La URL del editor de n8n es requerida y debe ser texto" });
         return;
       }
       const parsedUrl = parseAbsoluteUrl(n8nEditorUrl.trim());

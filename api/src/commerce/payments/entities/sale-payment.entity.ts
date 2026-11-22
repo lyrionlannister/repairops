@@ -32,7 +32,7 @@ export class SalePayment extends BaseEntity {
   method!: SalePaymentMethod;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false, name: "monto" })
-  amount!: number;
+  amount!: string;
 
   // Sin uso hasta Fase 3: tarjeta en mostrador se captura a mano de lo que
   // muestra el terminal fisico externo, no hay llamada a ningun proveedor

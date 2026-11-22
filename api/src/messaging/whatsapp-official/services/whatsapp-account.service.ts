@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { WhatsappAccountDao } from "../daos/whatsapp-account.dao.js";
 import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catalog-entry.dao.js";
 import { WhatsappAccount } from "../entities/whatsapp-account.entity.js";
@@ -40,9 +40,9 @@ export class WhatsappAccountService {
     if (account.displayPhoneNumber) return account.displayPhoneNumber;
     try {
       const displayPhoneNumber = await getDisplayPhoneNumber(account.phoneNumberId, account.accessToken);
-      await this.whatsappAccountDao.update(account.id, { displayPhoneNumber } as Partial<WhatsappAccount>);
+      await this.whatsappAccountDao.update(account.id, { displayPhoneNumber });
       return displayPhoneNumber;
-    } catch (error) {
+    } catch {
       console.warn("No se pudo obtener el número de WhatsApp de la cuenta", { tenantId: account.tenantId });
       return null;
     }

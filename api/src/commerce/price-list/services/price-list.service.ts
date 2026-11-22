@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { PriceListDao } from "../daos/price-list.dao.js";
 import { PriceListItem } from "../entities/price-list-item.entity.js";
 import { SupplierDao } from "../../suppliers/daos/supplier.dao.js";
@@ -30,7 +30,7 @@ export class PriceListService {
       const supplier = await this.supplierDao.findById(data.supplierId);
       if (!supplier) throw new Error("Proveedor no encontrado");
     }
-    return this.dao.create(data as Partial<PriceListItem>);
+    return this.dao.create(data);
   }
 
   async update(id: string, data: UpdatePayload): Promise<PriceListItem | null> {
@@ -38,7 +38,7 @@ export class PriceListService {
       const supplier = await this.supplierDao.findById(data.supplierId);
       if (!supplier) throw new Error("Proveedor no encontrado");
     }
-    return this.dao.update(id, data as Partial<PriceListItem>);
+    return this.dao.update(id, data);
   }
 
   async delete(id: string): Promise<boolean> {

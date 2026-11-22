@@ -1,4 +1,4 @@
-import { FindOptionsWhere, IsNull, Repository } from "typeorm";
+import { IsNull, Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { WhatsappTemplateCatalogEntry } from "../entities/whatsapp-template-catalog-entry.entity.js";
@@ -49,10 +49,7 @@ export class WhatsappTemplateCatalogEntryDao extends BaseDao<WhatsappTemplateCat
 
   async findByKeyForTenant(key: string): Promise<WhatsappTemplateCatalogEntry | null> {
     const tenantId = getCurrentTenantId();
-    return this.repository.findOneBy({
-      tenantId,
-      key,
-    } as FindOptionsWhere<WhatsappTemplateCatalogEntry>);
+    return this.repository.findOneBy({ tenantId, key });
   }
 
   async findByIdForTenant(id: string): Promise<WhatsappTemplateCatalogEntry | null> {
@@ -66,7 +63,7 @@ export class WhatsappTemplateCatalogEntryDao extends BaseDao<WhatsappTemplateCat
     data: Omit<Partial<WhatsappTemplateCatalogEntry>, "tenantId">,
   ): Promise<WhatsappTemplateCatalogEntry> {
     const tenantId = getCurrentTenantId();
-    return super.create({ ...data, tenantId } as Partial<WhatsappTemplateCatalogEntry>);
+    return super.create({ ...data, tenantId });
   }
 
   async updateForTenant(
@@ -124,7 +121,7 @@ export class WhatsappTemplateCatalogEntryDao extends BaseDao<WhatsappTemplateCat
   async createSystem(
     data: Omit<Partial<WhatsappTemplateCatalogEntry>, "tenantId">,
   ): Promise<WhatsappTemplateCatalogEntry> {
-    return super.create({ ...data, tenantId: null } as Partial<WhatsappTemplateCatalogEntry>);
+    return super.create({ ...data, tenantId: null });
   }
 
   async updateSystem(

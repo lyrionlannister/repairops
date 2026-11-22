@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { createElement, type ComponentType } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 

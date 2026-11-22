@@ -49,12 +49,12 @@ export class Local extends BaseEntity {
   // IVA por defecto 16% (MX, cap. 9/10 del plan). Configurable por tenant,
   // nunca quemado en el motor de calculo (ver commerce/pricing).
   @Column({ type: "decimal", precision: 5, scale: 2, default: 16, name: "tasa_impuesto" })
-  taxRatePercent!: number;
+  taxRatePercent!: string;
 
   // 0 = sin redondeo. Solo se aplica a movimientos de caja en efectivo
   // (CashService.registerMovement) -- tarjeta/transferencia nunca redondean.
   @Column({ type: "decimal", precision: 4, scale: 2, default: 0, name: "unidad_redondeo_caja" })
-  cashRoundingUnit!: number;
+  cashRoundingUnit!: string;
 
   // Diferencia de efectivo que un cierre de caja puede tener sin que un
   // owner/admin la autorice (monto fijo, no porcentaje -- ver
@@ -66,7 +66,7 @@ export class Local extends BaseEntity {
     default: 50,
     name: "tope_diferencia_caja_sin_autorizar",
   })
-  maxUnauthorizedCashVariance!: number;
+  maxUnauthorizedCashVariance!: string;
 
   // Valor por defecto del plan (MARKET=MX, CURRENCY=MXN, cap. 9/10). Configurable
   // por tenant, no quemado en código -- lo usan reportes, tickets y ventas.

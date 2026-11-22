@@ -1,8 +1,9 @@
 import { singleton, inject } from "tsyringe";
 import { randomUUID } from "node:crypto";
+import { Decimal } from "decimal.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { PriceListDao } from "../../../commerce/price-list/daos/price-list.dao.js";
-import type { PriceListItem } from "../../../commerce/price-list/entities/price-list-item.entity.js";
+import { SupplierDao } from "../../../commerce/suppliers/daos/supplier.dao.js";
 import type { RedisLike, StagingRecord, StagingRow } from "../types.js";
 import { REDIS_CLIENT } from "../../../core/di/tokens.js";
 
@@ -13,13 +14,18 @@ export class ImportStagingService {
   constructor(
     @inject(REDIS_CLIENT) private redis: RedisLike,
     private priceListDao: PriceListDao,
+    private supplierDao: SupplierDao,
   ) {}
 
   private key(tenantId: string, importId: string): string {
     return `import_staging:${tenantId}:${importId}`;
   }
 
-  async startUpload(supplierId: string): Promise<{ importId: string; tenantId: string }> {
+  async startUpload(supplierId: string): Promise<{ importId: string; tenantId: string } | null> {
+    if (!/^\d+$/.test(supplierId)) return null;
+    const supplier = await this.supplierDao.findById(supplierId);
+    if (!supplier) return null;
+
     const tenantId = getCurrentTenantId();
     const importId = randomUUID();
     const record: StagingRecord = {
@@ -84,9 +90,13 @@ export class ImportStagingService {
       throw new Error("No hay filas para importar");
     }
 
-    await this.priceListDao.deleteBySupplier(record.supplierId);
-    await this.priceListDao.bulkCreate(
-      record.rows.map((row) => ({ ...row, supplierId: record.supplierId })) as Partial<PriceListItem>[],
+    await this.priceListDao.replaceForSupplier(
+      record.supplierId,
+      record.rows.map((row) => ({
+        brand: row.brand.trim(),
+        model: row.model.trim(),
+        price: new Decimal(String(row.price)).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toFixed(2),
+      })),
     );
     await this.redis.del(key);
     return { imported: record.rows.length };

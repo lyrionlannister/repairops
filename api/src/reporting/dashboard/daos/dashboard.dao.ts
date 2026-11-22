@@ -61,7 +61,7 @@ export class DashboardDao {
   constructor(@inject(repositoryToken(CashMovement)) private repository: Repository<CashMovement>) {}
 
   async getIncomeSummary(timeZone: string, branchId: string | null): Promise<IncomeSummaryRow> {
-    const rows = await this.repository.query(
+    const rows = await this.repository.query<IncomeSummaryRow[]>(
       `
       WITH bounds AS (
         SELECT
@@ -94,7 +94,7 @@ export class DashboardDao {
   }
 
   async getOperationalCounts(branchId: string | null): Promise<OperationalCountsRow> {
-    const rows = await this.repository.query(
+    const rows = await this.repository.query<OperationalCountsRow[]>(
       `
       SELECT
         (SELECT COUNT(*) FROM repair_notes n
@@ -113,7 +113,7 @@ export class DashboardDao {
   }
 
   async getRecentActivity(branchId: string | null, limit = 10): Promise<ActivityRow[]> {
-    return this.repository.query(
+    return this.repository.query<ActivityRow[]>(
       `
       SELECT
         m.id::text AS id,
@@ -151,7 +151,7 @@ export class DashboardDao {
   }
 
   async getDailySeries(timeZone: string, branchId: string | null, days = 30): Promise<DailySeriesRow[]> {
-    return this.repository.query(
+    return this.repository.query<DailySeriesRow[]>(
       `
       WITH days AS (
         SELECT d::date AS day
@@ -177,7 +177,7 @@ export class DashboardDao {
   }
 
   async getMonthlySeries(timeZone: string, branchId: string | null, year: number): Promise<MonthlySeriesRow[]> {
-    return this.repository.query(
+    return this.repository.query<MonthlySeriesRow[]>(
       `
       WITH months AS (SELECT generate_series(1, 12) AS month), moves AS (
         SELECT EXTRACT(MONTH FROM (m.fecha_creacion AT TIME ZONE 'UTC') AT TIME ZONE $2)::int AS month,

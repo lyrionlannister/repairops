@@ -5,14 +5,9 @@ import type { LocalService } from "../../../../src/app_platform/local/services/l
 import type { ChatsService } from "../../../../src/messaging/chats/services/chats.service.js";
 import type { PresenceService } from "../../../../src/identity/auth/services/presence.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
+import { redisClient } from "../../../../src/core/config/redis-client.js";
 
 const store = new Map<string, string>();
-vi.mock("../../../../src/core/config/redis-client.js", () => ({
-  redisClient: {
-    get: vi.fn(async (key: string) => store.get(key) ?? null),
-    set: vi.fn(async (key: string, value: string) => void store.set(key, value)),
-  },
-}));
 
 const income = {
   today: "100.25",
@@ -44,7 +39,16 @@ function build() {
   return { dao, service: new DashboardService(dao, localService, chatsService, presenceService) };
 }
 
-beforeEach(() => store.clear());
+// spyOn sobre la instancia real en vez de vi.mock del modulo: con el pool vmThreads el
+// vi.mock a veces no se aplica y el cliente real se cuelga intentando conectar a "redis".
+beforeEach(() => {
+  store.clear();
+  vi.spyOn(redisClient, "get").mockImplementation((async (key: string) => store.get(key) ?? null) as never);
+  vi.spyOn(redisClient, "set").mockImplementation((async (key: string, value: string) => {
+    store.set(key, value);
+    return "OK";
+  }) as never);
+});
 
 describe("DashboardService permisos", () => {
   it("con dashboard.money recibe importes", async () => {

@@ -83,7 +83,7 @@ export class InventoryCountService {
     const updated = await this.countItemDao.update(countItemId, {
       countedQuantity,
       reason: reason ?? null,
-    } as Partial<InventoryCountItem>);
+    });
     return updated as InventoryCountItem;
   }
 

@@ -14,7 +14,7 @@ export class BillingController {
   getPlan = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getCurrent());
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -22,7 +22,7 @@ export class BillingController {
   listPlans = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.listPlans());
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -30,7 +30,7 @@ export class BillingController {
   listTenants = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.listTenants());
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -49,7 +49,7 @@ export class BillingController {
         return;
       }
       res.status(200).json(summary);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };

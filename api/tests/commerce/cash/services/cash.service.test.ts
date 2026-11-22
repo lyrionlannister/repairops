@@ -149,7 +149,7 @@ describe("CashService", () => {
         lastName: "Ño",
         email: `owner.${authorizedTenant}@test.local`,
         password: "x",
-      } as Partial<User>),
+      }),
     );
     await runWithTenant(authorizedTenant, () => makeUserRoleDao().replaceForUser(authorizer.id, ["owner"]));
     const session = await runWithTenant(authorizedTenant, () => service.openSession("1", 500));

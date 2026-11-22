@@ -1,7 +1,7 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
 import { PriceListService } from "../services/price-list.service.js";
-import { sendError } from "../../../core/http/error-response.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
 
 @singleton()
 export class PriceListController {
@@ -10,12 +10,12 @@ export class PriceListController {
   getAll = async (req: Request, res: Response): Promise<void> => {
     console.log("[controller] getAll llamado, query:", req.query);
     try {
-      const { q } = req.query;
+      const q = queryString(req.query.q);
       const items = q
-        ? await this.service.search(String(q))
+        ? await this.service.search(q)
         : await this.service.getAll();
       res.status(200).json(items);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -24,7 +24,7 @@ export class PriceListController {
     try {
       const item = await this.service.create(req.body);
       res.status(201).json(item);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -38,7 +38,7 @@ export class PriceListController {
         return;
       }
       res.status(200).json(item);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -52,7 +52,7 @@ export class PriceListController {
         return;
       }
       res.status(200).json({ message: "Item eliminado" });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };

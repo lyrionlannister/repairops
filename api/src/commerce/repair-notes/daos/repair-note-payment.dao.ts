@@ -19,7 +19,7 @@ export class RepairNotePaymentDao extends TenantScopedDao<RepairNotePayment> {
   }
 
   // Parte del saldo a crédito del cliente que viene de sus notas (nunca cacheada).
-  async sumCreditoForCustomer(customerId: string): Promise<number> {
+  async sumCreditoForCustomer(customerId: string): Promise<string> {
     const tenantId = this.currentTenantId();
     const row = await this.scoped()
       .innerJoin(RepairNote, "note", "note.id = entity.repairNoteId AND note.tenantId = :tenantId", { tenantId })
@@ -27,7 +27,7 @@ export class RepairNotePaymentDao extends TenantScopedDao<RepairNotePayment> {
       .andWhere("entity.method = 'credito'")
       .andWhere("note.customerId = :customerId", { customerId })
       .getRawOne<{ total: string }>();
-    return Number(row?.total ?? 0);
+    return row?.total ?? "0";
   }
 
   async findCreditoForCustomer(customerId: string): Promise<Array<RepairNotePayment & { controlNumber: number }>> {
@@ -38,7 +38,7 @@ export class RepairNotePaymentDao extends TenantScopedDao<RepairNotePayment> {
       .andWhere("entity.method = 'credito'")
       .andWhere("note.customerId = :customerId", { customerId })
       .orderBy("entity.createdAt", "DESC")
-      .getRawAndEntities();
+      .getRawAndEntities<{ controlNumber: string }>();
     return rows.entities.map((entity, index) => ({
       ...entity,
       controlNumber: Number(rows.raw[index]?.controlNumber),

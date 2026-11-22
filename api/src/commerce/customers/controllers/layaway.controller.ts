@@ -22,7 +22,7 @@ export class LayawayController {
         queryString(req.query["branchId"]),
       );
       res.status(200).json(await this.service.getAll(branchId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -36,7 +36,7 @@ export class LayawayController {
       }
       const items = await this.service.getItems(layaway.id);
       res.status(200).json({ ...layaway, items });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -50,7 +50,7 @@ export class LayawayController {
         return;
       }
       res.status(201).json(await this.service.open(dto));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -69,7 +69,7 @@ export class LayawayController {
         dto.cashSessionId,
       );
       res.status(200).json(layaway);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -78,7 +78,7 @@ export class LayawayController {
     try {
       const layaway = await this.service.cancel(req.params["id"] as string);
       res.status(200).json(layaway);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };

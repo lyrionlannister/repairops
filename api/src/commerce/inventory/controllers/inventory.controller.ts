@@ -21,7 +21,7 @@ export class InventoryController {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getAllWithAvailability(branchId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -34,7 +34,7 @@ export class InventoryController {
         return;
       }
       res.status(200).json(item);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -42,7 +42,7 @@ export class InventoryController {
   getLowStock = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getLowStock());
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -55,7 +55,7 @@ export class InventoryController {
         return;
       }
       res.status(200).json(item);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -70,7 +70,7 @@ export class InventoryController {
       }
       dto.localId = await this.branchAccess.resolveWriteBranch(dto.localId);
       res.status(201).json(await this.service.create(dto));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -83,7 +83,7 @@ export class InventoryController {
         return;
       }
       res.status(200).json(item);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -96,7 +96,7 @@ export class InventoryController {
         return;
       }
       res.status(200).json({ message: "Item eliminado" });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -104,7 +104,7 @@ export class InventoryController {
   getMovements = async (req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getMovements(req.params["id"] as string));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -117,7 +117,7 @@ export class InventoryController {
       }
       const { localId } = req.query;
       if (!localId || typeof localId !== "string") {
-        res.status(400).json({ error: "Se requiere el parámetro localId" });
+        res.status(400).json({ error: "Se requiere la sucursal" });
         return;
       }
 
@@ -132,7 +132,7 @@ export class InventoryController {
       }
 
       res.status(200).json(await this.service.bulkImport(localId, rows));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -153,7 +153,7 @@ export class InventoryController {
         createdByEmployeeId: dto.createdByEmployeeId,
       });
       res.status(201).json(movement);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };

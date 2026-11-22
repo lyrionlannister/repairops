@@ -1,5 +1,5 @@
 import { singleton } from "tsyringe";
-import { EntityManager, FindOptionsWhere } from "typeorm";
+import { EntityManager } from "typeorm";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { InventoryReservationDao } from "../daos/inventory-reservation.dao.js";
 import { InventoryReservation, InventoryReservationRelatedEntityType } from "../entities/inventory-reservation.entity.js";
@@ -61,7 +61,7 @@ export class InventoryReservationService {
       relatedEntityType,
       relatedEntityId,
       status: "active",
-    } as unknown as FindOptionsWhere<InventoryReservation>);
+    });
     if (!reservation) return;
 
     await manager.update(InventoryReservation, reservation.id, {
@@ -83,7 +83,7 @@ export class InventoryReservationService {
       relatedEntityType,
       relatedEntityId,
       status: "active",
-    } as unknown as FindOptionsWhere<InventoryReservation>);
+    });
     if (!reservation) return;
 
     const movement = await this.inventoryService.applyMovement(manager, {

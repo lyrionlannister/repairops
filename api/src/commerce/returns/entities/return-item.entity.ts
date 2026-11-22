@@ -40,5 +40,5 @@ export class ReturnItem extends BaseEntity {
   quantity!: number;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "monto_reembolsado" })
-  refundAmount!: number;
+  refundAmount!: string;
 }

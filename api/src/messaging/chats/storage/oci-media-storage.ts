@@ -1,4 +1,3 @@
-import { Readable } from "node:stream";
 import * as objectStorage from "oci-objectstorage";
 import * as common from "oci-common";
 import type { MediaStorage, StoredMedia } from "./media-storage.js";
@@ -40,13 +39,13 @@ export function createOciClient(config: OciMediaStorageConfig): OciObjectClient 
     null,
     common.Region.fromRegionId(config.region),
   );
-  return new objectStorage.ObjectStorageClient({ authenticationDetailsProvider: provider }) as unknown as OciObjectClient;
+  return new objectStorage.ObjectStorageClient({ authenticationDetailsProvider: provider });
 }
 
 async function toBuffer(value: unknown): Promise<Buffer> {
   if (Buffer.isBuffer(value)) return value;
   const chunks: Buffer[] = [];
-  for await (const chunk of value as Readable) chunks.push(Buffer.from(chunk));
+  for await (const chunk of value as AsyncIterable<Uint8Array>) chunks.push(Buffer.from(chunk));
   return Buffer.concat(chunks);
 }
 

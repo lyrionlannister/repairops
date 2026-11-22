@@ -1,12 +1,14 @@
 import { read, utils } from "xlsx";
+import { Decimal } from "decimal.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 import type { InventoryItemKind } from "../entities/inventory-item.entity.js";
 
 export interface InventoryImportRow {
   name: string;
   sku: string | null;
   kind: InventoryItemKind;
-  costPrice: number;
-  salePrice: number;
+  costPrice: string;
+  salePrice: string;
   quantity: number;
 }
 
@@ -41,6 +43,20 @@ function normalizeHeader(header: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
+const cellText = (value: unknown): string =>
+  typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : "";
+
+function parseMoney(value: unknown): Decimal | null {
+  if (typeof value === "number") return Number.isFinite(value) ? new Decimal(value) : null;
+  if (typeof value !== "string" || value.trim() === "") return null;
+  try {
+    const parsed = new Decimal(value.trim());
+    return parsed.isFinite() ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Lee un CSV o Excel (xlsx autodetecta el formato por el contenido del buffer). */
 export function parseInventoryImportFile(buffer: Buffer): InventoryImportResult {
   const workbook = read(buffer, { type: "buffer" });
@@ -58,26 +74,33 @@ export function parseInventoryImportFile(buffer: Buffer): InventoryImportResult 
     }
 
     const rowNumber = index + 2; // +1 por el encabezado, +1 por ser 1-indexado
-    const name = String(mapped.name ?? "").trim();
-    const salePriceRaw = mapped.salePrice;
-    const salePrice = Number(salePriceRaw);
+    const name = cellText(mapped.name).trim();
+    const salePrice = parseMoney(mapped.salePrice);
 
     if (!name) {
       errors.push(`Fila ${rowNumber}: falta el nombre`);
       return;
     }
-    if (salePriceRaw === undefined || salePriceRaw === "" || !Number.isFinite(salePrice) || salePrice < 0) {
+    if (salePrice === null || salePrice.isNegative()) {
       errors.push(`Fila ${rowNumber}: precio de venta inválido`);
       return;
     }
 
-    const kindRaw = normalizeHeader(String(mapped.kind ?? "accessory"));
-    const kind: InventoryItemKind = kindRaw === "part" || kindRaw === "refaccion" ? "part" : "accessory";
-    const costPrice = Number(mapped.costPrice) || 0;
+    const kindRaw = normalizeHeader(cellText(mapped.kind ?? "accessory"));
+    const kind: InventoryItemKind =
+      kindRaw === "part" || kindRaw === "refaccion" ? "part" : "accessory";
+    const costPrice = parseMoney(mapped.costPrice) ?? new Decimal(0);
     const quantity = Number(mapped.quantity) || 0;
-    const sku = mapped.sku != null ? String(mapped.sku).trim() : "";
+    const sku = cellText(mapped.sku).trim();
 
-    rows.push({ name, sku: sku || null, kind, costPrice, salePrice, quantity });
+    rows.push({
+      name,
+      sku: sku || null,
+      kind,
+      costPrice: toMoney(costPrice),
+      salePrice: toMoney(salePrice),
+      quantity,
+    });
   });
 
   return { rows, errors };

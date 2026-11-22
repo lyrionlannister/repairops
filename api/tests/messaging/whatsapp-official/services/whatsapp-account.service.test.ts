@@ -49,7 +49,7 @@ describe("WhatsappAccountService.getOrCreateForTenant", () => {
     const service = new WhatsappAccountService(dao, catalogDao);
 
     await expect(service.getOrCreateForTenant()).rejects.toThrow(
-      "WHATSAPP_PILOT_WABA_ID is required",
+      "Falta la variable de entorno WHATSAPP_PILOT_WABA_ID",
     );
   });
 });

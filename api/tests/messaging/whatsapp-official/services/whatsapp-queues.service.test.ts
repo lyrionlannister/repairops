@@ -57,7 +57,7 @@ describe("WhatsappInboundQueueService", () => {
 
     await service.enqueuePayload(payload);
 
-    const jobs = bull.addBulk.mock.calls[0]![0] as {
+    const jobs = bull.addBulk.mock.calls[0][0] as {
       data: { body: string };
       opts: { jobId: string };
     }[];
@@ -116,7 +116,7 @@ describe("WhatsappAutomationQueueService", () => {
 
     await service.enqueue(job);
 
-    expect(JSON.stringify(bull.add.mock.calls[0]![1])).not.toMatch(/token/i);
+    expect(JSON.stringify(bull.add.mock.calls[0][1])).not.toMatch(/token/i);
   });
 
   it("el worker corre la respuesta dentro del tenant del job y en paralelo", async () => {

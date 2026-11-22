@@ -34,5 +34,5 @@ export class LayawayItem extends BaseEntity {
   // Precio bloqueado al momento del apartado -- mismo criterio que
   // SaleItem.unitPrice/RepairNoteItem.unitPrice, nunca se recalcula despues.
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false, name: "precio_unitario" })
-  unitPrice!: number;
+  unitPrice!: string;
 }

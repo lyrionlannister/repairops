@@ -12,21 +12,21 @@ export class UpdateEmployeeDto {
   @IsString({ message: "Apellido debe ser texto" })
   lastName!: string;
 
-  @IsNotEmpty({ message: "Email requerido" })
-  @IsEmail({}, { message: "Email inválido" })
+  @IsNotEmpty({ message: "Correo electrónico requerido" })
+  @IsEmail({}, { message: "Correo electrónico inválido" })
   email!: string;
 
   // Opcional a proposito: dejarlo vacio significa "no cambiar la
   // contrasena actual" (a diferencia de CreateEmployeeDto, donde si es
   // obligatorio).
   @IsOptional()
-  @IsString()
-  @MinLength(8, { message: "Password debe tener al menos 8 caracteres" })
+  @IsString({ message: "Contraseña debe ser texto" })
+  @MinLength(8, { message: "Contraseña debe tener al menos 8 caracteres" })
   password?: string;
 
   // Sin roles se conservan los actuales.
   @IsOptional()
-  @IsArray({ message: "roles debe ser una lista" })
+  @IsArray({ message: "Roles deben ser una lista" })
   @ArrayNotEmpty({ message: "Elige al menos un rol" })
   @ArrayUnique({ message: "Roles repetidos" })
   @IsIn(USER_ROLES, { each: true, message: "Rol inválido" })
@@ -43,11 +43,11 @@ export class UpdateEmployeeDto {
 
   // Sucursales del usuario (obligatorio para quien no es owner; el owner accede a todas).
   @IsOptional()
-  @IsArray({ message: "branchIds debe ser una lista" })
-  @IsString({ each: true })
+  @IsArray({ message: "Sucursales deben ser una lista" })
+  @IsString({ each: true, message: "Sucursales contienen un valor inválido" })
   branchIds?: string[];
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Sucursal principal inválida" })
   primaryBranchId?: string;
 }

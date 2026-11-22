@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { BranchDao } from "../daos/branch.dao.js";
 import { Branch } from "../entities/branch.entity.js";
 import { getBranchScope } from "../../../core/tenancy/tenant-context.js";
@@ -42,7 +42,7 @@ export class BranchService {
         address: data.address?.trim() || undefined,
         phone: data.phone?.trim() || undefined,
         isActive: true,
-      } as Partial<Branch>),
+      }),
     );
   }
 
@@ -67,8 +67,8 @@ export class BranchService {
   async setActive(id: string, isActive: boolean): Promise<Branch | null> {
     const current = await this.dao.findById(id);
     if (!current) return null;
-    if (!isActive || current.isActive) return this.dao.update(id, { isActive } as Partial<Branch>);
-    return this.planLimitService.withCapacity("branches", () => this.dao.update(id, { isActive } as Partial<Branch>));
+    if (!isActive || current.isActive) return this.dao.update(id, { isActive });
+    return this.planLimitService.withCapacity("branches", () => this.dao.update(id, { isActive }));
   }
 
   // Idempotente: solo siembra "Sucursal principal" si el tenant aun no tiene
@@ -82,7 +82,7 @@ export class BranchService {
       address: defaults.address?.trim() || undefined,
       phone: defaults.phone?.trim() || undefined,
       isActive: true,
-    } as Partial<Branch>);
+    });
     console.log("Sucursal sembrada: Sucursal principal");
   }
 }

@@ -102,7 +102,7 @@ export class ReportsDao {
   }
 
   async accessoryTotals(start: string, end: string, timeZone: string, branchId: string | null): Promise<AccessoryTotalsRow> {
-    const rows = await this.repository.query(
+    const rows = await this.repository.query<AccessoryTotalsRow[]>(
       `
       SELECT COUNT(*)::int AS "salesCount", COALESCE(SUM(s.valor_total), 0)::numeric(14,2)::text AS "totalRevenue"
       FROM sales s
@@ -155,7 +155,7 @@ export class ReportsDao {
   }
 
   async notesTotals(start: string, end: string, branchId: string | null): Promise<NotesTotalsRow> {
-    const rows = await this.repository.query(
+    const rows = await this.repository.query<NotesTotalsRow[]>(
       `
       SELECT COUNT(*)::int AS "totalNotes", COALESCE(SUM(valor_total), 0)::numeric(14,2)::text AS "totalRevenue"
       FROM repair_notes

@@ -28,7 +28,7 @@ import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
 import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
-const today = () => new Date().toISOString().split("T")[0] as string;
+const today = () => new Date().toISOString().split("T")[0];
 // Ventana amplia para no depender de que el reloj del host coincida con el
 // del contenedor de Postgres (default sin periodo usa "hoy" de cada uno).
 const WIDE_PERIOD = { periodStart: "2000-01-01", periodEnd: "2099-12-31" };
@@ -304,8 +304,8 @@ describe("ReportsService", () => {
     it("aggregates notes by service type and by status", async () => {
       const typeTenant = `${tenantId}5`;
 
-      const repairType = await runWithTenant(typeTenant, () => serviceTypeDao.create({ name: "Reparación" } as Partial<ServiceType>));
-      const maintenanceType = await runWithTenant(typeTenant, () => serviceTypeDao.create({ name: "Mantenimiento" } as Partial<ServiceType>));
+      const repairType = await runWithTenant(typeTenant, () => serviceTypeDao.create({ name: "Reparación" }));
+      const maintenanceType = await runWithTenant(typeTenant, () => serviceTypeDao.create({ name: "Mantenimiento" }));
 
       const noteA = await runWithTenant(typeTenant, () =>
         repairNoteDao.create({
@@ -323,7 +323,7 @@ describe("ReportsService", () => {
         } as Partial<RepairNote>),
       );
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteA.id, serviceTypeId: repairType.id } as Partial<RepairNoteServiceType>),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteA.id, serviceTypeId: repairType.id }),
       );
 
       const noteB = await runWithTenant(typeTenant, () =>
@@ -342,10 +342,10 @@ describe("ReportsService", () => {
         } as Partial<RepairNote>),
       );
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: repairType.id } as Partial<RepairNoteServiceType>),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: repairType.id }),
       );
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: maintenanceType.id } as Partial<RepairNoteServiceType>),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: maintenanceType.id }),
       );
 
       const report = await runWithTenant(typeTenant, () => reportsService.getRepairNotesByType(WIDE_PERIOD));

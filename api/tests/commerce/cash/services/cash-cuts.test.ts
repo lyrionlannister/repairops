@@ -130,7 +130,7 @@ describe("CashService: cortes y arqueo ciego", () => {
     expect(cutsA.map((cut) => cut.id)).not.toContain(foreign.id);
     expect(cutsA).toHaveLength(2);
 
-    const latest = cutsA[0]!;
+    const latest = cutsA[0];
     expect(latest.id).toBe(shortSession.id);
     expect(latest.totalExpense).toBe("20.00");
     expect(latest.variance).toBe("-10.00");

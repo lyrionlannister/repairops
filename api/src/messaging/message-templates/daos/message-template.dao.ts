@@ -11,7 +11,7 @@ export class MessageTemplateDao extends TenantScopedDao<MessageTemplate> {
   }
 
   async findByKey(key: string): Promise<MessageTemplate | null> {
-    return this.findOne({ key } as Partial<MessageTemplate>);
+    return this.findOne({ key });
   }
 
   async findAllOrdered(): Promise<MessageTemplate[]> {

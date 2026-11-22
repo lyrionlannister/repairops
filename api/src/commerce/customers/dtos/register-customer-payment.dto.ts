@@ -5,8 +5,8 @@ import type { CashMovementMethod } from "../../cash/entities/cash-movement.entit
 const METHODS: CashMovementMethod[] = ["efectivo", "tarjeta", "transferencia"];
 
 export class RegisterCustomerPaymentDto {
-  @IsNotEmpty({ message: "localId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Sucursal requerida" })
+  @IsString({ message: "Sucursal inválida" })
   localId!: string;
 
   @IsNumber({}, { message: "Monto debe ser numérico" })
@@ -17,6 +17,6 @@ export class RegisterCustomerPaymentDto {
   method!: CashMovementMethod;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Empleado que registra inválido" })
   createdByEmployeeId?: string;
 }

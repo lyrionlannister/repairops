@@ -14,7 +14,7 @@ export class RevenueAttributionController {
   getSetting = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getSetting());
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -28,7 +28,7 @@ export class RevenueAttributionController {
         return;
       }
       res.status(200).json(await this.service.setBasis(dto.attributionBasis));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };

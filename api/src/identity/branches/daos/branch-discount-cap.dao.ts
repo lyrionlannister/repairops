@@ -37,9 +37,9 @@ export class BranchDiscountCapDao extends TenantScopedDao<BranchDiscountCap> {
   ): Promise<void> {
     const tenantId = this.currentTenantId();
     await this.repository.manager.transaction(async (manager) => {
-      await manager.delete(BranchDiscountCap, { tenantId, branchId } as never);
+      await manager.delete(BranchDiscountCap, { tenantId, branchId });
       for (const cap of caps) {
-        await manager.insert(BranchDiscountCap, { tenantId, branchId, ...cap } as never);
+        await manager.insert(BranchDiscountCap, { tenantId, branchId, ...cap });
       }
     });
   }

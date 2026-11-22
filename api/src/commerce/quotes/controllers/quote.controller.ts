@@ -27,7 +27,7 @@ export class QuoteController {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getAll(branchId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -40,7 +40,7 @@ export class QuoteController {
         return;
       }
       res.status(200).json(quote);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -48,7 +48,7 @@ export class QuoteController {
   getItems = async (req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getItems(req.params["id"] as string));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -56,7 +56,7 @@ export class QuoteController {
   getServiceTypes = async (req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getServiceTypeIds(req.params["id"] as string));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -77,7 +77,7 @@ export class QuoteController {
       data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
       const quote = await this.service.create(data, items, serviceTypeIds ?? []);
       res.status(201).json(quote);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -97,7 +97,7 @@ export class QuoteController {
         return;
       }
       res.status(200).json(quote);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -116,7 +116,7 @@ export class QuoteController {
         return;
       }
       res.status(200).json(quote);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -129,7 +129,7 @@ export class QuoteController {
         return;
       }
       res.status(200).json({ message: "Cotización eliminada" });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -150,7 +150,7 @@ export class QuoteController {
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="cotizacion-${quote.id}.pdf"`);
       res.status(200).send(buffer);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };

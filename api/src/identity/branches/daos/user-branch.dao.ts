@@ -18,9 +18,9 @@ export class UserBranchDao extends TenantScopedDao<UserBranch> {
   async replaceForUser(userId: string, branchIds: string[], primaryBranchId: string | null): Promise<void> {
     const tenantId = this.currentTenantId();
     await this.repository.manager.transaction(async (manager) => {
-      await manager.delete(UserBranch, { tenantId, userId } as never);
+      await manager.delete(UserBranch, { tenantId, userId });
       for (const branchId of branchIds) {
-        await manager.insert(UserBranch, { tenantId, userId, branchId, isPrimary: branchId === primaryBranchId } as never);
+        await manager.insert(UserBranch, { tenantId, userId, branchId, isPrimary: branchId === primaryBranchId });
       }
     });
   }

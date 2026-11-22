@@ -6,8 +6,8 @@ import type { CashMovementMethod } from "../../cash/entities/cash-movement.entit
 const REFUND_METHODS: CashMovementMethod[] = ["efectivo", "tarjeta", "transferencia"];
 
 export class ReturnItemInputDto {
-  @IsNotEmpty({ message: "saleItemId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Renglón de venta requerido" })
+  @IsString({ message: "Renglón de venta inválido" })
   saleItemId!: string;
 
   @IsNumber({}, { message: "Cantidad debe ser numérica" })
@@ -20,36 +20,36 @@ export class ReturnItemInputDto {
 }
 
 export class CreateReturnDto {
-  @IsNotEmpty({ message: "saleId requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Venta requerida" })
+  @IsString({ message: "Venta inválida" })
   saleId!: string;
 
-  @IsNotEmpty({ message: "cashSessionId requerido: no se puede devolver sin una sesión de caja abierta" })
-  @IsString()
+  @IsNotEmpty({ message: "Sesión de caja requerida: no se puede devolver sin una sesión de caja abierta" })
+  @IsString({ message: "Sesión de caja inválida" })
   cashSessionId!: string;
 
   @IsIn(REFUND_METHODS, { message: "Método de reembolso inválido" })
   refundMethod!: CashMovementMethod;
 
-  @IsNotEmpty({ message: "reason requerido" })
-  @IsString()
+  @IsNotEmpty({ message: "Motivo requerido" })
+  @IsString({ message: "Motivo debe ser texto" })
   reason!: string;
 
-  @IsNumber({}, { message: "totalRefunded debe ser numérico" })
-  @Min(0.01, { message: "totalRefunded debe ser mayor a 0" })
+  @IsNumber({}, { message: "Total reembolsado debe ser numérico" })
+  @Min(0.01, { message: "Total reembolsado debe ser mayor a 0" })
   totalRefunded!: number;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Empleado que registra inválido" })
   createdByEmployeeId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Clave de idempotencia debe ser texto" })
   idempotencyKey?: string;
 
-  @IsArray()
+  @IsArray({ message: "Renglones deben ser una lista" })
   @ArrayMinSize(1, { message: "La devolución debe tener al menos un item" })
-  @ValidateNested({ each: true })
+  @ValidateNested({ each: true, message: "Renglones contienen un valor inválido" })
   @Type(() => ReturnItemInputDto)
   items!: ReturnItemInputDto[];
 }

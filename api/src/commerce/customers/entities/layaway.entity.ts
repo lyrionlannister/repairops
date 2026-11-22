@@ -46,10 +46,10 @@ export class Layaway extends BaseEntity {
   status!: LayawayStatus;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false, name: "valor_total" })
-  totalValue!: number;
+  totalValue!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false, name: "monto_anticipo" })
-  depositAmount!: number;
+  depositAmount!: string;
 
   @Column({ type: "varchar", length: 20, nullable: false, name: "metodo_anticipo" })
   depositMethod!: CashMovementMethod;

@@ -19,7 +19,7 @@ export class ChatStatsDao {
   constructor(@inject(repositoryToken(ChatDailyStat)) private repository: Repository<ChatDailyStat>) {}
 
   async getCountsByDay(): Promise<ConversationCountPoint[]> {
-    return this.repository.query(
+    return this.repository.query<ConversationCountPoint[]>(
       `
       SELECT
         TO_CHAR(d, 'YYYY-MM-DD') AS bucket,
@@ -37,7 +37,7 @@ export class ChatStatsDao {
   }
 
   async getCountsByMonth(year: number): Promise<ConversationCountPoint[]> {
-    return this.repository.query(
+    return this.repository.query<ConversationCountPoint[]>(
       `
       SELECT
         TO_CHAR(m, 'YYYY-MM') AS bucket,
@@ -57,7 +57,7 @@ export class ChatStatsDao {
   }
 
   async getWeekContactCount(): Promise<number> {
-    const result = await this.repository.query(
+    const result = await this.repository.query<Array<{ count: number }>>(
       `
       SELECT COUNT(DISTINCT contact_phone)::int AS count
       FROM chat_daily_contacts
@@ -69,7 +69,7 @@ export class ChatStatsDao {
   }
 
   async getLastMessageAt(): Promise<string | null> {
-    const result = await this.repository.query(
+    const result = await this.repository.query<Array<{ lastAt: string | null }>>(
       `SELECT MAX(last_message_at) AS "lastAt" FROM chat_daily_stats WHERE tenant_id = $1`,
       [getCurrentTenantId()],
     );

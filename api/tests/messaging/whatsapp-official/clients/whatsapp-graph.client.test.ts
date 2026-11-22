@@ -147,7 +147,7 @@ describe("getDisplayPhoneNumber", () => {
       vi.fn().mockResolvedValue({ ok: true, json: async () => ({ display_phone_number: "+52 1 55 1234 5678", id: "p1" }) }),
     );
     await expect(getDisplayPhoneNumber("p1", "tok")).resolves.toBe("5215512345678");
-    expect(String(vi.mocked(fetch).mock.calls[0]![0])).toContain("/p1?fields=display_phone_number");
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain("/p1?fields=display_phone_number");
   });
 
   it("falla con claridad si Meta no devuelve el numero", async () => {

@@ -21,7 +21,7 @@ describe("automation y n8n: solo admin de plataforma", () => {
     ({ tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier"]));
     const admin = await setupStaff(AppDataSource, adminTenantId, ["owner"]);
     await AppDataSource.query(`UPDATE usuarios SET es_platform_admin = true WHERE id = $1`, [admin.userIds["owner"]]);
-    adminToken = admin.tokens["owner"] as string;
+    adminToken = admin.tokens["owner"];
 
     app = express();
     app.use(express.json());

@@ -5,46 +5,46 @@ import { QuoteItemInputDto } from "./quote-item-input.dto.js";
 
 export class UpdateQuoteDto {
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Cliente inválido" })
   customerId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Nombre del cliente debe ser texto" })
   customerName?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Número de contacto debe ser texto" })
   contactNumber?: string;
 
   @ValidateIf((o: UpdateQuoteDto) => o.brand !== undefined || o.model !== undefined || o.reportedFailure !== undefined)
-  @IsString()
+  @IsString({ message: "Marca debe ser texto" })
   brand?: string;
 
   @ValidateIf((o: UpdateQuoteDto) => o.brand !== undefined || o.model !== undefined || o.reportedFailure !== undefined)
-  @IsString()
+  @IsString({ message: "Modelo debe ser texto" })
   model?: string;
 
   @ValidateIf((o: UpdateQuoteDto) => o.brand !== undefined || o.model !== undefined || o.reportedFailure !== undefined)
-  @IsString()
+  @IsString({ message: "Falla reportada debe ser texto" })
   reportedFailure?: string;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
+  @IsArray({ message: "Tipos de servicio deben ser una lista" })
+  @IsString({ each: true, message: "Tipos de servicio contienen un valor inválido" })
   serviceTypeIds?: string[];
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Vigencia debe ser texto" })
   validUntil?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Empleado que registra inválido" })
   createdByEmployeeId?: string;
 
   @IsOptional()
-  @IsArray()
+  @IsArray({ message: "Renglones deben ser una lista" })
   @ArrayMinSize(1, { message: "La cotización debe tener al menos un item" })
-  @ValidateNested({ each: true })
+  @ValidateNested({ each: true, message: "Renglones contienen un valor inválido" })
   @Type(() => QuoteItemInputDto)
   items?: QuoteItemInputDto[];
 }

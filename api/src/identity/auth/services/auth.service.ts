@@ -23,6 +23,7 @@ import {
 import { BillingService } from "../../../app_platform/billing/services/billing.service.js";
 import { PlanLimitService } from "../../../app_platform/billing/services/plan-limit.service.js";
 import { effectivePermissions, roleCatalog, type Permission, type RoleCatalogEntry } from "../../authz/permissions.js";
+import { toMoneyOrNull } from "../../../core/common/utils/money.js";
 
 const { sign } = jwt;
 
@@ -67,7 +68,7 @@ export class AuthService {
       this.userDao.findByEmailAcrossTenants(data.email),
     );
     if (existingUser) {
-      throw new Error("Email ya registrado");
+      throw new Error("Correo electrónico ya registrado");
     }
 
     const tenant = await allowSystemScope(() =>
@@ -125,7 +126,7 @@ export class AuthService {
   async createEmployee(data: CreateEmployeeDto): Promise<PublicUser> {
     const existingUser = await this.userDao.findByEmail(data.email);
     if (existingUser) {
-      throw new Error("Email ya registrado");
+      throw new Error("Correo electrónico ya registrado");
     }
 
     const roles = this.normalizeRoles(data.roles);
@@ -144,7 +145,7 @@ export class AuthService {
         lastName: data.lastName,
         email: data.email,
         password: hashedPassword,
-        salaryAmount: data.salaryAmount ?? null,
+        salaryAmount: toMoneyOrNull(data.salaryAmount),
         payCycle: data.payCycle ?? null,
       });
       await this.userRoleDao.replaceForUser(created.id, roles);
@@ -161,7 +162,7 @@ export class AuthService {
   async updateEmployee(id: string, data: UpdateEmployeeDto): Promise<PublicUser | null> {
     const existingUser = await this.userDao.findByEmail(data.email);
     if (existingUser && existingUser.id !== id) {
-      throw new Error("Email ya registrado");
+      throw new Error("Correo electrónico ya registrado");
     }
 
     const target = await this.userDao.findById(id);
@@ -182,7 +183,7 @@ export class AuthService {
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email,
-      salaryAmount: data.salaryAmount ?? null,
+      salaryAmount: toMoneyOrNull(data.salaryAmount),
       payCycle: data.payCycle ?? null,
     };
     if (data.password) {
@@ -258,7 +259,7 @@ export class AuthService {
     // al tenant real para el resto de la operacion.
     const user = await allowSystemScope(() => this.userDao.findByEmailAcrossTenants(data.email));
     if (!user) {
-      throw new Error("Email no registrado");
+      throw new Error("Correo electrónico no registrado");
     }
 
     return runWithTenant(user.tenantId, async () => {

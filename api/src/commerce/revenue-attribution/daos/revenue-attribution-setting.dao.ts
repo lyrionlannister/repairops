@@ -1,4 +1,4 @@
-import { FindOptionsWhere, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { RevenueAttributionSetting } from "../entities/revenue-attribution-setting.entity.js";
@@ -13,7 +13,7 @@ export class RevenueAttributionSettingDao extends TenantScopedDao<RevenueAttribu
   async findOrCreate(): Promise<RevenueAttributionSetting> {
     const tenantId = this.currentTenantId();
     const existing = await this.repository.findOneBy(
-      { tenantId } as unknown as FindOptionsWhere<RevenueAttributionSetting>,
+      { tenantId },
     );
     if (existing) return existing;
 

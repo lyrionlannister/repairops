@@ -11,7 +11,7 @@ export class LocalController {
     try {
       const config = await this.localService.getConfigWithPalette();
       res.status(200).json(config);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -20,7 +20,7 @@ export class LocalController {
     try {
       const config = await this.localService.updateConfig(req.body);
       res.status(200).json(config);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, error instanceof LocalValidationError ? 400 : 500);
     }
   };

@@ -1,5 +1,4 @@
 import { singleton } from "tsyringe";
-import type { FindOptionsWhere } from "typeorm";
 import { Decimal } from "decimal.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -10,6 +9,7 @@ import { sumCreditBalance } from "../utils/credit-balance.js";
 import { CashSession } from "../../cash/entities/cash-session.entity.js";
 import { CashMovement } from "../../cash/entities/cash-movement.entity.js";
 import type { CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 
 export interface RegisterCustomerPaymentInput {
   customerId: string;
@@ -39,7 +39,7 @@ export class CustomerPaymentService {
       const customer = await manager.findOneBy(Customer, {
         id: input.customerId,
         tenantId,
-      } as unknown as FindOptionsWhere<Customer>);
+      });
       if (!customer) throw new Error("Cliente no encontrado");
 
       const balance = await sumCreditBalance(manager, tenantId, customer.id);
@@ -48,7 +48,7 @@ export class CustomerPaymentService {
       }
 
       const session = await manager.findOne(CashSession, {
-        where: { tenantId, localId: input.localId, status: "open" } as unknown as FindOptionsWhere<CashSession>,
+        where: { tenantId, localId: input.localId, status: "open" },
       });
       if (!session) throw new Error("Abre la caja de la sucursal para registrar el abono");
 
@@ -56,7 +56,7 @@ export class CustomerPaymentService {
         tenantId,
         localId: input.localId,
         customerId: customer.id,
-        amount: amount.toNumber(),
+        amount: toMoney(amount),
         method: input.method,
         createdByEmployeeId: input.createdByEmployeeId ?? null,
       });
@@ -68,7 +68,7 @@ export class CustomerPaymentService {
           cashSessionId: session.id,
           type: "income",
           method: input.method,
-          amount: amount.toNumber(),
+          amount: toMoney(amount),
           relatedEntityType: "customer_payment",
           relatedEntityId: savedPayment.id,
           note: `Abono cliente #${customer.id}`,

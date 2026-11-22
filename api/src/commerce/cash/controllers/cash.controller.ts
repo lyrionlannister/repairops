@@ -27,7 +27,7 @@ export class CashController {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getAllSessions(branchId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -36,11 +36,11 @@ export class CashController {
     try {
       const localId = req.query["localId"];
       if (!localId || typeof localId !== "string") {
-        res.status(400).json({ error: "Se requiere el parámetro localId" });
+        res.status(400).json({ error: "Se requiere la sucursal" });
         return;
       }
       res.status(200).json(await this.service.getOpenSession(localId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -53,7 +53,7 @@ export class CashController {
         return;
       }
       res.status(200).json(session);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -69,7 +69,7 @@ export class CashController {
       const localId = await this.branchAccess.resolveWriteBranch(dto.localId);
       const session = await this.service.openSession(localId, dto.openingBalance);
       res.status(201).json(session);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -89,7 +89,7 @@ export class CashController {
         dto.authorizedByEmployeeId,
       );
       res.status(200).json(session);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -102,7 +102,7 @@ export class CashController {
         return;
       }
       res.status(200).json(movements);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -125,7 +125,7 @@ export class CashController {
         relatedEntityId: dto.relatedEntityId,
       });
       res.status(201).json(movement);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -138,7 +138,7 @@ export class CashController {
         return;
       }
       res.status(200).json(summary);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -147,7 +147,7 @@ export class CashController {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getCuts(branchId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -156,7 +156,7 @@ export class CashController {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getLastCut(branchId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -165,7 +165,7 @@ export class CashController {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getVarianceStats(branchId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -178,7 +178,7 @@ export class CashController {
         return;
       }
       res.status(200).json(cut);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -195,7 +195,7 @@ export class CashController {
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="corte-${cut.cut.id}.pdf"`);
       res.status(200).send(buffer);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };

@@ -26,8 +26,8 @@ app.use(
 // re-serializado) sin montar un parser distinto solo para esa ruta.
 app.use(
   express.json({
-    verify: (req, _res, buf) => {
-      (req as any).rawBody = buf;
+    verify: (req: express.Request, _res, buf) => {
+      req.rawBody = buf;
     },
   }),
 );
@@ -72,7 +72,7 @@ AppDataSource.initialize()
 
     app.listen(port, "0.0.0.0", () => {
       console.log(
-        `Servidor de atención al cliente escuchando en el puerto ${port}`,
+        `Servidor escuchando en el puerto ${port}`,
       );
     });
   })

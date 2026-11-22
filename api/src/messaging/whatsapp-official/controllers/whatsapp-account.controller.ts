@@ -24,7 +24,7 @@ export class WhatsappAccountController {
         phoneNumberId: account.phoneNumberId,
         ownedByPlatform: account.ownedByPlatform,
       });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -43,7 +43,7 @@ export class WhatsappAccountController {
         phoneNumberId: account.phoneNumberId,
         ownedByPlatform: account.ownedByPlatform,
       });
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof WhatsappGraphApiError) {
         sendError(res, error, 400);
         return;
@@ -57,7 +57,7 @@ export class WhatsappAccountController {
       const account = await this.whatsappAccountService.getOrCreateForTenant();
       const templates = await this.whatsappTemplateService.reconcile(account);
       res.status(200).json(templates);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };

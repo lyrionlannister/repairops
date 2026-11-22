@@ -17,7 +17,7 @@ import { sendError } from "../../../core/http/error-response.js";
 export class WhatsappTemplateCatalogController {
   constructor(private whatsappTemplateCatalogService: WhatsappTemplateCatalogService) {}
 
-  private handleError(error: any, res: Response): void {
+  private handleError(error: unknown, res: Response): void {
     if (error instanceof WhatsappTemplateCatalogReadOnlyError) {
       sendError(res, error, 403);
       return;
@@ -35,7 +35,7 @@ export class WhatsappTemplateCatalogController {
   list = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.whatsappTemplateCatalogService.listForTenant());
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, res);
     }
   };
@@ -49,7 +49,7 @@ export class WhatsappTemplateCatalogController {
         return;
       }
       res.status(201).json(await this.whatsappTemplateCatalogService.create(dto));
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, res);
     }
   };
@@ -71,7 +71,7 @@ export class WhatsappTemplateCatalogController {
         return;
       }
       res.status(200).json(entry);
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, res);
     }
   };
@@ -84,7 +84,7 @@ export class WhatsappTemplateCatalogController {
         return;
       }
       res.status(204).send();
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, res);
     }
   };
@@ -92,7 +92,7 @@ export class WhatsappTemplateCatalogController {
   listSystem = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.whatsappTemplateCatalogService.listSystem());
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, res);
     }
   };
@@ -106,7 +106,7 @@ export class WhatsappTemplateCatalogController {
         return;
       }
       res.status(201).json(await this.whatsappTemplateCatalogService.createSystem(dto));
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, res);
     }
   };
@@ -128,7 +128,7 @@ export class WhatsappTemplateCatalogController {
         return;
       }
       res.status(200).json(entry);
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, res);
     }
   };
@@ -143,7 +143,7 @@ export class WhatsappTemplateCatalogController {
         return;
       }
       res.status(204).send();
-    } catch (error: any) {
+    } catch (error) {
       this.handleError(error, res);
     }
   };

@@ -1,10 +1,8 @@
 import "reflect-metadata";
 import express from "express";
 import request from "supertest";
-import jwt from "jsonwebtoken";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
-import { requireJwtSecret } from "../../../../src/identity/auth/jwt-secret.js";
 import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { AuthService } from "../../../../src/identity/auth/services/auth.service.js";
@@ -55,7 +53,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
   let branchId = "";
   let tokens: Record<string, string> = {};
   let userIds: Record<string, string> = {};
-  const tokenFor = (role: UserRole) => tokens[role] as string;
+  const tokenFor = (role: UserRole) => tokens[role];
 
   beforeAll(async () => {
     await AppDataSource.initialize();

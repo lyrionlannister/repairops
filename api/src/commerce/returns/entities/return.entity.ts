@@ -54,7 +54,7 @@ export class Return extends BaseEntity {
   reason!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "monto_reembolsado" })
-  totalRefunded!: number;
+  totalRefunded!: string;
 
   @Column({ type: "bigint", nullable: true, name: "id_empleado_creador" })
   createdByEmployeeId!: string | null;

@@ -16,7 +16,7 @@ export class SalePaymentDao extends TenantScopedDao<SalePayment> {
   }
 
   // Saldo a crédito de un cliente (ventas y notas) -- NUNCA cacheado; ver credit-balance.ts.
-  async sumCreditoForCustomer(customerId: string): Promise<number> {
+  async sumCreditoForCustomer(customerId: string): Promise<string> {
     return sumCreditBalance(this.repository.manager, this.currentTenantId(), customerId);
   }
 }

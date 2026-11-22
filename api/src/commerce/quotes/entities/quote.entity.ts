@@ -63,7 +63,7 @@ export class Quote extends BaseEntity {
   // QuoteService en cada create/update (mismo patron que
   // InventoryItem.quantityOnHand respecto al ledger de movimientos).
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0, name: "valor_total" })
-  totalValue!: number;
+  totalValue!: string;
 
   @Column({ type: "date", nullable: true, name: "valido_hasta" })
   validUntil?: string | null;

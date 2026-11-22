@@ -7,15 +7,15 @@ import { IsArray, IsBoolean, IsOptional, IsString } from "class-validator";
 // si llegan en el body, el Service los ignora en silencio.
 export class UpdateWhatsappTemplateCatalogEntryDto {
   @IsOptional()
-  @IsString()
+  @IsString({ message: "Texto inválido" })
   text?: string;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
+  @IsArray({ message: "Variables deben ser una lista" })
+  @IsString({ each: true, message: "Variables contienen un valor inválido" })
   variables?: string[];
 
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: "Activo debe ser verdadero o falso" })
   enabled?: boolean;
 }

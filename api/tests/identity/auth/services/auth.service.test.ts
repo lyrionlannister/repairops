@@ -80,7 +80,7 @@ describe("AuthService.login", () => {
 
     await expect(
       service.login({ email: "nobody@example.com", password: "whatever" }),
-    ).rejects.toThrow("Email no registrado");
+    ).rejects.toThrow("Correo electrónico no registrado");
   });
 
   it("rejects an incorrect password", async () => {
@@ -137,7 +137,7 @@ describe("AuthService.login", () => {
     const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
 
     const { token } = await service.login({ email: "admin@example.com", password: "correct-password" });
-    const payload = JSON.parse(Buffer.from(token.split(".")[1] as string, "base64url").toString());
+    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
 
     expect(Object.keys(payload).sort()).toEqual(["email", "exp", "iat", "id", "tenantId"]);
   });
@@ -206,7 +206,7 @@ describe("AuthService.register", () => {
         email: "admin@example.com",
         password: "whatever123",
       }),
-    ).rejects.toThrow("Email ya registrado");
+    ).rejects.toThrow("Correo electrónico ya registrado");
     expect(tenantRepository.save).not.toHaveBeenCalled();
   });
 });
@@ -233,7 +233,7 @@ describe("AuthService.createEmployee", () => {
 
     const persisted = create.mock.calls[0][0];
     expect(userRoleDao.replaceForUser).toHaveBeenCalledWith(expect.anything(), ["employee", "cashier"]);
-    expect(persisted.salaryAmount).toBe(4500);
+    expect(persisted.salaryAmount).toBe("4500.00");
     expect(persisted.payCycle).toBe("weekly");
     expect(persisted.password).not.toBe("plain-text-password");
   });
@@ -253,7 +253,7 @@ describe("AuthService.createEmployee", () => {
         password: "whatever123",
         roles: ["cashier"],
       }),
-    ).rejects.toThrow("Email ya registrado");
+    ).rejects.toThrow("Correo electrónico ya registrado");
   });
 
   it.each([
