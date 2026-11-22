@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { ServiceTypeDao } from "../daos/service-type.dao.js";
 import { ServiceType } from "../entities/service-type.entity.js";
 

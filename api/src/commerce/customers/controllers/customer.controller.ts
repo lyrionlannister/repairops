@@ -22,7 +22,7 @@ export class CustomerController {
   getAll = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getAll());
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -35,7 +35,7 @@ export class CustomerController {
         return;
       }
       res.status(200).json(customer);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -43,7 +43,7 @@ export class CustomerController {
   getDevices = async (req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getDeviceHistory(req.params["id"] as string));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -56,7 +56,7 @@ export class CustomerController {
         return;
       }
       res.status(200).json(balance);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -69,7 +69,7 @@ export class CustomerController {
         return;
       }
       res.status(200).json(debts);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -82,7 +82,7 @@ export class CustomerController {
         return;
       }
       res.status(200).json(await this.paymentService.getByCustomerId(id));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -104,7 +104,7 @@ export class CustomerController {
         createdByEmployeeId: dto.createdByEmployeeId,
       });
       res.status(201).json(payment);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -113,7 +113,7 @@ export class CustomerController {
     try {
       const customer = await this.service.create(req.body);
       res.status(201).json(customer);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -127,7 +127,7 @@ export class CustomerController {
         return;
       }
       res.status(200).json(customer);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -141,7 +141,7 @@ export class CustomerController {
         return;
       }
       res.status(200).json({ message: "Cliente eliminado" });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };

@@ -20,7 +20,7 @@ export class SaleController {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.service.getAll(branchId));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -37,7 +37,7 @@ export class SaleController {
         this.service.getPayments(sale.id),
       ]);
       res.status(200).json({ ...sale, items, payments });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -53,7 +53,7 @@ export class SaleController {
       dto.localId = await this.branchAccess.resolveWriteBranch(dto.localId);
       const sale = await this.service.create(dto, req.user!.roles ?? []);
       res.status(201).json(sale);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };

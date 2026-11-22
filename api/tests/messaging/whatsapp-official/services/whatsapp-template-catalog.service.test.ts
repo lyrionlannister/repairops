@@ -135,7 +135,7 @@ describe("WhatsappTemplateCatalogService -- empresa", () => {
     vi.mocked(catalogDao.updateForTenant).mockResolvedValue(entry);
     const service = new WhatsappTemplateCatalogService(catalogDao, makeStatusDao(), makeAccountService());
 
-    await service.update("entry-1", { enabled: false } as any);
+    await service.update("entry-1", { enabled: false });
 
     expect(catalogDao.updateForTenant).toHaveBeenCalledWith("entry-1", { enabled: false });
   });

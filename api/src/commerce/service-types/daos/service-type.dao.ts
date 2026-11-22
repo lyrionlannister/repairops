@@ -15,6 +15,6 @@ export class ServiceTypeDao extends TenantScopedDao<ServiceType> {
   }
 
   async findByName(name: string): Promise<ServiceType | null> {
-    return this.findOne({ name } as Partial<ServiceType>);
+    return this.findOne({ name });
   }
 }

@@ -1,6 +1,8 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
-import { RepairNoteService } from "../services/repair-note.service.js";
+import { RepairNoteService, type DeliveryPaymentInput } from "../services/repair-note.service.js";
+import type { CreateRepairNoteBody, UpdateRepairNoteBody } from "../types/repair-note-body.types.js";
+import { bodyOf, optionalString } from "../../../core/http/request-body.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { AuthService } from "../../../identity/auth/services/auth.service.js";
 import { PdfRendererService } from "../../../reporting/pdf/pdf-renderer.service.js";
@@ -24,7 +26,7 @@ export class RepairNoteController {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       const notes = await this.repairNoteService.getAll(branchId);
       res.status(200).json(notes);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -38,7 +40,7 @@ export class RepairNoteController {
         return;
       }
       res.status(200).json({ ...note, whatsappQrUrl: await this.repairNoteService.getWhatsappQrUrl(note) });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -56,14 +58,14 @@ export class RepairNoteController {
         return;
       }
       res.status(200).json(note);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
 
   create = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { items, serviceTypeIds, advancePayment, ...data } = req.body;
+      const { items, serviceTypeIds, advancePayment, ...data } = req.body as CreateRepairNoteBody;
       if (!data.customerId && !String(data.contactNumber ?? "").trim()) {
         res.status(400).json({ error: "El teléfono del cliente es obligatorio" });
         return;
@@ -71,28 +73,28 @@ export class RepairNoteController {
       data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
       const note = await this.repairNoteService.create(data, items, serviceTypeIds, advancePayment);
       res.status(201).json(note);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
 
   deliver = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { payments, createdByEmployeeId } = req.body ?? {};
+      const { payments, createdByEmployeeId } = bodyOf(req);
       const note = await this.repairNoteService.deliver(req.params["id"] as string, {
-        payments: Array.isArray(payments) ? payments : [],
-        createdByEmployeeId,
+        payments: Array.isArray(payments) ? (payments as DeliveryPaymentInput[]) : [],
+        createdByEmployeeId: optionalString(createdByEmployeeId),
       });
       res.status(200).json(note);
-    } catch (error: any) {
-      sendError(res, error, error.message === "Nota no encontrada" ? 404 : 400);
+    } catch (error) {
+      sendError(res, error, error instanceof Error && error.message === "Nota no encontrada" ? 404 : 400);
     }
   };
 
   getPayments = async (req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.repairNoteService.getPayments(req.params["id"] as string));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -100,7 +102,7 @@ export class RepairNoteController {
   update = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params["id"] as string;
-      const { items, serviceTypeIds, ...data } = req.body;
+      const { items, serviceTypeIds, ...data } = req.body as UpdateRepairNoteBody;
       if (data.localId !== undefined) data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
       const note = await this.repairNoteService.update(id, data, items, serviceTypeIds);
       if (!note) {
@@ -108,7 +110,7 @@ export class RepairNoteController {
         return;
       }
       res.status(200).json(note);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -118,15 +120,15 @@ export class RepairNoteController {
       const id = req.params["id"] as string;
       const note = await this.repairNoteService.cancel(id);
       res.status(200).json(note);
-    } catch (error: any) {
-      sendError(res, error, error.message === "Nota no encontrada" ? 404 : 400);
+    } catch (error) {
+      sendError(res, error, error instanceof Error && error.message === "Nota no encontrada" ? 404 : 400);
     }
   };
 
   getItems = async (req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.repairNoteService.getItems(req.params["id"] as string));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -134,7 +136,7 @@ export class RepairNoteController {
   getServiceTypes = async (req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.repairNoteService.getServiceTypeIds(req.params["id"] as string));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -158,7 +160,7 @@ export class RepairNoteController {
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="nota-${note.controlNumber}.pdf"`);
       res.status(200).send(buffer);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -172,7 +174,7 @@ export class RepairNoteController {
         return;
       }
       res.status(200).json({ message: "Nota eliminada" });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };

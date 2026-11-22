@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { WhatsappTemplateStatusDao } from "../daos/whatsapp-template-status.dao.js";
 import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catalog-entry.dao.js";
 import { WhatsappAccount } from "../entities/whatsapp-account.entity.js";

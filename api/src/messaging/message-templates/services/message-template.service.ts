@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { MessageTemplateDao } from "../daos/message-template.dao.js";
 import { MessageTemplate } from "../entities/message-template.entity.js";
 
@@ -18,11 +18,11 @@ export class MessageTemplateService {
   }
 
   async create(data: CreatePayload): Promise<MessageTemplate> {
-    return this.dao.create(data as Partial<MessageTemplate>);
+    return this.dao.create(data);
   }
 
   async update(id: string, data: UpdatePayload): Promise<MessageTemplate | null> {
-    return this.dao.update(id, data as Partial<MessageTemplate>);
+    return this.dao.update(id, data);
   }
 
   async delete(id: string): Promise<boolean> {

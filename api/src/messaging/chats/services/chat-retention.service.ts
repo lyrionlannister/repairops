@@ -43,7 +43,7 @@ export class ChatRetentionService {
       }
     };
     void run();
-    this.timer = setInterval(run, RUN_EVERY_MS);
+    this.timer = setInterval(() => void run(), RUN_EVERY_MS);
     this.timer.unref();
   }
 }

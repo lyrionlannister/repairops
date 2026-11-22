@@ -20,7 +20,7 @@ export class DashboardController {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
       res.status(200).json(await this.dashboardService.getSummary(req.user!.permissions?.has("dashboard.money") ?? false, branchId ?? undefined));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, fallbackStatusOf(error));
     }
   };
@@ -34,7 +34,7 @@ export class DashboardController {
         branchId: branchId ?? undefined,
       });
       res.status(200).json(series);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, fallbackStatusOf(error));
     }
   };

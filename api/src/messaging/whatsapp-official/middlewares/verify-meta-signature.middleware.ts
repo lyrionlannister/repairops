@@ -7,7 +7,7 @@ export function verifyMetaSignatureMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  const rawBody = (req as unknown as { rawBody?: Buffer }).rawBody;
+  const rawBody = req.rawBody;
   const signatureHeader = req.header("x-hub-signature-256");
 
   if (

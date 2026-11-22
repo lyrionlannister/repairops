@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { SupplierDao } from "../daos/supplier.dao.js";
 import { Supplier } from "../entities/supplier.entity.js";
 
@@ -32,7 +32,7 @@ export class SupplierService {
       address: data.address?.trim() || undefined,
       contactName: data.contactName?.trim() || undefined,
       isActive: true,
-    } as Partial<Supplier>);
+    });
   }
 
   async update(id: string, data: UpdatePayload): Promise<Supplier | null> {
@@ -57,7 +57,7 @@ export class SupplierService {
   // Soft: nunca se borra un proveedor con historial (price_list_items/inventory_items lo
   // referencian), solo se desactiva -- mismo criterio que Branch.setActive.
   async setActive(id: string, isActive: boolean): Promise<Supplier | null> {
-    return this.dao.update(id, { isActive } as Partial<Supplier>);
+    return this.dao.update(id, { isActive });
   }
 
   async delete(id: string): Promise<boolean> {

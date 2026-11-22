@@ -39,11 +39,11 @@ describe("reglas de roles de usuario", () => {
     roleDao = makeUserRoleDao();
     const staff = await setupStaff(AppDataSource, tenantId, ["owner", "cashier"]);
     ({ branchId } = staff);
-    ownerId = staff.userIds["owner"] as string;
-    cashierId = staff.userIds["cashier"] as string;
+    ownerId = staff.userIds["owner"];
+    cashierId = staff.userIds["cashier"];
     foreignOwnerId = (await setupStaff(AppDataSource, otherTenantId, ["owner"])).userIds[
       "owner"
-    ] as string;
+    ];
     await AppDataSource.query(
       `INSERT INTO subscriptions (tenant_id, plan_id) SELECT $1, id FROM plans WHERE key = 'platform'`,
       [tenantId],

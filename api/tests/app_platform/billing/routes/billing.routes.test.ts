@@ -46,7 +46,7 @@ describe("billing routes", () => {
       `INSERT INTO subscriptions (tenant_id, plan_id, status) SELECT $1, id, 'active' FROM plans WHERE key = 'platform'`,
       [adminTenantId],
     );
-    adminToken = admin.tokens["owner"] as string;
+    adminToken = admin.tokens["owner"];
     [{ publicId: tenantPublicId }] = await AppDataSource.query(
       `SELECT public_id AS "publicId" FROM tenants WHERE id = $1`,
       [tenantId],

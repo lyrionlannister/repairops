@@ -18,7 +18,7 @@ const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 export type GraphTemplate = {
   id: string;
   name: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | string;
+  status: string;
   category: string;
   language: string;
 };
@@ -29,7 +29,9 @@ export class WhatsappGraphApiError extends Error {
   }
 }
 
-async function graphFetch(path: string, accessToken: string, init?: RequestInit): Promise<any> {
+type GraphErrorBody = { error?: { message?: string } } | null;
+
+async function graphFetch<T>(path: string, accessToken: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${GRAPH_API_BASE}${path}`, {
     ...init,
     headers: {
@@ -38,22 +40,22 @@ async function graphFetch(path: string, accessToken: string, init?: RequestInit)
       ...(init?.headers ?? {}),
     },
   });
-  const body = await response.json().catch(() => null);
+  const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     throw new WhatsappGraphApiError(
-      body?.error?.message || `Graph API respondió ${response.status}`,
+      (body as GraphErrorBody)?.error?.message || `Graph API respondió ${response.status}`,
       response.status,
       body,
     );
   }
-  return body;
+  return body as T;
 }
 
 export async function listTemplates(
   wabaId: string,
   accessToken: string,
 ): Promise<GraphTemplate[]> {
-  const body = await graphFetch(`/${wabaId}/message_templates?limit=200`, accessToken);
+  const body = await graphFetch<{ data?: GraphTemplate[] }>(`/${wabaId}/message_templates?limit=200`, accessToken);
   return body.data ?? [];
 }
 
@@ -146,7 +148,10 @@ export async function sendTextMessage(
 // Numero visible de la cuenta (ej. "+52 1 55 1234 5678") reducido a digitos: es lo que
 // va en https://wa.me/<numero>. Falla con claridad si Meta no lo devuelve.
 export async function getDisplayPhoneNumber(phoneNumberId: string, accessToken: string): Promise<string> {
-  const body = await graphFetch(`/${phoneNumberId}?fields=display_phone_number`, accessToken);
+  const body = await graphFetch<{ display_phone_number?: string } | null>(
+    `/${phoneNumberId}?fields=display_phone_number`,
+    accessToken,
+  );
   const digits = String(body?.display_phone_number ?? "").replace(/\D/g, "");
   if (!digits) {
     throw new WhatsappGraphApiError("Meta no devolvió display_phone_number para la cuenta", 502, body);
@@ -159,10 +164,10 @@ export async function verifyAccountCredentials(
   phoneNumberId: string,
   accessToken: string,
 ): Promise<void> {
-  const phoneCheck = await graphFetch(`/${phoneNumberId}?fields=id`, accessToken);
-  if (phoneCheck.id !== phoneNumberId) {
+  const phoneCheck = await graphFetch<{ id?: string } | null>(`/${phoneNumberId}?fields=id`, accessToken);
+  if (phoneCheck?.id !== phoneNumberId) {
     throw new WhatsappGraphApiError(
-      "El token no tiene permiso sobre ese phoneNumberId",
+      "El token no tiene permiso sobre ese número de WhatsApp",
       403,
       phoneCheck,
     );
@@ -201,6 +206,8 @@ export async function sendTemplateMessage(
   });
 }
 
+type GraphMediaBody = { url?: string; mime_type?: string; sha256?: string; file_size?: number | string };
+
 export interface MediaInfo {
   url: string;
   mimeType: string;
@@ -210,7 +217,7 @@ export interface MediaInfo {
 
 // GET /{media-id} devuelve una URL temporal; la descarga exige el mismo token.
 export async function getMediaInfo(mediaId: string, accessToken: string): Promise<MediaInfo> {
-  const body = await graphFetch(`/${mediaId}`, accessToken);
+  const body = await graphFetch<GraphMediaBody | null>(`/${mediaId}`, accessToken);
   if (!body?.url || !body?.mime_type) {
     throw new WhatsappGraphApiError("Meta no devolvió la URL del archivo", 502, null);
   }

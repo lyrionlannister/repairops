@@ -31,7 +31,6 @@ import { InventoryService } from "../../../../src/commerce/inventory/services/in
 import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
 import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
 import { InventoryReservationService } from "../../../../src/commerce/inventory/services/inventory-reservation.service.js";
-import { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 // Integration test against a real Postgres (same reasoning as
@@ -138,7 +137,7 @@ describe("QuoteService", () => {
     const serviceType = await AppDataSource.getRepository(ServiceType).save({
       tenantId,
       name: `Diagnostico-${Date.now()}`,
-    } as never);
+    });
 
     const quote = await runWithTenant(tenantId, () =>
       service.create(
@@ -150,7 +149,7 @@ describe("QuoteService", () => {
           brand: "Samsung",
           model: "A14",
           reportedFailure: "No enciende",
-        } as never,
+        },
         [{ description: "Diagnostico", quantity: 1, unitPrice: 200 }],
         [serviceType.id],
       ),

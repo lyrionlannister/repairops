@@ -1,3 +1,4 @@
+import { isRowsTuple } from "../../../core/database/rows-result.js";
 import { Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
@@ -22,8 +23,8 @@ export class LocalDao extends TenantScopedDao<Local> {
   private async runQuery<T>(sql: string, params: unknown[]): Promise<T[]> {
     const queryRunner = this.repository.manager.connection.createQueryRunner();
     try {
-      const result = await queryRunner.query(sql, params);
-      return Array.isArray(result[0]) ? result[0] : result;
+      const result = (await queryRunner.query(sql, params)) as T[] | [T[], number];
+      return isRowsTuple(result) ? result[0] : result;
     } finally {
       await queryRunner.release();
     }

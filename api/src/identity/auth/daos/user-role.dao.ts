@@ -35,9 +35,9 @@ export class UserRoleDao extends TenantScopedDao<UserRoleAssignment> {
   async replaceForUser(userId: string, roles: readonly UserRole[]): Promise<void> {
     const tenantId = this.currentTenantId();
     await this.repository.manager.transaction(async (manager) => {
-      await manager.delete(UserRoleAssignment, { tenantId, userId } as never);
+      await manager.delete(UserRoleAssignment, { tenantId, userId });
       for (const role of roles) {
-        await manager.insert(UserRoleAssignment, { tenantId, userId, role } as never);
+        await manager.insert(UserRoleAssignment, { tenantId, userId, role });
       }
     });
   }

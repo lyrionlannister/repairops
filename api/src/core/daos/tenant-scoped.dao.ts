@@ -1,8 +1,11 @@
-import { FindOptionsWhere, ObjectLiteral, Repository, SelectQueryBuilder } from "typeorm";
+import { ObjectLiteral, Repository, SelectQueryBuilder } from "typeorm";
 import { BaseDao } from "./base.dao.js";
 import { BranchAccessError, getBranchScope, getCurrentTenantId } from "../tenancy/tenant-context.js";
 
 type TenantOwned = { tenantId: string };
+
+const idText = (value: unknown): string =>
+  typeof value === "string" || typeof value === "number" || typeof value === "bigint" ? String(value) : "";
 
 // Unico lugar donde un repository concreto construye una query sobre un
 // modelo con tenant: todo metodo propio de un Dao hijo debe partir de
@@ -42,20 +45,20 @@ export abstract class TenantScopedDao<
 
   private canRead(entity: T): boolean {
     const branch = this.hasBranch ? getBranchScope() : null;
-    return !branch || branch.readIds.includes(String((entity as { localId?: unknown }).localId));
+    return !branch || branch.readIds.includes(idText((entity as { localId?: unknown }).localId));
   }
 
   override async create(data: Partial<T>): Promise<T> {
     const tenantId = getCurrentTenantId();
     const branch = this.hasBranch ? getBranchScope() : null;
     if (branch) {
-      const localId = String((data as { localId?: unknown }).localId ?? branch.primaryId ?? "");
+      const localId = idText((data as { localId?: unknown }).localId ?? branch.primaryId);
       if (!branch.writeIds.includes(localId)) {
         throw new BranchAccessError("No tienes acceso a esa sucursal");
       }
-      return super.create({ ...data, localId, tenantId } as unknown as Partial<T>);
+      return super.create({ ...data, localId, tenantId });
     }
-    return super.create({ ...data, tenantId } as Partial<T>);
+    return super.create({ ...data, tenantId });
   }
 
   override async findById(id: string | number): Promise<T | null> {
@@ -67,14 +70,14 @@ export abstract class TenantScopedDao<
 
   override async findOne(where: Partial<T>): Promise<T | null> {
     const tenantId = getCurrentTenantId();
-    const entity = await super.findOne({ ...where, tenantId } as Partial<T>);
+    const entity = await super.findOne({ ...where, tenantId });
     return entity && this.canRead(entity) ? entity : null;
   }
 
   override async findAll(): Promise<T[]> {
     if (this.hasBranch) return this.scoped().getMany();
     const tenantId = getCurrentTenantId();
-    return this.repository.find({ where: { tenantId } as unknown as FindOptionsWhere<T> });
+    return this.repository.find({ where: this.where({ tenantId }) });
   }
 
   override async update(id: string | number, data: Partial<T>): Promise<T | null> {
@@ -82,7 +85,7 @@ export abstract class TenantScopedDao<
     if (!existing) return null;
     const branch = this.hasBranch ? getBranchScope() : null;
     const newLocal = (data as { localId?: unknown }).localId;
-    if (branch && newLocal !== undefined && !branch.writeIds.includes(String(newLocal))) {
+    if (branch && newLocal !== undefined && !branch.writeIds.includes(idText(newLocal))) {
       throw new BranchAccessError("No tienes acceso a esa sucursal");
     }
     return super.update(id, data);

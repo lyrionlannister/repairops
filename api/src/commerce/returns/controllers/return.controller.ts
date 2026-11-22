@@ -21,7 +21,7 @@ export class ReturnController {
       }
       const items = await this.service.getItems(theReturn.id);
       res.status(200).json({ ...theReturn, items });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -29,7 +29,7 @@ export class ReturnController {
   getBySaleId = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getBySaleId(req.params["saleId"] as string));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -44,7 +44,7 @@ export class ReturnController {
       }
       const theReturn = await this.service.create(dto);
       res.status(201).json(theReturn);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };

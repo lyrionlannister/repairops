@@ -8,7 +8,7 @@ describe("buildNoteQrUrl", () => {
   it("arma la URL wa.me con el mensaje codificado", () => {
     const url = buildNoteQrUrl(base)!;
     expect(url.startsWith("https://wa.me/5215512345678?text=")).toBe(true);
-    const text = decodeURIComponent(url.split("?text=")[1]!);
+    const text = decodeURIComponent(url.split("?text=")[1]);
     expect(text).toBe("Hola, quiero consultar la nota #1042 de Celulares Pérez (ref: 7F3K2A9B)");
     expect(url).not.toContain("#");
     expect(url).not.toContain(" ");
@@ -25,8 +25,8 @@ describe("buildNoteQrUrl", () => {
 
   it("trunca el nombre a 40 caracteres como maximo", () => {
     const url = buildNoteQrUrl({ ...base, localName: "X".repeat(80) })!;
-    const text = decodeURIComponent(url.split("?text=")[1]!);
-    const name = /de (X+) \(ref/.exec(text)![1]!;
+    const text = decodeURIComponent(url.split("?text=")[1]);
+    const name = /de (X+) \(ref/.exec(text)![1];
     expect(name.length).toBeLessThanOrEqual(40);
     expect(name.length).toBeGreaterThan(20);
   });

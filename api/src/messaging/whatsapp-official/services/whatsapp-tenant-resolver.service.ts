@@ -41,7 +41,7 @@ export class WhatsappTenantResolver {
 
     const ownAccounts = accounts.filter((account) => !account.ownedByPlatform);
     if (accounts.length === 1 && ownAccounts.length === 1) {
-      const account = ownAccounts[0]!;
+      const account = ownAccounts[0];
       return { account, note: refNote && refNote.tenantId === account.tenantId ? refNote : null };
     }
 

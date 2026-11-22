@@ -11,7 +11,7 @@ export class MessageTemplateController {
     try {
       const templates = await this.service.getAll();
       res.status(200).json(templates);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -25,7 +25,7 @@ export class MessageTemplateController {
         return;
       }
       res.status(200).json(template);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -34,7 +34,7 @@ export class MessageTemplateController {
     try {
       const template = await this.service.create(req.body);
       res.status(201).json(template);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -48,7 +48,7 @@ export class MessageTemplateController {
         return;
       }
       res.status(200).json(template);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -62,7 +62,7 @@ export class MessageTemplateController {
         return;
       }
       res.status(200).json({ message: "Template eliminado" });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };

@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { NotificationDao } from "../daos/notification.dao.js";
 import { Notification, NotificationType } from "../entities/notification.entity.js";
 import { ChatMessageDao } from "../../chats/daos/chat-message.dao.js";

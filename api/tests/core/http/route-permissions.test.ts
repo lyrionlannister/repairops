@@ -52,7 +52,7 @@ describe("cobertura de permisos en rutas", () => {
   // objeto cuyos métodos son funciones vacías, sin base de datos ni Redis.
   beforeAll(() => {
     const stub = new Proxy({}, { get: () => () => undefined });
-    vi.spyOn(container, "resolve").mockImplementation(() => stub as never);
+    vi.spyOn(container, "resolve").mockImplementation(() => stub);
     const app = express();
     registerRoutes(app);
     routes = collectRoutes(app);

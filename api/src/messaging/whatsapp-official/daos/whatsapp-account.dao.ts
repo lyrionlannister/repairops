@@ -33,7 +33,7 @@ export class WhatsappAccountDao extends TenantScopedDao<WhatsappAccount> {
       ...credentials,
       ownedByPlatform: false,
       status: "connected",
-    } as Partial<WhatsappAccount>);
+    });
     if (!updated) {
       throw new Error("No se pudo actualizar la cuenta de WhatsApp");
     }

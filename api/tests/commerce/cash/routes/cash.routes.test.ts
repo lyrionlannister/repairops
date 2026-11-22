@@ -1,10 +1,8 @@
 import "reflect-metadata";
 import express from "express";
 import request from "supertest";
-import jwt from "jsonwebtoken";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
-import { requireJwtSecret } from "../../../../src/identity/auth/jwt-secret.js";
 import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
 import { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
@@ -34,7 +32,7 @@ describe("cash routes: permisos por rol (modulo Caja)", () => {
 
   // Sucursal real y un usuario por rol (el personal asignado a ella): ver tests/support/staff.ts.
   let tokens: Record<string, string> = {};
-  const tokenFor = (role: UserRole) => tokens[role] as string;
+  const tokenFor = (role: UserRole) => tokens[role];
 
   beforeAll(async () => {
     await AppDataSource.initialize();

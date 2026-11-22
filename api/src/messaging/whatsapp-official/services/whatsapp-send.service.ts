@@ -96,7 +96,7 @@ export class WhatsappSendService {
         metaMessageId: result.messages?.[0]?.id ?? null,
         errorMessage: null,
       });
-    } catch (error: any) {
+    } catch (error) {
       return this.whatsappOutboundMessageDao.create({
         accountId,
         catalogKey,
@@ -105,7 +105,7 @@ export class WhatsappSendService {
         idempotencyKey,
         status: "failed",
         metaMessageId: null,
-        errorMessage: error.message ?? "Error desconocido al enviar",
+        errorMessage: error instanceof Error ? error.message : "Error desconocido al enviar",
       });
     }
   }

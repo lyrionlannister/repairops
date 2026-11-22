@@ -35,7 +35,7 @@ export class UserBranchService {
     const foreign = unique.filter((id) => !tenantBranches.has(id));
     if (foreign.length > 0) throw new BranchAssignmentError("Alguna sucursal no existe en este negocio");
 
-    const primary = primaryBranchId ? String(primaryBranchId) : (unique[0] as string);
+    const primary = primaryBranchId ? String(primaryBranchId) : (unique[0]);
     if (!unique.includes(primary)) throw new BranchAssignmentError("La sucursal principal debe estar entre las asignadas");
     return { branchIds: unique, primaryBranchId: primary };
   }

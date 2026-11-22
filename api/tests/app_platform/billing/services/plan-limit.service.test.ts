@@ -52,7 +52,7 @@ describe("PlanLimitService", () => {
       role: "cashier",
     });
   const addBranch = () =>
-    branchDao.create({ name: `Sucursal ${++seq}`, isActive: true } as Partial<Branch>);
+    branchDao.create({ name: `Sucursal ${++seq}`, isActive: true });
 
   beforeAll(async () => {
     await AppDataSource.initialize();

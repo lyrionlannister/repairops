@@ -138,7 +138,7 @@ describe("WhatsappWebhookService.handleIncomingMessage", () => {
 
     await service.handleIncomingMessage({ ...incoming, contactName: "Ana" });
 
-    const sent = vi.mocked(whatsappSendService.sendFreeText).mock.calls[0]![3];
+    const sent = vi.mocked(whatsappSendService.sendFreeText).mock.calls[0][3];
     expect(sent).not.toMatch(/Ana|\$|saldo/i);
   });
 
@@ -153,7 +153,7 @@ describe("WhatsappWebhookService.handleIncomingMessage", () => {
   });
 
   it("un estado desconocido no genera respuesta", async () => {
-    const { service, whatsappSendService } = makeDeps({ account, note: { ...note, status: "raro" } as RepairNote });
+    const { service, whatsappSendService } = makeDeps({ account, note: { ...note, status: "raro" } });
     vi.mocked(humanModeService.isActive).mockResolvedValue(false);
 
     await service.handleIncomingMessage(incoming);

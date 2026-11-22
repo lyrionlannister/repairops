@@ -1,4 +1,4 @@
-import { FindOptionsWhere, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { User } from "../entities/user.entity.js";
@@ -11,7 +11,7 @@ export class UserDao extends TenantScopedDao<User> {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.findOne({ email } as Partial<User>);
+    return this.findOne({ email });
   }
 
   // Unica excepcion deliberada al filtro de tenant: en login todavia no se
@@ -19,7 +19,7 @@ export class UserDao extends TenantScopedDao<User> {
   // todos los tenants. Solo usar dentro de allowSystemScope(), nunca para
   // listar/editar datos de negocio.
   async findByEmailAcrossTenants(email: string): Promise<User | null> {
-    return this.repository.findOneBy({ email } as unknown as FindOptionsWhere<User>);
+    return this.repository.findOneBy({ email });
   }
 
   async countActive(): Promise<number> {
@@ -27,7 +27,7 @@ export class UserDao extends TenantScopedDao<User> {
   }
 
   async toggleStatus(id: string): Promise<User | null> {
-    const user = await this.findOne({ id } as Partial<User>);
+    const user = await this.findOne({ id });
     if (!user) return null;
     user.isActive = !user.isActive;
     return this.repository.save(user);

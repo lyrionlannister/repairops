@@ -14,7 +14,7 @@ export class InventoryTransferController {
   getAll = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.getAll());
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -28,7 +28,7 @@ export class InventoryTransferController {
         return;
       }
       res.status(201).json(await this.service.create(dto));
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };

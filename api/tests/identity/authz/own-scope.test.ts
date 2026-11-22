@@ -1,6 +1,5 @@
 import "reflect-metadata";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Repository } from "typeorm";
 import AppDataSource from "../../../src/core/config/data-source.js";
 import { runWithTenant, type RequestActor } from "../../../src/core/tenancy/tenant-context.js";
 import { effectivePermissions } from "../../../src/identity/authz/permissions.js";
@@ -84,8 +83,8 @@ describe("permisos .own del técnico", () => {
   beforeAll(async () => {
     await AppDataSource.initialize();
     const staff = await setupStaff(AppDataSource, tenantId, ["owner", "technician", "employee"]);
-    technicianId = staff.userIds["technician"] as string;
-    otherTechnicianId = staff.userIds["employee"] as string;
+    technicianId = staff.userIds["technician"];
+    otherTechnicianId = staff.userIds["employee"];
     const other = await setupStaff(AppDataSource, otherTenantId, ["owner"]);
 
     const ownCustomer = await insertCustomer(tenantId, "5215550000001");
@@ -135,7 +134,7 @@ describe("permisos .own del técnico", () => {
     chats = new ChatsService(
       chatMessageDao,
       {} as ChatStatsDao,
-      AppDataSource.getRepository(ContactName) as Repository<ContactName>,
+      AppDataSource.getRepository(ContactName),
     );
   });
 
@@ -167,7 +166,7 @@ describe("permisos .own del técnico", () => {
     expect(await asTechnician(() => quoteDao.findById(ids.foreignQuote))).toBeNull();
     expect(
       await asTechnician(() =>
-        quoteDao.update(ids.foreignQuote, { customerName: "X" } as Partial<Quote>),
+        quoteDao.update(ids.foreignQuote, { customerName: "X" }),
       ),
     ).toBeNull();
     expect(await asTechnician(() => quoteDao.delete(ids.foreignQuote))).toBe(false);
