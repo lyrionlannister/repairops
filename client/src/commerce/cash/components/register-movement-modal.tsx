@@ -1,22 +1,11 @@
 import type { FC } from "react";
-import type { CashMovementForm } from "../hooks/use-cash-page";
-import { EmployeeSelect } from "@common/components/employee-select";
 import { Modal } from "@ui/modal/modal";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 import { METHOD_LABELS } from "../utils/format";
-
-interface RegisterMovementModalProps {
-  isOpen: boolean;
-  movementForm: CashMovementForm;
-  saving: boolean;
-  cashRoundingUnit: number | undefined;
-  onClose: () => void;
-  onFormChange: (updater: (prev: CashMovementForm) => CashMovementForm) => void;
-  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
-}
+import type { RegisterMovementModalProps } from "../props/register-movement-modal-props";
 
 export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
   isOpen,
@@ -85,25 +74,11 @@ export const RegisterMovementModal: FC<RegisterMovementModalProps> = ({
           disabled={saving}
         />
       </div>
-      <div>
-        <Label className="text-gray-500">Empleado</Label>
-        <EmployeeSelect
-          value={movementForm.createdByEmployeeId}
-          onChange={(employeeId) =>
-            onFormChange((prev) => ({ ...prev, createdByEmployeeId: employeeId }))
-          }
-          disabled={saving}
-        />
-      </div>
       <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
           Cancelar
         </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={saving || !movementForm.createdByEmployeeId}
-        >
+        <Button type="submit" variant="primary" disabled={saving}>
           {saving ? "Guardando..." : "Registrar"}
         </Button>
       </div>

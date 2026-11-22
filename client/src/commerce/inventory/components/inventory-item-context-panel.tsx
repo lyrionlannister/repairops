@@ -1,11 +1,6 @@
 import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
-import type { InventoryMovement } from "../hooks/use-inventory";
 import { formatDate, MOVEMENT_LABELS } from "../utils/format";
-
-interface InventoryItemContextPanelProps {
-  movements: InventoryMovement[];
-  marginPercent: number | null;
-}
+import type { InventoryItemContextPanelProps } from "../props/inventory-item-context-panel-props";
 
 export const InventoryItemContextPanel: React.FC<InventoryItemContextPanelProps> = ({ movements, marginPercent }) => (
   <div className="space-y-4">

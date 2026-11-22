@@ -1,28 +1,12 @@
 import type { FC } from "react";
 import { RotateCcw } from "lucide-react";
-import type { SaleWithItems, RefundMethod } from "../hooks/use-returns";
-import type { LineDraft } from "../hooks/use-return-refund";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 import { PAYMENT_LABELS, formatMoney } from "../utils/format";
-
-interface ReturnLinesFormProps {
-  sale: SaleWithItems;
-  lines: LineDraft[];
-  alreadyReturned: Record<string, number>;
-  itemNames: Record<string, string>;
-  refundMethod: RefundMethod;
-  reason: string;
-  totalRefunded: number;
-  saving: boolean;
-  canSubmit: boolean;
-  onLineChange: (saleItemId: string, patch: Partial<LineDraft>) => void;
-  onRefundMethodChange: (method: RefundMethod) => void;
-  onReasonChange: (value: string) => void;
-  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
-}
+import type { RefundMethod } from "../types/returns";
+import type { ReturnLinesFormProps } from "../props/return-lines-form-props";
 
 export const ReturnLinesForm: FC<ReturnLinesFormProps> = ({
   sale,

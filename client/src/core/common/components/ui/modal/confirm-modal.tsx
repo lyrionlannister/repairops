@@ -1,17 +1,6 @@
 import { Modal } from "./modal";
 import { Button } from "@ui/button/button";
-
-interface ConfirmModalProps {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  danger?: boolean;
-  loading?: boolean;
-  onConfirm: () => void;
-  onClose: () => void;
-}
+import type { ConfirmModalProps } from "../../../props/confirm-modal-props";
 
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   isOpen,

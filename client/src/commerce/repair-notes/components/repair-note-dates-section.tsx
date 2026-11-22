@@ -4,21 +4,7 @@ import { Label } from "@ui/inputs/label";
 import { TextArea } from "@ui/textarea/textarea";
 import { EmployeeSelect } from "@common/components/employee-select";
 import { SectionTitle } from "./section-title";
-
-interface RepairNoteDatesSectionProps {
-  receivedAt: string;
-  deliveryDate: string;
-  assignedEmployeeId: string;
-  technicianNotes: string;
-  additionalFindings: string;
-  isEdit: boolean;
-  saving: boolean;
-  onReceivedAtChange: (value: string) => void;
-  onDeliveryDateChange: (value: string) => void;
-  onAssignedEmployeeIdChange: (value: string) => void;
-  onTechnicianNotesChange: (value: string) => void;
-  onAdditionalFindingsChange: (value: string) => void;
-}
+import type { RepairNoteDatesSectionProps } from "../props/repair-note-dates-section-props";
 
 export const RepairNoteDatesSection: FC<RepairNoteDatesSectionProps> = ({
   receivedAt,

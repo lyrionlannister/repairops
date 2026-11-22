@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTicketFormat } from "@common/hooks/use-ticket-format";
 import { useParams } from "react-router";
 
 import { useServiceTypes } from "@common/hooks/use-service-types";
 import { usePdfPreview } from "@common/hooks/use-pdf-preview";
-import { useLocal, type TicketSize } from "../../../app_platform/local/hooks/use-local";
+import { useLocal } from "../../../app_platform/local/hooks/use-local";
 import { useRepairNotes } from "./use-repair-notes";
 
 export const useRepairNotePrintPage = () => {
@@ -11,7 +12,6 @@ export const useRepairNotePrintPage = () => {
   const { note, loading: loadingNote, fetchNote, fetchNoteServiceTypeIds } = useRepairNotes();
   const { local, loading: loadingLocal, fetchLocal } = useLocal();
   const { serviceTypes, fetchAll: fetchServiceTypes } = useServiceTypes();
-  const [ticketSize, setTicketSize] = useState<TicketSize | null>(null);
   const [serviceTypeNames, setServiceTypeNames] = useState<string[]>([]);
 
   useEffect(() => {
@@ -20,9 +20,7 @@ export const useRepairNotePrintPage = () => {
     fetchServiceTypes();
   }, [id, fetchNote, fetchLocal, fetchServiceTypes]);
 
-  useEffect(() => {
-    if (local && ticketSize === null) setTicketSize(local.defaultTicketSize);
-  }, [local, ticketSize]);
+  const format = useTicketFormat(local?.defaultTicketSize);
 
   useEffect(() => {
     if (!note) return;
@@ -34,17 +32,13 @@ export const useRepairNotePrintPage = () => {
     });
   }, [note, serviceTypes, fetchNoteServiceTypeIds]);
 
-  const isThermal = ticketSize === "58mm" || ticketSize === "80mm";
-  const pdf = usePdfPreview(ticketSize === "letter" && id ? `/repair-notes/${id}/pdf` : null);
+  const pdf = usePdfPreview(!format.isThermal && id ? `/repair-notes/${id}/pdf` : null);
 
   return {
     note,
     local,
     loading: loadingNote || loadingLocal,
-    ticketSize: ticketSize ?? "80mm",
-    setTicketSize,
-    isThermal,
-    pageWidthMm: ticketSize === "58mm" ? (58 as const) : (80 as const),
+    ...format,
     serviceTypeNames,
     pdf,
   };

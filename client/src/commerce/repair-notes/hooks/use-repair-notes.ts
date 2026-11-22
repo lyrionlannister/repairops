@@ -1,63 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
-
-export type RepairNoteStatus = "received" | "in_repair" | "done" | "delivered" | "cancelled";
-
-export interface RepairNoteRecord {
-  id: string;
-  controlNumber: number;
-  publicRef: string;
-  // URL wa.me del QR impreso; la arma el API. null si el taller no tiene numero de WhatsApp.
-  whatsappQrUrl?: string | null;
-  customerName: string;
-  contactNumber?: string;
-  brand: string;
-  model: string;
-  reportedFailure: string;
-  totalValue: number;
-  status: RepairNoteStatus;
-  requiresAdvance: boolean;
-  advanceValue?: number;
-  receivedAt: string;
-  receivedTime: string;
-  deliveryDate?: string;
-  technicianNotes?: string;
-  additionalFindings?: string;
-  assignedEmployeeId?: string | null;
-  localId?: string | null;
-  customerId?: string | null;
-  deviceOff: boolean;
-  hasWarranty: boolean;
-  hasExtendedWarranty: boolean;
-  extendedWarrantyDays?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RepairNoteFormData {
-  customerName: string;
-  contactNumber: string;
-  brand: string;
-  model: string;
-  reportedFailure: string;
-  totalValue: string;
-  status: RepairNoteStatus;
-  requiresAdvance: boolean;
-  advanceValue: string;
-  receivedAt: string;
-  deliveryDate: string;
-  technicianNotes: string;
-  additionalFindings: string;
-  assignedEmployeeId: string;
-  localId: string;
-  customerId: string;
-  serviceTypeIds: string[];
-  deviceOff: boolean;
-  hasWarranty: boolean;
-  hasExtendedWarranty: boolean;
-  extendedWarrantyDays: string;
-}
+import type { RepairNoteRecord, RepairNoteFormData, AdvancePaymentInput, RepairNoteItemInput, RepairNoteItemRecord, RepairNoteStatus } from "../types/repair-notes";
 
 export const INITIAL_FORM: RepairNoteFormData = {
   customerName: "",
@@ -107,21 +51,6 @@ export const STATUS_CONFIG: Record<RepairNoteStatus, { label: string; className:
 };
 
 // Cómo se cobró el anticipo al recibir el equipo: entra como ingreso en la caja abierta.
-export interface AdvancePaymentInput {
-  method: "efectivo" | "tarjeta" | "transferencia";
-  createdByEmployeeId: string;
-}
-
-export interface RepairNoteItemInput {
-  inventoryItemId: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-export interface RepairNoteItemRecord extends RepairNoteItemInput {
-  id: string;
-}
-
 const toPayload = (form: RepairNoteFormData) => ({
   ...form,
   totalValue: parseFloat(form.totalValue) || 0,

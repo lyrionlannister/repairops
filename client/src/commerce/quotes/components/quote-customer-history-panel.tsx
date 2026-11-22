@@ -1,9 +1,5 @@
-import type { QuoteStatus } from "../hooks/use-quotes";
 import { QUOTE_STATUS_LABEL, formatCurrency } from "../utils/format";
-
-interface QuoteCustomerHistoryPanelProps {
-  otherQuotes: { id: string; status: QuoteStatus; totalValue: number }[];
-}
+import type { QuoteCustomerHistoryPanelProps } from "../props/quote-customer-history-panel-props";
 
 export const QuoteCustomerHistoryPanel: React.FC<QuoteCustomerHistoryPanelProps> = ({ otherQuotes }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">

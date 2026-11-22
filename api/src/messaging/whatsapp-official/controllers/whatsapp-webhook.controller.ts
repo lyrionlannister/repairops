@@ -1,13 +1,12 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
-import { WhatsappWebhookService } from "../services/whatsapp-webhook.service.js";
-import { verifyMetaSignature } from "../utils/verify-signature.js";
-import { extractIncomingMessages } from "../helpers/whatsapp-webhook.helpers.js";
+import { WhatsappInboundQueueService } from "../services/whatsapp-inbound-queue.service.js";
 import { requiredEnv } from "../../../core/config/env.js";
+import { safeEqual } from "../utils/verify-signature.js";
 
 @singleton()
 export class WhatsappWebhookController {
-  constructor(private whatsappWebhookService: WhatsappWebhookService) {}
+  constructor(private whatsappInboundQueueService: WhatsappInboundQueueService) {}
 
   // Handshake de suscripcion que exige Meta antes de mandar cualquier POST
   // (se configura una sola vez en el panel de la WABA).
@@ -16,34 +15,26 @@ export class WhatsappWebhookController {
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
 
-    if (mode === "subscribe" && token === requiredEnv("WHATSAPP_WEBHOOK_VERIFY_TOKEN")) {
+    if (mode === "subscribe" &&
+      typeof token === "string" &&
+      safeEqual(token, requiredEnv("WHATSAPP_WEBHOOK_VERIFY_TOKEN"))) {
       res.status(200).send(challenge);
       return;
     }
     res.sendStatus(403);
   };
 
+  // La firma ya la valido verifyMetaSignatureMiddleware. 200 solo con el
+  // mensaje ya en la cola: si Redis falla, el 500 hace que Meta reintente, y
+  // el jobId por wamid descarta el duplicado si el primer intento si entro.
   receive = async (req: Request, res: Response): Promise<void> => {
-    const signatureHeader = req.header("x-hub-signature-256");
-    const rawBody = (req as unknown as { rawBody?: Buffer }).rawBody;
-
-    if (!rawBody || !verifyMetaSignature(rawBody, signatureHeader, requiredEnv("WHATSAPP_APP_SECRET"))) {
-      res.sendStatus(401);
+    try {
+      await this.whatsappInboundQueueService.enqueuePayload(req.body);
+    } catch (error) {
+      console.error("Error encolando webhook de WhatsApp:", error);
+      res.sendStatus(500);
       return;
     }
-
-    try {
-      const messages = extractIncomingMessages(req.body);
-      for (const message of messages) {
-        await this.whatsappWebhookService.handleIncomingMessage(message);
-      }
-    } catch (error) {
-      console.error("Error procesando webhook de WhatsApp:", error);
-    }
-
-    // Siempre 200 una vez pasada la firma: Meta reintenta agresivamente
-    // cualquier otro status, y una falla nuestra (n8n caido, etc.) no debe
-    // convertirse en una tormenta de reintentos.
     res.sendStatus(200);
   };
 }

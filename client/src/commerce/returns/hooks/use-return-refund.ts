@@ -1,6 +1,5 @@
 import { round2 } from "../utils/format";
-
-export type LineDraft = { saleItemId: string; quantity: string; refundAmount: string };
+import type { LineDraft } from "../types/return-refund";
 
 // Solo lineas con cantidad > 0 cuentan para el total a reembolsar -- el
 // cajero deja las demas en 0 en vez de quitarlas de la lista.

@@ -4,9 +4,14 @@ import { CashSessionDao } from "../daos/cash-session.dao.js";
 import { CashMovementDao } from "../daos/cash-movement.dao.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { UserDao } from "../../../identity/auth/daos/user.dao.js";
+import { UserRoleDao } from "../../../identity/auth/daos/user-role.dao.js";
+import { effectivePermissions } from "../../../identity/authz/permissions.js";
+import { can, currentUserId } from "../../../identity/authz/access.js";
 import { CashSession } from "../entities/cash-session.entity.js";
 import { CashMovement, CashMovementMethod, CashMovementRelatedEntityType, CashMovementType } from "../entities/cash-movement.entity.js";
 import { roundCashAmount } from "../utils/round-cash-amount.js";
+import { buildCashSummary, buildVarianceStats, cashMethodTotals } from "../utils/cash-summary.js";
+import type { CashCutRow, CashSummary, CashVarianceStats } from "../types/cash-report.types.js";
 
 export interface RegisterCashMovementInput {
   cashSessionId: string;
@@ -16,14 +21,13 @@ export interface RegisterCashMovementInput {
   note?: string | null;
   relatedEntityType?: CashMovementRelatedEntityType;
   relatedEntityId?: string | null;
-  createdByEmployeeId?: string | null;
 }
 
-export interface CashSummary {
-  totalIncome: number;
-  totalExpense: number;
-  net: number;
-  byMethod: Record<CashMovementMethod, { income: number; expense: number }>;
+export interface CashCut {
+  cut: CashCutRow;
+  summary: CashSummary;
+  movements: CashMovement[];
+  expectedCash: string;
 }
 
 @singleton()
@@ -33,6 +37,7 @@ export class CashService {
     private movementDao: CashMovementDao,
     private localService: LocalService,
     private userDao: UserDao,
+    private userRoleDao: UserRoleDao,
   ) {}
 
   async getAllSessions(branchId?: string | null): Promise<CashSession[]> {
@@ -47,11 +52,9 @@ export class CashService {
     return this.sessionDao.findOpenByLocal(localId);
   }
 
-  async openSession(
-    localId: string,
-    openingBalance: number,
-    openedByEmployeeId?: string | null,
-  ): Promise<CashSession> {
+  // Quien abre (y quien registra un movimiento) es siempre el usuario de la sesión: el cliente
+  // no puede atribuir la operación a otra persona.
+  async openSession(localId: string, openingBalance: number): Promise<CashSession> {
     const existing = await this.sessionDao.findOpenByLocal(localId);
     if (existing) {
       throw new Error("Ya hay una sesión de caja abierta para este local");
@@ -59,7 +62,7 @@ export class CashService {
     return this.sessionDao.create({
       localId,
       openingBalance,
-      openedByEmployeeId: openedByEmployeeId ?? null,
+      openedByEmployeeId: currentUserId(),
       status: "open",
     } as Partial<CashSession>);
   }
@@ -81,10 +84,8 @@ export class CashService {
     if (!session) throw new Error("Sesión de caja no encontrada");
     if (session.status === "closed") throw new Error("La sesión ya está cerrada");
 
-    const summary = await this.getSummary(id);
-    const expectedCashBalance = new Decimal(session.openingBalance)
-      .plus(summary.byMethod.efectivo.income)
-      .minus(summary.byMethod.efectivo.expense);
+    const cash = cashMethodTotals(await this.movementDao.findBySession(id)).efectivo;
+    const expectedCashBalance = new Decimal(String(session.openingBalance)).plus(cash.income).minus(cash.expense);
     const variance = new Decimal(closingBalance).minus(expectedCashBalance);
 
     if (!variance.isZero() && !reason) {
@@ -98,8 +99,9 @@ export class CashService {
         throw new Error(`La diferencia supera el límite sin autorizar (${maxUnauthorized.toFixed(2)}): requiere autorización`);
       }
       const authorizer = await this.userDao.findById(authorizedByEmployeeId);
-      if (!authorizer || authorizer.role !== "owner") {
-        throw new Error("Quien autoriza la diferencia debe ser el owner");
+      const authorizerRoles = authorizer?.isActive ? await this.userRoleDao.findRolesOf(authorizer.id) : [];
+      if (!effectivePermissions(authorizerRoles, false).has("cash.authorize-variance")) {
+        throw new Error("Quien autoriza la diferencia debe poder autorizar diferencias de caja");
       }
     }
 
@@ -110,6 +112,7 @@ export class CashService {
       variance: variance.toNumber(),
       varianceReason: variance.isZero() ? null : reason ?? null,
       varianceAuthorizedByEmployeeId: authorizedByEmployeeId ?? null,
+      closedByEmployeeId: currentUserId(),
     } as Partial<CashSession>);
     return updated as CashSession;
   }
@@ -138,35 +141,63 @@ export class CashService {
       note: input.note ?? null,
       relatedEntityType: input.relatedEntityType ?? "manual",
       relatedEntityId: input.relatedEntityId ?? null,
-      createdByEmployeeId: input.createdByEmployeeId ?? null,
+      createdByEmployeeId: currentUserId(),
     } as Partial<CashMovement>);
   }
 
-  async getMovements(cashSessionId: string): Promise<CashMovement[]> {
-    return this.movementDao.findBySession(cashSessionId);
+  async getMovements(cashSessionId: string): Promise<CashMovement[] | null> {
+    const session = await this.sessionDao.findById(cashSessionId);
+    if (!session) return null;
+    const movements = await this.movementDao.findBySession(cashSessionId);
+    if (!this.hidesAmounts(session)) return movements;
+    return movements.map((movement) =>
+      movement.method === "efectivo" ? ({ ...movement, amount: null } as unknown as CashMovement) : movement,
+    );
   }
 
-  async getSummary(cashSessionId: string): Promise<CashSummary> {
-    const movements = await this.movementDao.findBySession(cashSessionId);
-    const byMethod: CashSummary["byMethod"] = {
-      efectivo: { income: 0, expense: 0 },
-      tarjeta: { income: 0, expense: 0 },
-      transferencia: { income: 0, expense: 0 },
+  async getSummary(cashSessionId: string): Promise<CashSummary | null> {
+    const session = await this.sessionDao.findById(cashSessionId);
+    if (!session) return null;
+    const [movements, local] = await Promise.all([
+      this.movementDao.findBySession(cashSessionId),
+      this.localService.getConfig(),
+    ]);
+    return buildCashSummary(movements, { hideAmounts: this.hidesAmounts(session), timeZone: local.timeZone });
+  }
+
+  async getCuts(branchId: string | null, limit = 50): Promise<CashCutRow[]> {
+    return this.sessionDao.findClosedCuts({ branchId, limit });
+  }
+
+  async getLastCut(branchId: string | null): Promise<CashCutRow | null> {
+    const [last] = await this.sessionDao.findClosedCuts({ branchId, limit: 1 });
+    return last ?? null;
+  }
+
+  async getVarianceStats(branchId: string | null): Promise<CashVarianceStats> {
+    const local = await this.localService.getConfig();
+    const cuts = await this.sessionDao.findClosedCuts({ branchId, monthOf: { timeZone: local.timeZone } });
+    const month = new Date().toLocaleDateString("en-CA", { timeZone: local.timeZone }).slice(0, 7);
+    return buildVarianceStats(cuts, month);
+  }
+
+  async getCut(sessionId: string): Promise<CashCut | null> {
+    const [cut] = await this.sessionDao.findClosedCuts({ sessionId, limit: 1 });
+    if (!cut) return null;
+    const [movements, local] = await Promise.all([
+      this.movementDao.findBySession(sessionId),
+      this.localService.getConfig(),
+    ]);
+    const cash = cashMethodTotals(movements).efectivo;
+    return {
+      cut,
+      movements,
+      summary: buildCashSummary(movements, { hideAmounts: false, timeZone: local.timeZone }),
+      expectedCash: new Decimal(cut.openingBalance).plus(cash.income).minus(cash.expense).toFixed(2),
     };
-    let totalIncome = 0;
-    let totalExpense = 0;
+  }
 
-    for (const movement of movements) {
-      const amount = Number(movement.amount);
-      if (movement.type === "income") {
-        totalIncome += amount;
-        byMethod[movement.method].income += amount;
-      } else {
-        totalExpense += amount;
-        byMethod[movement.method].expense += amount;
-      }
-    }
-
-    return { totalIncome, totalExpense, net: totalIncome - totalExpense, byMethod };
+  private hidesAmounts(session: CashSession): boolean {
+    return session.status === "open" && !can("cash.authorize-variance");
   }
 }

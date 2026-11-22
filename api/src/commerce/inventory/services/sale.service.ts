@@ -16,6 +16,7 @@ import { CashMovement, CashMovementMethod } from "../../cash/entities/cash-movem
 import { CustomerDao } from "../../customers/daos/customer.dao.js";
 import { calculateSaleTotals } from "../../pricing/calculate-sale-totals.js";
 import type { UserRole } from "../../../identity/auth/entities/user.entity.js";
+import { BranchDiscountCapService } from "../../../identity/branches/services/branch-discount-cap.service.js";
 
 export interface SaleItemInput {
   lineType: SaleItemLineType;
@@ -56,6 +57,7 @@ export class SaleService {
     private cashSessionDao: CashSessionDao,
     private serviceTypeDao: ServiceTypeDao,
     private customerDao: CustomerDao,
+    private discountCapService: BranchDiscountCapService,
   ) {}
 
   async getAll(branchId?: string | null): Promise<Sale[]> {
@@ -78,12 +80,12 @@ export class SaleService {
   // una sola transaccion. Idempotente por idempotencyKey (un doble clic en
   // "Cobrar" nunca produce una segunda venta) y exige una sesion de caja
   // abierta del mismo local (cap. 3 del plan: "sin sesión de caja no hay
-  // cobro"). El tope de descuento por rol se valida aquí, nunca solo en
+  // cobro"). El tope de descuento de la sucursal para los roles de quien vende se valida aquí, nunca solo en
   // pantalla (ver skill tenant-isolation / money-precision). Pago dividido
   // (Fase 3, SPEC-fase3-pos-dinero.md): sum(payments[].amount) debe cuadrar
   // exacto contra el total, sin tolerancia de redondeo -- se valida antes
   // de abrir la transaccion, mismo lugar que el tope de descuento.
-  async create(data: CreateSalePayload, requestingRole: UserRole): Promise<Sale> {
+  async create(data: CreateSalePayload, requestingRoles: readonly UserRole[]): Promise<Sale> {
     if (data.items.length === 0) {
       throw new Error("La venta debe tener al menos un item");
     }
@@ -112,10 +114,12 @@ export class SaleService {
     }
 
     const local = await this.localService.getConfig();
-    const discountCap = local.maxDiscountPercentByRole?.[requestingRole] ?? 100;
-    for (const item of data.items) {
-      if ((item.discountPercent ?? 0) > discountCap) {
-        throw new Error(`El descuento del renglón supera el límite permitido para tu rol (${discountCap}%)`);
+    const discountCap = await this.discountCapService.maxDiscountFor(data.localId, requestingRoles);
+    if (discountCap) {
+      for (const item of data.items) {
+        if (new Decimal(item.discountPercent ?? 0).greaterThan(discountCap)) {
+          throw new Error(`El descuento del renglón supera el límite permitido para tu rol (${discountCap.toFixed(2)}%)`);
+        }
       }
     }
 

@@ -1,10 +1,16 @@
 import { FindOptionsWhere, ObjectLiteral, Repository } from "typeorm";
+import { getTransactionManager } from "../database/transaction-context.js";
 
 export abstract class BaseDao<T extends ObjectLiteral> {
-  protected repository: Repository<T>;
+  private readonly baseRepository: Repository<T>;
 
   constructor(repository: Repository<T>) {
-    this.repository = repository;
+    this.baseRepository = repository;
+  }
+
+  protected get repository(): Repository<T> {
+    const manager = getTransactionManager();
+    return manager ? manager.getRepository<T>(this.baseRepository.target) : this.baseRepository;
   }
 
   async create(data: Partial<T>): Promise<T> {

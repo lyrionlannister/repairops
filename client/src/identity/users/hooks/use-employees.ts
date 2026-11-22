@@ -1,20 +1,19 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export interface EmployeeOption {
-  id: string;
-  firstName: string;
-  lastName: string;
-  role: "owner" | "employee";
-}
+import { usePermissions } from "@common/hooks/use-permissions";
+import type { EmployeeOption } from "../types/employees";
 
 export const useEmployees = () => {
   const { apiClient } = useApiClient();
+  const { can } = usePermissions();
+  // El técnico no ve la lista de personal (staff.list): sus notas quedan asignadas a él.
+  const canList = can("staff.list");
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
+    if (!canList) return;
     setLoading(true);
     setError(null);
     try {
@@ -26,7 +25,7 @@ export const useEmployees = () => {
     } finally {
       setLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, canList]);
 
   return { employees, loading, error, fetchAll };
 };

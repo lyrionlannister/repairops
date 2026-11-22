@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { NEXT_STATUS, type RepairNoteRecord, type RepairNoteStatus } from "./use-repair-notes";
+import { NEXT_STATUS } from "./use-repair-notes";
 import { useRepairNoteDelivery } from "./use-repair-note-delivery";
-
+import type { RepairNoteRecord, RepairNoteStatus } from "../types/repair-notes";
 export const useRepairNotesPage = ({
   notes,
   deleteNote,

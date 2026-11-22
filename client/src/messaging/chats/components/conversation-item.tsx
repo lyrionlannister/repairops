@@ -1,11 +1,5 @@
-import type { Conversation } from "../hooks/use-conversations";
 import { formatPhone, getInitials, getAvatarColor } from "../utils/contact-display";
-
-interface ConversationItemProps {
-  conversation: Conversation;
-  selected: boolean;
-  onClick: () => void;
-}
+import type { ConversationItemProps } from "../props/conversation-item-props";
 
 export const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, selected, onClick }) => {
   const displayName = conversation.contactName ?? formatPhone(conversation.phone);

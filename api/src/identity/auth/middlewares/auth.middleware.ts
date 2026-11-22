@@ -1,13 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { requireJwtSecret } from "../jwt-secret.js";
-import { UserRole } from "../entities/user.entity.js";
+import type { UserRole } from "../entities/user.entity.js";
+import type { Permission } from "../../authz/permissions.js";
 import { ACCESS_TOKEN_COOKIE } from "../constants/auth.constants.js";
 
 const { verify } = jwt;
 
+// El JWT solo prueba identidad (id, email, tenantId). roles, permisos y el flag de
+// plataforma los completa tenantMiddleware desde la base en cada petición.
 export interface AuthenticatedRequest extends Request {
-  user?: { id: string; email: string; tenantId: string; role: UserRole; isPlatformAdmin?: boolean };
+  user?: {
+    id: string;
+    email: string;
+    tenantId: string;
+    roles?: UserRole[];
+    permissions?: ReadonlySet<Permission>;
+    isPlatformAdmin?: boolean;
+  };
 }
 
 // Sin cookie-parser: solo necesitamos leer un valor, no vale la pena la
@@ -40,7 +50,8 @@ export const authMiddleware = (
 
   try {
     const decoded = verify(token, requireJwtSecret());
-    req.user = decoded as { id: string; email: string; tenantId: string; role: UserRole; isPlatformAdmin?: boolean };
+    const { id, email, tenantId } = decoded as { id: string; email: string; tenantId: string };
+    req.user = { id, email, tenantId };
     next();
   } catch (error: any) {
     if (error.name === "TokenExpiredError") {

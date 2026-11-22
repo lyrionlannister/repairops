@@ -1,57 +1,9 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-import type { SaleItemLineType } from "@commerce/inventory/hooks/use-sales";
+import type { SaleWithItems, SaleListItem, CreateReturnPayload, ReturnRecord } from "../types/returns";
 
 // Metodos de reembolso = CashMovementMethod del backend (ReturnService), no
 // SalePaymentMethod -- "credito" existe para vender, nunca para reembolsar.
-export type RefundMethod = "efectivo" | "tarjeta" | "transferencia";
-
-export interface SaleItemRecord {
-  id: string;
-  lineType: SaleItemLineType;
-  referenceId: string;
-  quantity: number;
-  unitPrice: number;
-  discountAmount: number;
-}
-
-export interface SaleWithItems {
-  id: string;
-  saleNumber: number;
-  totalValue: number;
-  items: SaleItemRecord[];
-}
-
-export interface SaleListItem {
-  id: string;
-  saleNumber: number;
-  customerId: string | null;
-  totalValue: number;
-  createdAt: string;
-}
-
-export interface ReturnItemInput {
-  saleItemId: string;
-  quantity: number;
-  refundAmount: number;
-}
-
-export interface CreateReturnPayload {
-  saleId: string;
-  cashSessionId: string;
-  refundMethod: RefundMethod;
-  reason: string;
-  totalRefunded: number;
-  idempotencyKey?: string;
-  items: ReturnItemInput[];
-}
-
-export interface ReturnRecord {
-  id: string;
-  returnNumber: number;
-  saleId: string;
-  totalRefunded: number;
-}
 
 async function readError(res: Response, fallback: string): Promise<string> {
   const body = await res.json().catch(() => ({}));

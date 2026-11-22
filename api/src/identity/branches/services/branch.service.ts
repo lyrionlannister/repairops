@@ -2,13 +2,17 @@ import { singleton, inject } from "tsyringe";
 import { BranchDao } from "../daos/branch.dao.js";
 import { Branch } from "../entities/branch.entity.js";
 import { getBranchScope } from "../../../core/tenancy/tenant-context.js";
+import { PlanLimitService } from "../../../app_platform/billing/services/plan-limit.service.js";
 
 type CreatePayload = Pick<Branch, "name" | "address" | "phone">;
 type UpdatePayload = Partial<CreatePayload>;
 
 @singleton()
 export class BranchService {
-  constructor(private dao: BranchDao) {}
+  constructor(
+    private dao: BranchDao,
+    private planLimitService: PlanLimitService,
+  ) {}
 
   // Owner: todas las del tenant. Personal: solo las suyas, con la principal marcada.
   async getAll(): Promise<Array<Branch & { isPrimary?: boolean }>> {
@@ -32,12 +36,14 @@ export class BranchService {
       throw new Error("El nombre de la sucursal es obligatorio");
     }
 
-    return this.dao.create({
-      name,
-      address: data.address?.trim() || undefined,
-      phone: data.phone?.trim() || undefined,
-      isActive: true,
-    } as Partial<Branch>);
+    return this.planLimitService.withCapacity("branches", () =>
+      this.dao.create({
+        name,
+        address: data.address?.trim() || undefined,
+        phone: data.phone?.trim() || undefined,
+        isActive: true,
+      } as Partial<Branch>),
+    );
   }
 
   async update(id: string, data: UpdatePayload): Promise<Branch | null> {
@@ -59,7 +65,10 @@ export class BranchService {
   // Soft: nunca se borra una sucursal, solo se desactiva -- es reversible y
   // no requiere revisar relaciones (notas/ventas/caja no se pierden).
   async setActive(id: string, isActive: boolean): Promise<Branch | null> {
-    return this.dao.update(id, { isActive } as Partial<Branch>);
+    const current = await this.dao.findById(id);
+    if (!current) return null;
+    if (!isActive || current.isActive) return this.dao.update(id, { isActive } as Partial<Branch>);
+    return this.planLimitService.withCapacity("branches", () => this.dao.update(id, { isActive } as Partial<Branch>));
   }
 
   // Idempotente: solo siembra "Sucursal principal" si el tenant aun no tiene

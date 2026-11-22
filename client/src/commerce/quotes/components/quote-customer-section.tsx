@@ -1,24 +1,10 @@
 import type { FC } from "react";
-import type { Customer } from "@commerce/customers/hooks/use-customers";
 import { EmployeeSelect } from "@common/components/employee-select";
 import { CustomerSelect } from "@common/components/customer-select";
 import { Input } from "@ui/inputs/input";
 import { DatePicker } from "@ui/date-picker/date-picker";
 import { Label } from "@ui/inputs/label";
-
-interface QuoteCustomerSectionProps {
-  customerId: string;
-  customerName: string;
-  contactNumber: string;
-  validUntil: string;
-  createdByEmployeeId: string;
-  saving: boolean;
-  onCustomerChange: (customerId: string, customer: Customer | null) => void;
-  onCustomerNameChange: (value: string) => void;
-  onContactNumberChange: (value: string) => void;
-  onValidUntilChange: (value: string) => void;
-  onCreatedByEmployeeIdChange: (value: string) => void;
-}
+import type { QuoteCustomerSectionProps } from "../props/quote-customer-section-props";
 
 export const QuoteCustomerSection: FC<QuoteCustomerSectionProps> = ({
   customerId,

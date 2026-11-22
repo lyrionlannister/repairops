@@ -19,6 +19,7 @@ export class CreateCashSessions1794891049037 implements MigrationInterface {
             "id_empleado_autoriza_diferencia" bigint,
             "fecha_apertura" TIMESTAMP NOT NULL DEFAULT now(),
             "fecha_cierre" TIMESTAMP,
+            "id_empleado_cierre" bigint,
             CONSTRAINT "UQ_d061925fe46389bd928428b8182" UNIQUE ("public_id"),
             CONSTRAINT "PK_946ea5ce864b10fb70162708448" PRIMARY KEY ("id")
           )

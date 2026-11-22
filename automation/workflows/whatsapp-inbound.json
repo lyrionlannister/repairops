@@ -1,0 +1,187 @@
+{
+  "name": "whatsapp-inbound",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "whatsapp-inbound"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? {};\nconst contextId = `${body.tenantId}:${body.from}`;\n\nreturn [{\n  json: {\n    contextId,\n    message: String(body.body ?? '').trim(),\n    msgId: String($execution.id),\n  },\n}];"
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000002",
+      "name": "Preparar Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "=buffer:{{ $json.contextId }}",
+        "messageData": "={{ $json.message }}",
+        "tail": true
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000003",
+      "name": "Acumular Mensaje",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [440, 300],
+      "credentials": { "redis": { "id": "Qq5CwV06ho74EjHQ", "name": "Redis account" } }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=buffer_last:{{ $('Preparar Mensaje').item.json.contextId }}",
+        "value": "={{ $('Preparar Mensaje').item.json.msgId }}",
+        "keyType": "string",
+        "expire": true,
+        "ttl": 60
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000004",
+      "name": "Marcar Ultimo Mensaje",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [660, 300],
+      "credentials": { "redis": { "id": "Qq5CwV06ho74EjHQ", "name": "Redis account" } }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000005",
+      "name": "Esperar 3s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [880, 300],
+      "webhookId": "a1f0c001-0000-4000-8000-0000000000w1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "lastId",
+        "key": "=buffer_last:{{ $('Preparar Mensaje').item.json.contextId }}",
+        "keyType": "string",
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000006",
+      "name": "Leer Ultimo Mensaje",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1100, 300],
+      "credentials": { "redis": { "id": "Qq5CwV06ho74EjHQ", "name": "Redis account" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "id": "a1f0c001-0000-4000-8000-0000000000c1",
+              "leftValue": "={{ String($json.lastId) }}",
+              "rightValue": "={{ $('Preparar Mensaje').item.json.msgId }}",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000007",
+      "name": "Soy El Ultimo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1320, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {} }}",
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000008",
+      "name": "Responder Vacio",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1540, 460]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "buffer",
+        "key": "=buffer:{{ $('Preparar Mensaje').item.json.contextId }}",
+        "keyType": "list",
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000009",
+      "name": "Leer Buffer",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1540, 220],
+      "credentials": { "redis": { "id": "Qq5CwV06ho74EjHQ", "name": "Redis account" } }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=buffer:{{ $('Preparar Mensaje').item.json.contextId }}"
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000010",
+      "name": "Limpiar Buffer",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1760, 220],
+      "credentials": { "redis": { "id": "Qq5CwV06ho74EjHQ", "name": "Redis account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const buffer = $('Leer Buffer').first().json.buffer ?? [];\nconst messages = (Array.isArray(buffer) ? buffer : [buffer]).filter(Boolean);\n\nreturn [{\n  json: {\n    contextId: $('Preparar Mensaje').first().json.contextId,\n    message: messages.join('\\n'),\n    count: messages.length,\n  },\n}];"
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000011",
+      "name": "Consolidar Buffer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { buffered: $json.message, count: $json.count } }}",
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000012",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2200, 220]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Preparar Mensaje", "type": "main", "index": 0 }]] },
+    "Preparar Mensaje": { "main": [[{ "node": "Acumular Mensaje", "type": "main", "index": 0 }]] },
+    "Acumular Mensaje": { "main": [[{ "node": "Marcar Ultimo Mensaje", "type": "main", "index": 0 }]] },
+    "Marcar Ultimo Mensaje": { "main": [[{ "node": "Esperar 3s", "type": "main", "index": 0 }]] },
+    "Esperar 3s": { "main": [[{ "node": "Leer Ultimo Mensaje", "type": "main", "index": 0 }]] },
+    "Leer Ultimo Mensaje": { "main": [[{ "node": "Soy El Ultimo?", "type": "main", "index": 0 }]] },
+    "Soy El Ultimo?": {
+      "main": [
+        [{ "node": "Leer Buffer", "type": "main", "index": 0 }],
+        [{ "node": "Responder Vacio", "type": "main", "index": 0 }]
+      ]
+    },
+    "Leer Buffer": { "main": [[{ "node": "Limpiar Buffer", "type": "main", "index": 0 }]] },
+    "Limpiar Buffer": { "main": [[{ "node": "Consolidar Buffer", "type": "main", "index": 0 }]] },
+    "Consolidar Buffer": { "main": [[{ "node": "Responder", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

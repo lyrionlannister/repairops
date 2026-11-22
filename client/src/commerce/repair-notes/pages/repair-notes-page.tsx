@@ -7,17 +7,16 @@ import { Button } from "@ui/button/button";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
-import { useCurrentUser } from "@common/hooks/use-current-user";
+import { usePermissions } from "@common/hooks/use-permissions";
 import { RepairNotesFilterBar } from "../components/repair-notes-filter-bar";
 import { RepairNotesTable } from "../components/repair-notes-table";
 import { RepairNoteDeliveryModal } from "../components/repair-note-delivery-modal";
 
 export const RepairNotesPage: React.FC = () => {
   const navigate = useNavigate();
-  const currentUser = useCurrentUser();
-  // Un cajero no edita diagnósticos de reparación, ni por pantalla ni por
-  // API (requireRole en repair-note.routes.ts bloquea el lado de API).
-  const canEditNotes = currentUser?.role !== "cashier";
+  const { can, canAny } = usePermissions();
+  const canEditNotes = canAny("repair-notes.write", "repair-notes.write.own");
+  const canCreateNotes = canAny("repair-notes.create", "repair-notes.create.own");
   const { notes, loading, error, fetchNotes, deleteNote, cancelNote, changeStatus } = useRepairNotes();
   const {
     search,
@@ -50,7 +49,7 @@ export const RepairNotesPage: React.FC = () => {
       title="Notas de Reparación"
       description="Gestiona el taller de reparación de celulares."
       action={
-        canEditNotes ? (
+        canCreateNotes ? (
           <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/repair-notes/new")}>
             Nueva nota
           </Button>
@@ -77,6 +76,9 @@ export const RepairNotesPage: React.FC = () => {
         filteredNotes={filteredNotes}
         pageItems={pageItems}
         canEditNotes={canEditNotes}
+        canCreateNotes={canCreateNotes}
+        canCancelNotes={can("repair-notes.write")}
+        canDeleteNotes={can("repair-notes.delete")}
         cancellingId={cancellingId}
         deletingId={deletingId}
         page={page}

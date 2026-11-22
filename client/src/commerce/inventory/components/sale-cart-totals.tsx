@@ -1,15 +1,7 @@
 import type { FC } from "react";
 import { CheckboxField } from "@ui/checkbox/checkbox-field";
 import { formatMoney } from "../utils/format";
-
-interface SaleCartTotalsProps {
-  subtotal: number;
-  taxRate: number;
-  taxAmount: number;
-  total: number;
-  applyTax: boolean;
-  onApplyTaxChange: (value: boolean) => void;
-}
+import type { SaleCartTotalsProps } from "../props/sale-cart-totals-props";
 
 export const SaleCartTotals: FC<SaleCartTotalsProps> = ({
   subtotal,

@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { InputProps } from "../../../types/interfaces/props/input-props";
+import type { InputProps } from "../../../props/input-props";
 
 export const Input: FC<InputProps> = ({
   type = "text",

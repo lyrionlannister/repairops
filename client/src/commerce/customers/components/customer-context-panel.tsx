@@ -1,17 +1,6 @@
 import { Wallet, TrendingUp, Smartphone, ShoppingBag } from "lucide-react";
-
-import type { CustomerDeviceHistoryEntry } from "../hooks/use-customers";
-import type { LayawayRecord } from "../hooks/use-layaways";
 import { formatMoney } from "../utils/format";
-
-interface CustomerContextPanelProps {
-  creditLimit: number;
-  creditBalance: number;
-  creditAvailable: number;
-  creditLoaded: boolean;
-  devices: CustomerDeviceHistoryEntry[];
-  activeLayaways: LayawayRecord[];
-}
+import type { CustomerContextPanelProps } from "../props/customer-context-panel-props";
 
 export const CustomerContextPanel: React.FC<CustomerContextPanelProps> = ({
   creditLimit,

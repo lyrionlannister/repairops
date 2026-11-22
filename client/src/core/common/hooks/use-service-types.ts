@@ -1,10 +1,6 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export interface ServiceTypeOption {
-  id: string;
-  name: string;
-}
+import type { ServiceTypeOption } from "../types/service-types";
 
 // Tipos de servicio: configurables por tenant (regla transversal #1 — se
 // seleccionan por id, nunca texto libre). Sembrados con defaults al crear

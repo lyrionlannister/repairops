@@ -21,6 +21,7 @@ import { BranchAccessService } from "../../../../src/identity/branches/services/
 import { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
 import { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
 import { setupStaff } from "../../../support/staff.js";
+import { makeUserRoleDao } from "../../../support/authz-deps.js";
 
 // Integration test contra Postgres real + el router real -- prueba el
 // criterio de aceptacion de la Fase 1: un tecnico no puede abrir/cerrar
@@ -44,7 +45,7 @@ describe("cash routes: permisos por rol (modulo Caja)", () => {
       new CashSessionDao(AppDataSource.getRepository(CashSession)),
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       localService,
-      new UserDao(AppDataSource.getRepository(User)),
+      new UserDao(AppDataSource.getRepository(User)), makeUserRoleDao(),
     );
     const controller = new CashController(cashService, new BranchAccessService(new BranchDao(AppDataSource.getRepository(Branch))));
 
@@ -57,7 +58,7 @@ describe("cash routes: permisos por rol (modulo Caja)", () => {
     await AppDataSource.destroy();
   });
 
-  it("rejects a technician opening a cash session (403), but allows read", async () => {
+  it("rejects a technician opening or reading cash sessions (403)", async () => {
     const technicianToken = tokenFor("technician");
 
     const openRes = await request(app)
@@ -69,7 +70,7 @@ describe("cash routes: permisos por rol (modulo Caja)", () => {
     const readRes = await request(app)
       .get("/cash/sessions")
       .set("Authorization", `Bearer ${technicianToken}`);
-    expect(readRes.status).toBe(200);
+    expect(readRes.status).toBe(403);
   });
 
   it("allows a cashier to open a session, register a movement, and close it", async () => {

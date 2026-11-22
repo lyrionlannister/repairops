@@ -1,15 +1,7 @@
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-
-import type { BrandPalette } from "../hooks/use-local";
-
-interface BrandColorFieldProps {
-  value: string;
-  palette: BrandPalette | null;
-  disabled: boolean;
-  onChange: (value: string) => void;
-}
+import type { BrandColorFieldProps } from "../props/brand-color-field-props";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 

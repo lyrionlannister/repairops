@@ -1,15 +1,8 @@
 import type { FC } from "react";
 import { CheckCircle2, HandCoins, Receipt, Wrench } from "lucide-react";
-import type { CustomerDebtRow } from "../hooks/use-customer-detail";
 import { formatDay, formatMoney } from "../utils/format";
 import { Button } from "@ui/button/button";
-
-interface CustomerDebtsCardProps {
-  debts: CustomerDebtRow[];
-  balance: number;
-  onRegisterPayment: () => void;
-}
-
+import type { CustomerDebtsCardProps } from "../props/customer-debts-card-props";
 
 // Deudas: cada venta o nota que se dejó (en parte) a crédito. "balance" ya
 // resta los abonos registrados (ver CustomerPaymentsCard, junto a esta).

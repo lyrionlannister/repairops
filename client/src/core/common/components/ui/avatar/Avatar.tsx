@@ -1,4 +1,4 @@
-import type { AvatarProps } from "@/core/common/types/interfaces/props/avatar-props";
+import type { AvatarProps } from "@common/props/avatar-props";
 
 import {
   sizeClasses,

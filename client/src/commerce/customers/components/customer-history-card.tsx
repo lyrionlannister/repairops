@@ -3,20 +3,11 @@ import type { FC, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { Eye } from "lucide-react";
 import {
-  STATUS_CONFIG,
-  type RepairNoteRecord,
+  STATUS_CONFIG
 } from "@commerce/repair-notes/hooks/use-repair-notes";
-import type { Sale } from "@commerce/inventory/hooks/use-sales";
-import type { LayawayRecord } from "../hooks/use-layaways";
 import { STATUS_LABELS, formatDay, formatMoney } from "../utils/format";
-
-type Tab = "notes" | "sales" | "layaways";
-
-interface CustomerHistoryCardProps {
-  notes: RepairNoteRecord[];
-  sales: Sale[];
-  layaways: LayawayRecord[];
-}
+import type { CustomerHistoryCardProps } from "../props/customer-history-card-props";
+import type { Tab } from "../types/customer-history-card";
 
 const MiniTable: FC<{ head: string[]; empty: string; rows: ReactNode[][] }> = ({
   head,

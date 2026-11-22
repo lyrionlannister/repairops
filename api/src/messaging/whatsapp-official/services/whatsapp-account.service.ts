@@ -1,5 +1,6 @@
 import { singleton, inject } from "tsyringe";
 import { WhatsappAccountDao } from "../daos/whatsapp-account.dao.js";
+import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catalog-entry.dao.js";
 import { WhatsappAccount } from "../entities/whatsapp-account.entity.js";
 import { requiredEnv } from "../../../core/config/env.js";
 import { getDisplayPhoneNumber, verifyAccountCredentials } from "../clients/whatsapp-graph.client.js";
@@ -7,7 +8,10 @@ import type { ConnectWhatsappAccountDto } from "../dtos/connect-whatsapp-account
 
 @singleton()
 export class WhatsappAccountService {
-  constructor(private whatsappAccountDao: WhatsappAccountDao) {}
+  constructor(
+    private whatsappAccountDao: WhatsappAccountDao,
+    private whatsappTemplateCatalogEntryDao: WhatsappTemplateCatalogEntryDao,
+  ) {}
 
   // Etapa 2: valida las credenciales contra Meta ANTES de guardar nada -- si
   // Meta las rechaza, la cuenta piloto sigue intacta (ver plan Fase 4,
@@ -15,12 +19,16 @@ export class WhatsappAccountService {
   async connectOwnAccount(dto: ConnectWhatsappAccountDto): Promise<WhatsappAccount> {
     await verifyAccountCredentials(dto.wabaId, dto.phoneNumberId, dto.accessToken);
     const displayPhoneNumber = await getDisplayPhoneNumber(dto.phoneNumberId, dto.accessToken).catch(() => null);
-    return this.whatsappAccountDao.connectOwnAccount({
+    const account = await this.whatsappAccountDao.connectOwnAccount({
       wabaId: dto.wabaId,
       phoneNumberId: dto.phoneNumberId,
       accessToken: dto.accessToken,
       displayPhoneNumber,
     });
+    // Idempotente: reconectar solo agrega las plantillas de sistema que el
+    // taller todavia no tiene, nunca pisa las que ya edito.
+    await this.whatsappTemplateCatalogEntryDao.copySystemToTenant();
+    return account;
   }
 
   // Numero al que escribe el cliente, para el QR de la nota. Se llena de forma

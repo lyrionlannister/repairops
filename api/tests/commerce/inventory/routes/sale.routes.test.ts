@@ -40,6 +40,7 @@ import { BranchAccessService } from "../../../../src/identity/branches/services/
 import { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
 import { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
 import { setupStaff } from "../../../support/staff.js";
+import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
 
 // Integration test contra Postgres real + el router real -- un técnico no
 // opera el POS, igual criterio de módulo que cash.routes.ts.
@@ -64,7 +65,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       cashSessionDao,
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       localService,
-      new UserDao(AppDataSource.getRepository(User)),
+      new UserDao(AppDataSource.getRepository(User)), makeUserRoleDao(),
     );
     inventoryService = new InventoryService(
       new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),
@@ -80,7 +81,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       localService,
       cashSessionDao,
       serviceTypeDao,
-      new CustomerDao(AppDataSource.getRepository(Customer)),
+      new CustomerDao(AppDataSource.getRepository(Customer)), makeDiscountCapService(),
     );
     const controller = new SaleController(saleService, new BranchAccessService(new BranchDao(AppDataSource.getRepository(Branch))));
 
@@ -93,7 +94,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
     await AppDataSource.destroy();
   });
 
-  it("rejects a technician creating a sale (403), but allows read", async () => {
+  it("rejects a technician creating or reading sales (403)", async () => {
     const technicianToken = tokenFor("technician");
 
     const createRes = await request(app)
@@ -103,7 +104,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
     expect(createRes.status).toBe(403);
 
     const readRes = await request(app).get("/sales").set("Authorization", `Bearer ${technicianToken}`);
-    expect(readRes.status).toBe(200);
+    expect(readRes.status).toBe(403);
   });
 
   it("allows a cashier to sell with an open cash session", async () => {

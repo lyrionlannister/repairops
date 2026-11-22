@@ -1,9 +1,4 @@
-interface CheckboxFieldProps {
-  checked: boolean;
-  label: string;
-  onChange: (v: boolean) => void;
-  disabled?: boolean;
-}
+import type { CheckboxFieldProps } from "../../../props/checkbox-field-props";
 
 export const CheckboxField: React.FC<CheckboxFieldProps> = ({ checked, label, onChange, disabled }) => (
   <label className="flex cursor-pointer items-center gap-2">

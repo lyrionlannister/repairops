@@ -1,17 +1,6 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export interface WhatsappAccountStatus {
-  status: "connected" | "disconnected";
-  phoneNumberId: string;
-  ownedByPlatform: boolean;
-}
-
-export interface ConnectWhatsappAccountInput {
-  wabaId: string;
-  phoneNumberId: string;
-  accessToken: string;
-}
+import type { WhatsappAccountStatus, ConnectWhatsappAccountInput } from "../types/whatsapp-account";
 
 export const useWhatsappAccount = () => {
   const { apiClient } = useApiClient();

@@ -1,6 +1,8 @@
 import type { Response } from "express";
 import { QueryFailedError } from "typeorm";
 import { BranchAccessError } from "../tenancy/tenant-context.js";
+import { ForbiddenError } from "../../identity/authz/access.js";
+import { PlanLimitReachedError } from "../../app_platform/billing/errors/plan-limit-reached.error.js";
 
 const GENERIC_MESSAGE = "Ocurrió un error inesperado. Intenta de nuevo.";
 
@@ -20,8 +22,14 @@ const PG_ERROR_MAP: Record<string, { status: number; message: string }> = {
 // constraint, y registra el error real en consola para diagnóstico -- el
 // usuario nunca ve el texto crudo del driver.
 export function sendError(res: Response, error: unknown, fallbackStatus: number, fallbackMessage = GENERIC_MESSAGE): void {
-  if (error instanceof BranchAccessError) {
+  if (error instanceof BranchAccessError || error instanceof ForbiddenError) {
     res.status(403).json({ error: error.message });
+    return;
+  }
+
+  // Código fijo para que el client ofrezca cambiar de plan en vez de un error genérico.
+  if (error instanceof PlanLimitReachedError) {
+    res.status(402).json({ error: error.message, code: error.code, resource: error.resource, limit: error.limit, used: error.used });
     return;
   }
 

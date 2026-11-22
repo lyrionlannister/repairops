@@ -107,6 +107,10 @@ export class AuthController {
     }
   };
 
+  listRoles = (_req: Request, res: Response): void => {
+    res.status(200).json(this.authService.listRoles());
+  };
+
   listEmployees = async (_req: Request, res: Response): Promise<void> => {
     try {
       const employees = await this.authService.listEmployees();

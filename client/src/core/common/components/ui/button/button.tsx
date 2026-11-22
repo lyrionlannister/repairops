@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { ButtonProps } from "@/core/common/types/interfaces/props/button-props";
+import type { ButtonProps } from "@common/props/button-props";
 import {
   sizeClasses,
   variantClasses,

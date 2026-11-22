@@ -69,7 +69,7 @@ export class ReturnService {
   // SPEC-pos-sale-cycle.md) -- Return es siempre una entidad nueva.
   // A diferencia de SaleService.create, no hay regla de negocio por rol aqui
   // (sin tope de descuento que validar) -- el permiso ya lo exige la ruta
-  // (canSell), el Service no necesita el rol de quien llama.
+  // (returns.create), el Service no necesita el rol de quien llama.
   async create(data: CreateReturnPayload): Promise<Return> {
     if (data.items.length === 0) {
       throw new Error("La devolución debe tener al menos un item");

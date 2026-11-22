@@ -21,6 +21,7 @@ export const RepairNoteDetailPage: React.FC = () => {
     itemLines,
     canEdit,
     canCancel,
+    canDelete,
     confirm,
     setConfirm,
     busy,
@@ -59,12 +60,12 @@ export const RepairNoteDetailPage: React.FC = () => {
         itemLines={itemLines}
         actions={
           <>
-            {canEdit && (
+            {canDelete && (
               <Button variant="outline" startIcon={<Trash2 className="size-4" />} onClick={() => setConfirm("delete")}>
                 Eliminar
               </Button>
             )}
-            {canEdit && canCancel && (
+            {canCancel && (
               <Button variant="outline" startIcon={<Ban className="size-4" />} onClick={() => setConfirm("cancel")}>
                 Cancelar nota
               </Button>

@@ -1,24 +1,6 @@
 import { useState } from "react";
 import { useApiClient } from "./use-api-client";
-
-export interface RegisterPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-}
-
-interface RegisterResponse {
-  message: string;
-  user: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-}
+import type { RegisterPayload, RegisterResponse } from "../types/register";
 
 export const useRegister = () => {
   const { apiClient } = useApiClient();

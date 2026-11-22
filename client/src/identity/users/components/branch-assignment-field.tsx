@@ -1,14 +1,4 @@
-import { Label } from "@ui/inputs/label";
-
-import type { BranchRecord } from "@common/contexts/branch-context";
-
-interface BranchAssignmentFieldProps {
-  branches: BranchRecord[];
-  branchIds: string[];
-  primaryBranchId: string;
-  disabled: boolean;
-  onChange: (branchIds: string[], primaryBranchId: string) => void;
-}
+import type { BranchAssignmentFieldProps } from "../props/branch-assignment-field-props";
 
 // Sucursales de un usuario que no es owner: una o varias, y una principal (la sucursal en
 // la que opera, que él no puede cambiar). El owner accede a todas y no usa este campo.
@@ -27,32 +17,38 @@ export const BranchAssignmentField: React.FC<BranchAssignmentFieldProps> = ({
 
   return (
     <div>
-      <Label className="text-gray-500">
-        Sucursales <span className="text-error-500">*</span>
-      </Label>
-      <div className="mt-1 space-y-2 rounded-xl border border-gray-200 p-3 dark:border-gray-700">
+      <div className="space-y-2">
         {branches.map((branch) => {
           const checked = branchIds.includes(branch.id);
           return (
-            <div key={branch.id} className="flex min-h-11 items-center justify-between gap-3">
-              <label className="flex flex-1 items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+            <div
+              key={branch.id}
+              className={`flex min-h-12 flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-2 transition-colors ${
+                checked
+                  ? "border-brand-300 bg-brand-50/50 dark:border-brand-500/40 dark:bg-brand-500/5"
+                  : "border-gray-200 dark:border-gray-800"
+              }`}
+            >
+              <label className="flex flex-1 cursor-pointer items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <input
                   type="checkbox"
-                  className="size-4"
+                  className="size-4 accent-brand-600"
                   checked={checked}
                   disabled={disabled}
                   onChange={() => toggle(branch.id)}
                 />
                 {branch.name}
-                {!branch.isActive && <span className="text-xs text-gray-400">(desactivada)</span>}
+                {!branch.isActive && (
+                  <span className="text-xs font-normal text-gray-400">(desactivada)</span>
+                )}
               </label>
               <label
-                className={`flex items-center gap-2 text-xs ${checked ? "text-gray-600 dark:text-gray-300" : "text-gray-300 dark:text-gray-600"}`}
+                className={`flex min-h-11 items-center gap-2 text-xs ${checked ? "cursor-pointer text-gray-600 dark:text-gray-300" : "text-gray-300 dark:text-gray-600"}`}
               >
                 <input
                   type="radio"
                   name="primaryBranch"
-                  className="size-4"
+                  className="size-4 accent-brand-600"
                   checked={primaryBranchId === branch.id}
                   disabled={disabled || !checked}
                   onChange={() => onChange(branchIds, branch.id)}
@@ -63,8 +59,9 @@ export const BranchAssignmentField: React.FC<BranchAssignmentFieldProps> = ({
           );
         })}
       </div>
-      <p className="mt-1 text-xs text-gray-400">
-        El usuario trabaja en su sucursal principal y no puede cambiarla; solo el dueño cambia de sucursal.
+      <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Trabaja en su sucursal principal y no puede cambiarla; solo el administrador cambia de
+        sucursal.
       </p>
     </div>
   );

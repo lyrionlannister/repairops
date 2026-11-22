@@ -4,7 +4,8 @@ import type { UserRole } from "../../src/identity/auth/entities/user.entity.js";
 
 type Queryable = { query(sql: string, params?: unknown[]): Promise<any> };
 
-// Para pruebas de rutas: crea (bajo un tenant fixture) una sucursal real y un usuario por rol.
+// Para pruebas de rutas: crea (bajo un tenant fixture) una sucursal real y un usuario por rol
+// (cada uno con ese único rol en user_roles).
 // El personal queda asignado a esa sucursal como principal; el owner no necesita asignación.
 // Devuelve la sucursal y un token JWT por rol.
 export async function setupStaff(
@@ -22,10 +23,11 @@ export async function setupStaff(
   const userIds: Record<string, string> = {};
   for (const role of roles) {
     const [{ id }] = await ds.query(
-      `INSERT INTO usuarios (tenant_id, rol, nombre, apellido, email, contrasena)
-       VALUES ($1, $2, 'Test', $2, $3, 'x') RETURNING id::text AS id`,
+      `INSERT INTO usuarios (tenant_id, nombre, apellido, email, contrasena)
+       VALUES ($1, 'Test', $2, $3, 'x') RETURNING id::text AS id`,
       [tenantId, role, `${role}.${tenantId}@test.local`],
     );
+    await ds.query(`INSERT INTO user_roles (tenant_id, user_id, role) VALUES ($1, $2, $3)`, [tenantId, id, role]);
     if (role !== "owner") {
       await ds.query(`INSERT INTO user_branches (tenant_id, user_id, branch_id, is_primary) VALUES ($1, $2, $3, true)`, [
         tenantId,
@@ -34,7 +36,7 @@ export async function setupStaff(
       ]);
     }
     userIds[role] = id;
-    tokens[role] = jwt.sign({ id, email: `${role}@x.com`, tenantId, role }, requireJwtSecret());
+    tokens[role] = jwt.sign({ id, email: `${role}@x.com`, tenantId }, requireJwtSecret());
   }
   return { branchId, tokens, userIds };
 }

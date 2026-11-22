@@ -31,6 +31,7 @@ import { Customer } from "../../../../src/commerce/customers/entities/customer.e
 import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
+import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
 
 describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => {
   let inventoryService: InventoryService;
@@ -52,7 +53,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
       cashSessionDao,
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       localService,
-      new UserDao(AppDataSource.getRepository(User)),
+      new UserDao(AppDataSource.getRepository(User)), makeUserRoleDao(),
     );
     customerDao = new CustomerDao(AppDataSource.getRepository(Customer));
     saleService = new SaleService(
@@ -63,7 +64,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
       localService,
       cashSessionDao,
       new ServiceTypeDao(AppDataSource.getRepository(ServiceType)),
-      customerDao,
+      customerDao, makeDiscountCapService(),
     );
 
     await runWithTenant(tenantId, async () => {
@@ -91,7 +92,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "1", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
-        "owner",
+        ["owner"],
       ),
     );
     expect(Number(sale.totalValue)).toBe(100);
@@ -107,7 +108,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
       runWithTenant(tenantId, () =>
         saleService.create(
           { localId: "2", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
-          "owner",
+          ["owner"],
         ),
       ),
     ).rejects.toThrow("supera el límite disponible");
@@ -125,7 +126,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
       runWithTenant(tenantId, () =>
         saleService.create(
           { localId: "3", cashSessionId: session.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
-          "owner",
+          ["owner"],
         ),
       ),
     ).rejects.toThrow("requiere un cliente");
@@ -140,7 +141,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
     await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "4", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
-        "owner",
+        ["owner"],
       ),
     );
 
@@ -148,7 +149,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
       runWithTenant(tenantId, () =>
         saleService.create(
           { localId: "4", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
-          "owner",
+          ["owner"],
         ),
       ),
     ).rejects.toThrow("supera el límite disponible");

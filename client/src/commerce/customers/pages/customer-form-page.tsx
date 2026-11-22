@@ -3,10 +3,11 @@ import { useNavigate, useParams } from "react-router";
 
 import { PageShell } from "@common/components/page-shell/page-shell";
 
-import { useCustomers, type CustomerFormData } from "../hooks/use-customers";
+import { useCustomers } from "../hooks/use-customers";
 import { useCustomerContext } from "../hooks/use-customer-context";
 import { CustomerContextPanel } from "../components/customer-context-panel";
 import { CustomerForm } from "../components/customer-form";
+import type { CustomerFormData } from "../types/customers";
 
 const emptyForm: CustomerFormData = { name: "", phone: "", email: "", creditLimit: "0" };
 

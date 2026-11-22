@@ -2,7 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import { BranchService } from "../../../../src/identity/branches/services/branch.service.js";
 import type { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
 import type { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
+import type { PlanLimitService } from "../../../../src/app_platform/billing/services/plan-limit.service.js";
 import { mockEntity } from "../../../support/mock-entity.js";
+
+function makePlanLimit() {
+  return {
+    withCapacity: vi.fn((_resource: string, fn: () => Promise<unknown>) => fn()),
+  } as unknown as PlanLimitService;
+}
 
 function makeDao() {
   return {
@@ -17,7 +24,7 @@ function makeDao() {
 describe("BranchService", () => {
   it("create rejects a blank name", async () => {
     const dao = makeDao();
-    const service = new BranchService(dao);
+    const service = new BranchService(dao, makePlanLimit());
 
     await expect(service.create({ name: "  " })).rejects.toThrow("obligatorio");
     expect(dao.create).not.toHaveBeenCalled();
@@ -26,7 +33,7 @@ describe("BranchService", () => {
   it("create trims fields and defaults isActive to true", async () => {
     const dao = makeDao();
     vi.mocked(dao.create).mockResolvedValue(mockEntity<Branch>({ id: "b-1" }));
-    const service = new BranchService(dao);
+    const service = new BranchService(dao, makePlanLimit());
 
     await service.create({ name: " Sucursal Centro ", address: " Calle 1 ", phone: " 555 " });
 
@@ -40,8 +47,9 @@ describe("BranchService", () => {
 
   it("setActive toggles isActive via the dao", async () => {
     const dao = makeDao();
+    vi.mocked(dao.findById).mockResolvedValue(mockEntity<Branch>({ id: "b-1", isActive: true }));
     vi.mocked(dao.update).mockResolvedValue(mockEntity<Branch>({ id: "b-1", isActive: false }));
-    const service = new BranchService(dao);
+    const service = new BranchService(dao, makePlanLimit());
 
     const result = await service.setActive("b-1", false);
 
@@ -49,10 +57,25 @@ describe("BranchService", () => {
     expect(result?.isActive).toBe(false);
   });
 
+  it("reactivar una sucursal pasa por el límite del plan; desactivarla no", async () => {
+    const dao = makeDao();
+    const planLimit = makePlanLimit();
+    vi.mocked(dao.findById).mockResolvedValue(mockEntity<Branch>({ id: "b-1", isActive: false }));
+    vi.mocked(dao.update).mockResolvedValue(mockEntity<Branch>({ id: "b-1", isActive: true }));
+    const service = new BranchService(dao, planLimit);
+
+    await service.setActive("b-1", true);
+    expect(planLimit.withCapacity).toHaveBeenCalledWith("branches", expect.any(Function));
+
+    vi.mocked(planLimit.withCapacity).mockClear();
+    await service.setActive("b-1", false);
+    expect(planLimit.withCapacity).not.toHaveBeenCalled();
+  });
+
   it("seed only creates 'Sucursal principal' when the tenant has no branches yet", async () => {
     const dao = makeDao();
     vi.mocked(dao.count).mockResolvedValue(0);
-    const service = new BranchService(dao);
+    const service = new BranchService(dao, makePlanLimit());
 
     await service.seed({ name: "Mi Taller", address: "Av. Siempre Viva", phone: "123" });
 
@@ -67,7 +90,7 @@ describe("BranchService", () => {
   it("seed is a no-op when the tenant already has branches", async () => {
     const dao = makeDao();
     vi.mocked(dao.count).mockResolvedValue(2);
-    const service = new BranchService(dao);
+    const service = new BranchService(dao, makePlanLimit());
 
     await service.seed({ name: "Mi Taller" });
 

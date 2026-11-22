@@ -1,53 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
-
-export type QuoteStatus = "pending" | "accepted" | "rejected";
-export type QuoteKind = "product" | "repair";
-
-export interface QuoteRecord {
-  id: string;
-  localId: string;
-  kind: QuoteKind;
-  customerId: string | null;
-  customerName: string;
-  contactNumber: string | null;
-  brand: string | null;
-  model: string | null;
-  reportedFailure: string | null;
-  repairNoteId: string | null;
-  totalValue: number;
-  validUntil: string | null;
-  status: QuoteStatus;
-  createdByEmployeeId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface QuoteItemInput {
-  inventoryItemId?: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-export interface QuoteItemRecord extends QuoteItemInput {
-  id: string;
-}
-
-export interface QuoteFormData {
-  localId: string;
-  kind: QuoteKind;
-  customerId: string;
-  customerName: string;
-  contactNumber: string;
-  brand: string;
-  model: string;
-  reportedFailure: string;
-  serviceTypeIds: string[];
-  validUntil: string;
-  createdByEmployeeId: string;
-}
+import type { QuoteRecord, QuoteItemInput, QuoteItemRecord, QuoteFormData, QuoteStatus } from "../types/quotes";
 
 const toPayload = (form: QuoteFormData) => ({
   localId: form.localId,

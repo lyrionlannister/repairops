@@ -13,6 +13,9 @@ vi.mock("../../../src/core/config/data-source.js", () => ({
 }));
 
 // Imported after the mock so SettingsService picks up the mocked AppDataSource.
+// vmThreads no aísla el grafo de módulos entre archivos: sin resetModules, si otro
+// test ya cargó settings.service con el AppDataSource real, el mock no se aplica.
+vi.resetModules();
 const { SettingsService } = await import("../../../src/identity/settings/settings.service.js");
 const { runWithTenant } = await import("../../../src/core/tenancy/tenant-context.js");
 

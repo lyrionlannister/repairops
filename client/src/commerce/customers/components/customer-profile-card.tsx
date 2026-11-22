@@ -3,20 +3,7 @@ import { Mail, Pencil, Phone } from "lucide-react";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-import type { Customer } from "../hooks/use-customers";
-import type { ProfileDraft } from "../hooks/use-customer-detail";
-
-interface CustomerProfileCardProps {
-  customer: Customer;
-  editing: boolean;
-  draft: ProfileDraft;
-  saving: boolean;
-  error: string | null;
-  onDraftChange: (draft: ProfileDraft) => void;
-  onStart: () => void;
-  onCancel: () => void;
-  onSave: () => void;
-}
+import type { CustomerProfileCardProps } from "../props/customer-profile-card-props";
 
 export const CustomerProfileCard: FC<CustomerProfileCardProps> = ({
   customer,

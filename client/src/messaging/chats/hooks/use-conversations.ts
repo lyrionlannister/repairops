@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
-
-export interface Conversation {
-  sessionId: string;
-  phone: string;
-  contactName?: string;
-  lastId: number;
-  messageCount: number;
-  lastContent: string;
-  lastType: string;
-}
+import type { Conversation } from "../types/conversations";
 
 export function useConversations() {
   const { apiClient } = useApiClient();

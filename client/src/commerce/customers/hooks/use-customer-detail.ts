@@ -7,27 +7,9 @@ import { useRepairNotes } from "@commerce/repair-notes/hooks/use-repair-notes";
 import { useSales } from "@commerce/inventory/hooks/use-sales";
 import { useCustomers } from "./use-customers";
 import { useLayaways } from "./use-layaways";
-import { useCustomerPayments, type CustomerPaymentMethod } from "./use-customer-payments";
-
-export interface CustomerDebtRow {
-  kind: "sale" | "repair_note";
-  reference: number;
-  date: string;
-  amount: string;
-}
-
-interface CustomerDebts {
-  creditLimit: number;
-  balance: number;
-  available: number;
-  items: CustomerDebtRow[];
-}
-
-export interface ProfileDraft {
-  name: string;
-  phone: string;
-  email: string;
-}
+import { useCustomerPayments } from "./use-customer-payments";
+import type { CustomerPaymentMethod } from "../types/customer-payments";
+import type { CustomerDebts, ProfileDraft } from "../types/customer-detail";
 
 export const useCustomerDetail = () => {
   const { id } = useParams<{ id: string }>();

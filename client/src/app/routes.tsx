@@ -6,6 +6,8 @@ import { HomePage } from "../home/pages/home-page";
 import { UsersPage } from "../identity/users/pages/users-page";
 import { UserFormPage } from "../identity/users/pages/user-form-page";
 import { LocalPage } from "../app_platform/local/pages/local-page";
+import { TenantsPage } from "../app_platform/billing/pages/tenants-page";
+import { TenantSubscriptionPage } from "../app_platform/billing/pages/tenant-subscription-page";
 import { ProfilePage } from "../identity/auth/pages/profile-page";
 import { RepairNotesPage } from "../commerce/repair-notes/pages/repair-notes-page";
 import { RepairNoteFormPage } from "../commerce/repair-notes/pages/repair-note-form-page";
@@ -30,6 +32,7 @@ import { QuotesPage } from "../commerce/quotes/pages/quotes-page";
 import { QuoteFormPage } from "../commerce/quotes/pages/quote-form-page";
 import { QuotePrintPage } from "../commerce/quotes/pages/quote-print-page";
 import { CashPage } from "../commerce/cash/pages/cash-page";
+import { CashCutPrintPage } from "../commerce/cash/pages/cash-cut-print-page";
 import { SuppliersPage } from "../commerce/suppliers/pages/suppliers-page";
 import { SupplierFormPage } from "../commerce/suppliers/pages/supplier-form-page";
 import { BranchesPage } from "../identity/branches/pages/branches-page";
@@ -78,6 +81,14 @@ export const protectedRoutes = [
   {
     path: "/platform/local",
     element: <LocalPage />,
+  },
+  {
+    path: "/platform/tenants",
+    element: <TenantsPage />,
+  },
+  {
+    path: "/platform/tenants/:tenantId/edit",
+    element: <TenantSubscriptionPage />,
   },
   {
     path: "/identity/profile",
@@ -234,6 +245,10 @@ export const protectedRoutes = [
   {
     path: "/commerce/cash",
     element: <CashPage />,
+  },
+  {
+    path: "/commerce/cash/cuts/:id/print",
+    element: <CashCutPrintPage />,
   },
   {
     path: "/reporting/reports",

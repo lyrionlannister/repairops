@@ -54,4 +54,7 @@ export class CashSession extends BaseEntity {
 
   @Column({ type: "timestamp", nullable: true, name: "fecha_cierre" })
   closedAt?: Date | null;
+
+  @Column({ type: "bigint", nullable: true, name: "id_empleado_cierre" })
+  closedByEmployeeId?: string | null;
 }

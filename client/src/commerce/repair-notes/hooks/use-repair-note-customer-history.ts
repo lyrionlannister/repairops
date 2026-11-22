@@ -1,15 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useRepairNotes } from "./use-repair-notes";
-import type { RepairNoteStatus } from "./use-repair-notes";
-
-export type RepairNoteHistoryEntry = {
-  id: string;
-  brand: string;
-  model: string;
-  status: RepairNoteStatus;
-  totalValue: number;
-  receivedAt: string;
-};
+import type { RepairNoteStatus } from "../types/repair-notes";
+import type { RepairNoteHistoryEntry } from "../types/repair-note-customer-history";
 
 /**
  * Otras notas de reparación del mismo cliente, para pintar el panel de

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { RepairNoteRecord } from "./use-repair-notes";
+import type { RepairNoteRecord } from "../types/repair-notes";
 
 // Marcas ya usadas en otras notas -- sugerencia, nunca restringe a una
 // marca nueva que el cliente trae por primera vez.

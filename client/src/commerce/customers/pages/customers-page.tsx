@@ -6,6 +6,7 @@ import { Input } from "@ui/inputs/input";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
+import { usePermissions } from "@common/hooks/use-permissions";
 
 import { useCustomers } from "../hooks/use-customers";
 import { useCustomersPage } from "../hooks/use-customers-page";
@@ -14,6 +15,7 @@ import { CustomerDeviceHistoryModal } from "../components/customer-device-histor
 
 export const CustomersPage = () => {
   const navigate = useNavigate();
+  const { can } = usePermissions();
   const { customers, devices, loading, saving, fetchAll, fetchDevices, remove } = useCustomers();
 
   const {
@@ -36,10 +38,12 @@ export const CustomersPage = () => {
       title="Clientes"
       description="Gestiona el catálogo de clientes y su historial de equipos."
       action={
-        <Button variant="primary" onClick={() => navigate("/commerce/customers/new")}>
-          <Plus className="mr-1.5 size-4" />
-          Nuevo cliente
-        </Button>
+        can("customers.write") && (
+          <Button variant="primary" onClick={() => navigate("/commerce/customers/new")}>
+            <Plus className="mr-1.5 size-4" />
+            Nuevo cliente
+          </Button>
+        )
       }
     >
 
@@ -60,6 +64,8 @@ export const CustomersPage = () => {
       </div>
 
       <CustomersTable
+        canEdit={can("customers.write")}
+        canDelete={can("customers.delete")}
         loading={loading}
         pageItems={pageItems}
         page={page}

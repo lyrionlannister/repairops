@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import { currentUserId, lacks } from "../../../identity/authz/access.js";
 import type { EntityManager, FindOptionsWhere } from "typeorm";
 import { RepairNoteDao } from "../daos/repair-note.dao.js";
 import { RepairNoteItemDao } from "../daos/repair-note-item.dao.js";
@@ -103,11 +104,15 @@ export class RepairNoteService {
     return this.repairNoteDao.findByControlNumber(controlNumber);
   }
 
+  // Las sub-lecturas pasan por findById: una nota que el usuario no ve (otro taller,
+  // otra sucursal o, para el técnico, ajena) no deja ver sus items, tipos ni pagos.
   async getItems(repairNoteId: string): Promise<RepairNoteItem[]> {
+    if (!(await this.repairNoteDao.findById(repairNoteId))) return [];
     return this.repairNoteItemDao.findByRepairNoteId(repairNoteId);
   }
 
   async getServiceTypeIds(repairNoteId: string): Promise<string[]> {
+    if (!(await this.repairNoteDao.findById(repairNoteId))) return [];
     const links = await this.repairNoteServiceTypeDao.findByRepairNoteId(repairNoteId);
     return links.map((l) => l.serviceTypeId);
   }
@@ -132,6 +137,8 @@ export class RepairNoteService {
     advancePayment?: AdvancePaymentInput,
   ): Promise<RepairNote> {
     if (!data.localId) throw new Error("La sucursal (localId) es obligatoria");
+    // repair-notes.create.own: la nota queda asignada a quien la crea, mande lo que mande.
+    if (lacks("repair-notes.create")) data = { ...data, assignedEmployeeId: currentUserId() };
     const tenantId = getCurrentTenantId();
     await this.assertCanCollectAdvance(data, advancePayment, tenantId);
     const controlNumber = await this.localService.consumeControlNumber();
@@ -288,6 +295,8 @@ export class RepairNoteService {
   // entregar una nota "Lista"; entregar por PATCH de estado está bloqueado.
   async deliver(id: string, input: DeliverInput): Promise<RepairNote> {
     const tenantId = getCurrentTenantId();
+    if (!(await this.repairNoteDao.findById(id))) throw new Error("Nota no encontrada");
+    if (lacks("repair-notes.deliver")) input = { ...input, createdByEmployeeId: currentUserId() };
     const local = await this.localService.getConfig();
     const today = new Date().toLocaleDateString("en-CA", { timeZone: local.timeZone });
     const payments = input.payments ?? [];
@@ -372,6 +381,7 @@ export class RepairNoteService {
   }
 
   async getPayments(repairNoteId: string): Promise<RepairNotePayment[]> {
+    if (!(await this.repairNoteDao.findById(repairNoteId))) return [];
     return this.repairNotePaymentDao.findByRepairNoteId(repairNoteId);
   }
 
@@ -400,6 +410,13 @@ export class RepairNoteService {
   ): Promise<RepairNote | null> {
     if ("localId" in data && !data.localId) throw new Error("La sucursal (localId) es obligatoria");
     const tenantId = getCurrentTenantId();
+    // Las escrituras de abajo van directo al manager: este findById es el que aplica
+    // sucursal y, para el técnico, que la nota sea suya.
+    if (!(await this.repairNoteDao.findById(id))) return null;
+    if (lacks("repair-notes.write")) {
+      const { assignedEmployeeId: _ignored, ...rest } = data as UpdatePayload & { assignedEmployeeId?: unknown };
+      data = rest as UpdatePayload;
+    }
 
     if ("advanceValue" in data || "requiresAdvance" in data) {
       await this.assertAdvanceUnchanged(id, data, tenantId);
@@ -539,6 +556,7 @@ export class RepairNoteService {
   // (si ya estaba "done") -- nunca se borra la nota.
   async cancel(id: string): Promise<RepairNote> {
     const tenantId = getCurrentTenantId();
+    if (!(await this.repairNoteDao.findById(id))) throw new Error("Nota no encontrada");
     return AppDataSource.transaction(async (manager) => {
       const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
       if (!note) throw new Error("Nota no encontrada");

@@ -3,8 +3,9 @@ import { useNavigate, useParams } from "react-router";
 
 import { PageShell } from "@common/components/page-shell/page-shell";
 
-import { useMessageTemplates, type MessageTemplateFormData } from "../hooks/use-message-templates";
+import { useMessageTemplates } from "../hooks/use-message-templates";
 import { MessageTemplateForm } from "../components/message-template-form";
+import type { MessageTemplateFormData } from "../types/message-templates";
 
 const emptyForm: MessageTemplateFormData = { key: "", text: "", description: "" };
 

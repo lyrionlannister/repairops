@@ -1,24 +1,9 @@
 import type { FC } from "react";
-import type { QuoteKind } from "../hooks/use-quotes";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { TextArea } from "@ui/textarea/textarea";
 import { ServiceTypeMultiSelect } from "@common/components/service-type-multi-select";
-
-interface QuoteKindDeviceSectionProps {
-  kind: QuoteKind;
-  brand: string;
-  model: string;
-  reportedFailure: string;
-  serviceTypeIds: string[];
-  saving: boolean;
-  disabled?: boolean;
-  onKindChange: (kind: QuoteKind) => void;
-  onBrandChange: (value: string) => void;
-  onModelChange: (value: string) => void;
-  onReportedFailureChange: (value: string) => void;
-  onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
-}
+import type { QuoteKindDeviceSectionProps } from "../props/quote-kind-device-section-props";
 
 export const QuoteKindDeviceSection: FC<QuoteKindDeviceSectionProps> = ({
   kind,

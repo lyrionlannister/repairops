@@ -51,18 +51,6 @@ export class Local extends BaseEntity {
   @Column({ type: "decimal", precision: 5, scale: 2, default: 16, name: "tasa_impuesto" })
   taxRatePercent!: number;
 
-  // Tope de descuento por rol en el POS, ej. {"cashier": 10} = un cajero no
-  // puede aplicar mas de 10% por renglon. Un rol ausente del mapa no tiene
-  // tope (lo valida SaleService antes de cobrar, API y pantalla).
-  // Default a nivel de columna deliberadamente vacio: el valor real por
-  // rol ({"cashier": 10}) se siembra en el INSERT de LocalDao.findOrCreate,
-  // no aqui. Sin "::jsonb": PostgresQueryRunner.loadTables le quita el cast
-  // al leer column_default de vuelta (PostgresDriver.js:2079), así que un
-  // default de función que SÍ incluya el cast nunca compara igual -- queda
-  // en falso drift para siempre en schema:check.
-  @Column({ type: "jsonb", default: () => `'{}'`, name: "tope_descuento_por_rol" })
-  maxDiscountPercentByRole!: Record<string, number>;
-
   // 0 = sin redondeo. Solo se aplica a movimientos de caja en efectivo
   // (CashService.registerMovement) -- tarjeta/transferencia nunca redondean.
   @Column({ type: "decimal", precision: 4, scale: 2, default: 0, name: "unidad_redondeo_caja" })

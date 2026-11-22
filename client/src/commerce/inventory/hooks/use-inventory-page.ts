@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-
-import type { InventoryItem } from "./use-inventory";
-
-export type InventoryMovementForm = {
-  type: "in" | "out" | "adjustment";
-  quantity: string;
-  reason: string;
-  createdByEmployeeId: string;
-};
+import type { InventoryItem } from "../types/inventory";
+import type { InventoryMovementForm } from "../types/inventory-page";
 
 export const emptyMovementForm: InventoryMovementForm = {
   type: "in",

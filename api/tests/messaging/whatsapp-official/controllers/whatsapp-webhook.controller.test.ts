@@ -1,10 +1,8 @@
-import { createHmac } from "node:crypto";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { Request, Response } from "express";
 import { WhatsappWebhookController } from "../../../../src/messaging/whatsapp-official/controllers/whatsapp-webhook.controller.js";
-import type { WhatsappWebhookService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-webhook.service.js";
+import type { WhatsappInboundQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-inbound-queue.service.js";
 
-const appSecret = "test-app-secret";
 const verifyToken = "test-verify-token";
 
 function makeRes() {
@@ -13,77 +11,34 @@ function makeRes() {
   return res;
 }
 
-function makeReq(body: unknown, signatureHeader?: string): Request {
-  const rawBody = Buffer.from(JSON.stringify(body));
-  return {
-    body,
-    rawBody,
-    header: vi.fn().mockReturnValue(signatureHeader),
-    query: {},
-  } as unknown as Request;
-}
-
-function signatureFor(body: unknown): string {
-  const raw = JSON.stringify(body);
-  return `sha256=${createHmac("sha256", appSecret).update(raw).digest("hex")}`;
+function makeQueue(enqueuePayload = vi.fn().mockResolvedValue(undefined)) {
+  return { enqueuePayload } as unknown as WhatsappInboundQueueService;
 }
 
 describe("WhatsappWebhookController.receive", () => {
-  const originalAppSecret = process.env.WHATSAPP_APP_SECRET;
-  const originalVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
-
-  beforeEach(() => {
-    process.env.WHATSAPP_APP_SECRET = appSecret;
-    process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = verifyToken;
-  });
-
-  afterEach(() => {
-    process.env.WHATSAPP_APP_SECRET = originalAppSecret;
-    process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = originalVerifyToken;
-  });
-
-  it("rejects an invalid signature with 401 without touching the service", async () => {
-    const service = { handleIncomingMessage: vi.fn() } as unknown as WhatsappWebhookService;
-    const controller = new WhatsappWebhookController(service);
-    const req = makeReq({ entry: [] }, "sha256=invalido");
+  it("encola el payload y responde 200", async () => {
+    const queue = makeQueue();
+    const controller = new WhatsappWebhookController(queue);
+    const body = { entry: [] };
     const res = makeRes();
 
-    await controller.receive(req, res);
+    await controller.receive({ body } as Request, res);
 
-    expect(res.sendStatus).toHaveBeenCalledWith(401);
-    expect(service.handleIncomingMessage).not.toHaveBeenCalled();
-  });
-
-  it("processes an incoming text message and acks 200 with a valid signature", async () => {
-    const service = { handleIncomingMessage: vi.fn().mockResolvedValue(undefined) } as unknown as WhatsappWebhookService;
-    const controller = new WhatsappWebhookController(service);
-    const payload = {
-      entry: [
-        {
-          changes: [
-            {
-              value: {
-                metadata: { phone_number_id: "phone-1" },
-                contacts: [{ wa_id: "5215500000000", profile: { name: "Ana" } }],
-                messages: [{ from: "5215500000000", type: "text", text: { body: "hola" } }],
-              },
-            },
-          ],
-        },
-      ],
-    };
-    const req = makeReq(payload, signatureFor(payload));
-    const res = makeRes();
-
-    await controller.receive(req, res);
-
-    expect(service.handleIncomingMessage).toHaveBeenCalledWith(expect.objectContaining({
-      phoneNumberId: "phone-1",
-      from: "5215500000000",
-      body: "hola",
-      contactName: "Ana",
-    }));
+    expect(queue.enqueuePayload).toHaveBeenCalledWith(body);
     expect(res.sendStatus).toHaveBeenCalledWith(200);
+  });
+
+  it("si no se pudo encolar responde 500 para que Meta reintente", async () => {
+    const queue = makeQueue(vi.fn().mockRejectedValue(new Error("redis caido")));
+    const controller = new WhatsappWebhookController(queue);
+    const res = makeRes();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await controller.receive({ body: {} } as Request, res);
+
+    expect(res.sendStatus).toHaveBeenCalledTimes(1);
+    expect(res.sendStatus).toHaveBeenCalledWith(500);
+    errorSpy.mockRestore();
   });
 });
 
@@ -99,8 +54,7 @@ describe("WhatsappWebhookController.verify", () => {
   });
 
   it("echoes the challenge when mode and token match", () => {
-    const service = {} as unknown as WhatsappWebhookService;
-    const controller = new WhatsappWebhookController(service);
+    const controller = new WhatsappWebhookController(makeQueue());
     const req = {
       query: { "hub.mode": "subscribe", "hub.verify_token": verifyToken, "hub.challenge": "123" },
     } as unknown as Request;
@@ -113,10 +67,21 @@ describe("WhatsappWebhookController.verify", () => {
   });
 
   it("rejects a wrong verify token with 403", () => {
-    const service = {} as unknown as WhatsappWebhookService;
-    const controller = new WhatsappWebhookController(service);
+    const controller = new WhatsappWebhookController(makeQueue());
     const req = {
       query: { "hub.mode": "subscribe", "hub.verify_token": "incorrecto", "hub.challenge": "123" },
+    } as unknown as Request;
+    const res = makeRes();
+
+    controller.verify(req, res);
+
+    expect(res.sendStatus).toHaveBeenCalledWith(403);
+  });
+
+  it("rejects a verify token sent as an array with 403", () => {
+    const controller = new WhatsappWebhookController(makeQueue());
+    const req = {
+      query: { "hub.mode": "subscribe", "hub.verify_token": [verifyToken], "hub.challenge": "123" },
     } as unknown as Request;
     const res = makeRes();
 

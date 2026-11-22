@@ -1,14 +1,16 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
+import { formToPayload } from "../utils/user-to-form";
 
-export type UserRole = "owner" | "employee" | "technician" | "cashier";
-export type PayCycle = "weekly" | "biweekly" | "monthly";
+import type { UserRole } from "@common/types/auth/permission";
+import type { UserFormData, UserRecord, CreateUserPayload, UpdateUserPayload, PayCycle } from "../types/users";
 
+export type { UserRole };
 export const ROLE_LABELS: Record<UserRole, string> = {
-  owner: "Dueño",
-  employee: "Empleado",
-  technician: "Técnico",
+  owner: "Administrador",
   cashier: "Cajero",
+  technician: "Técnico",
+  employee: "Recepción",
 };
 
 export const PAY_CYCLE_LABELS: Record<PayCycle, string> = {
@@ -16,73 +18,7 @@ export const PAY_CYCLE_LABELS: Record<PayCycle, string> = {
   biweekly: "Quincenal",
   monthly: "Mensual",
 };
-
-export interface UserFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: UserRole;
-  salaryAmount: string;
-  payCycle: PayCycle | "";
-  branchIds: string[];
-  primaryBranchId: string;
-}
-
-export interface UserRecord {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: UserRole;
-  salaryAmount: number | null;
-  payCycle: PayCycle | null;
-  // Sucursales del usuario (vacío para el owner, que accede a todas).
-  branchIds: string[];
-  primaryBranchId: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CreateUserPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: UserRole;
-  salaryAmount?: number;
-  payCycle?: PayCycle;
-  branchIds?: string[];
-  primaryBranchId?: string;
-}
-
 // password es opcional: si se omite, el backend debe conservar la contraseña actual.
-interface UpdateUserPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password?: string;
-  role: UserRole;
-  salaryAmount?: number;
-  payCycle?: PayCycle;
-  branchIds?: string[];
-  primaryBranchId?: string;
-}
-
-// El owner accede a todas las sucursales: nunca se le asignan branchIds/primaryBranchId.
-const toPayload = (form: UserFormData) => ({
-  firstName: form.firstName,
-  lastName: form.lastName,
-  email: form.email,
-  role: form.role,
-  salaryAmount: form.salaryAmount ? Number(form.salaryAmount) : undefined,
-  payCycle: form.payCycle || undefined,
-  ...(form.role === "owner"
-    ? {}
-    : { branchIds: form.branchIds, primaryBranchId: form.primaryBranchId || undefined }),
-});
-
 export const useUsers = () => {
   const { apiClient } = useApiClient();
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -122,7 +58,7 @@ export const useUsers = () => {
       setCreateError(null);
       setCreateSuccess(false);
       try {
-        const payload: CreateUserPayload = { ...toPayload(form), password: form.password };
+        const payload: CreateUserPayload = { ...formToPayload(form), password: form.password };
         const response = await apiClient("/auth/employees", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -152,7 +88,7 @@ export const useUsers = () => {
       try {
         // password vacío en edición = no cambiar la contraseña actual.
         const payload: UpdateUserPayload = {
-          ...toPayload(form),
+          ...formToPayload(form),
           ...(form.password ? { password: form.password } : {}),
         };
         const response = await apiClient(`/auth/users/${id}`, {
@@ -191,6 +127,8 @@ export const useUsers = () => {
         setUsers((prev) =>
           prev.map((u) => (u.id === id ? { ...u, isActive: updated.isActive } : u)),
         );
+      } catch {
+        // El toast de useApiClient ya mostró el motivo (402 por el plan, o último dueño activo).
       } finally {
         setTogglingId(null);
       }

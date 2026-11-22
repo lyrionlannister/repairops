@@ -12,9 +12,9 @@ export type ChatAutomationResponse = {
   transferToHuman?: boolean;
 };
 
-// Contrato HTTP hacia n8n, independiente del transporte. Hoy nada lo llama:
-// el webhook solo atiende por ref de nota (ver WhatsappWebhookService); queda
-// para cuando el flujo de n8n se retome.
+// Contrato HTTP hacia n8n (workflow automation/workflows/whatsapp-inbound.json),
+// independiente del transporte. Una respuesta sin reply significa "no contestar":
+// es lo que devuelve n8n a los mensajes que absorbio en el buffer.
 @singleton()
 export class ChatAutomationService {
   async send(message: IncomingChatMessage): Promise<ChatAutomationResponse | null> {

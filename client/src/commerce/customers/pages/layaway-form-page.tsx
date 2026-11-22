@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { useLayaways, type LayawayMethod } from "../hooks/use-layaways";
+import { useLayaways } from "../hooks/use-layaways";
 import { useCustomers } from "../hooks/use-customers";
 import { useCustomerContext } from "../hooks/use-customer-context";
 import { useLayawayItemLines } from "../hooks/use-layaway-item-lines";
@@ -11,6 +11,7 @@ import { useBranch } from "@common/hooks/use-branch";
 import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { LayawayForm } from "../components/layaway-form";
+import type { LayawayMethod } from "../types/layaways";
 
 export const LayawayFormPage: React.FC = () => {
   const navigate = useNavigate();

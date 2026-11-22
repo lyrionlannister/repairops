@@ -27,6 +27,7 @@ import { LayawayDao } from "../../../../src/commerce/customers/daos/layaway.dao.
 import { LayawayItemDao } from "../../../../src/commerce/customers/daos/layaway-item.dao.js";
 import { LayawayService } from "../../../../src/commerce/customers/services/layaway.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
+import { makeUserRoleDao } from "../../../support/authz-deps.js";
 
 describe("LayawayService", () => {
   let inventoryService: InventoryService;
@@ -46,7 +47,7 @@ describe("LayawayService", () => {
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
     cashMovementDao = new CashMovementDao(AppDataSource.getRepository(CashMovement));
-    const cashService = new CashService(cashSessionDao, cashMovementDao, localService, new UserDao(AppDataSource.getRepository(User)));
+    const cashService = new CashService(cashSessionDao, cashMovementDao, localService, new UserDao(AppDataSource.getRepository(User)), makeUserRoleDao());
     customerDao = new CustomerDao(AppDataSource.getRepository(Customer));
     layawayService = new LayawayService(
       new LayawayDao(AppDataSource.getRepository(Layaway)),

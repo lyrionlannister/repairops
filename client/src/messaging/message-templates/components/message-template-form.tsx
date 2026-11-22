@@ -4,18 +4,7 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { TextArea } from "@ui/textarea/textarea";
-
-import type { MessageTemplateFormData } from "../hooks/use-message-templates";
-
-interface MessageTemplateFormProps {
-  form: MessageTemplateFormData;
-  loading: boolean;
-  saving: boolean;
-  isEdit: boolean;
-  onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
+import type { MessageTemplateFormProps } from "../props/message-template-form-props";
 
 export const MessageTemplateForm: FC<MessageTemplateFormProps> = ({
   form,

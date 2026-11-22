@@ -5,18 +5,7 @@ import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Modal } from "@ui/modal/modal";
 
-import type { EMPTY_CONNECT_FORM } from "../utils/format";
-
-type ConnectAccountForm = typeof EMPTY_CONNECT_FORM;
-
-interface ConnectAccountModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  form: ConnectAccountForm;
-  onFormChange: (form: ConnectAccountForm) => void;
-  connecting: boolean;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-}
+import type { ConnectAccountModalProps } from "../props/connect-account-modal-props";
 
 export const ConnectAccountModal: FC<ConnectAccountModalProps> = ({
   isOpen,

@@ -36,8 +36,8 @@ export class LocalDao extends TenantScopedDao<Local> {
     // SELECT-then-INSERT que tenia antes sí corria esa carrera.
     const tenantId = this.currentTenantId();
     const rows = await this.runQuery<Partial<Local>>(
-      `INSERT INTO local_config ("tenant_id", "siguiente_numero_control", "tope_descuento_por_rol")
-       VALUES ($1, 1, '{"cashier": 10}'::jsonb)
+      `INSERT INTO local_config ("tenant_id", "siguiente_numero_control")
+       VALUES ($1, 1)
        ON CONFLICT ("tenant_id") DO UPDATE SET "tenant_id" = EXCLUDED."tenant_id"
        RETURNING
          "id" AS id,
@@ -58,7 +58,6 @@ export class LocalDao extends TenantScopedDao<Local> {
          "color_marca" AS "brandColor",
          "zona_horaria" AS "timeZone",
          "tasa_impuesto" AS "taxRatePercent",
-         "tope_descuento_por_rol" AS "maxDiscountPercentByRole",
          "fecha_creacion" AS "createdAt",
          "fecha_actualizacion" AS "updatedAt"`,
       [tenantId],

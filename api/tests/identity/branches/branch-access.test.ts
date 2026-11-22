@@ -24,6 +24,7 @@ describe("acceso por sucursal", () => {
   let branchB = "";
   let foreignBranch = "";
   let cashierA = "";
+  let ownerA = "";
   let ownerScope: BranchScope | null = null;
   let scopeA: BranchScope;
   let dao: RepairNoteDao;
@@ -37,6 +38,7 @@ describe("acceso por sucursal", () => {
     const first = await setupStaff(AppDataSource, tenantId, ["owner", "cashier"]);
     branchA = first.branchId;
     cashierA = first.userIds["cashier"] as string;
+    ownerA = first.userIds["owner"] as string;
     tokens = first.tokens;
     [{ id: branchB }] = await AppDataSource.query(`INSERT INTO branches (tenant_id, nombre) VALUES ($1, 'B') RETURNING id::text AS id`, [tenantId]);
     foreignBranch = (await setupStaff(AppDataSource, otherTenantId, ["owner"])).branchId;
@@ -163,12 +165,12 @@ describe("acceso por sucursal", () => {
       const next = vi.fn(() => {
         captured = getBranchScope();
       });
-      await tenantMiddleware({ user: { id, email: "x", tenantId, role } } as never, {} as never, next);
+      await tenantMiddleware({ user: { id, email: "x", tenantId } } as never, {} as never, next);
       return { captured, next };
     }
 
     it("el owner no lleva alcance; el personal lleva sus sucursales activas", async () => {
-      expect((await scopeFor("owner", "1")).captured).toBeNull();
+      expect((await scopeFor("owner", ownerA)).captured).toBeNull();
       expect((await scopeFor("cashier", cashierA)).captured).toEqual({ readIds: [branchA], writeIds: [branchA], primaryId: branchA });
     });
 
@@ -176,6 +178,46 @@ describe("acceso por sucursal", () => {
       await AppDataSource.query(`UPDATE branches SET activa = false WHERE id = $1`, [branchA]);
       expect((await scopeFor("cashier", cashierA)).captured).toEqual({ readIds: [], writeIds: [], primaryId: null });
       await AppDataSource.query(`UPDATE branches SET activa = true WHERE id = $1`, [branchA]);
+    });
+
+    function fakeRes() {
+      const res = { statusCode: 0, status: vi.fn((code: number) => { res.statusCode = code; return res; }), json: vi.fn(() => res) };
+      return res;
+    }
+
+    it("toma roles y flag de plataforma de la base, no del JWT", async () => {
+      await AppDataSource.query(`UPDATE usuarios SET es_platform_admin = true WHERE id = $1`, [cashierA]);
+      const user: { id: string; email: string; tenantId: string; roles?: string[]; isPlatformAdmin?: boolean } = {
+        id: cashierA,
+        email: "x",
+        tenantId,
+        roles: ["owner"],
+        isPlatformAdmin: false,
+      };
+      const next = vi.fn();
+      await tenantMiddleware({ user } as never, fakeRes() as never, next);
+      expect(next).toHaveBeenCalledOnce();
+      expect(user.roles).toEqual(["cashier"]);
+      expect(user.isPlatformAdmin).toBe(true);
+      await AppDataSource.query(`UPDATE usuarios SET es_platform_admin = false WHERE id = $1`, [cashierA]);
+    });
+
+    it("un usuario desactivado recibe 401 aunque su JWT siga vigente", async () => {
+      await AppDataSource.query(`UPDATE usuarios SET activo = false WHERE id = $1`, [cashierA]);
+      const res = fakeRes();
+      const next = vi.fn();
+      await tenantMiddleware({ user: { id: cashierA, email: "x", tenantId } } as never, res as never, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(401);
+      await AppDataSource.query(`UPDATE usuarios SET activo = true WHERE id = $1`, [cashierA]);
+    });
+
+    it("un usuario de otro tenant recibe 401", async () => {
+      const res = fakeRes();
+      const next = vi.fn();
+      await tenantMiddleware({ user: { id: cashierA, email: "x", tenantId: otherTenantId } } as never, res as never, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(401);
     });
   });
 

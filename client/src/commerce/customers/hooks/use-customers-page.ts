@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-
-import type { Customer } from "./use-customers";
+import type { Customer } from "../types/customers";
 
 export const useCustomersPage = ({
   customers,

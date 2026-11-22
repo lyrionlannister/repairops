@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useApiClient } from "./use-api-client";
 
@@ -6,10 +6,12 @@ import { useApiClient } from "./use-api-client";
 // pero ya no corresponder a nada (usuario borrado, tenant eliminado, DB
 // restaurada) y seguiriamos mostrando la app como si hubiera sesion. Por
 // eso esto valida contra la API en cada guard, no solo contra el storage
-// local.
+// local. La misma respuesta refresca roles y permisos guardados: un cambio que haga
+// el dueño se ve al recargar, sin cerrar sesión.
 export const useAuthGuard = (redirectTo: string = "/identity/sign-in") => {
   const navigate = useNavigate();
   const { apiClient } = useApiClient();
+  const [, setRefreshed] = useState(0);
 
   useEffect(() => {
     if (!sessionStorage.getItem("user")) {
@@ -19,10 +21,16 @@ export const useAuthGuard = (redirectTo: string = "/identity/sign-in") => {
     }
 
     apiClient("/auth/users/me")
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) {
           sessionStorage.clear();
           navigate(redirectTo, { replace: true });
+          return;
+        }
+        const me = await res.json().catch(() => null);
+        if (me) {
+          sessionStorage.setItem("user", JSON.stringify(me));
+          setRefreshed((n) => n + 1);
         }
       })
       .catch(() => {

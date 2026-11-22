@@ -1,10 +1,6 @@
 import type { FC } from "react";
 import { Search } from "lucide-react";
-
-interface SalesFilterBarProps {
-  search: string;
-  onSearchChange: (value: string) => void;
-}
+import type { SalesFilterBarProps } from "../props/sales-filter-bar-props";
 
 export const SalesFilterBar: FC<SalesFilterBarProps> = ({ search, onSearchChange }) => (
   <div className="relative">

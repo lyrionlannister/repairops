@@ -1,13 +1,7 @@
 import type { FC } from "react";
 import { Search } from "lucide-react";
-import type { RepairNoteStatus } from "../hooks/use-repair-notes";
-
-interface RepairNotesFilterBarProps {
-  search: string;
-  onSearchChange: (value: string) => void;
-  statusFilter: RepairNoteStatus | "all";
-  onStatusFilterChange: (value: RepairNoteStatus | "all") => void;
-}
+import type { RepairNoteStatus } from "../types/repair-notes";
+import type { RepairNotesFilterBarProps } from "../props/repair-notes-filter-bar-props";
 
 export const RepairNotesFilterBar: FC<RepairNotesFilterBarProps> = ({
   search,

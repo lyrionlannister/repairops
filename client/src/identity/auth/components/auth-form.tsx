@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useLogin, type LoginPayload } from "../../../core/common/hooks/use-login";
+import { useLogin } from "../../../core/common/hooks/use-login";
 import { Input } from "../../../core/common/components/ui/inputs/input";
 import { Label } from "../../../core/common/components/ui/inputs/label";
 import { Button } from "../../../core/common/components/ui/button/button";
 import { EyeCloseIcon, EyeIcon } from "../../../core/common/icons";
 import { AUTH_REDIRECT_DELAY_MS, INITIAL_AUTH_FORM_DATA } from "../constants/auth.constants";
 import { updateAuthFormField } from "../helpers/auth-form.helpers";
+import type { LoginPayload } from "../../../core/common/types/login";
 
 export const AuthForm: React.FC = () => {
   const { login, loading, clearError, clearSuccess } = useLogin();

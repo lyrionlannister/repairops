@@ -1,13 +1,6 @@
 import type { FC } from "react";
 import { Check } from "lucide-react";
-
-interface StepProps {
-  index: number;
-  current: number;
-  // Clases del contenedor cuando el paso está activo (p. ej. un grid de columnas).
-  className?: string;
-  children: React.ReactNode;
-}
+import type { StepProps, StepperProps } from "../../../props/stepper-props";
 
 // Oculta (sin desmontar) los pasos que no son el actual.
 export const Step: FC<StepProps> = ({ index, current, className = "space-y-6", children }) => (
@@ -15,13 +8,6 @@ export const Step: FC<StepProps> = ({ index, current, className = "space-y-6", c
     {children}
   </div>
 );
-
-interface StepperProps {
-  steps: string[];
-  current: number;
-  onStepClick: (index: number) => void;
-}
-
 export const Stepper: FC<StepperProps> = ({ steps, current, onStepClick }) => (
   <ol className="flex items-start" aria-label="Pasos del formulario">
     {steps.map((label, index) => {

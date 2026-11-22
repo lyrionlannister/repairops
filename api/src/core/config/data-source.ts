@@ -45,6 +45,10 @@ import { InventoryReservation } from "../../commerce/inventory/entities/inventor
 import { Layaway } from "../../commerce/customers/entities/layaway.entity.js";
 import { LayawayItem } from "../../commerce/customers/entities/layaway-item.entity.js";
 import { CustomerPayment } from "../../commerce/customers/entities/customer-payment.entity.js";
+import { Plan } from "../../app_platform/billing/entities/plan.entity.js";
+import { Subscription } from "../../app_platform/billing/entities/subscription.entity.js";
+import { UserRoleAssignment } from "../../identity/auth/entities/user-role.entity.js";
+import { BranchDiscountCap } from "../../identity/branches/entities/branch-discount-cap.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
@@ -106,6 +110,10 @@ export const appDataSourceOptions: DataSourceOptions = {
     Layaway,
     LayawayItem,
     CustomerPayment,
+    Plan,
+    Subscription,
+    UserRoleAssignment,
+    BranchDiscountCap,
   ],
 };
 

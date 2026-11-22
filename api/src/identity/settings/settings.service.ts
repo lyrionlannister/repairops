@@ -27,7 +27,7 @@ export class SettingsService {
   private getFallbackAutomationUrl(): string {
     return optionalEnv(
       "AUTOMATION_URL",
-      "http://automation:5678/webhook/97c71c06-20b2-4c12-a8be-16442536f909",
+      "http://automation:5678/webhook/whatsapp-inbound",
     );
   }
 

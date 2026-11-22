@@ -1,21 +1,11 @@
 import type { FC } from "react";
-import type { InventoryItem } from "../hooks/use-inventory";
-import type { InventoryMovementForm } from "../hooks/use-inventory-page";
 import { EmployeeSelect } from "@common/components/employee-select";
 import { Modal } from "@ui/modal/modal";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
-
-interface InventoryMovementModalProps {
-  movementItem: InventoryItem | null;
-  movementForm: InventoryMovementForm;
-  saving: boolean;
-  onClose: () => void;
-  onFormChange: (updater: (prev: InventoryMovementForm) => InventoryMovementForm) => void;
-  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
-}
+import type { InventoryMovementModalProps } from "../props/inventory-movement-modal-props";
 
 export const InventoryMovementModal: FC<InventoryMovementModalProps> = ({
   movementItem,

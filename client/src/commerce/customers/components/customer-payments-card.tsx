@@ -1,11 +1,7 @@
 import type { FC } from "react";
 import { HandCoins } from "lucide-react";
-import type { CustomerPaymentRecord } from "../hooks/use-customer-payments";
 import { formatDay, formatMoney, METHOD_LABELS } from "../utils/format";
-
-interface CustomerPaymentsCardProps {
-  payments: CustomerPaymentRecord[];
-}
+import type { CustomerPaymentsCardProps } from "../props/customer-payments-card-props";
 
 export const CustomerPaymentsCard: FC<CustomerPaymentsCardProps> = ({ payments }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">

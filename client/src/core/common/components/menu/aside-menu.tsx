@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import type { NavItem } from "../../../../config/app/navbar/types/nav-item";
 
-import { Smartphone } from "lucide-react";
-import { ChevronDownIcon, HorizontaLDots } from "../../icons";
+import { ChevronRight, Smartphone } from "lucide-react";
+import { HorizontaLDots } from "../../icons";
 import { useLogout } from "../../hooks/use-logout";
 
 export const AsideMenu: React.FC<{
@@ -102,12 +102,12 @@ export const AsideMenu: React.FC<{
                 <span className="menu-item-text text-gray-500">{nav.name}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
-                <ChevronDownIcon
-                  className={`ml-auto w-5 h-5 transition-transform duration-200 ${
-                    openSubmenu?.type === menuType &&
-                    openSubmenu?.name === nav.name
-                      ? "rotate-180 text-brand-500"
-                      : ""
+                <ChevronRight
+                  aria-hidden
+                  className={`ml-auto size-4 shrink-0 transition-transform duration-200 ${
+                    openSubmenu?.type === menuType && openSubmenu?.name === nav.name
+                      ? "rotate-90 text-brand-500"
+                      : "text-gray-400"
                   }`}
                 />
               )}

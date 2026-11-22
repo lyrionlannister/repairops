@@ -1,8 +1,5 @@
 import type { FC } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { RepairNoteRecord } from "../hooks/use-repair-notes";
-import type { DeliveryMethod, DeliveryPaymentLine } from "../hooks/use-repair-note-delivery";
-import type { CustomerCreditBalance } from "@commerce/customers/hooks/use-customers";
 import { Modal } from "@ui/modal/modal";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -10,6 +7,8 @@ import { Select } from "@ui/select/select";
 import { Button } from "@ui/button/button";
 import { EmployeeSelect } from "@common/components/employee-select";
 import { formatCurrency } from "../utils/format";
+import type { DeliveryMethod } from "../types/repair-note-delivery";
+import type { RepairNoteDeliveryModalProps } from "../props/repair-note-delivery-modal-props";
 
 const METHOD_OPTIONS: Array<{ value: DeliveryMethod; label: string }> = [
   { value: "efectivo", label: "Efectivo" },
@@ -17,30 +16,6 @@ const METHOD_OPTIONS: Array<{ value: DeliveryMethod; label: string }> = [
   { value: "transferencia", label: "Transferencia" },
   { value: "credito", label: "Crédito" },
 ];
-
-interface RepairNoteDeliveryModalProps {
-  isOpen: boolean;
-  note: RepairNoteRecord | null;
-  total: number;
-  advancePaid: number;
-  balance: number;
-  payments: DeliveryPaymentLine[];
-  paymentsSum: number;
-  employeeId: string;
-  credit: CustomerCreditBalance | null;
-  hasCashSession: boolean;
-  hasCashPayment: boolean;
-  problem: string | null;
-  error: string | null;
-  saving: boolean;
-  onClose: () => void;
-  onEmployeeChange: (id: string) => void;
-  onPaymentChange: (index: number, patch: Partial<DeliveryPaymentLine>) => void;
-  onAddPayment: () => void;
-  onRemovePayment: (index: number) => void;
-  onSubmit: () => void;
-}
-
 const SummaryRow: FC<{ label: string; value: string; strong?: boolean }> = ({
   label,
   value,

@@ -1,13 +1,7 @@
 import type { FC } from "react";
 import { Search } from "lucide-react";
-import type { QuoteStatus } from "../hooks/use-quotes";
-
-interface QuotesFilterBarProps {
-  search: string;
-  onSearchChange: (value: string) => void;
-  statusFilter: QuoteStatus | "all";
-  onStatusFilterChange: (value: QuoteStatus | "all") => void;
-}
+import type { QuoteStatus } from "../types/quotes";
+import type { QuotesFilterBarProps } from "../props/quotes-filter-bar-props";
 
 export const QuotesFilterBar: FC<QuotesFilterBarProps> = ({
   search,

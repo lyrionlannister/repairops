@@ -1,12 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
-import type { FC, ReactNode } from "react";
-
-interface ScrollTableProps {
-  colgroup?: ReactNode;
-  header: ReactNode;
-  children: ReactNode;
-  className?: string;
-}
+import type { FC } from "react";
+import type { ScrollTableProps } from "../../../props/scroll-table-props";
 
 // Separa el <thead> (fijo, nunca scrollea) del <tbody> (su propio
 // overflow-y-auto) en dos <table> distintas que comparten el mismo

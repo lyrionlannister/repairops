@@ -1,10 +1,6 @@
-import type { ReactNode } from "react";
 import { Smartphone } from "lucide-react";
 import { ThemeToggler } from "../../../core/common/components/menu/theme-toggler";
-
-interface AuthLayoutProps {
-  children: ReactNode;
-}
+import type { AuthLayoutProps } from "../props/auth-layout-props";
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (

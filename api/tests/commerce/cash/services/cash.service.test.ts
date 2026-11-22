@@ -13,6 +13,8 @@ import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
+import { makeUserRoleDao } from "../../../support/authz-deps.js";
+import { effectivePermissions } from "../../../../src/identity/authz/permissions.js";
 
 // Integration test against a real Postgres (same reasoning as
 // quote.service.test.ts): proves the rounding rule end-to-end through
@@ -30,7 +32,7 @@ describe("CashService", () => {
     const movementDao = new CashMovementDao(AppDataSource.getRepository(CashMovement));
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     userDao = new UserDao(AppDataSource.getRepository(User));
-    service = new CashService(sessionDao, movementDao, localService, userDao);
+    service = new CashService(sessionDao, movementDao, localService, userDao, makeUserRoleDao());
   });
 
   afterAll(async () => {
@@ -98,13 +100,15 @@ describe("CashService", () => {
       service.registerMovement({ cashSessionId: session.id, type: "expense", method: "efectivo", amount: 30 }),
     );
 
-    const summary = await runWithTenant(summaryTenant, () => service.getSummary(session.id));
+    const owner = { userId: "1", roles: ["owner"], permissions: effectivePermissions(["owner"], false) };
+    const summary = await runWithTenant(summaryTenant, () => service.getSummary(session.id), null, owner);
 
-    expect(summary.totalIncome).toBe(300);
-    expect(summary.totalExpense).toBe(30);
-    expect(summary.net).toBe(270);
-    expect(summary.byMethod.efectivo).toEqual({ income: 100, expense: 30 });
-    expect(summary.byMethod.tarjeta).toEqual({ income: 200, expense: 0 });
+    expect(summary?.amountsHidden).toBe(false);
+    expect(summary?.totalIncome).toBe("300.00");
+    expect(summary?.totalExpense).toBe("30.00");
+    expect(summary?.net).toBe("270.00");
+    expect(summary?.byMethod.efectivo).toEqual({ income: "100.00", expense: "30.00" });
+    expect(summary?.byMethod.tarjeta).toEqual({ income: "200.00", expense: "0.00" });
   });
 
   it("closeSession persists the closing balance and status when the balance matches exactly", async () => {
@@ -145,9 +149,9 @@ describe("CashService", () => {
         lastName: "Ño",
         email: `owner.${authorizedTenant}@test.local`,
         password: "x",
-        role: "owner",
       } as Partial<User>),
     );
+    await runWithTenant(authorizedTenant, () => makeUserRoleDao().replaceForUser(authorizer.id, ["owner"]));
     const session = await runWithTenant(authorizedTenant, () => service.openSession("1", 500));
 
     const closed = await runWithTenant(authorizedTenant, () =>
@@ -157,5 +161,20 @@ describe("CashService", () => {
     expect(closed.status).toBe("closed");
     expect(Number(closed.variance)).toBe(-200);
     expect(closed.varianceAuthorizedByEmployeeId).toBe(authorizer.id);
+  });
+
+  it("abre la caja y registra movimientos a nombre del usuario de la sesión", async () => {
+    const actorTenant = `${tenantId}8`;
+    await ensureFixtureTenant(AppDataSource, actorTenant);
+    const actor = { userId: "987654", roles: ["cashier"], permissions: new Set<string>() };
+    const asCashier = <T>(fn: () => Promise<T>) => runWithTenant(actorTenant, fn, null, actor);
+
+    const session = await asCashier(() => service.openSession("1", 0));
+    const movement = await asCashier(() =>
+      service.registerMovement({ cashSessionId: session.id, type: "income", method: "tarjeta", amount: 10 }),
+    );
+
+    expect(session.openedByEmployeeId).toBe("987654");
+    expect(movement.createdByEmployeeId).toBe("987654");
   });
 });

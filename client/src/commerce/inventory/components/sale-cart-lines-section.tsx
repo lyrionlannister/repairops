@@ -1,20 +1,10 @@
 import type { FC } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { InventoryItem } from "../hooks/use-inventory";
-import type { SaleLineItem } from "../hooks/use-sale-cart";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
-
-interface SaleCartLinesSectionProps {
-  lines: SaleLineItem[];
-  inventoryItems: InventoryItem[];
-  onItemChange: (index: number, inventoryItemId: string) => void;
-  onLineChange: (index: number, patch: Partial<SaleLineItem>) => void;
-  onAddLine: () => void;
-  onRemoveLine: (index: number) => void;
-}
+import type { SaleCartLinesSectionProps } from "../props/sale-cart-lines-section-props";
 
 export const SaleCartLinesSection: FC<SaleCartLinesSectionProps> = ({
   lines,

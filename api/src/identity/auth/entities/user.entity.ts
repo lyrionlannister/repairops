@@ -2,7 +2,8 @@ import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColu
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
-export type UserRole = "owner" | "employee" | "technician" | "cashier";
+export const USER_ROLES = ["owner", "cashier", "technician", "employee"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
 export type PayCycle = "weekly" | "biweekly" | "monthly";
 
 @Entity("usuarios")
@@ -14,9 +15,6 @@ export class User extends BaseEntity {
   @ManyToOne(() => Tenant, { onDelete: "CASCADE" })
   @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_usuarios_tenant" })
   tenant?: Tenant;
-
-  @Column({ type: "varchar", length: 20, default: "owner", name: "rol" })
-  role!: UserRole;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true, name: "salario" })
   salaryAmount!: number | null;

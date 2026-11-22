@@ -1,18 +1,7 @@
 import type { FC } from "react";
 import Chart from "react-apexcharts";
-import type { Point } from "../hooks/use-dashboard-page";
 import { buildConversationsAreaOptions, buildConversationsBarOptions, buildBusinessStackedBarOptions } from "../utils/chart-options";
-
-interface DashboardSecondaryChartsProps {
-  daily: Point[];
-  monthly: Point[];
-  dailyCategories: string[];
-  monthLabels: string[];
-  year: number;
-  // null cuando el rol no ve importes: la gráfica de dinero no se pinta.
-  monthlyBusinessSeries: { salesData: number[]; repairsData: number[] } | null;
-  currencyFormatter: Intl.NumberFormat;
-}
+import type { DashboardSecondaryChartsProps } from "../props/dashboard-secondary-charts-props";
 
 export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
   daily,

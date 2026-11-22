@@ -3,25 +3,20 @@ import { useLocation, useNavigate, useParams } from "react-router";
 
 import { useBranch } from "@common/hooks/use-branch";
 import { useServiceTypes } from "@common/hooks/use-service-types";
+import { usePermissions } from "@common/hooks/use-permissions";
 import { useCurrentUser } from "@common/hooks/use-current-user";
 import { useEmployees } from "@identity/users/hooks/use-employees";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
-import { NEXT_STATUS, useRepairNotes, type RepairNoteItemRecord } from "./use-repair-notes";
+import { NEXT_STATUS, useRepairNotes } from "./use-repair-notes";
 import { useRepairNoteDelivery } from "./use-repair-note-delivery";
-
-export type SavedKind = "created" | "updated";
-
-export interface DetailItemLine {
-  id: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-}
+import type { RepairNoteItemRecord } from "../types/repair-notes";
+import type { DetailItemLine, SavedKind } from "../types/repair-note-detail";
 
 export const useRepairNoteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { can, canAny } = usePermissions();
   const currentUser = useCurrentUser();
   const { workingBranchId } = useBranch();
   const {
@@ -73,8 +68,13 @@ export const useRepairNoteDetail = () => {
 
   const technicianName = useMemo(() => {
     const employee = employees.find((e) => e.id === note?.assignedEmployeeId);
-    return employee ? `${employee.firstName} ${employee.lastName}` : null;
-  }, [employees, note?.assignedEmployeeId]);
+    if (employee) return `${employee.firstName} ${employee.lastName}`;
+    // Sin staff.list (el técnico) no hay lista de personal: su propia nota sí se nombra.
+    if (currentUser && String(note?.assignedEmployeeId) === String(currentUser.id)) {
+      return `${currentUser.firstName} ${currentUser.lastName}`;
+    }
+    return null;
+  }, [employees, note?.assignedEmployeeId, currentUser]);
 
   const serviceTypeNames = useMemo(() => {
     const nameById = new Map(serviceTypes.map((t) => [t.id, t.name]));
@@ -133,9 +133,9 @@ export const useRepairNoteDetail = () => {
     technicianName,
     serviceTypeNames,
     itemLines,
-    // Un cajero no edita notas (igual que en la tabla; el API lo bloquea con requireRole).
-    canEdit: currentUser?.role !== "cashier",
-    canCancel: !isClosed,
+    canEdit: canAny("repair-notes.write", "repair-notes.write.own"),
+    canCancel: !isClosed && can("repair-notes.write"),
+    canDelete: can("repair-notes.delete"),
     confirm,
     setConfirm,
     busy,

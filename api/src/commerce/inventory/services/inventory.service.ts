@@ -1,4 +1,5 @@
 import { singleton, inject } from "tsyringe";
+import { lacks } from "../../../identity/authz/access.js";
 import { EntityManager } from "typeorm";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -36,6 +37,13 @@ type CreateItemPayload = {
 };
 type UpdateItemPayload = Partial<CreateItemPayload>;
 
+// inventory.lookup (el técnico): busca refacciones para sus notas sin ver costo ni proveedor.
+function hideCostsUnlessAllowed<T extends InventoryItem>(item: T): T {
+  if (!lacks("inventory.read")) return item;
+  const { costPrice: _cost, supplierId: _supplier, supplier: _supplierRow, ...rest } = item as T & { supplier?: unknown };
+  return rest as T;
+}
+
 @singleton()
 export class InventoryService {
   constructor(
@@ -65,11 +73,14 @@ export class InventoryService {
       this.itemDao.findAllOrdered(branchId),
       this.reservationDao.sumActiveQuantityByItemForTenant(),
     ]);
-    return items.map((item) => ({ ...item, available: item.quantityOnHand - (reservedByItem.get(item.id) ?? 0) }));
+    return items.map((item) =>
+      hideCostsUnlessAllowed({ ...item, available: item.quantityOnHand - (reservedByItem.get(item.id) ?? 0) }),
+    );
   }
 
   async getById(id: string): Promise<InventoryItem | null> {
-    return this.itemDao.findById(id);
+    const item = await this.itemDao.findById(id);
+    return item && hideCostsUnlessAllowed(item);
   }
 
   // "Disponible para prometer" -- nunca se cachea (ver SPEC-fase5-pos-total.md,
@@ -83,7 +94,8 @@ export class InventoryService {
   }
 
   async getBySku(sku: string): Promise<InventoryItem | null> {
-    return this.itemDao.findBySku(sku);
+    const item = await this.itemDao.findBySku(sku);
+    return item && hideCostsUnlessAllowed(item);
   }
 
   async getLowStock(): Promise<InventoryItem[]> {

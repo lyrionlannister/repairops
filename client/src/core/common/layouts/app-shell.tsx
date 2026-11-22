@@ -8,36 +8,28 @@ import { SidebarProvider } from "../contexts/providers/sidebar-provider";
 import { BranchProvider } from "../contexts/providers/branch-provider";
 import { signInNavbarItems } from "../../../config/app/navbar/sign-in-navbar-items";
 import { Backdrop } from "../components/menu/backdrop";
-import { useCurrentUser } from "../hooks/use-current-user";
-
-// Un técnico no opera caja -- ocultar el ítem de menú es el lado de
-// pantalla de la Regla de permisos por módulo; la API (requireRole en
-// cash.routes.ts) es la que de verdad lo bloquea aunque alguien edite el DOM.
-// Solo el owner administra usuarios, sucursales, reportes y la configuracion del local.
-const OWNER_ONLY_PATHS = ["/identity/users", "/identity/branches", "/reporting/reports", "/platform/local"];
-const hiddenPathsByRole: Partial<Record<string, string[]>> = {
-  technician: ["/commerce/cash", ...OWNER_ONLY_PATHS],
-  cashier: OWNER_ONLY_PATHS,
-  employee: OWNER_ONLY_PATHS,
-};
+import { usePermissions } from "../hooks/use-permissions";
+import { useLayoutResizeNotifier } from "../hooks/use-layout-resize-notifier";
+import { visibleNavItems } from "../utils/visible-nav-items";
 
 const LayoutContent: React.FC = () => {
   useAuthGuard("/identity/sign-in");
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const currentUser = useCurrentUser();
-  const hiddenPaths = (currentUser && hiddenPathsByRole[currentUser.role]) ?? [];
-  const visibleNavItems = signInNavbarItems.filter((item) => !item.path || !hiddenPaths.includes(item.path));
+  const { canAny } = usePermissions();
+  const navItems = visibleNavItems(signInNavbarItems, canAny);
+  const notifyLayoutResize = useLayoutResizeNotifier();
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <div>
-        <AsideMenu navItems={visibleNavItems} />
+        <AsideMenu navItems={navItems} />
         <Backdrop />
       </div>
       <div
         className={`flex min-h-0 min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out ${
           isExpanded || isHovered ? "lg:ml-72.5" : "lg:ml-22.5"
         } ${isMobileOpen ? "ml-0" : ""}`}
+        onTransitionEnd={notifyLayoutResize}
       >
         <NavbarMenu />
         <div className="custom-scrollbar flex w-full flex-1 flex-col overflow-y-auto p-4 md:p-6">

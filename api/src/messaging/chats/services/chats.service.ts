@@ -8,6 +8,7 @@ import { repositoryToken } from "../../../core/di/repository-token.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { normalizePhone, toConversationDto, toMessageDto } from "../helpers/chats.helpers.js";
 import { ConversationDto, MessageDto } from "../types/chats.types.js";
+import { can, currentUserId } from "../../../identity/authz/access.js";
 
 export interface RecordMessageInput {
   contactPhone: string;
@@ -40,8 +41,20 @@ export class ChatsService {
     return this.chatMessageDao.findMediaMessage(normalizePhone(sessionId), publicId);
   }
 
+  // read: ver la conversación y sus medios; reply: responder o tomar el control.
+  // Con el permiso completo, cualquiera; con el .own, solo las de sus notas asignadas.
+  async canAccess(sessionId: string, action: "read" | "reply"): Promise<boolean> {
+    const [full, own] = action === "read" ? (["chats.read", "chats.read.own"] as const) : (["chats.reply", "chats.reply.own"] as const);
+    if (can(full)) return true;
+    const userId = currentUserId();
+    if (!can(own) || !userId) return false;
+    return (await this.chatMessageDao.findPhonesOfAssignedNotes(userId)).has(normalizePhone(sessionId));
+  }
+
   async getConversations(): Promise<ConversationDto[]> {
-    const rows = await this.chatMessageDao.getConversations();
+    const userId = currentUserId();
+    const ownPhones = !can("chats.read") && userId ? await this.chatMessageDao.findPhonesOfAssignedNotes(userId) : null;
+    const rows = (await this.chatMessageDao.getConversations()).filter((row) => !ownPhones || ownPhones.has(row.sessionId));
     const contactNames = await this.contactNameRepository.find({ where: { tenantId: getCurrentTenantId() } });
     const nameMap = new Map(contactNames.map((cn) => [cn.phone, cn.name]));
 

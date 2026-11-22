@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Supplier } from "./use-suppliers";
+import type { Supplier } from "../types/suppliers";
 
 export const useSuppliersPage = (suppliers: Supplier[]) => {
   const [search, setSearch] = useState("");

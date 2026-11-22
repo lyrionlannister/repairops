@@ -1,8 +1,8 @@
 import type { FC, ReactNode } from "react";
 import { Check, X } from "lucide-react";
-import { STATUS_CONFIG, type RepairNoteRecord } from "../hooks/use-repair-notes";
-import type { DetailItemLine } from "../hooks/use-repair-note-detail";
+import { STATUS_CONFIG } from "../hooks/use-repair-notes";
 import { formatCurrency, formatDate } from "../utils/format";
+import type { RepairNoteDetailSummaryProps } from "../props/repair-note-detail-summary-props";
 
 const Row: FC<{ label: string; children: ReactNode }> = ({ label, children }) => (
   <div className="space-y-1 border-b border-gray-200 py-4 first:pt-0 dark:border-gray-800">
@@ -29,15 +29,6 @@ const Check_: FC<{ included?: boolean; children: ReactNode }> = ({ included = tr
     </span>
   </li>
 );
-
-interface RepairNoteDetailSummaryProps {
-  note: RepairNoteRecord;
-  technicianName: string | null;
-  serviceTypeNames: string[];
-  itemLines: DetailItemLine[];
-  actions: ReactNode;
-}
-
 export const RepairNoteDetailSummary: FC<RepairNoteDetailSummaryProps> = ({
   note,
   technicianName,

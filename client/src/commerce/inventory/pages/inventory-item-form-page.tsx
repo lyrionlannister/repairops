@@ -4,15 +4,13 @@ import { useLocation, useNavigate, useParams } from "react-router";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useBranch } from "@common/hooks/use-branch";
 
-import { useInventory, type InventoryItemFormData } from "../hooks/use-inventory";
+import { useInventory } from "../hooks/use-inventory";
 import { useInventoryItemContext } from "../hooks/use-inventory-item-context";
 import { InventoryItemContextPanel } from "../components/inventory-item-context-panel";
 import { InventoryItemForm } from "../components/inventory-item-form";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
-
-interface InventoryPrefillState {
-  prefillFromPriceList?: { name: string; costPrice: string; supplierId: string };
-}
+import type { InventoryItemFormData } from "../types/inventory";
+import type { InventoryPrefillState } from "../types/inventory-item-form-page";
 
 const emptyForm: InventoryItemFormData = {
   name: "",

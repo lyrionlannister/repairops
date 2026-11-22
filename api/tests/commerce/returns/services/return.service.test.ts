@@ -36,6 +36,7 @@ import { ReturnItemDao } from "../../../../src/commerce/returns/daos/return-item
 import { ReturnService } from "../../../../src/commerce/returns/services/return.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
+import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
 
 describe("ReturnService.create", () => {
   let inventoryService: InventoryService;
@@ -57,7 +58,7 @@ describe("ReturnService.create", () => {
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
     cashMovementDao = new CashMovementDao(AppDataSource.getRepository(CashMovement));
-    cashService = new CashService(cashSessionDao, cashMovementDao, localService, new UserDao(AppDataSource.getRepository(User)));
+    cashService = new CashService(cashSessionDao, cashMovementDao, localService, new UserDao(AppDataSource.getRepository(User)), makeUserRoleDao());
     serviceTypeDao = new ServiceTypeDao(AppDataSource.getRepository(ServiceType));
     const saleDao = new SaleDao(AppDataSource.getRepository(Sale));
     const saleItemDao = new SaleItemDao(AppDataSource.getRepository(SaleItem));
@@ -69,7 +70,7 @@ describe("ReturnService.create", () => {
       localService,
       cashSessionDao,
       serviceTypeDao,
-      new CustomerDao(AppDataSource.getRepository(Customer)),
+      new CustomerDao(AppDataSource.getRepository(Customer)), makeDiscountCapService(),
     );
     returnService = new ReturnService(
       new ReturnDao(AppDataSource.getRepository(Return)),
@@ -107,7 +108,7 @@ describe("ReturnService.create", () => {
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "1", cashSessionId: session.id, payments: [{ method: "efectivo", amount: 60 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 2, unitPrice: 30 }] },
-        "owner",
+        ["owner"],
       ),
     );
     const saleItems = await runWithTenant(tenantId, () => saleService.getItems(sale.id));
@@ -143,7 +144,7 @@ describe("ReturnService.create", () => {
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "2", cashSessionId: session.id, payments: [{ method: "efectivo", amount: 50 }], items: [{ lineType: "service_type", referenceId: serviceType.id, quantity: 1, unitPrice: 50 }] },
-        "owner",
+        ["owner"],
       ),
     );
     const saleItems = await runWithTenant(tenantId, () => saleService.getItems(sale.id));
@@ -172,7 +173,7 @@ describe("ReturnService.create", () => {
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "3", cashSessionId: session.id, payments: [{ method: "efectivo", amount: 30 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 30 }] },
-        "owner",
+        ["owner"],
       ),
     );
     const saleItems = await runWithTenant(tenantId, () => saleService.getItems(sale.id));
@@ -203,7 +204,7 @@ describe("ReturnService.create", () => {
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "4", cashSessionId: session.id, payments: [{ method: "efectivo", amount: 30 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 30 }] },
-        "owner",
+        ["owner"],
       ),
     );
     const saleItems = await runWithTenant(tenantId, () => saleService.getItems(sale.id));
@@ -242,7 +243,7 @@ describe("ReturnService.create", () => {
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "5", cashSessionId: session.id, payments: [{ method: "efectivo", amount: 30 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 30 }] },
-        "owner",
+        ["owner"],
       ),
     );
     const saleItems = await runWithTenant(tenantId, () => saleService.getItems(sale.id));
@@ -270,7 +271,7 @@ describe("ReturnService.create", () => {
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "6", cashSessionId: session.id, payments: [{ method: "efectivo", amount: 30 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 30 }] },
-        "owner",
+        ["owner"],
       ),
     );
     const saleItems = await runWithTenant(tenantId, () => saleService.getItems(sale.id));
@@ -304,7 +305,7 @@ describe("ReturnService.create", () => {
     const saleOfTenantA = await runWithTenant(tenantId, () =>
       saleService.create(
         { localId: "7", cashSessionId: sessionA.id, payments: [{ method: "efectivo", amount: 30 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 30 }] },
-        "owner",
+        ["owner"],
       ),
     );
     const saleItemsA = await runWithTenant(tenantId, () => saleService.getItems(saleOfTenantA.id));

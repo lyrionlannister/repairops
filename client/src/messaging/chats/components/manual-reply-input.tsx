@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { Send } from "lucide-react";
-
-interface ManualReplyInputProps {
-  onSend: (body: string) => Promise<boolean>;
-  sending: boolean;
-}
+import type { ManualReplyInputProps } from "../props/manual-reply-input-props";
 
 export const ManualReplyInput: React.FC<ManualReplyInputProps> = ({ onSend, sending }) => {
   const [text, setText] = useState("");

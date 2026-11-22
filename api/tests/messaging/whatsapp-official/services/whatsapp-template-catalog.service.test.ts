@@ -2,6 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import {
   WhatsappTemplateCatalogService,
   WhatsappTemplateCatalogConflictError,
+  WhatsappTemplateCatalogReadOnlyError,
 } from "../../../../src/messaging/whatsapp-official/services/whatsapp-template-catalog.service.js";
 import type { WhatsappTemplateCatalogEntryDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-template-catalog-entry.dao.js";
 import type { WhatsappTemplateStatusDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-template-status.dao.js";
@@ -37,10 +38,10 @@ function makeStatusDao() {
   } as unknown as WhatsappTemplateStatusDao;
 }
 
-function makeAccountService() {
+function makeAccountService(ownedByPlatform = false) {
   return {
     getOrCreateForTenant: vi.fn().mockResolvedValue(
-      mockEntity<WhatsappAccount>({ wabaId: "waba-1", accessToken: "token-1" }),
+      mockEntity<WhatsappAccount>({ wabaId: "waba-1", accessToken: "token-1", ownedByPlatform }),
     ),
   } as unknown as WhatsappAccountService;
 }
@@ -191,6 +192,39 @@ describe("WhatsappTemplateCatalogService -- empresa", () => {
 
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(catalogDao.deleteForTenant).toHaveBeenCalledWith("entry-1");
+  });
+});
+
+describe("WhatsappTemplateCatalogService -- cuenta piloto compartida", () => {
+  it("create, update and delete are rejected and never touch the DAO or Meta", async () => {
+    const catalogDao = makeCatalogDao();
+    vi.mocked(catalogDao.findByIdForTenant).mockResolvedValue(entry);
+    const statusDao = makeStatusDao();
+    vi.mocked(statusDao.findByCatalogEntryId).mockResolvedValue(
+      mockEntity<WhatsappTemplateStatus>({ id: "status-1", metaTemplateId: "meta-123" }),
+    );
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const service = new WhatsappTemplateCatalogService(catalogDao, statusDao, makeAccountService(true));
+
+    await expect(service.create(createDto)).rejects.toThrow(WhatsappTemplateCatalogReadOnlyError);
+    await expect(service.update("entry-1", { text: "x" })).rejects.toThrow(
+      WhatsappTemplateCatalogReadOnlyError,
+    );
+    await expect(service.delete("entry-1")).rejects.toThrow(WhatsappTemplateCatalogReadOnlyError);
+
+    expect(catalogDao.createForTenant).not.toHaveBeenCalled();
+    expect(catalogDao.updateForTenant).not.toHaveBeenCalled();
+    expect(catalogDao.deleteForTenant).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("listForTenant still works -- read-only, not hidden", async () => {
+    const catalogDao = makeCatalogDao();
+    vi.mocked(catalogDao.getOrSeedDefaultsForTenant).mockResolvedValue([entry]);
+    const service = new WhatsappTemplateCatalogService(catalogDao, makeStatusDao(), makeAccountService(true));
+
+    await expect(service.listForTenant()).resolves.toEqual([entry]);
   });
 });
 

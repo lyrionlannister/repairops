@@ -1,12 +1,12 @@
 import { Plus, Upload } from "lucide-react";
 
-import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useBranch } from "@common/hooks/use-branch";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useInventoryPage } from "../hooks/use-inventory-page";
-import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
+import { useSupplierName } from "../hooks/use-supplier-name";
+import { usePermissions } from "@common/hooks/use-permissions";
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
@@ -18,13 +18,10 @@ export const InventoryPage = () => {
   const { workingBranchId } = useBranch();
   const { items, loading, saving, error, fetchAll, remove, bulkImport, registerMovement } =
     useBranchScopedInventory(workingBranchId);
-  const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
+  const supplierName = useSupplierName();
+  const { can } = usePermissions();
+  const canManage = can("inventory.manage");
   const navigate = useNavigate();
-  const supplierName = (supplierId: string | null) => suppliers.find((s) => s.id === supplierId)?.name ?? "—";
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, [fetchSuppliers]);
 
   const {
     deleteConfirmId,
@@ -63,6 +60,7 @@ export const InventoryPage = () => {
       title="Inventario"
       description={items.length > 0 ? `${items.length} productos en total.` : "Aún no hay productos."}
       action={
+        canManage && (
         <div className="flex shrink-0 gap-2">
           <Button variant="outline" onClick={() => setIsImportOpen(true)}>
             <Upload className="mr-1.5 size-4" />
@@ -73,6 +71,7 @@ export const InventoryPage = () => {
             Nuevo producto
           </Button>
         </div>
+        )
       }
     >
 
@@ -89,6 +88,9 @@ export const InventoryPage = () => {
         onPageSizeChange={setPageSize}
         onOpenMovement={openMovement}
         onRequestDelete={setDeleteConfirmId}
+        showCosts={can("inventory.read")}
+        canManage={canManage}
+        canAdjust={can("inventory.adjust")}
       />
 
       <InventoryMovementModal

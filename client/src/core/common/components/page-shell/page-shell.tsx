@@ -1,17 +1,8 @@
-import type { ReactNode } from "react";
 import { useLocation } from "react-router";
 
 import { PageMeta } from "@common/pages/page-meta";
 import { BackButton } from "@ui/back-button/back-button";
-
-type PageShellProps = {
-  title: string;
-  description: string;
-  action?: ReactNode;
-  // true: la página entera crece y scrollea en la capa del layout (scrollbar al borde, título incluido).
-  scrollHeader?: boolean;
-  children: ReactNode;
-};
+import type { PageShellProps } from "../../props/page-shell-props";
 
 export const PageShell = ({
   title,

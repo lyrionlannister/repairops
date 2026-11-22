@@ -1,7 +1,6 @@
-import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, MinLength, IsArray } from "class-validator";
-import { PayCycle, UserRole } from "../entities/user.entity.js";
+import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, MinLength, IsArray, ArrayNotEmpty, ArrayUnique } from "class-validator";
+import { PayCycle, USER_ROLES, UserRole } from "../entities/user.entity.js";
 
-const ROLES: UserRole[] = ["owner", "employee", "technician", "cashier"];
 const PAY_CYCLES: PayCycle[] = ["weekly", "biweekly", "monthly"];
 
 export class CreateEmployeeDto {
@@ -22,9 +21,11 @@ export class CreateEmployeeDto {
   @MinLength(8, { message: "Password debe tener al menos 8 caracteres" })
   password!: string;
 
-  @IsOptional()
-  @IsIn(ROLES, { message: "Rol inválido" })
-  role?: UserRole;
+  @IsArray({ message: "roles debe ser una lista" })
+  @ArrayNotEmpty({ message: "Elige al menos un rol" })
+  @ArrayUnique({ message: "Roles repetidos" })
+  @IsIn(USER_ROLES, { each: true, message: "Rol inválido" })
+  roles!: UserRole[];
 
   @IsOptional()
   @IsNumber({}, { message: "Salario debe ser numérico" })

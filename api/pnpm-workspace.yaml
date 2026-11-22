@@ -1,2 +1,6 @@
 allowBuilds:
   esbuild: true
+  # Ambos traen binarios precompilados por plataforma; sus scripts solo
+  # compilan/verifican de respaldo y bullmq cae a msgpackr en JS puro.
+  msgpackr-extract: false
+  "@swc/core": false

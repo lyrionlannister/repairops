@@ -1,33 +1,13 @@
-import type { FC, RefObject } from "react";
+import type { FC } from "react";
 import { Store } from "lucide-react";
 
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { TextArea } from "@ui/textarea/textarea";
-
-import type { LocalRecord } from "../hooks/use-local";
-import type { LocalFormState, AttributionBasis } from "../hooks/use-local-page";
 import { BrandColorField } from "./brand-color-field";
 import { TIME_ZONES } from "../utils/time-zones";
-
-interface LocalSettingsFormProps {
-  local: LocalRecord | null;
-  form: LocalFormState;
-  saving: boolean;
-  fileInputRef: RefObject<HTMLInputElement | null>;
-  attributionBasis: AttributionBasis;
-  attributionSaving: boolean;
-  attributionMessage: string | null;
-  onChange: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => void;
-  onLogoChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onAttributionBasisChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onRemoveLogo: () => void;
-  onSetBrandColor: (color: string) => void;
-}
+import type { LocalSettingsFormProps } from "../props/local-settings-form-props";
 
 export const LocalSettingsForm: FC<LocalSettingsFormProps> = ({
   local,

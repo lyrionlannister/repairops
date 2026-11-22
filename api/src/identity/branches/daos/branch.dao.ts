@@ -17,4 +17,8 @@ export class BranchDao extends TenantScopedDao<Branch> {
   async count(): Promise<number> {
     return this.scoped().getCount();
   }
+
+  async countActive(): Promise<number> {
+    return this.scoped().andWhere("entity.isActive = true").getCount();
+  }
 }

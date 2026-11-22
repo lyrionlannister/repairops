@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-
-import type { PriceListItem } from "./use-price-list";
+import type { PriceListItem } from "../types/price-list";
 
 export const usePriceListPage = ({
   items,

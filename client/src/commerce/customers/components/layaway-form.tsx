@@ -6,39 +6,12 @@ import { Input } from "@ui/inputs/input";
 import { DatePicker } from "@ui/date-picker/date-picker";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
-
-import type { Customer } from "../hooks/use-customers";
-import type { LayawayItemLine } from "../hooks/use-layaway-item-lines";
-import type { LayawayMethod } from "../hooks/use-layaways";
-import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
 import { METHOD_LABELS, formatMoney } from "../utils/format";
+import type { LayawayMethod } from "../types/layaways";
+import type { LayawayFormProps } from "../props/layaway-form-props";
 
 const FORM_CARD_CLASS =
   "space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3";
-
-interface LayawayFormProps {
-  hasContext: boolean;
-  customers: Customer[];
-  customerId: string;
-  onCustomerIdChange: (value: string) => void;
-  expiresAt: string;
-  onExpiresAtChange: (value: string) => void;
-  inventoryItems: InventoryItem[];
-  lines: LayawayItemLine[];
-  onUpdateLine: (index: number, patch: Partial<LayawayItemLine>) => void;
-  onItemChange: (index: number, value: string) => void;
-  onAddLine: () => void;
-  depositAmount: string;
-  onDepositAmountChange: (value: string) => void;
-  depositMethod: LayawayMethod;
-  onDepositMethodChange: (value: LayawayMethod) => void;
-  totalValue: number;
-  saving: boolean;
-  hasCashSession: boolean;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
-
 export const LayawayForm: FC<LayawayFormProps> = ({
   hasContext,
   customers,

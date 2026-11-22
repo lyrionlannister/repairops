@@ -1,17 +1,8 @@
-import type { FC, RefObject } from "react";
+import type { FC } from "react";
 import { FileSpreadsheet } from "lucide-react";
 import { Modal } from "@ui/modal/modal";
 import { Button } from "@ui/button/button";
-
-interface InventoryImportModalProps {
-  isOpen: boolean;
-  importFile: File | null;
-  importFileInputRef: RefObject<HTMLInputElement | null>;
-  saving: boolean;
-  onClose: () => void;
-  onFileSelected: (file: File) => void;
-  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
-}
+import type { InventoryImportModalProps } from "../props/inventory-import-modal-props";
 
 export const InventoryImportModal: FC<InventoryImportModalProps> = ({
   isOpen,

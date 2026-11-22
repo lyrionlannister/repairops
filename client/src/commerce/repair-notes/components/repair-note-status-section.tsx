@@ -1,12 +1,8 @@
 import type { FC } from "react";
-import { STATUS_CONFIG, type RepairNoteStatus } from "../hooks/use-repair-notes";
+import { STATUS_CONFIG } from "../hooks/use-repair-notes";
 import { SectionTitle } from "./section-title";
-
-interface RepairNoteStatusSectionProps {
-  status: RepairNoteStatus;
-  saving: boolean;
-  onStatusChange: (status: RepairNoteStatus) => void;
-}
+import type { RepairNoteStatus } from "../types/repair-notes";
+import type { RepairNoteStatusSectionProps } from "../props/repair-note-status-section-props";
 
 export const RepairNoteStatusSection: FC<RepairNoteStatusSectionProps> = ({ status, saving, onStatusChange }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 space-y-4">

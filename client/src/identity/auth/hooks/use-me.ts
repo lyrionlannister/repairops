@@ -1,18 +1,6 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export interface Me {
-  id: string;
-  tenantId: string;
-  role: "owner" | "employee" | "technician" | "cashier";
-  firstName: string;
-  lastName: string;
-  email: string;
-  isActive: boolean;
-  isPlatformAdmin: boolean;
-  salaryAmount: number | null;
-  payCycle: "weekly" | "biweekly" | "monthly" | null;
-}
+import type { Me } from "../types/me";
 
 // Perfil del usuario autenticado, siempre fresco desde la fila real -- a
 // diferencia del user guardado en sessionStorage al hacer login, que se

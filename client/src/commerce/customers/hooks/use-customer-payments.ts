@@ -1,24 +1,6 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export type CustomerPaymentMethod = "efectivo" | "tarjeta" | "transferencia";
-
-export interface CustomerPaymentRecord {
-  id: string;
-  customerId: string;
-  localId: string;
-  amount: number;
-  method: CustomerPaymentMethod;
-  createdByEmployeeId: string | null;
-  createdAt: string;
-}
-
-export interface RegisterCustomerPaymentInput {
-  localId: string;
-  amount: number;
-  method: CustomerPaymentMethod;
-  createdByEmployeeId?: string;
-}
+import type { CustomerPaymentRecord, RegisterCustomerPaymentInput } from "../types/customer-payments";
 
 export const useCustomerPayments = () => {
   const { apiClient } = useApiClient();

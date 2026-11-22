@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Branch } from "./use-branches";
+import type { Branch } from "../types/branches";
 
 export const useBranchesPage = (branches: Branch[]) => {
   const [search, setSearch] = useState("");

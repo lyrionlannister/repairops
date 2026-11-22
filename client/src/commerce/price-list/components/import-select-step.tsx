@@ -1,27 +1,8 @@
 import type { FC } from "react";
-import type { RefObject } from "react";
 import { Upload, FileText, X } from "lucide-react";
-import type { Supplier } from "@commerce/suppliers/hooks/use-suppliers";
 import { Button } from "@ui/button/button";
 import { Label } from "@ui/inputs/label";
-
-interface ImportSelectStepProps {
-  suppliers: Supplier[];
-  loadingSuppliers: boolean;
-  supplierId: string;
-  onSupplierIdChange: (value: string) => void;
-  selectedFile: File | null;
-  isDragging: boolean;
-  fileInputRef: RefObject<HTMLInputElement | null>;
-  uploading: boolean;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: () => void;
-  onDrop: (e: React.DragEvent) => void;
-  onFileInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onClearFile: () => void;
-  onCancel: () => void;
-  onUpload: () => void;
-}
+import type { ImportSelectStepProps } from "../props/import-select-step-props";
 
 export const ImportSelectStep: FC<ImportSelectStepProps> = ({
   suppliers,

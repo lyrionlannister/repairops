@@ -1,21 +1,6 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export interface InventoryTransfer {
-  id: string;
-  fromInventoryItemId: string;
-  toInventoryItemId: string;
-  quantity: number;
-  reason: string | null;
-  createdAt: string;
-}
-
-export interface CreateInventoryTransferPayload {
-  fromInventoryItemId: string;
-  toInventoryItemId: string;
-  quantity: number;
-  reason?: string;
-}
+import type { InventoryTransfer, CreateInventoryTransferPayload } from "../types/inventory-transfers";
 
 export const useInventoryTransfers = () => {
   const { apiClient } = useApiClient();

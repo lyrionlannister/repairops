@@ -1,5 +1,5 @@
-import type { InventoryMovement } from "../hooks/use-inventory";
-import type { PaymentMethod } from "../hooks/use-sales";
+import type { InventoryMovement } from "../types/inventory";
+import type { PaymentMethod } from "../types/sales";
 
 export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   efectivo: "Efectivo",

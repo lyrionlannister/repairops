@@ -3,6 +3,7 @@ import { DashboardService, DashboardValidationError } from "../../../../src/repo
 import type { DashboardDao } from "../../../../src/reporting/dashboard/daos/dashboard.dao.js";
 import type { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import type { ChatsService } from "../../../../src/messaging/chats/services/chats.service.js";
+import type { PresenceService } from "../../../../src/identity/auth/services/presence.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 const store = new Map<string, string>();
@@ -39,23 +40,24 @@ function build() {
     getWeekSessionCount: vi.fn().mockResolvedValue(5),
     getLastInteractionAt: vi.fn().mockResolvedValue(null),
   } as unknown as ChatsService;
-  return { dao, service: new DashboardService(dao, localService, chatsService) };
+  const presenceService = { countOnline: vi.fn().mockResolvedValue(2) } as unknown as PresenceService;
+  return { dao, service: new DashboardService(dao, localService, chatsService, presenceService) };
 }
 
 beforeEach(() => store.clear());
 
 describe("DashboardService permisos", () => {
-  it.each(["owner"] as const)("%s recibe importes", async (role) => {
+  it("con dashboard.money recibe importes", async () => {
     const { service } = build();
-    const summary = await runWithTenant("1", () => service.getSummary(role));
+    const summary = await runWithTenant("1", () => service.getSummary(true));
     expect(summary.money?.today).toBe("100.25");
     expect(summary.activity[0]?.amount).toBe("10.00");
   });
 
-  it.each(["technician", "cashier", "employee"] as const)("%s no recibe ningun importe en el JSON", async (role) => {
+  it("sin dashboard.money no recibe ningun importe en el JSON", async () => {
     const { service, dao } = build();
-    const summary = await runWithTenant("1", () => service.getSummary(role));
-    const series = await runWithTenant("1", () => service.getSeries(role, { granularity: "day" }));
+    const summary = await runWithTenant("1", () => service.getSummary(false));
+    const series = await runWithTenant("1", () => service.getSeries(false, { granularity: "day" }));
 
     expect("money" in summary).toBe(false);
     expect(summary.activity[0]).not.toHaveProperty("amount");
@@ -70,37 +72,37 @@ describe("DashboardService permisos", () => {
 describe("DashboardService tendencias y validaciones", () => {
   it("calcula la tendencia con Decimal y omite el badge sin periodo previo", async () => {
     const { service } = build();
-    const { money } = await runWithTenant("1", () => service.getSummary("owner"));
+    const { money } = await runWithTenant("1", () => service.getSummary(true));
     expect(money?.todayTrend).toEqual({ pct: 101, up: true });
     expect(money?.monthTrend).toBeNull();
   });
 
   it("rechaza una sucursal o un año invalidos", async () => {
     const { service } = build();
-    await expect(runWithTenant("1", () => service.getSummary("owner", "1; DROP TABLE"))).rejects.toBeInstanceOf(DashboardValidationError);
-    await expect(runWithTenant("1", () => service.getSeries("owner", { granularity: "month", year: "1999" }))).rejects.toBeInstanceOf(
+    await expect(runWithTenant("1", () => service.getSummary(true, "1; DROP TABLE"))).rejects.toBeInstanceOf(DashboardValidationError);
+    await expect(runWithTenant("1", () => service.getSeries(true, { granularity: "month", year: "1999" }))).rejects.toBeInstanceOf(
       DashboardValidationError,
     );
   });
 
   it("la serie mensual devuelve cubetas YYYY-MM", async () => {
     const { service } = build();
-    const series = await runWithTenant("1", () => service.getSeries("owner", { granularity: "month", year: "2026" }));
+    const series = await runWithTenant("1", () => service.getSeries(true, { granularity: "month", year: "2026" }));
     expect(series.business?.[0]?.bucket).toBe("2026-01");
   });
 });
 
 describe("DashboardService cache", () => {
-  it("la clave lleva el tenant y no mezcla tenants ni roles", async () => {
+  it("la clave lleva el tenant y no mezcla tenants ni vistas con y sin importes", async () => {
     const { service, dao } = build();
-    await runWithTenant("1", () => service.getSummary("owner"));
-    await runWithTenant("1", () => service.getSummary("owner"));
+    await runWithTenant("1", () => service.getSummary(true));
+    await runWithTenant("1", () => service.getSummary(true));
     expect(dao.getOperationalCounts).toHaveBeenCalledTimes(1);
 
-    await runWithTenant("2", () => service.getSummary("owner"));
+    await runWithTenant("2", () => service.getSummary(true));
     expect(dao.getOperationalCounts).toHaveBeenCalledTimes(2);
 
-    await runWithTenant("1", () => service.getSummary("technician"));
+    await runWithTenant("1", () => service.getSummary(false));
     expect(dao.getOperationalCounts).toHaveBeenCalledTimes(3);
     expect([...store.keys()].every((key) => /^dashboard:[12]:/.test(key))).toBe(true);
   });

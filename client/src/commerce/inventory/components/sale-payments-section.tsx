@@ -1,24 +1,12 @@
 import type { FC } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { PaymentMethod } from "../hooks/use-sales";
-import type { SalePaymentLine } from "../hooks/use-sale-cart";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 import { PAYMENT_LABELS, formatMoney } from "../utils/format";
-
-interface SalePaymentsSectionProps {
-  payments: SalePaymentLine[];
-  isOnline: boolean;
-  paymentsSum: number;
-  paymentsMatchTotal: boolean;
-  hasCreditoWithoutCustomer: boolean;
-  total: number;
-  onPaymentChange: (index: number, patch: Partial<SalePaymentLine>) => void;
-  onAddPayment: () => void;
-  onRemovePayment: (index: number) => void;
-}
+import type { PaymentMethod } from "../types/sales";
+import type { SalePaymentsSectionProps } from "../props/sale-payments-section-props";
 
 export const SalePaymentsSection: FC<SalePaymentsSectionProps> = ({
   payments,

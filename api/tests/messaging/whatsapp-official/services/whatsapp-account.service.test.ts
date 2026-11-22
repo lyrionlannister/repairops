@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
 import type { WhatsappAccountDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-account.dao.js";
+import type { WhatsappTemplateCatalogEntryDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-template-catalog-entry.dao.js";
 import type { WhatsappAccount } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-account.entity.js";
 import { WhatsappGraphApiError } from "../../../../src/messaging/whatsapp-official/clients/whatsapp-graph.client.js";
 import { mockEntity } from "../../../support/mock-entity.js";
@@ -12,6 +13,12 @@ function makeDao() {
   } as unknown as WhatsappAccountDao;
 }
 
+function makeCatalogDao() {
+  return {
+    copySystemToTenant: vi.fn().mockResolvedValue([]),
+  } as unknown as WhatsappTemplateCatalogEntryDao;
+}
+
 describe("WhatsappAccountService.getOrCreateForTenant", () => {
   beforeEach(() => {
     process.env.WHATSAPP_PILOT_WABA_ID = "waba-123";
@@ -21,9 +28,10 @@ describe("WhatsappAccountService.getOrCreateForTenant", () => {
 
   it("seeds the pilot account from env vars", async () => {
     const dao = makeDao();
+    const catalogDao = makeCatalogDao();
     vi.mocked(dao.getOrCreateForTenant).mockResolvedValue(mockEntity<WhatsappAccount>({ id: "wa-1" }));
 
-    const service = new WhatsappAccountService(dao);
+    const service = new WhatsappAccountService(dao, catalogDao);
     await service.getOrCreateForTenant();
 
     expect(dao.getOrCreateForTenant).toHaveBeenCalledWith({
@@ -37,7 +45,8 @@ describe("WhatsappAccountService.getOrCreateForTenant", () => {
   it("throws if a pilot env var is missing", async () => {
     delete process.env.WHATSAPP_PILOT_WABA_ID;
     const dao = makeDao();
-    const service = new WhatsappAccountService(dao);
+    const catalogDao = makeCatalogDao();
+    const service = new WhatsappAccountService(dao, catalogDao);
 
     await expect(service.getOrCreateForTenant()).rejects.toThrow(
       "WHATSAPP_PILOT_WABA_ID is required",
@@ -61,15 +70,17 @@ describe("WhatsappAccountService.connectOwnAccount", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const dao = makeDao();
+    const catalogDao = makeCatalogDao();
     vi.mocked(dao.connectOwnAccount).mockResolvedValue(
       mockEntity<WhatsappAccount>({ id: "wa-1", ownedByPlatform: false }),
     );
 
-    const service = new WhatsappAccountService(dao);
+    const service = new WhatsappAccountService(dao, catalogDao);
     const result = await service.connectOwnAccount(dto);
 
     expect(result.ownedByPlatform).toBe(false);
     expect(dao.connectOwnAccount).toHaveBeenCalledWith({ ...dto, displayPhoneNumber: "5215512345678" });
+    expect(catalogDao.copySystemToTenant).toHaveBeenCalledOnce();
   });
 
   it("never calls the DAO when Meta rejects the credentials", async () => {
@@ -83,9 +94,11 @@ describe("WhatsappAccountService.connectOwnAccount", () => {
     );
 
     const dao = makeDao();
-    const service = new WhatsappAccountService(dao);
+    const catalogDao = makeCatalogDao();
+    const service = new WhatsappAccountService(dao, catalogDao);
 
     await expect(service.connectOwnAccount(dto)).rejects.toThrow(WhatsappGraphApiError);
     expect(dao.connectOwnAccount).not.toHaveBeenCalled();
+    expect(catalogDao.copySystemToTenant).not.toHaveBeenCalled();
   });
 });
