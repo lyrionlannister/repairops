@@ -17,6 +17,8 @@ interface CustomersTableProps {
   onPageSizeChange: (size: number) => void;
   onOpenHistory: (customer: Customer) => void;
   onRequestDelete: (id: string) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 export const CustomersTable: FC<CustomersTableProps> = ({
@@ -28,6 +30,8 @@ export const CustomersTable: FC<CustomersTableProps> = ({
   totalItems,
   startIndex,
   onPageChange,
+  canEdit,
+  canDelete,
   onPageSizeChange,
   onOpenHistory,
   onRequestDelete,
@@ -97,6 +101,7 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                     >
                       <Smartphone className="size-4" />
                     </button>
+                    {canEdit && (
                     <button
                       onClick={() => navigate(`/commerce/customers/${customer.id}/edit`)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
@@ -104,6 +109,8 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                     >
                       <Pencil className="size-4" />
                     </button>
+                    )}
+                    {canDelete && (
                     <button
                       onClick={() => onRequestDelete(customer.id)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
@@ -111,6 +118,7 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                     >
                       <Trash2 className="size-4" />
                     </button>
+                    )}
                   </div>
                 </td>
               </tr>

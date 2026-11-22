@@ -22,9 +22,13 @@ interface QuotesTableProps {
   onPageSizeChange: (size: number) => void;
   onStatusChange: (id: string, status: "accepted" | "rejected") => void;
   onRequestDelete: (id: string) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 export const QuotesTable: FC<QuotesTableProps> = ({
+  canEdit,
+  canDelete,
   loading,
   quotes,
   filteredQuotes,
@@ -105,7 +109,7 @@ export const QuotesTable: FC<QuotesTableProps> = ({
                   </TableCell>
                   <TableCell className="px-4 py-4">
                     <div className="flex items-center gap-1">
-                      {quote.status === "pending" && (
+                      {canEdit && quote.status === "pending" && (
                         <>
                           <button
                             title="Aceptar"
@@ -139,6 +143,7 @@ export const QuotesTable: FC<QuotesTableProps> = ({
                       >
                         <FileText className="size-4" />
                       </button>
+                      {canEdit && (
                       <button
                         title="Editar"
                         onClick={() => navigate(`/commerce/quotes/${quote.id}/edit`)}
@@ -146,6 +151,8 @@ export const QuotesTable: FC<QuotesTableProps> = ({
                       >
                         <Pencil className="size-4" />
                       </button>
+                      )}
+                      {canDelete && (
                       <button
                         title="Eliminar"
                         onClick={() => onRequestDelete(quote.id)}
@@ -154,6 +161,7 @@ export const QuotesTable: FC<QuotesTableProps> = ({
                       >
                         <Trash2 className="size-4" />
                       </button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

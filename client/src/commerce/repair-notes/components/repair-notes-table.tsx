@@ -15,6 +15,9 @@ interface RepairNotesTableProps {
   filteredNotes: RepairNoteRecord[];
   pageItems: RepairNoteRecord[];
   canEditNotes: boolean;
+  canCreateNotes: boolean;
+  canCancelNotes: boolean;
+  canDeleteNotes: boolean;
   cancellingId: string | null;
   deletingId: string | null;
   page: number;
@@ -44,6 +47,9 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
   filteredNotes,
   pageItems,
   canEditNotes,
+  canCreateNotes,
+  canCancelNotes,
+  canDeleteNotes,
   cancellingId,
   deletingId,
   page,
@@ -83,7 +89,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {notes.length === 0 ? "Crea la primera nota para comenzar." : "Prueba con otro cliente, equipo o estado."}
           </p>
-          {canEditNotes && (
+          {canCreateNotes && (
             <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/repair-notes/new")}>
               Nueva nota
             </Button>
@@ -182,7 +188,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                           >
                             <Pencil className="size-4" />
                           </button>
-                          {note.status !== "delivered" && note.status !== "cancelled" && (
+                          {canCancelNotes && note.status !== "delivered" && note.status !== "cancelled" && (
                             <button
                               title="Cancelar"
                               onClick={() => onRequestCancel(note.id)}
@@ -192,6 +198,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                               <Ban className="size-4" />
                             </button>
                           )}
+                          {canDeleteNotes && (
                           <button
                             title="Eliminar"
                             onClick={() => onRequestDelete(note.id)}
@@ -200,6 +207,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                           >
                             <Trash2 className="size-4" />
                           </button>
+                          )}
                         </>
                       )}
                     </div>

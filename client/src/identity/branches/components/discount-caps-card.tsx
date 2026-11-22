@@ -11,13 +11,11 @@ interface DiscountCapsCardProps {
   form: DiscountCapForm;
   loading: boolean;
   saving: boolean;
-  error: string | null;
-  saved: boolean;
   onChange: (role: CappedRole, value: string) => void;
   onSave: () => void;
 }
 
-export const DiscountCapsCard: FC<DiscountCapsCardProps> = ({ form, loading, saving, error, saved, onChange, onSave }) => (
+export const DiscountCapsCard: FC<DiscountCapsCardProps> = ({ form, loading, saving, onChange, onSave }) => (
   <form
     onSubmit={(event) => {
       event.preventDefault();
@@ -51,9 +49,6 @@ export const DiscountCapsCard: FC<DiscountCapsCardProps> = ({ form, loading, sav
         </div>
       ))}
     </div>
-
-    {error && <p className="text-sm text-error-500">{error}</p>}
-    {saved && !error && <p className="text-sm text-success-600 dark:text-success-500">Topes guardados.</p>}
 
     <div className="flex justify-end">
       <Button type="submit" variant="primary" disabled={loading || saving}>

@@ -18,7 +18,7 @@ export const BranchFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { branches, loading, saving, error, fetchAll, create, update } = useBranches();
+  const { branches, loading, saving, fetchAll, create, update } = useBranches();
   const { refreshBranches } = useBranch();
   const [form, setForm] = useState<BranchFormData>(emptyForm);
   const context = useBranchContext(isEdit ? (id ?? null) : null);
@@ -60,7 +60,6 @@ export const BranchFormPage: React.FC = () => {
       loading={loading}
       saving={saving}
       isEdit={isEdit}
-      error={error}
       onChange={handleChange}
       onSubmit={handleSubmit}
       onCancel={() => navigate("/identity/branches")}
@@ -80,8 +79,6 @@ export const BranchFormPage: React.FC = () => {
               form={discountCaps.form}
               loading={discountCaps.loading}
               saving={discountCaps.saving}
-              error={discountCaps.error}
-              saved={discountCaps.saved}
               onChange={discountCaps.setCap}
               onSave={discountCaps.save}
             />

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FC } from "react";
 import { Plus } from "lucide-react";
 import { useServiceTypes } from "@common/hooks/use-service-types";
+import { usePermissions } from "@common/hooks/use-permissions";
 import { Input } from "./ui/inputs/input";
 import { Button } from "./ui/button/button";
 
@@ -17,6 +18,7 @@ export const ServiceTypeMultiSelect: FC<ServiceTypeMultiSelectProps> = ({ value,
   const { serviceTypes, loading, fetchAll, create } = useServiceTypes();
   const [newTypeName, setNewTypeName] = useState("");
   const [adding, setAdding] = useState(false);
+  const canCreateTypes = usePermissions().can("settings.manage");
 
   useEffect(() => {
     fetchAll();
@@ -58,6 +60,7 @@ export const ServiceTypeMultiSelect: FC<ServiceTypeMultiSelectProps> = ({ value,
           ))
         )}
       </div>
+      {canCreateTypes && (
       <div className="flex items-center gap-2">
         <Input
           placeholder="Nuevo tipo de servicio (ej. Software)"
@@ -69,6 +72,7 @@ export const ServiceTypeMultiSelect: FC<ServiceTypeMultiSelectProps> = ({ value,
           <Plus className="size-4" />
         </Button>
       </div>
+      )}
     </div>
   );
 };

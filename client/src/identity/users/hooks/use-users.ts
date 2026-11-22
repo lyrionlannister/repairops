@@ -96,7 +96,6 @@ export const useUsers = () => {
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [toggleError, setToggleError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -182,7 +181,6 @@ export const useUsers = () => {
   const toggleUserStatus = useCallback(
     async (id: string): Promise<void> => {
       setTogglingId(id);
-      setToggleError(null);
       try {
         const response = await apiClient(`/auth/users/${id}/toggle-status`, {
           method: "PATCH",
@@ -195,9 +193,8 @@ export const useUsers = () => {
         setUsers((prev) =>
           prev.map((u) => (u.id === id ? { ...u, isActive: updated.isActive } : u)),
         );
-      } catch (err) {
-        // 402 al reactivar por encima del plan, o 400 al desactivar al último dueño.
-        setToggleError(err instanceof Error ? err.message : "Error al cambiar estado del usuario");
+      } catch {
+        // El toast de useApiClient ya mostró el motivo (402 por el plan, o último dueño activo).
       } finally {
         setTogglingId(null);
       }
@@ -222,6 +219,5 @@ export const useUsers = () => {
     clearUpdateError: () => setUpdateError(null),
     toggleUserStatus,
     togglingId,
-    toggleError,
   };
 };

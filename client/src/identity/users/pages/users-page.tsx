@@ -17,7 +17,7 @@ import { formatDate } from "../utils/format";
 
 export const UsersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { users, loading, error, fetchUsers, toggleUserStatus, togglingId, toggleError } = useUsers();
+  const { users, loading, error, fetchUsers, toggleUserStatus, togglingId } = useUsers();
   const { summary: planSummary, fetchPlan } = usePlan();
   const { search, setSearch, filteredUsers } = useUsersPage(users);
 
@@ -44,7 +44,6 @@ export const UsersPage: React.FC = () => {
       }
     >
       {planSummary && <PlanUsageCard summary={planSummary} />}
-      {toggleError && <p className="text-sm text-error-500">{toggleError}</p>}
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">
@@ -95,7 +94,7 @@ export const UsersPage: React.FC = () => {
               <tr className="border-b border-gray-200 dark:border-gray-800">
                 <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Nombre</th>
                 <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Email</th>
-                <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Rol</th>
+                <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Roles</th>
                 <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Creado</th>
                 <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Estado</th>
                 <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Acciones</th>

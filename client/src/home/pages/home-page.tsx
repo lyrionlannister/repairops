@@ -1,4 +1,8 @@
 import { useMemo } from "react";
+import { Navigate } from "react-router";
+import { usePermissions } from "@common/hooks/use-permissions";
+import { firstNavPath, visibleNavItems } from "@common/utils/visible-nav-items";
+import { signInNavbarItems } from "../../config/app/navbar/sign-in-navbar-items";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useDashboardPage } from "../hooks/use-dashboard-page";
 import { DashboardRevenueCards } from "../components/dashboard-revenue-cards";
@@ -8,7 +12,17 @@ import { DashboardConversationStats } from "../components/dashboard-conversation
 import { DashboardMainChart } from "../components/dashboard-main-chart";
 import { DashboardSecondaryCharts } from "../components/dashboard-secondary-charts";
 
+// Quien no ve el dashboard (el técnico) entra a lo primero que su menú le deja abrir.
 export const HomePage: React.FC = () => {
+  const { can, canAny } = usePermissions();
+  if (!can("dashboard.read")) {
+    const target = firstNavPath(visibleNavItems(signInNavbarItems, canAny));
+    return target ? <Navigate to={target} replace /> : <PageShell title="Sin acceso" description="Tu usuario no tiene módulos asignados.">{null}</PageShell>;
+  }
+  return <DashboardHome />;
+};
+
+const DashboardHome: React.FC = () => {
   const {
     daily,
     monthly,

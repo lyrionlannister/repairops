@@ -7,11 +7,13 @@ import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
+import { usePermissions } from "@common/hooks/use-permissions";
 import { QuotesFilterBar } from "../components/quotes-filter-bar";
 import { QuotesTable } from "../components/quotes-table";
 
 export const QuotesPage: React.FC = () => {
   const navigate = useNavigate();
+  const { can, canAny } = usePermissions();
   const { quotes, loading, error, fetchQuotes, deleteQuote, setStatus } = useQuotes();
   const { search, setSearch, statusFilter, setStatusFilter, deletingId, filteredQuotes, handleDelete, handleStatusChange } =
     useQuotesPage({ quotes, deleteQuote, setStatus });
@@ -28,9 +30,12 @@ export const QuotesPage: React.FC = () => {
       title="Cotizaciones"
       description="Genera y da seguimiento a cotizaciones para clientes."
       action={
-        <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/quotes/new")}>
-          Nueva cotización
-        </Button>
+        // El formulario no liga la cotización a una nota: quien solo cotiza sus notas no crea desde aquí.
+        can("quotes.write") && (
+          <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/quotes/new")}>
+            Nueva cotización
+          </Button>
+        )
       }
     >
       {error && <div className="text-sm text-red-500">{error}</div>}
@@ -49,6 +54,8 @@ export const QuotesPage: React.FC = () => {
       />
 
       <QuotesTable
+        canEdit={canAny("quotes.write", "quotes.write.own")}
+        canDelete={can("quotes.delete")}
         loading={loading}
         quotes={quotes}
         filteredQuotes={filteredQuotes}

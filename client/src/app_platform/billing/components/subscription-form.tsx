@@ -12,19 +12,18 @@ interface SubscriptionFormProps {
   form: SubscriptionFormData;
   plans: PlanOption[];
   disabled: boolean;
-  error: string | null;
   onChange: (field: keyof SubscriptionFormData, value: string) => void;
   onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }
 
-const limitLabel = (value: number | null) => (value === null ? "sin límite" : String(value));
+const limitLabel = (value: number | null, one: string, many: string) =>
+  value === null ? `${many} sin límite` : `${value} ${value === 1 ? one : many}`;
 
 export const SubscriptionForm: FC<SubscriptionFormProps> = ({
   form,
   plans,
   disabled,
-  error,
   onChange,
   onSubmit,
   onCancel,
@@ -42,7 +41,7 @@ export const SubscriptionForm: FC<SubscriptionFormProps> = ({
           disabled={disabled}
           options={plans.map((plan) => ({
             value: plan.key,
-            label: `${plan.name} (${limitLabel(plan.maxUsers)} usuarios, ${limitLabel(plan.maxBranches)} sucursales)`,
+            label: `${plan.name} (${limitLabel(plan.maxUsers, "usuario", "usuarios")}, ${limitLabel(plan.maxBranches, "sucursal", "sucursales")})`,
           }))}
         />
       </div>
@@ -84,7 +83,6 @@ export const SubscriptionForm: FC<SubscriptionFormProps> = ({
     <p className="text-xs text-gray-500 dark:text-gray-400">
       Bajar de plan o quitar extras solo procede si el uso actual del taller ya cabe.
     </p>
-    {error && <p className="text-sm text-error-500">{error}</p>}
 
     <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
       <Button type="button" variant="outline" onClick={onCancel}>

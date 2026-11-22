@@ -12,7 +12,6 @@ interface UserFormProps {
   isEdit: boolean;
   disabled: boolean;
   saving: boolean;
-  error: string | null;
   branches: BranchRecord[];
   showPassword: boolean;
   onTogglePassword: () => void;
@@ -28,7 +27,6 @@ export const UserForm: FC<UserFormProps> = ({
   isEdit,
   disabled,
   saving,
-  error,
   branches,
   showPassword,
   onTogglePassword,
@@ -61,8 +59,6 @@ export const UserForm: FC<UserFormProps> = ({
         onChange={onBranchAssignmentChange}
       />
     )}
-
-    {error && <p className="text-sm text-error-500">{error}</p>}
 
     <div className="flex justify-end gap-2 pt-1">
       <Button type="button" variant="outline" onClick={onCancel}>

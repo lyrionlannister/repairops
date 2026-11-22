@@ -27,7 +27,7 @@ export const UserFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { users, loading, fetchUsers, createUser, creating, createError, updateUser, updating, updateError } = useUsers();
+  const { users, loading, fetchUsers, createUser, creating, updateUser, updating } = useUsers();
   const { branches, workingBranchId } = useBranch();
   const context = useEmployeeContext(isEdit ? (id ?? null) : null);
   const [form, setForm] = useState<UserFormData>(INITIAL_FORM);
@@ -71,7 +71,6 @@ export const UserFormPage: React.FC = () => {
       isEdit={isEdit}
       disabled={disabled}
       saving={saving}
-      error={isEdit ? updateError : createError}
       branches={branches}
       showPassword={showPassword}
       onTogglePassword={() => setShowPassword((prev) => !prev)}

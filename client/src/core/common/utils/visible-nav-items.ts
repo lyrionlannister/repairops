@@ -10,3 +10,11 @@ export const visibleNavItems = (items: NavItem[], canAny: (...permissions: Permi
     const subItems = item.subItems.filter((sub) => !sub.permissions || canAny(...sub.permissions));
     return subItems.length > 0 ? [{ ...item, subItems }] : [];
   });
+
+export const firstNavPath = (items: NavItem[]): string | null => {
+  for (const item of items) {
+    const path = item.path ?? item.subItems?.[0]?.path;
+    if (path) return path;
+  }
+  return null;
+};

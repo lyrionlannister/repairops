@@ -20,7 +20,7 @@ const EMPTY_FORM: SubscriptionFormData = {
 export const TenantSubscriptionPage: React.FC = () => {
   const navigate = useNavigate();
   const { tenantId } = useParams<{ tenantId: string }>();
-  const { tenants, plans, loading, saving, error, fetchAll, assign } = usePlatformTenants();
+  const { tenants, plans, loading, saving, fetchAll, assign } = usePlatformTenants();
   const [form, setForm] = useState<SubscriptionFormData>(EMPTY_FORM);
   const tenant = tenants.find((t) => t.tenantId === tenantId);
 
@@ -47,7 +47,6 @@ export const TenantSubscriptionPage: React.FC = () => {
           form={form}
           plans={plans}
           disabled={loading || saving || !tenant}
-          error={error}
           onChange={(field, value) => setForm((prev) => ({ ...prev, [field]: value }))}
           onSubmit={handleSubmit}
           onCancel={() => navigate("/platform/tenants")}

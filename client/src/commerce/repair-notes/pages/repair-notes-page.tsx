@@ -14,8 +14,9 @@ import { RepairNoteDeliveryModal } from "../components/repair-note-delivery-moda
 
 export const RepairNotesPage: React.FC = () => {
   const navigate = useNavigate();
-  const { canAny } = usePermissions();
+  const { can, canAny } = usePermissions();
   const canEditNotes = canAny("repair-notes.write", "repair-notes.write.own");
+  const canCreateNotes = canAny("repair-notes.create", "repair-notes.create.own");
   const { notes, loading, error, fetchNotes, deleteNote, cancelNote, changeStatus } = useRepairNotes();
   const {
     search,
@@ -48,7 +49,7 @@ export const RepairNotesPage: React.FC = () => {
       title="Notas de Reparación"
       description="Gestiona el taller de reparación de celulares."
       action={
-        canEditNotes ? (
+        canCreateNotes ? (
           <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/repair-notes/new")}>
             Nueva nota
           </Button>
@@ -75,6 +76,9 @@ export const RepairNotesPage: React.FC = () => {
         filteredNotes={filteredNotes}
         pageItems={pageItems}
         canEditNotes={canEditNotes}
+        canCreateNotes={canCreateNotes}
+        canCancelNotes={can("repair-notes.write")}
+        canDeleteNotes={can("repair-notes.delete")}
         cancellingId={cancellingId}
         deletingId={deletingId}
         page={page}

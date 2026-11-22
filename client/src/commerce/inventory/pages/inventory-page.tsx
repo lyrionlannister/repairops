@@ -7,6 +7,7 @@ import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useInventoryPage } from "../hooks/use-inventory-page";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
+import { usePermissions } from "@common/hooks/use-permissions";
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
@@ -19,12 +20,15 @@ export const InventoryPage = () => {
   const { items, loading, saving, error, fetchAll, remove, bulkImport, registerMovement } =
     useBranchScopedInventory(workingBranchId);
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
+  const { can } = usePermissions();
+  const canReadSuppliers = can("suppliers.read");
+  const canManage = can("inventory.manage");
   const navigate = useNavigate();
   const supplierName = (supplierId: string | null) => suppliers.find((s) => s.id === supplierId)?.name ?? "—";
 
   useEffect(() => {
-    fetchSuppliers();
-  }, [fetchSuppliers]);
+    if (canReadSuppliers) fetchSuppliers();
+  }, [fetchSuppliers, canReadSuppliers]);
 
   const {
     deleteConfirmId,
@@ -63,6 +67,7 @@ export const InventoryPage = () => {
       title="Inventario"
       description={items.length > 0 ? `${items.length} productos en total.` : "Aún no hay productos."}
       action={
+        canManage && (
         <div className="flex shrink-0 gap-2">
           <Button variant="outline" onClick={() => setIsImportOpen(true)}>
             <Upload className="mr-1.5 size-4" />
@@ -73,6 +78,7 @@ export const InventoryPage = () => {
             Nuevo producto
           </Button>
         </div>
+        )
       }
     >
 
@@ -89,6 +95,9 @@ export const InventoryPage = () => {
         onPageSizeChange={setPageSize}
         onOpenMovement={openMovement}
         onRequestDelete={setDeleteConfirmId}
+        showCosts={can("inventory.read")}
+        canManage={canManage}
+        canAdjust={can("inventory.adjust")}
       />
 
       <InventoryMovementModal
