@@ -1,19 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
-
-export interface Message {
-  id: number;
-  sessionId: string;
-  content: string;
-  type: string;
-  fromMe: boolean;
-  messageType: string;
-  // Solo si el mensaje trae un archivo descargable.
-  mediaId?: string;
-  mediaMime?: string;
-  mediaSize?: number;
-  location?: { lat: string; lng: string };
-}
+import type { Message } from "../types/messages";
 
 export function useMessages(sessionId: string | null) {
   const { apiClient } = useApiClient();

@@ -1,13 +1,6 @@
 import type { FC } from "react";
-import type { QueuedSale } from "../hooks/use-offline-sales-queue";
 import { Button } from "@ui/button/button";
-
-interface OfflineSalesQueueBannerProps {
-  offlineQueue: QueuedSale[];
-  isOnline: boolean;
-  syncing: boolean;
-  onSync: () => void;
-}
+import type { OfflineSalesQueueBannerProps } from "../props/offline-sales-queue-banner-props";
 
 export const OfflineSalesQueueBanner: FC<OfflineSalesQueueBannerProps> = ({
   offlineQueue,

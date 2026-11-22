@@ -1,21 +1,10 @@
 import type { FC } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
-import type { RepairNoteItemLine } from "../hooks/use-repair-note-item-lines";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Select } from "@ui/select/select";
 import { SectionTitle } from "./section-title";
-
-interface RepairNoteItemLinesSectionProps {
-  itemLines: RepairNoteItemLine[];
-  inventoryItems: InventoryItem[];
-  saving: boolean;
-  onItemChange: (index: number, inventoryItemId: string) => void;
-  onLineChange: (index: number, patch: Partial<RepairNoteItemLine>) => void;
-  onAddLine: () => void;
-  onRemoveLine: (index: number) => void;
-}
+import type { RepairNoteItemLinesSectionProps } from "../props/repair-note-item-lines-section-props";
 
 export const RepairNoteItemLinesSection: FC<RepairNoteItemLinesSectionProps> = ({
   itemLines,

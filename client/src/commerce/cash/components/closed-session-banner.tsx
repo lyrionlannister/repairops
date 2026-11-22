@@ -1,11 +1,6 @@
 import type { FC } from "react";
-import type { CashSessionRecord } from "../hooks/use-cash";
 import { formatMoney } from "../utils/format";
-
-interface ClosedSessionBannerProps {
-  closedSession: CashSessionRecord;
-  onDismiss: () => void;
-}
+import type { ClosedSessionBannerProps } from "../props/closed-session-banner-props";
 
 export const ClosedSessionBanner: FC<ClosedSessionBannerProps> = ({ closedSession, onDismiss }) => (
   <div className="relative shrink-0 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">

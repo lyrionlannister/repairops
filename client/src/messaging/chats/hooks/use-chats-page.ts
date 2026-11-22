@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Conversation } from "./use-conversations";
+import type { Conversation } from "../types/conversations";
 
 export const useChatsPage = (conversations: Conversation[]) => {
   const [search, setSearch] = useState("");

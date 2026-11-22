@@ -1,6 +1,5 @@
-import type { SubscriptionStatus } from "../hooks/use-plan";
-import type { PlanOption, SubscriptionFormData, TenantPlan } from "../hooks/use-platform-tenants";
-
+import type { SubscriptionStatus } from "../types/plan";
+import type { PlanOption, SubscriptionFormData, TenantPlan } from "../types/platform-tenants";
 export const formatUsage = (used: number, limit: number | null): string =>
   limit === null ? `${used} (sin límite)` : `${used} de ${limit}`;
 

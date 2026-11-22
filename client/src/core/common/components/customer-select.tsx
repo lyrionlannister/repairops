@@ -1,14 +1,8 @@
 import { useEffect, useRef, useState, type FC } from "react";
-import { useCustomers, type Customer } from "@commerce/customers/hooks/use-customers";
+import { useCustomers } from "@commerce/customers/hooks/use-customers";
 import { labelFor } from "@commerce/customers/utils/format";
-
-interface CustomerSelectProps {
-  value: string;
-  onChange: (customerId: string, customer: Customer | null) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  className?: string;
-}
+import type { Customer } from "@commerce/customers/types/customers";
+import type { CustomerSelectProps } from "../props/customer-select-props";
 
 // Selector de cliente existente -- al elegir uno, el caller decide si
 // autollena nombre/telefono (ver repair-note-form-page / quote-form-page).

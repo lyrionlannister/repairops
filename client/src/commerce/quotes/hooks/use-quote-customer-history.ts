@@ -1,11 +1,6 @@
 import { useEffect, useMemo } from "react";
-import { useQuotes, type QuoteStatus } from "./use-quotes";
-
-export interface QuoteHistoryEntry {
-  id: string;
-  status: QuoteStatus;
-  totalValue: number;
-}
+import { useQuotes } from "./use-quotes";
+import type { QuoteHistoryEntry } from "../types/quote-customer-history";
 
 export const useQuoteCustomerHistory = (customerId: string | null, excludeId?: string) => {
   const { quotes, fetchQuotes } = useQuotes();

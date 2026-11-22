@@ -4,17 +4,8 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { ROLE_LABELS } from "@identity/users/hooks/use-users";
-
-import type { CappedRole, DiscountCapForm } from "../hooks/use-discount-caps";
 import { CAPPED_ROLES } from "../utils/discount-caps";
-
-interface DiscountCapsCardProps {
-  form: DiscountCapForm;
-  loading: boolean;
-  saving: boolean;
-  onChange: (role: CappedRole, value: string) => void;
-  onSave: () => void;
-}
+import type { DiscountCapsCardProps } from "../props/discount-caps-card-props";
 
 export const DiscountCapsCard: FC<DiscountCapsCardProps> = ({ form, loading, saving, onChange, onSave }) => (
   <form

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useBranch } from "@common/hooks/use-branch";
-import { useBranches, type BranchFormData } from "./use-branches";
+import { useBranches } from "./use-branches";
+import type { BranchFormData } from "../types/branches";
 
 const EMPTY_FORM: BranchFormData = { name: "", address: "", phone: "" };
 

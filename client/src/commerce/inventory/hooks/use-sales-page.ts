@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Sale } from "./use-sales";
+import type { Sale } from "../types/sales";
 
 export const useSalesPage = (sales: Sale[]) => {
   const [search, setSearch] = useState("");

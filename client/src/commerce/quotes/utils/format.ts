@@ -1,4 +1,4 @@
-import type { QuoteStatus } from "../hooks/use-quotes";
+import type { QuoteStatus } from "../types/quotes";
 
 export const STATUS_CONFIG: Record<QuoteStatus, { label: string; className: string }> = {
   pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },

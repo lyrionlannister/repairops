@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { useRegister, type RegisterPayload } from "../../../core/common/hooks/use-register";
+import { useRegister } from "../../../core/common/hooks/use-register";
 import { Input } from "../../../core/common/components/ui/inputs/input";
 import { Label } from "../../../core/common/components/ui/inputs/label";
 import { Button } from "../../../core/common/components/ui/button/button";
@@ -10,6 +10,7 @@ import {
   REGISTER_REDIRECT_DELAY_MS,
 } from "../constants/auth.constants";
 import { updateRegisterFormField } from "../helpers/auth-form.helpers";
+import type { RegisterPayload } from "../../../core/common/types/register";
 
 export const RegisterForm: React.FC = () => {
   const { register, loading, clearError, clearSuccess } = useRegister();

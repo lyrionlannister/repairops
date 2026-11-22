@@ -1,5 +1,4 @@
 import type { FC } from "react";
-import type { CustomerPaymentMethod } from "../hooks/use-customer-payments";
 import { EmployeeSelect } from "@common/components/employee-select";
 import { Modal } from "@ui/modal/modal";
 import { Button } from "@ui/button/button";
@@ -7,23 +6,8 @@ import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 import { METHOD_LABELS } from "../utils/format";
-
-export interface RegisterPaymentForm {
-  amount: string;
-  method: CustomerPaymentMethod;
-  createdByEmployeeId: string;
-}
-
-interface RegisterPaymentModalProps {
-  isOpen: boolean;
-  form: RegisterPaymentForm;
-  balance: number;
-  saving: boolean;
-  error: string | null;
-  onFormChange: (updater: (prev: RegisterPaymentForm) => RegisterPaymentForm) => void;
-  onClose: () => void;
-  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
-}
+import type { CustomerPaymentMethod } from "../types/customer-payments";
+import type { RegisterPaymentModalProps } from "../props/register-payment-modal-props";
 
 export const RegisterPaymentModal: FC<RegisterPaymentModalProps> = ({
   isOpen,

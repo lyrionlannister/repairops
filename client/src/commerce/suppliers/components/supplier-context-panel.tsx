@@ -1,11 +1,5 @@
 import { Boxes, DollarSign, TriangleAlert } from "lucide-react";
-import type { SupplierCriticalItem } from "../hooks/use-supplier-context";
-
-interface SupplierContextPanelProps {
-  skuCount: number;
-  stockValueAtCost: number;
-  criticalItems: SupplierCriticalItem[];
-}
+import type { SupplierContextPanelProps } from "../props/supplier-context-panel-props";
 
 export const SupplierContextPanel: React.FC<SupplierContextPanelProps> = ({
   skuCount,

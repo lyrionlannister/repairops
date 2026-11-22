@@ -4,18 +4,8 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
-
-import type { PlanOption, SubscriptionFormData } from "../hooks/use-platform-tenants";
 import { planOptionLabel, STATUS_LABELS } from "../utils/format";
-
-interface SubscriptionFormProps {
-  form: SubscriptionFormData;
-  plans: PlanOption[];
-  disabled: boolean;
-  onChange: (field: keyof SubscriptionFormData, value: string) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
+import type { SubscriptionFormProps } from "../props/subscription-form-props";
 
 export const SubscriptionForm: FC<SubscriptionFormProps> = ({
   form,

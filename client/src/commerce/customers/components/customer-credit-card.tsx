@@ -3,18 +3,7 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { formatMoney } from "../utils/format";
-
-interface CustomerCreditCardProps {
-  limit: number;
-  balance: number;
-  available: number;
-  usedPct: number;
-  draft: string;
-  dirty: boolean;
-  saving: boolean;
-  onDraftChange: (value: string) => void;
-  onSave: () => void;
-}
+import type { CustomerCreditCardProps } from "../props/customer-credit-card-props";
 
 export const CustomerCreditCard: FC<CustomerCreditCardProps> = ({
   limit,

@@ -1,17 +1,7 @@
-import type { FC, RefObject } from "react";
+import type { FC } from "react";
 
 import { Button } from "@ui/button/button";
 import { Step, Stepper } from "@ui/stepper/stepper";
-
-import type { Customer } from "@commerce/customers/hooks/use-customers";
-import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
-import type {
-  AdvancePaymentInput,
-  RepairNoteFormData,
-  RepairNoteRecord,
-  RepairNoteStatus,
-} from "../hooks/use-repair-notes";
-import type { RepairNoteItemLine } from "../hooks/use-repair-note-item-lines";
 import { RepairNoteCustomerSection } from "./repair-note-customer-section";
 import { RepairNoteDeviceSection } from "./repair-note-device-section";
 import { RepairNoteDatesSection } from "./repair-note-dates-section";
@@ -21,56 +11,9 @@ import {
   RepairNoteWarrantySection,
 } from "./repair-note-cost-warranty-section";
 import { RepairNoteStatusSection } from "./repair-note-status-section";
+import type { RepairNoteFormProps } from "../props/repair-note-form-props";
 
 export const REPAIR_NOTE_FORM_STEPS = ["Cliente", "Equipo", "Servicio", "Costo y garantía"];
-
-interface RepairNoteFormProps {
-  formRef: RefObject<HTMLFormElement | null>;
-  step: number;
-  isLast: boolean;
-  onStepClick: (step: number) => void;
-  form: RepairNoteFormData;
-  note: RepairNoteRecord | null;
-  saving: boolean;
-  isEdit: boolean;
-  showCustomerHistory: boolean;
-  knownBrands: string[];
-  onCustomerChange: (customerId: string, customer: Customer | null) => void;
-  onCustomerNameChange: (value: string) => void;
-  onContactNumberChange: (value: string) => void;
-  onBrandChange: (value: string) => void;
-  onModelChange: (value: string) => void;
-  onReportedFailureChange: (value: string) => void;
-  onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
-  onDeviceOffChange: (value: boolean) => void;
-  onReceivedAtChange: (value: string) => void;
-  onDeliveryDateChange: (value: string) => void;
-  onAssignedEmployeeIdChange: (value: string) => void;
-  onTechnicianNotesChange: (value: string) => void;
-  onAdditionalFindingsChange: (value: string) => void;
-  itemLines: RepairNoteItemLine[];
-  inventoryItems: InventoryItem[];
-  onItemChange: (index: number, inventoryItemId: string) => void;
-  onLineChange: (index: number, patch: Partial<RepairNoteItemLine>) => void;
-  onAddLine: () => void;
-  onRemoveLine: (index: number) => void;
-  onTotalValueChange: (value: string) => void;
-  onRequiresAdvanceToggle: () => void;
-  onAdvanceValueChange: (value: string) => void;
-  advanceMethod: AdvancePaymentInput["method"];
-  onAdvanceMethodChange: (value: string) => void;
-  advanceEmployeeId: string;
-  onAdvanceEmployeeIdChange: (value: string) => void;
-  onHasWarrantyToggle: () => void;
-  onHasExtendedWarrantyToggle: () => void;
-  onExtendedWarrantyDaysChange: (value: string) => void;
-  onStatusChange: (status: RepairNoteStatus) => void;
-  onBack: () => void;
-  onNext: () => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
-
 export const RepairNoteForm: FC<RepairNoteFormProps> = ({
   formRef,
   step,

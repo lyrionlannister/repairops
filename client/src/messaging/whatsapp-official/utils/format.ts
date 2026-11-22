@@ -1,5 +1,6 @@
-import type { WhatsappTemplateSyncStatus } from "../hooks/use-whatsapp-templates";
-import type { WhatsappTemplateCatalogEntryRow, WhatsappTemplateCategory } from "../hooks/use-whatsapp-template-catalog";
+import type { WhatsappTemplateSyncStatus } from "../types/whatsapp-templates";
+import type { WhatsappTemplateCatalogEntryRow, WhatsappTemplateCategory } from "../types/whatsapp-template-catalog";
+import type { CatalogFormData } from "../types/format";
 
 export const EMPTY_CONNECT_FORM = { wabaId: "", phoneNumberId: "", accessToken: "" };
 
@@ -29,9 +30,6 @@ export const parseVariables = (variablesText: string): string[] =>
     .split(",")
     .map((v) => v.trim())
     .filter((v) => v.length > 0);
-
-export type CatalogFormData = typeof EMPTY_CATALOG_FORM;
-
 export const entryToCatalogForm = (entry: WhatsappTemplateCatalogEntryRow): CatalogFormData => ({
   key: entry.key,
   metaName: entry.metaName,

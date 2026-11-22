@@ -2,9 +2,9 @@ import { Printer } from "lucide-react";
 
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { PdfPreview } from "@common/components/pdf-preview/pdf-preview";
-import type { TicketSize } from "../../../app_platform/local/hooks/use-local";
 import { ThermalReceipt } from "../components/thermal-receipt";
 import { useRepairNotePrintPage } from "../hooks/use-repair-note-print-page";
+import type { TicketSize } from "../../../app_platform/local/types/local";
 
 export const RepairNotePrintPage: React.FC = () => {
   const { note, local, loading, ticketSize, setTicketSize, isThermal, pageWidthMm, serviceTypeNames, pdf } =

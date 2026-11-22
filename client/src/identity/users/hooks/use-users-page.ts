@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import type { UserRecord } from "./use-users";
 import { useBranch } from "@common/hooks/use-branch";
 import { ALL_BRANCHES } from "@common/contexts/branch-context";
+import type { UserRecord } from "../types/users";
 
 export const useUsersPage = (users: UserRecord[]) => {
   const [search, setSearch] = useState("");

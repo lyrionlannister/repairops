@@ -4,14 +4,7 @@ import { Select } from "./ui/select/select";
 import { Input } from "./ui/inputs/input";
 import { usePermissions } from "../hooks/use-permissions";
 import { useCurrentUser } from "../hooks/use-current-user";
-
-interface EmployeeSelectProps {
-  value: string;
-  onChange: (employeeId: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  className?: string;
-}
+import type { EmployeeSelectProps } from "../props/employee-select-props";
 
 // Reusable en cualquier modulo que necesite asignar un empleado por id
 // (inventory, quotes, caja, dashboards) -- regla transversal: el valor

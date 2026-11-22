@@ -1,21 +1,6 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export interface Branch {
-  id: string;
-  name: string;
-  address?: string;
-  phone?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface BranchFormData {
-  name: string;
-  address: string;
-  phone: string;
-}
+import type { Branch } from "../types/branches";
 
 export const useBranches = () => {
   const { apiClient } = useApiClient();

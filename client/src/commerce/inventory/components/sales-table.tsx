@@ -1,23 +1,9 @@
 import type { FC } from "react";
-import type { Sale } from "../hooks/use-sales";
 import { TableBody, TableRow, TableCell } from "@ui/table/table";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { formatMoney, formatDate } from "../utils/format";
-
-interface SalesTableProps {
-  loading: boolean;
-  sales: Sale[];
-  filteredSales: Sale[];
-  pageItems: Sale[];
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalItems: number;
-  startIndex: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-}
+import type { SalesTableProps } from "../props/sales-table-props";
 
 export const SalesTable: FC<SalesTableProps> = ({
   loading,

@@ -1,16 +1,7 @@
 import { Fragment } from "react";
 import { Package, Receipt, Wrench, Wallet } from "lucide-react";
 import { formatMoney } from "../utils/format";
-
-interface BranchContextPanelProps {
-  skuCount: number;
-  stockValue: number;
-  criticalCount: number;
-  monthlySalesTotal: number;
-  monthlySalesCount: number;
-  openRepairNotesCount: number;
-  cashSessionOpen: boolean;
-}
+import type { BranchContextPanelProps } from "../props/branch-context-panel-props";
 
 export const BranchContextPanel = ({
   skuCount,

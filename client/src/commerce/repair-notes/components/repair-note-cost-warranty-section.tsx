@@ -5,23 +5,7 @@ import { Toggle } from "@ui/toggle/toggle";
 import { Select } from "@ui/select/select";
 import { EmployeeSelect } from "@common/components/employee-select";
 import { SectionTitle } from "./section-title";
-
-interface RepairNoteCostSectionProps {
-  totalValue: string;
-  requiresAdvance: boolean;
-  advanceValue: string;
-  saving: boolean;
-  onTotalValueChange: (value: string) => void;
-  onRequiresAdvanceToggle: () => void;
-  onAdvanceValueChange: (value: string) => void;
-  // Solo al crear la nota: cómo y quién cobra el anticipo (entra a la caja abierta).
-  advanceMethod?: string;
-  advanceEmployeeId?: string;
-  onAdvanceMethodChange?: (value: string) => void;
-  onAdvanceEmployeeChange?: (value: string) => void;
-  // El anticipo ya se cobró (entró a caja): no se edita.
-  advanceLocked?: boolean;
-}
+import type { RepairNoteCostSectionProps, RepairNoteWarrantySectionProps } from "../props/repair-note-cost-warranty-section-props";
 
 export const RepairNoteCostSection: FC<RepairNoteCostSectionProps> = ({
   totalValue,
@@ -104,17 +88,6 @@ export const RepairNoteCostSection: FC<RepairNoteCostSectionProps> = ({
     )}
   </div>
 );
-
-interface RepairNoteWarrantySectionProps {
-  hasWarranty: boolean;
-  hasExtendedWarranty: boolean;
-  extendedWarrantyDays: string;
-  saving: boolean;
-  onHasWarrantyToggle: () => void;
-  onHasExtendedWarrantyToggle: () => void;
-  onExtendedWarrantyDaysChange: (value: string) => void;
-}
-
 export const RepairNoteWarrantySection: FC<RepairNoteWarrantySectionProps> = ({
   hasWarranty,
   hasExtendedWarranty,

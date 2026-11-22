@@ -1,14 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { usePermissions } from "@common/hooks/use-permissions";
-import type { UserRole } from "@common/types/auth/permission";
-
-export interface EmployeeOption {
-  id: string;
-  firstName: string;
-  lastName: string;
-  roles: UserRole[];
-}
+import type { EmployeeOption } from "../types/employees";
 
 export const useEmployees = () => {
   const { apiClient } = useApiClient();

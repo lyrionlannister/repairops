@@ -1,14 +1,8 @@
 import type { FC } from "react";
-import type { Customer, CustomerDeviceHistoryEntry } from "../hooks/use-customers";
 import { Modal } from "@ui/modal/modal";
 import { Button } from "@ui/button/button";
 import { formatDate } from "../utils/format";
-
-interface CustomerDeviceHistoryModalProps {
-  historyCustomer: Customer | null;
-  devices: CustomerDeviceHistoryEntry[];
-  onClose: () => void;
-}
+import type { CustomerDeviceHistoryModalProps } from "../props/customer-device-history-modal-props";
 
 export const CustomerDeviceHistoryModal: FC<CustomerDeviceHistoryModalProps> = ({
   historyCustomer,

@@ -3,10 +3,9 @@ import { useApiClient } from "../../../core/common/hooks/use-api-client";
 import { formToPayload } from "../utils/user-to-form";
 
 import type { UserRole } from "@common/types/auth/permission";
+import type { UserFormData, UserRecord, CreateUserPayload, UpdateUserPayload, PayCycle } from "../types/users";
 
 export type { UserRole };
-export type PayCycle = "weekly" | "biweekly" | "monthly";
-
 export const ROLE_LABELS: Record<UserRole, string> = {
   owner: "Dueño",
   cashier: "Cajero",
@@ -19,60 +18,7 @@ export const PAY_CYCLE_LABELS: Record<PayCycle, string> = {
   biweekly: "Quincenal",
   monthly: "Mensual",
 };
-
-export interface UserFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  roles: UserRole[];
-  salaryAmount: string;
-  payCycle: PayCycle | "";
-  branchIds: string[];
-  primaryBranchId: string;
-}
-
-export interface UserRecord {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  roles: UserRole[];
-  salaryAmount: number | null;
-  payCycle: PayCycle | null;
-  // Sucursales del usuario (vacío para el owner, que accede a todas).
-  branchIds: string[];
-  primaryBranchId: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CreateUserPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  roles: UserRole[];
-  salaryAmount?: number;
-  payCycle?: PayCycle;
-  branchIds?: string[];
-  primaryBranchId?: string;
-}
-
 // password es opcional: si se omite, el backend debe conservar la contraseña actual.
-interface UpdateUserPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password?: string;
-  roles: UserRole[];
-  salaryAmount?: number;
-  payCycle?: PayCycle;
-  branchIds?: string[];
-  primaryBranchId?: string;
-}
-
 export const useUsers = () => {
   const { apiClient } = useApiClient();
   const [users, setUsers] = useState<UserRecord[]>([]);

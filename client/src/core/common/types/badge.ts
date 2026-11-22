@@ -1,5 +1,7 @@
 export type BadgeVariant = "light" | "solid";
+
 export type BadgeSize = "sm" | "md" | "lg";
+
 export type BadgeColor =
   | "primary"
   | "success"
@@ -8,12 +10,3 @@ export type BadgeColor =
   | "info"
   | "light"
   | "dark";
-
-export interface BadgeProps {
-  variant?: BadgeVariant;
-  size?: BadgeSize;
-  color?: BadgeColor;
-  startIcon?: React.ReactNode;
-  endIcon?: React.ReactNode;
-  children: React.ReactNode;
-}

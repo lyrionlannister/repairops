@@ -3,10 +3,11 @@ import { useNavigate, useParams } from "react-router";
 
 import { PageShell } from "@common/components/page-shell/page-shell";
 
-import { usePriceList, type PriceListItemFormData } from "../hooks/use-price-list";
+import { usePriceList } from "../hooks/use-price-list";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
 import { PriceListSupplierPanel } from "../components/price-list-supplier-panel";
 import { PriceListItemForm } from "../components/price-list-item-form";
+import type { PriceListItemFormData } from "../types/price-list";
 
 const emptyForm: PriceListItemFormData = { brand: "", model: "", price: "", supplierId: "" };
 

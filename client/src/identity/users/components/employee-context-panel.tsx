@@ -1,11 +1,5 @@
 import { ShoppingCart, Wrench } from "lucide-react";
-
-interface EmployeeContextPanelProps {
-  salesCount: number;
-  salesTotal: number;
-  notesTotal: number;
-  notesOpenCount: number;
-}
+import type { EmployeeContextPanelProps } from "../props/employee-context-panel-props";
 
 export const EmployeeContextPanel: React.FC<EmployeeContextPanelProps> = ({
   salesCount,

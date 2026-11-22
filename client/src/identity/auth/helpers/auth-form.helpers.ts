@@ -1,5 +1,5 @@
-import type { LoginPayload } from "../../../core/common/hooks/use-login";
-import type { RegisterPayload } from "../../../core/common/hooks/use-register";
+import type { LoginPayload } from "../../../core/common/types/login";
+import type { RegisterPayload } from "../../../core/common/types/register";
 
 export function updateAuthFormField(
   prev: LoginPayload,

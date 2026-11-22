@@ -1,16 +1,4 @@
-import type { Permission, UserRole } from "../types/auth/permission";
-
-export type CurrentUserRole = UserRole;
-
-export interface CurrentUser {
-  id: string;
-  roles: CurrentUserRole[];
-  permissions: Permission[];
-  firstName: string;
-  lastName: string;
-  email: string;
-  isPlatformAdmin: boolean;
-}
+import type { CurrentUser } from "../types/current-user";
 
 // Lee el usuario que use-login.ts guarda en sessionStorage al iniciar sesión y que
 // useAuthGuard refresca desde /users/me al montar el shell -- no hace una llamada

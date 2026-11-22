@@ -1,26 +1,9 @@
 import type { FC } from "react";
 
 import { Button } from "@ui/button/button";
-
-import type { BranchRecord } from "@common/contexts/branch-context";
-import type { UserFormData, UserRole } from "../hooks/use-users";
 import { BranchAssignmentField } from "./branch-assignment-field";
 import { UserAccountSection } from "./user-account-section";
-
-interface UserFormProps {
-  form: UserFormData;
-  isEdit: boolean;
-  disabled: boolean;
-  saving: boolean;
-  branches: BranchRecord[];
-  showPassword: boolean;
-  onTogglePassword: () => void;
-  onChange: (field: Exclude<keyof UserFormData, "branchIds" | "roles">, value: string) => void;
-  onRolesChange: (roles: UserRole[]) => void;
-  onBranchAssignmentChange: (branchIds: string[], primaryBranchId: string) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
+import type { UserFormProps } from "../props/user-form-props";
 
 export const UserForm: FC<UserFormProps> = ({
   form,

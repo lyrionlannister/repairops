@@ -1,5 +1,4 @@
-import type { RepairNoteFormData, RepairNoteRecord, RepairNoteStatus } from "../hooks/use-repair-notes";
-
+import type { RepairNoteFormData, RepairNoteRecord, RepairNoteStatus } from "../types/repair-notes";
 export const noteToForm = (n: RepairNoteRecord): RepairNoteFormData => ({
   customerName: n.customerName,
   contactNumber: n.contactNumber ?? "",

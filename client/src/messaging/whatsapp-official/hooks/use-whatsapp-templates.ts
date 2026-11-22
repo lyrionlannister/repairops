@@ -1,15 +1,6 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export type WhatsappTemplateSyncStatus = "PENDING" | "APPROVED" | "REJECTED";
-
-export interface WhatsappTemplateStatusRow {
-  id: string;
-  catalogEntryId: string;
-  metaTemplateId: string | null;
-  status: WhatsappTemplateSyncStatus;
-  lastSyncedAt: string | null;
-}
+import type { WhatsappTemplateStatusRow } from "../types/whatsapp-templates";
 
 // GET dispara la reconciliación on-demand en el backend (da de alta en Meta
 // las plantillas del catálogo que falten y refresca el status de las que ya

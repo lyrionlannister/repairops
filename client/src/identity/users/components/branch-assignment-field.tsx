@@ -1,14 +1,5 @@
 import { Label } from "@ui/inputs/label";
-
-import type { BranchRecord } from "@common/contexts/branch-context";
-
-interface BranchAssignmentFieldProps {
-  branches: BranchRecord[];
-  branchIds: string[];
-  primaryBranchId: string;
-  disabled: boolean;
-  onChange: (branchIds: string[], primaryBranchId: string) => void;
-}
+import type { BranchAssignmentFieldProps } from "../props/branch-assignment-field-props";
 
 // Sucursales de un usuario que no es owner: una o varias, y una principal (la sucursal en
 // la que opera, que él no puede cambiar). El owner accede a todas y no usa este campo.

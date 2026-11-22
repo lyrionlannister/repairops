@@ -1,18 +1,8 @@
 import type { FC } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { StagingRow } from "../hooks/use-import-staging";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
-
-interface ImportPreviewStepProps {
-  rows: StagingRow[];
-  saving: boolean;
-  onAddRow: () => void;
-  onUpdateRow: (index: number, patch: Partial<StagingRow>) => void;
-  onRemoveRow: (index: number) => void;
-  onDiscard: () => void;
-  onConfirm: () => void;
-}
+import type { ImportPreviewStepProps } from "../props/import-preview-step-props";
 
 export const ImportPreviewStep: FC<ImportPreviewStepProps> = ({
   rows,

@@ -1,8 +1,7 @@
 import { useState } from "react";
-import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
-import type { RepairNoteItemInput, RepairNoteItemRecord } from "./use-repair-notes";
-
-export type RepairNoteItemLine = { inventoryItemId: string; quantity: string; unitPrice: string };
+import type { InventoryItem } from "@commerce/inventory/types/inventory";
+import type { RepairNoteItemInput, RepairNoteItemRecord } from "../types/repair-notes";
+import type { RepairNoteItemLine } from "../types/repair-note-item-lines";
 
 const emptyItemLine: RepairNoteItemLine = { inventoryItemId: "", quantity: "1", unitPrice: "" };
 

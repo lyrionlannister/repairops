@@ -1,10 +1,5 @@
-import type { FC, TextareaHTMLAttributes } from "react";
-
-interface TextAreaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className"> {
-  className?: string;
-  error?: boolean;
-  hint?: string;
-}
+import type { FC } from "react";
+import type { TextAreaProps } from "../../../props/textarea-props";
 
 // Mismo esqueleto visual que Input.tsx -- antes cada page tenia su propio
 // <textarea> con clases ligeramente distintas (rounded-xl sin shadow-theme-xs).

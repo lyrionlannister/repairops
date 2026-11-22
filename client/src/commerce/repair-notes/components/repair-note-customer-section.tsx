@@ -1,19 +1,9 @@
 import type { FC } from "react";
-import type { Customer } from "@commerce/customers/hooks/use-customers";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { CustomerSelect } from "@common/components/customer-select";
 import { SectionTitle } from "./section-title";
-
-interface RepairNoteCustomerSectionProps {
-  customerId: string;
-  customerName: string;
-  contactNumber: string;
-  saving: boolean;
-  onCustomerChange: (customerId: string, customer: Customer | null) => void;
-  onCustomerNameChange: (value: string) => void;
-  onContactNumberChange: (value: string) => void;
-}
+import type { RepairNoteCustomerSectionProps } from "../props/repair-note-customer-section-props";
 
 export const RepairNoteCustomerSection: FC<RepairNoteCustomerSectionProps> = ({
   customerId,

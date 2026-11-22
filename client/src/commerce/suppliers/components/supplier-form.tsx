@@ -4,20 +4,7 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Toggle } from "@ui/toggle/toggle";
-
-import type { Supplier, SupplierFormData } from "../hooks/use-suppliers";
-
-interface SupplierFormProps {
-  form: SupplierFormData;
-  loading: boolean;
-  saving: boolean;
-  isEdit: boolean;
-  supplier?: Supplier;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-  onToggleActive: () => void;
-}
+import type { SupplierFormProps } from "../props/supplier-form-props";
 
 export const SupplierForm: FC<SupplierFormProps> = ({
   form,

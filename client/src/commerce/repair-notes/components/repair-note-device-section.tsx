@@ -6,21 +6,7 @@ import { TextArea } from "@ui/textarea/textarea";
 import { ServiceTypeMultiSelect } from "@common/components/service-type-multi-select";
 import { SectionTitle } from "./section-title";
 import { CheckboxField } from "@ui/checkbox/checkbox-field";
-
-interface RepairNoteDeviceSectionProps {
-  brand: string;
-  model: string;
-  reportedFailure: string;
-  serviceTypeIds: string[];
-  deviceOff: boolean;
-  knownBrands: string[];
-  saving: boolean;
-  onBrandChange: (value: string) => void;
-  onModelChange: (value: string) => void;
-  onReportedFailureChange: (value: string) => void;
-  onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
-  onDeviceOffChange: (value: boolean) => void;
-}
+import type { RepairNoteDeviceSectionProps } from "../props/repair-note-device-section-props";
 
 export const RepairNoteDeviceSection: FC<RepairNoteDeviceSectionProps> = ({
   brand,

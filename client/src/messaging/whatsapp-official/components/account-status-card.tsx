@@ -2,15 +2,7 @@ import type { FC } from "react";
 
 import { Badge } from "@ui/badge/badge";
 import { Button } from "@ui/button/button";
-
-import type { WhatsappAccountStatus } from "../hooks/use-whatsapp-account";
-
-interface AccountStatusCardProps {
-  account: WhatsappAccountStatus | null;
-  loading: boolean;
-  canConnect: boolean;
-  onConnect: () => void;
-}
+import type { AccountStatusCardProps } from "../props/account-status-card-props";
 
 export const AccountStatusCard: FC<AccountStatusCardProps> = ({ account, loading, canConnect, onConnect }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">

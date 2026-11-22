@@ -1,8 +1,4 @@
-type Props = {
-  checked: boolean;
-  onChange: () => void;
-  disabled?: boolean;
-};
+import type { Props } from "../../../props/toggle-props";
 
 export const Toggle: React.FC<Props> = ({ checked, onChange, disabled = false }) => (
   <button

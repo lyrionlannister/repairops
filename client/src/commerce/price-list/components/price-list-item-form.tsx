@@ -3,22 +3,7 @@ import type { FC } from "react";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-
-import type { PriceListItemFormData } from "../hooks/use-price-list";
-import type { Supplier } from "@commerce/suppliers/hooks/use-suppliers";
-
-interface PriceListItemFormProps {
-  form: PriceListItemFormData;
-  loading: boolean;
-  saving: boolean;
-  isEdit: boolean;
-  suppliers: Supplier[];
-  hasPanel: boolean;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onSupplierChange: (supplierId: string) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
+import type { PriceListItemFormProps } from "../props/price-list-item-form-props";
 
 export const PriceListItemForm: FC<PriceListItemFormProps> = ({
   form,

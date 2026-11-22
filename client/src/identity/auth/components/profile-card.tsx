@@ -1,11 +1,7 @@
 import { Avatar } from "@common/components/ui/avatar/Avatar";
-import type { Me } from "../hooks/use-me";
 import { PAY_CYCLE_LABELS } from "@identity/users/hooks/use-users";
 import { formatRoles } from "@identity/users/utils/roles";
-
-interface ProfileCardProps {
-  me: Me;
-}
+import type { ProfileCardProps } from "../props/profile-card-props";
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ me }) => (
   <div className="flex flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 sm:flex-row sm:items-start">

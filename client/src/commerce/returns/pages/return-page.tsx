@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react";
 import {
-  useReturns,
-  type SaleWithItems,
-  type SaleListItem,
-  type RefundMethod,
+  useReturns
 } from "../hooks/use-returns";
 import { useInventory } from "@commerce/inventory/hooks/use-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useBranch } from "@common/hooks/use-branch";
 import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
-import { useReturnRefund, type LineDraft } from "../hooks/use-return-refund";
+import { useReturnRefund } from "../hooks/use-return-refund";
 import { SaleSearchPanel } from "../components/sale-search-panel";
 import { ReturnLinesForm } from "../components/return-lines-form";
 import { newIdempotencyKey } from "../utils/format";
+import type { SaleWithItems, SaleListItem, RefundMethod } from "../types/returns";
+import type { LineDraft } from "../types/return-refund";
 
 export const ReturnPage: React.FC = () => {
   const {

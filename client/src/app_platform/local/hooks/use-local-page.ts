@@ -1,25 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-
-import type { LocalRecord, TicketSize } from "./use-local";
+import type { LocalRecord, TicketSize } from "../types/local";
+import type { LocalFormState, AttributionBasis } from "../types/local-page";
 
 export type { TicketSize };
-
-export type AttributionBasis = "total_value" | "margin" | "labor_only";
-
-export interface LocalFormState {
-  name: string;
-  address: string;
-  phone: string;
-  nextControlNumber: string;
-  cashRoundingUnit: string;
-  logo: string;
-  currency: string;
-  defaultTicketSize: TicketSize;
-  warrantyClause: string;
-  brandColor: string;
-  timeZone: string;
-}
-
 const emptyForm: LocalFormState = {
   name: "",
   address: "",

@@ -1,29 +1,10 @@
 import type { FC } from "react";
 import { useNavigate } from "react-router";
 import { Boxes, Pencil, Trash2, ArrowUpDown } from "lucide-react";
-import type { InventoryItem } from "../hooks/use-inventory";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { KIND_LABELS, formatMoney } from "../utils/format";
-
-interface InventoryTableProps {
-  loading: boolean;
-  pageItems: InventoryItem[];
-  supplierName: (supplierId: string | null) => string;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalItems: number;
-  startIndex: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  onOpenMovement: (item: InventoryItem) => void;
-  onRequestDelete: (id: string) => void;
-  // Sin inventory.read (el técnico): la API no manda costo ni proveedor.
-  showCosts: boolean;
-  canManage: boolean;
-  canAdjust: boolean;
-}
+import type { InventoryTableProps } from "../props/inventory-table-props";
 
 export const InventoryTable: FC<InventoryTableProps> = ({
   loading,

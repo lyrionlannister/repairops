@@ -1,14 +1,5 @@
 import { useEffect, useRef, useState, type FC } from "react";
-
-interface ComboboxProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: string[];
-  placeholder?: string;
-  disabled?: boolean;
-  required?: boolean;
-  className?: string;
-}
+import type { ComboboxProps } from "../../../props/combobox-props";
 
 // Input de texto libre con sugerencias filtradas -- a diferencia de Select,
 // nunca restringe a un valor del catalogo (ej. una marca nueva que aun no

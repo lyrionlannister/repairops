@@ -1,25 +1,9 @@
 import type { FC } from "react";
 import { useNavigate } from "react-router";
 import { Pencil, Trash2, Smartphone, Users, Eye } from "lucide-react";
-import type { Customer } from "../hooks/use-customers";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
-
-interface CustomersTableProps {
-  loading: boolean;
-  pageItems: Customer[];
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalItems: number;
-  startIndex: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  onOpenHistory: (customer: Customer) => void;
-  onRequestDelete: (id: string) => void;
-  canEdit: boolean;
-  canDelete: boolean;
-}
+import type { CustomersTableProps } from "../props/customers-table-props";
 
 export const CustomersTable: FC<CustomersTableProps> = ({
   loading,

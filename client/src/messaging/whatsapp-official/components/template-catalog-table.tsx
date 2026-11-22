@@ -3,18 +3,8 @@ import { Pencil, Trash2 } from "lucide-react";
 
 import { ScrollTable } from "@ui/table/scroll-table";
 import { Badge } from "@ui/badge/badge";
-
-import type { WhatsappTemplateCatalogEntryRow } from "../hooks/use-whatsapp-template-catalog";
-import type { TemplateStatusByEntry } from "../hooks/use-template-status-by-entry";
 import { formatSyncedAt, STATUS_BADGE } from "../utils/format";
-
-interface TemplateCatalogTableProps {
-  entries: WhatsappTemplateCatalogEntryRow[];
-  statusByEntryId?: TemplateStatusByEntry;
-  readOnly: boolean;
-  onEdit: (entry: WhatsappTemplateCatalogEntryRow) => void;
-  onDelete: (entry: WhatsappTemplateCatalogEntryRow) => void;
-}
+import type { TemplateCatalogTableProps } from "../props/template-catalog-table-props";
 
 const TH = "px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400";
 

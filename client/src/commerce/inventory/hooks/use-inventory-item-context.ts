@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
-import { useInventory, type InventoryMovement } from "./use-inventory";
+import { useInventory } from "./use-inventory";
+import type { InventoryMovement } from "../types/inventory";
 
 export const useInventoryItemContext = (itemId: string | null) => {
   const { items, movements, fetchAll, fetchMovements } = useInventory();

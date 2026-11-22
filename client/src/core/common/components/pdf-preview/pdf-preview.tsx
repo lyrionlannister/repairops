@@ -1,15 +1,7 @@
 import { Download, ExternalLink } from "lucide-react";
 
 import { useMediaQuery } from "@common/hooks/use-media-query";
-
-interface PdfPreviewProps {
-  url: string | null;
-  loading: boolean;
-  error: string | null;
-  title: string;
-  onDownload: () => void;
-  onOpen: () => void;
-}
+import type { PdfPreviewProps } from "../../props/pdf-preview-props";
 
 // En pantallas chicas los navegadores móviles no muestran bien un PDF incrustado:
 // ahí solo se ofrecen los botones.

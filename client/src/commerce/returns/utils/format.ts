@@ -1,4 +1,4 @@
-import type { RefundMethod } from "../hooks/use-returns";
+import type { RefundMethod } from "../types/returns";
 
 export const PAYMENT_LABELS: Record<RefundMethod, string> = {
   efectivo: "Efectivo",

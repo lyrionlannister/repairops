@@ -1,16 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import {
-  ToastContext,
-  type ToastInput,
-  type ToastVariant,
+  ToastContext
 } from "../toast-context";
-
-type ToastItem = {
-  id: number;
-  title: string;
-  message?: string;
-  variant: ToastVariant;
-};
+import type { ToastInput, ToastVariant } from "../../types/toast-context";
+import type { ToastItem } from "../../types/toast-provider";
 
 const styleByVariant: Record<ToastVariant, string> = {
   success:

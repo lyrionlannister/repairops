@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-import type { CreateSalePayload, Sale } from "./use-sales";
+import type { CreateSalePayload, Sale } from "../types/sales";
+import type { QueuedSale } from "../types/offline-sales-queue";
 
 const STORAGE_KEY = "repairops_offline_sales_queue";
 const COUNTER_KEY = "repairops_offline_sales_counter";
@@ -17,14 +18,6 @@ function nextLocalFolioNumber(): number {
     // no es critico, el folio real lo da el servidor al sincronizar.
   }
   return current;
-}
-
-export interface QueuedSale {
-  localFolio: string;
-  idempotencyKey: string;
-  payload: CreateSalePayload;
-  queuedAt: string;
-  lastError?: string;
 }
 
 function readQueue(): QueuedSale[] {

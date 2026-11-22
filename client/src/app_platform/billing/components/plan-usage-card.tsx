@@ -1,11 +1,6 @@
 import type { FC } from "react";
-
-import type { PlanSummary } from "../hooks/use-plan";
 import { formatUsage, STATUS_LABELS } from "../utils/format";
-
-interface PlanUsageCardProps {
-  summary: PlanSummary;
-}
+import type { PlanUsageCardProps } from "../props/plan-usage-card-props";
 
 export const PlanUsageCard: FC<PlanUsageCardProps> = ({ summary }) => (
   <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3 sm:flex-row sm:items-center sm:justify-between">

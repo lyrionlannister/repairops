@@ -3,10 +3,11 @@ import { useNavigate, useParams } from "react-router";
 
 import { PageShell } from "@common/components/page-shell/page-shell";
 
-import { useSuppliers, type SupplierFormData } from "../hooks/use-suppliers";
+import { useSuppliers } from "../hooks/use-suppliers";
 import { useSupplierContext } from "../hooks/use-supplier-context";
 import { SupplierContextPanel } from "../components/supplier-context-panel";
 import { SupplierForm } from "../components/supplier-form";
+import type { SupplierFormData } from "../types/suppliers";
 
 const emptyForm: SupplierFormData = {
   name: "",

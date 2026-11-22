@@ -1,38 +1,13 @@
 import type { FC } from "react";
 import { useNavigate } from "react-router";
 import { Plus, Printer, Pencil, Trash2, Ban, Eye, Wrench, CheckCircle2, HandCoins } from "lucide-react";
-import type { RepairNoteRecord, RepairNoteStatus } from "../hooks/use-repair-notes";
 import { NEXT_STATUS, STATUS_CONFIG } from "../hooks/use-repair-notes";
 import { Button } from "@ui/button/button";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { formatDate, formatCurrency } from "../utils/format";
-
-interface RepairNotesTableProps {
-  loading: boolean;
-  error: string | null;
-  notes: RepairNoteRecord[];
-  filteredNotes: RepairNoteRecord[];
-  pageItems: RepairNoteRecord[];
-  canEditNotes: boolean;
-  canCreateNotes: boolean;
-  canCancelNotes: boolean;
-  canDeleteNotes: boolean;
-  cancellingId: string | null;
-  deletingId: string | null;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalItems: number;
-  startIndex: number;
-  onRetry: () => void;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  onRequestCancel: (id: string) => void;
-  onRequestDelete: (id: string) => void;
-  advancingId: string | null;
-  onAdvance: (note: RepairNoteRecord) => void;
-}
+import type { RepairNoteStatus } from "../types/repair-notes";
+import type { RepairNotesTableProps } from "../props/repair-notes-table-props";
 
 const NEXT_STATUS_ICON: Record<string, FC<{ className?: string }>> = {
   in_repair: Wrench,

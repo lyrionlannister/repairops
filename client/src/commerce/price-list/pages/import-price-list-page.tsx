@@ -2,13 +2,13 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
-import { useImportStaging, type StagingRow } from "../hooks/use-import-staging";
+import { useImportStaging } from "../hooks/use-import-staging";
 import { useToast } from "@common/hooks/use-toast";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { ImportSelectStep } from "../components/import-select-step";
 import { ImportPreviewStep } from "../components/import-preview-step";
-
-type Step = "select" | "processing" | "preview";
+import type { StagingRow } from "../types/import-staging";
+import type { Step } from "../types/import-price-list-page";
 
 const POLL_INTERVAL_MS = 2500;
 

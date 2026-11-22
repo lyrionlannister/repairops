@@ -3,15 +3,7 @@ import { EmployeeSelect } from "@common/components/employee-select";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-
-interface OpenCashFormProps {
-  openingBalance: string;
-  openedByEmployeeId: string;
-  saving: boolean;
-  onOpeningBalanceChange: (value: string) => void;
-  onOpenedByEmployeeIdChange: (value: string) => void;
-  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
-}
+import type { OpenCashFormProps } from "../props/open-cash-form-props";
 
 export const OpenCashForm: FC<OpenCashFormProps> = ({
   openingBalance,

@@ -1,30 +1,11 @@
 import type { FC } from "react";
 import { useNavigate } from "react-router";
 import { FileText, Pencil, Trash2, Check, X, Wrench } from "lucide-react";
-import type { QuoteListItem } from "../hooks/use-quotes-page";
 import { TableBody, TableRow, TableCell } from "@ui/table/table";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { STATUS_CONFIG, formatDate, formatCurrency } from "../utils/format";
-
-interface QuotesTableProps {
-  loading: boolean;
-  quotes: QuoteListItem[];
-  filteredQuotes: QuoteListItem[];
-  pageItems: QuoteListItem[];
-  deletingId: string | null;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalItems: number;
-  startIndex: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  onStatusChange: (id: string, status: "accepted" | "rejected") => void;
-  onRequestDelete: (id: string) => void;
-  canEdit: boolean;
-  canDelete: boolean;
-}
+import type { QuotesTableProps } from "../props/quotes-table-props";
 
 export const QuotesTable: FC<QuotesTableProps> = ({
   canEdit,

@@ -4,12 +4,7 @@ import { useServiceTypes } from "@common/hooks/use-service-types";
 import { usePermissions } from "@common/hooks/use-permissions";
 import { Input } from "./ui/inputs/input";
 import { Button } from "./ui/button/button";
-
-interface ServiceTypeMultiSelectProps {
-  value: string[];
-  onChange: (serviceTypeIds: string[]) => void;
-  disabled?: boolean;
-}
+import type { ServiceTypeMultiSelectProps } from "../props/service-type-multi-select-props";
 
 // Checkboxes de tipo de servicio: la lista viene del tenant (defaults
 // sembrados + los que el tenant haya creado), nunca hardcodeada en el

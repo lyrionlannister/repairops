@@ -1,11 +1,6 @@
 import { Boxes } from "lucide-react";
-import type { PriceListItem } from "../hooks/use-price-list";
 import { formatPrice } from "../utils/format";
-
-interface PriceListSupplierPanelProps {
-  supplierName: string;
-  otherItems: PriceListItem[];
-}
+import type { PriceListSupplierPanelProps } from "../props/price-list-supplier-panel-props";
 
 // Contexto del proveedor elegido: sus otros productos ya cargados en la lista de
 // precios (misma data que trae la page, filtrada por supplierId) -- sirve tanto al

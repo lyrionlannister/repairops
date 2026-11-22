@@ -3,8 +3,9 @@ import { useParams } from "react-router";
 
 import { useServiceTypes } from "@common/hooks/use-service-types";
 import { usePdfPreview } from "@common/hooks/use-pdf-preview";
-import { useLocal, type TicketSize } from "../../../app_platform/local/hooks/use-local";
+import { useLocal } from "../../../app_platform/local/hooks/use-local";
 import { useRepairNotes } from "./use-repair-notes";
+import type { TicketSize } from "../../../app_platform/local/types/local";
 
 export const useRepairNotePrintPage = () => {
   const { id } = useParams<{ id: string }>();

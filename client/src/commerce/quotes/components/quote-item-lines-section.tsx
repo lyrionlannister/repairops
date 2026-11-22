@@ -1,20 +1,9 @@
 import type { FC } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
-import type { QuoteItemLine } from "../hooks/use-quote-item-lines";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Select } from "@ui/select/select";
-
-interface QuoteItemLinesSectionProps {
-  itemLines: QuoteItemLine[];
-  inventoryItems: InventoryItem[];
-  saving: boolean;
-  onInventoryItemChange: (index: number, inventoryItemId: string) => void;
-  onLineChange: (index: number, patch: Partial<QuoteItemLine>) => void;
-  onAddLine: () => void;
-  onRemoveLine: (index: number) => void;
-}
+import type { QuoteItemLinesSectionProps } from "../props/quote-item-lines-section-props";
 
 export const QuoteItemLinesSection: FC<QuoteItemLinesSectionProps> = ({
   itemLines,

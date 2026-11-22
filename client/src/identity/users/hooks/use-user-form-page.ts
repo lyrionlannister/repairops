@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useBranch } from "@common/hooks/use-branch";
-import { useUsers, type UserFormData, type UserRole } from "./use-users";
+import { useUsers, type UserRole } from "./use-users";
 import { userToForm } from "../utils/user-to-form";
+import type { UserFormData } from "../types/users";
 
 const INITIAL_FORM: UserFormData = {
   firstName: "",

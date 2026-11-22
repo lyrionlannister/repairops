@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-  useWhatsappTemplateCatalog,
-  type CreateWhatsappTemplateCatalogEntryInput,
-  type WhatsappTemplateCatalogEntryRow,
+  useWhatsappTemplateCatalog
 } from "./use-whatsapp-template-catalog";
-import { EMPTY_CATALOG_FORM, entryToCatalogForm, parseVariables, type CatalogFormData } from "../utils/format";
+import { EMPTY_CATALOG_FORM, entryToCatalogForm, parseVariables } from "../utils/format";
+import type { CreateWhatsappTemplateCatalogEntryInput, WhatsappTemplateCatalogEntryRow } from "../types/whatsapp-template-catalog";
+import type { CatalogFormData } from "../types/format";
 
 export const useTemplateCatalogSection = (scope: "tenant" | "system") => {
   const { entries, loading, saving, fetchEntries, create, update, remove } = useWhatsappTemplateCatalog(scope);

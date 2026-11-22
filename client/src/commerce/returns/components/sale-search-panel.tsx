@@ -1,23 +1,11 @@
 import type { FC } from "react";
 import { Search } from "lucide-react";
-import type { SaleListItem } from "../hooks/use-returns";
 import { CustomerSelect } from "@common/components/customer-select";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@ui/table/table";
 import { formatMoney } from "../utils/format";
-
-interface SaleSearchPanelProps {
-  saleNumberInput: string;
-  onSaleNumberInputChange: (value: string) => void;
-  onSearch: () => void;
-  searching: boolean;
-  customerId: string;
-  onCustomerIdChange: (id: string) => void;
-  customerSales: SaleListItem[];
-  customerSaleId: string;
-  onSelectCustomerSale: (saleId: string) => void;
-}
+import type { SaleSearchPanelProps } from "../props/sale-search-panel-props";
 
 export const SaleSearchPanel: FC<SaleSearchPanelProps> = ({
   saleNumberInput,

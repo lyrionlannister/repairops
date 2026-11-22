@@ -1,10 +1,5 @@
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-import type { Trend } from "../hooks/use-dashboard-page";
-
-interface TrendBadgeProps {
-  trend: Trend | null;
-  inverted?: boolean;
-}
+import type { TrendBadgeProps } from "../props/trend-badge-props";
 
 export const TrendBadge: React.FC<TrendBadgeProps> = ({ trend, inverted }) => {
   if (!trend) return null;

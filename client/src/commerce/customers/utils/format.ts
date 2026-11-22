@@ -1,5 +1,5 @@
-import type { LayawayMethod, LayawayRecord } from "../hooks/use-layaways";
-import type { Customer } from "../hooks/use-customers";
+import type { LayawayMethod, LayawayRecord } from "../types/layaways";
+import type { Customer } from "../types/customers";
 
 export const labelFor = (c: Customer) => `${c.name} · ${c.phone}`;
 

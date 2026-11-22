@@ -1,26 +1,10 @@
 import type { FC } from "react";
 import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Lock } from "lucide-react";
-import type { CashMovementRecord, CashSessionRecord, CashSummary } from "../hooks/use-cash";
 import { Button } from "@ui/button/button";
 import { ScrollTable } from "@ui/table/scroll-table";
 import { Pagination } from "@ui/table/pagination";
 import { METHOD_LABELS, formatMoney, formatTime } from "../utils/format";
-
-interface CashSessionPanelProps {
-  session: CashSessionRecord;
-  summary: CashSummary | null;
-  movements: CashMovementRecord[];
-  pageItems: CashMovementRecord[];
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalItems: number;
-  startIndex: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  onOpenMovement: () => void;
-  onOpenClose: () => void;
-}
+import type { CashSessionPanelProps } from "../props/cash-session-panel-props";
 
 export const CashSessionPanel: FC<CashSessionPanelProps> = ({
   session,

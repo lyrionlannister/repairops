@@ -1,11 +1,7 @@
 import type { FC } from "react";
 import { Banknote, Wrench } from "lucide-react";
-import type { ActivityItem } from "../hooks/use-dashboard-page";
 import { formatMoney, formatRelativeTime } from "../utils/format";
-
-interface DashboardRecentActivityProps {
-  recentActivity: ActivityItem[];
-}
+import type { DashboardRecentActivityProps } from "../props/dashboard-recent-activity-props";
 
 export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ recentActivity }) => (
   <div className="h-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/3 sm:p-6">

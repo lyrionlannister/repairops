@@ -1,16 +1,8 @@
 import type { FC } from "react";
 import { CalendarDays, CalendarRange, Banknote } from "lucide-react";
-import type { Trend } from "../hooks/use-dashboard-page";
 import { StatCard } from "./stat-card";
 import { formatMoney } from "../utils/format";
-
-interface DashboardRevenueCardsProps {
-  monthlyRevenue: string;
-  weeklyRevenue: string;
-  todayRevenue: string;
-  monthDelta: Trend | null;
-  todayDelta: Trend | null;
-}
+import type { DashboardRevenueCardsProps } from "../props/dashboard-revenue-cards-props";
 
 export const DashboardRevenueCards: FC<DashboardRevenueCardsProps> = ({
   monthlyRevenue,

@@ -1,18 +1,6 @@
-import { STATUS_CONFIG, type RepairNoteStatus } from "../hooks/use-repair-notes";
+import { STATUS_CONFIG } from "../hooks/use-repair-notes";
 import { formatCurrency, formatDate } from "../utils/format";
-
-interface HistoryEntry {
-  id: string;
-  brand: string;
-  model: string;
-  status: RepairNoteStatus;
-  totalValue: number;
-  receivedAt: string;
-}
-
-interface RepairNoteCustomerHistoryPanelProps {
-  otherNotes: HistoryEntry[];
-}
+import type { RepairNoteCustomerHistoryPanelProps } from "../props/repair-note-customer-history-panel-props";
 
 export const RepairNoteCustomerHistoryPanel: React.FC<RepairNoteCustomerHistoryPanelProps> = ({ otherNotes }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">

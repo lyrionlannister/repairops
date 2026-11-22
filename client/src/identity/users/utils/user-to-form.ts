@@ -1,5 +1,4 @@
-import type { UserFormData, UserRecord } from "../hooks/use-users";
-
+import type { UserFormData, UserRecord } from "../types/users";
 // password nunca viaja de vuelta del backend: siempre arranca vacía al editar.
 export const userToForm = (user: UserRecord): UserFormData => ({
   firstName: user.firstName,

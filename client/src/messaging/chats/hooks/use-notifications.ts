@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
-
-export interface AppNotification {
-  id: number;
-  type: "conversation_transferred" | "new_human_message";
-  sessionId: string;
-  phone: string;
-  contactName?: string;
-  read: boolean;
-  createdAt: string;
-}
+import type { AppNotification } from "../types/notifications";
 
 export function useNotifications() {
   const { apiClient } = useApiClient();

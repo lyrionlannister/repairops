@@ -1,24 +1,6 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export type InventoryCountStatus = "open" | "closed";
-
-export interface InventoryCountItemRecord {
-  id: string;
-  inventoryItemId: string;
-  countedQuantity: number | null;
-  reason: string | null;
-  appliedMovementId: string | null;
-}
-
-export interface InventoryCountRecord {
-  id: string;
-  branchId: string;
-  status: InventoryCountStatus;
-  openedAt: string;
-  closedAt: string | null;
-  items?: InventoryCountItemRecord[];
-}
+import type { InventoryCountRecord } from "../types/inventory-counts";
 
 async function readError(res: Response, fallback: string): Promise<{ message: string; missingReasonItemIds?: string[] }> {
   const body = await res.json().catch(() => ({}));

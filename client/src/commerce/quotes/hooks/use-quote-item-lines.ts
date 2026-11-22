@@ -1,8 +1,7 @@
 import { useState } from "react";
-import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
-import type { QuoteItemInput, QuoteItemRecord } from "./use-quotes";
-
-export type QuoteItemLine = { inventoryItemId: string; description: string; quantity: string; unitPrice: string };
+import type { InventoryItem } from "@commerce/inventory/types/inventory";
+import type { QuoteItemInput, QuoteItemRecord } from "../types/quotes";
+import type { QuoteItemLine } from "../types/quote-item-lines";
 
 const emptyItemLine: QuoteItemLine = { inventoryItemId: "", description: "", quantity: "1", unitPrice: "" };
 

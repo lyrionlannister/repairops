@@ -2,14 +2,8 @@ import type { FC } from "react";
 import { Pencil } from "lucide-react";
 
 import { ScrollTable } from "@ui/table/scroll-table";
-
-import type { TenantPlan } from "../hooks/use-platform-tenants";
 import { formatUsage, STATUS_LABELS } from "../utils/format";
-
-interface TenantsTableProps {
-  tenants: TenantPlan[];
-  onEdit: (tenantId: string) => void;
-}
+import type { TenantsTableProps } from "../props/tenants-table-props";
 
 const TH =
   "px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400";

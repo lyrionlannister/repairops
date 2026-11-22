@@ -1,34 +1,6 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export type WhatsappTemplateCategory = "UTILITY" | "MARKETING" | "AUTHENTICATION";
-
-export interface WhatsappTemplateCatalogEntryRow {
-  id: string;
-  key: string;
-  metaName: string;
-  category: WhatsappTemplateCategory;
-  language: string;
-  text: string;
-  variables: string[];
-  triggerEvent: string | null;
-  enabled: boolean;
-}
-
-export interface CreateWhatsappTemplateCatalogEntryInput {
-  key: string;
-  metaName: string;
-  category: WhatsappTemplateCategory;
-  language: string;
-  text: string;
-  variables: string[];
-}
-
-export interface UpdateWhatsappTemplateCatalogEntryInput {
-  text?: string;
-  variables?: string[];
-  enabled?: boolean;
-}
+import type { WhatsappTemplateCatalogEntryRow, CreateWhatsappTemplateCatalogEntryInput, UpdateWhatsappTemplateCatalogEntryInput } from "../types/whatsapp-template-catalog";
 
 async function readError(res: Response, fallback: string): Promise<string> {
   const body = await res.json().catch(() => ({}));

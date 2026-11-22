@@ -1,25 +1,6 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-import type { PlanKey, PlanSummary, SubscriptionStatus } from "./use-plan";
-
-export interface TenantPlan extends PlanSummary {
-  tenantId: string;
-  tenantName: string;
-}
-
-export interface PlanOption {
-  key: PlanKey;
-  name: string;
-  maxUsers: number | null;
-  maxBranches: number | null;
-}
-
-export interface SubscriptionFormData {
-  planKey: PlanKey;
-  extraUsers: string;
-  extraBranches: string;
-  status: SubscriptionStatus;
-}
+import type { TenantPlan, PlanOption, SubscriptionFormData } from "../types/platform-tenants";
 
 // Solo admin de plataforma (platform.tenants.read / platform.subscriptions.manage).
 export const usePlatformTenants = () => {

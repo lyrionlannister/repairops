@@ -1,15 +1,6 @@
-import type { FC, ReactNode } from "react";
-import type { Trend } from "../hooks/use-dashboard-page";
+import type { FC } from "react";
 import { TrendBadge } from "./trend-badge";
-
-interface StatCardProps {
-  icon: ReactNode;
-  // Clases de fondo y color del icono, p. ej. "bg-brand-50 text-brand-600 ...".
-  iconTone: string;
-  label: string;
-  value: string | number;
-  trend?: Trend | null;
-}
+import type { StatCardProps } from "../props/stat-card-props";
 
 export const StatCard: FC<StatCardProps> = ({ icon, iconTone, label, value, trend }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3 md:p-6">

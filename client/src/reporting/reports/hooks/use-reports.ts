@@ -2,42 +2,7 @@ import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranch } from "@common/hooks/use-branch";
 import { ALL_BRANCHES } from "@common/contexts/branch-context";
-
-export interface EmployeePerformanceRow {
-  employeeId: string;
-  employeeName: string;
-  attributedAmount: number;
-  salaryAmount: number;
-  coversSalary: boolean;
-  repairNotesCount: number;
-  salesCount: number;
-}
-
-export interface EmployeePerformanceReport {
-  attributionBasis: string;
-  periodStart: string;
-  periodEnd: string;
-  employees: EmployeePerformanceRow[];
-}
-
-export interface AccessorySalesReport {
-  periodStart: string;
-  periodEnd: string;
-  groupBy: "item" | "day" | "week";
-  totalRevenue: number;
-  averageTicket: number;
-  salesCount: number;
-  data: Array<{ key: string; label: string; quantity: number; revenue: number }>;
-}
-
-export interface RepairNotesByTypeReport {
-  periodStart: string;
-  periodEnd: string;
-  totalNotes: number;
-  totalRevenue: number;
-  byType: Array<{ type: string; label: string; count: number; totalValue: number }>;
-  byStatus: Array<{ status: string; count: number; totalValue: number }>;
-}
+import type { EmployeePerformanceReport, AccessorySalesReport, RepairNotesByTypeReport } from "../types/reports";
 
 export const useReports = () => {
   const { apiClient } = useApiClient();

@@ -5,28 +5,9 @@ import { Toggle } from "@ui/toggle/toggle";
 import { Button } from "@ui/button/button";
 import { Pagination } from "@ui/table/pagination";
 import { ScrollTable } from "@ui/table/scroll-table";
-
-import type { UserRecord } from "../hooks/use-users";
 import { formatRoles } from "../utils/roles";
 import { formatDate } from "../utils/format";
-
-interface UsersTableProps {
-  loading: boolean;
-  error: string | null;
-  pageItems: UserRecord[];
-  togglingId: string | null;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  totalItems: number;
-  startIndex: number;
-  onRetry: () => void;
-  onCreate: () => void;
-  onEdit: (id: string) => void;
-  onToggleStatus: (id: string) => void;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-}
+import type { UsersTableProps } from "../props/users-table-props";
 
 export const UsersTable: FC<UsersTableProps> = ({
   loading,

@@ -1,43 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
-
-export type LayawayStatus = "open" | "completed" | "cancelled" | "expired";
-export type LayawayMethod = "efectivo" | "tarjeta" | "transferencia";
-
-export interface LayawayItemRecord {
-  id: string;
-  inventoryItemId: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-export interface LayawayRecord {
-  id: string;
-  customerId: string;
-  status: LayawayStatus;
-  totalValue: number;
-  depositAmount: number;
-  depositMethod: LayawayMethod;
-  expiresAt: string;
-  createdAt: string;
-  items?: LayawayItemRecord[];
-}
-
-export interface OpenLayawayItemInput {
-  inventoryItemId: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-export interface OpenLayawayPayload {
-  customerId: string;
-  cashSessionId: string;
-  depositAmount: number;
-  depositMethod: LayawayMethod;
-  expiresAt: string;
-  items: OpenLayawayItemInput[];
-}
+import type { LayawayRecord, OpenLayawayPayload, LayawayMethod } from "../types/layaways";
 
 async function readError(res: Response, fallback: string): Promise<string> {
   const body = await res.json().catch(() => ({}));

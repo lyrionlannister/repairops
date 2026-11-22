@@ -1,4 +1,4 @@
-import type { LoaderProps } from "@/core/common/types/interfaces/props/loader-props";
+import type { LoaderProps } from "@common/props/loader-props";
 
 export const Loader: React.FC<LoaderProps> = ({ loaderText = "Cargando..." }) => {
   return (

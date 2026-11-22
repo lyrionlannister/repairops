@@ -3,18 +3,7 @@ import type { FC } from "react";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-
-import type { BranchFormData } from "../hooks/use-branches";
-
-interface BranchFormProps {
-  form: BranchFormData;
-  loading: boolean;
-  saving: boolean;
-  isEdit: boolean;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
+import type { BranchFormProps } from "../props/branch-form-props";
 
 export const BranchForm: FC<BranchFormProps> = ({
   form,

@@ -1,18 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-import type { UserRole } from "@common/types/auth/permission";
 import { capsToForm, capsToPayload } from "../utils/discount-caps";
-
-export type CappedRole = Exclude<UserRole, "owner">;
-
-export interface DiscountCap {
-  role: CappedRole;
-  maxDiscountPercent: string;
-}
+import type { CappedRole, DiscountCapForm } from "../types/discount-caps";
 
 // Un valor vacío = sin fila = ese rol no puede dar descuento en la sucursal.
-export type DiscountCapForm = Record<CappedRole, string>;
-
 export const useDiscountCaps = (branchId: string | null) => {
   const { apiClient } = useApiClient();
   const [form, setForm] = useState<DiscountCapForm>(capsToForm([]));

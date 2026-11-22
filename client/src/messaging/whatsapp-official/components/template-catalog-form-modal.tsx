@@ -6,19 +6,9 @@ import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 import { TextArea } from "@ui/textarea/textarea";
 import { Modal } from "@ui/modal/modal";
-
-import type { WhatsappTemplateCategory } from "../hooks/use-whatsapp-template-catalog";
-import { CATEGORY_OPTIONS, type CatalogFormData } from "../utils/format";
-
-interface TemplateCatalogFormModalProps {
-  isOpen: boolean;
-  isEditing: boolean;
-  form: CatalogFormData;
-  saving: boolean;
-  onFieldChange: <K extends keyof CatalogFormData>(field: K, value: CatalogFormData[K]) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onClose: () => void;
-}
+import { CATEGORY_OPTIONS } from "../utils/format";
+import type { WhatsappTemplateCategory } from "../types/whatsapp-template-catalog";
+import type { TemplateCatalogFormModalProps } from "../props/template-catalog-form-modal-props";
 
 // Meta no deja cambiar key, nombre, categoría ni idioma de una plantilla ya registrada:
 // al editar solo se tocan texto y variables.

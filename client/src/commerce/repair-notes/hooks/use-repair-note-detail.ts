@@ -7,17 +7,10 @@ import { usePermissions } from "@common/hooks/use-permissions";
 import { useCurrentUser } from "@common/hooks/use-current-user";
 import { useEmployees } from "@identity/users/hooks/use-employees";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
-import { NEXT_STATUS, useRepairNotes, type RepairNoteItemRecord } from "./use-repair-notes";
+import { NEXT_STATUS, useRepairNotes } from "./use-repair-notes";
 import { useRepairNoteDelivery } from "./use-repair-note-delivery";
-
-export type SavedKind = "created" | "updated";
-
-export interface DetailItemLine {
-  id: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-}
+import type { RepairNoteItemRecord } from "../types/repair-notes";
+import type { DetailItemLine, SavedKind } from "../types/repair-note-detail";
 
 export const useRepairNoteDetail = () => {
   const { id } = useParams<{ id: string }>();

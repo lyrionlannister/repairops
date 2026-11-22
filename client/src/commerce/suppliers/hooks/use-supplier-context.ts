@@ -1,11 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useInventory } from "../../inventory/hooks/use-inventory";
-
-export interface SupplierCriticalItem {
-  id: string;
-  name: string;
-  quantityOnHand: number;
-}
+import type { SupplierCriticalItem } from "../types/supplier-context";
 
 export const useSupplierContext = (supplierId: string | null) => {
   const { items, fetchAll } = useInventory();

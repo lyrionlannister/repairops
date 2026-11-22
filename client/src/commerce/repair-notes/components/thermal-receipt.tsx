@@ -1,17 +1,9 @@
 import type { CSSProperties, FC, ReactNode } from "react";
 import Barcode from "react-barcode";
 import { QRCodeSVG } from "qrcode.react";
-import type { RepairNoteRecord } from "../hooks/use-repair-notes";
-import type { LocalRecord } from "../../../app_platform/local/hooks/use-local";
 import { fmtCurrency } from "../utils/format";
 import { formatTicketDate, initialsOf } from "../utils/ticket-format";
-
-export interface ThermalReceiptProps {
-  note: RepairNoteRecord;
-  local: LocalRecord | null;
-  serviceTypeNames: string[];
-  widthMm: 58 | 80;
-}
+import type { ThermalReceiptProps } from "../props/thermal-receipt-props";
 
 // Tamaños del diseño por ancho de rollo (px a 96 dpi; el navegador imprime el ancho en mm reales).
 const SIZES = {

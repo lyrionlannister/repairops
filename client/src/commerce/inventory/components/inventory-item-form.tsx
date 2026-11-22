@@ -4,28 +4,13 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
-
-import type { InventoryItemFormData, InventoryItemKind } from "../hooks/use-inventory";
-import type { Supplier } from "@commerce/suppliers/hooks/use-suppliers";
+import type { InventoryItemKind } from "../types/inventory";
+import type { InventoryItemFormProps } from "../props/inventory-item-form-props";
 
 const KIND_LABELS: Record<InventoryItemKind, string> = {
   accessory: "Accesorio",
   part: "Parte",
 };
-
-interface InventoryItemFormProps {
-  form: InventoryItemFormData;
-  loading: boolean;
-  saving: boolean;
-  isEdit: boolean;
-  suppliers: Supplier[];
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onKindChange: (kind: InventoryItemKind) => void;
-  onSupplierChange: (supplierId: string) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
-
 export const InventoryItemForm: FC<InventoryItemFormProps> = ({
   form,
   loading,

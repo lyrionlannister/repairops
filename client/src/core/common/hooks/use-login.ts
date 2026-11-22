@@ -1,27 +1,6 @@
 import { useState } from "react";
 import { useApiClient } from "./use-api-client";
-import type { Permission, UserRole } from "../types/auth/permission";
-
-export interface LoginPayload {
-  email: string;
-  password: string;
-}
-
-interface LoginResponse {
-  message: string;
-  user: {
-    id: string;
-    tenantId: string;
-    roles: UserRole[];
-    permissions: Permission[];
-    isPlatformAdmin: boolean;
-    firstName: string;
-    lastName: string;
-    email: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-}
+import type { LoginPayload, LoginResponse } from "../types/login";
 
 export const useLogin = () => {
   const { apiClient } = useApiClient();

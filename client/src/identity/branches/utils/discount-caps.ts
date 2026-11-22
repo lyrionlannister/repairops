@@ -1,5 +1,4 @@
-import type { CappedRole, DiscountCap, DiscountCapForm } from "../hooks/use-discount-caps";
-
+import type { CappedRole, DiscountCap, DiscountCapForm } from "../types/discount-caps";
 export const CAPPED_ROLES: CappedRole[] = ["cashier", "employee", "technician"];
 
 export const capsToForm = (caps: DiscountCap[]): DiscountCapForm => {

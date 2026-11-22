@@ -5,17 +5,9 @@ import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 
 import { useTemplateCatalogSection } from "../hooks/use-template-catalog-section";
-import type { TemplateStatusByEntry } from "../hooks/use-template-status-by-entry";
 import { TemplateCatalogTable } from "./template-catalog-table";
 import { TemplateCatalogFormModal } from "./template-catalog-form-modal";
-
-interface TemplateCatalogSectionProps {
-  scope: "tenant" | "system";
-  title: string;
-  description: string;
-  readOnly?: boolean;
-  statusByEntryId?: TemplateStatusByEntry;
-}
+import type { TemplateCatalogSectionProps } from "../props/template-catalog-section-props";
 
 // Una plantilla con disparador automático (ej. order_ready) muestra el aviso
 // pero NUNCA bloquea el borrado -- el usuario pidió "totalmente

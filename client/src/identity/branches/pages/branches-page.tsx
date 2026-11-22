@@ -11,8 +11,9 @@ import { PageShell } from "@common/components/page-shell/page-shell";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useBranch } from "@common/hooks/use-branch";
 
-import { useBranches, type Branch } from "../hooks/use-branches";
+import { useBranches } from "../hooks/use-branches";
 import { useBranchesPage } from "../hooks/use-branches-page";
+import type { Branch } from "../types/branches";
 
 export const BranchesPage = () => {
   const navigate = useNavigate();

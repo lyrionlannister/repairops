@@ -1,14 +1,7 @@
 import type { FC } from "react";
 import { Clock, CalendarCheck2, TrendingUp, MessageSquare } from "lucide-react";
 import { StatCard } from "./stat-card";
-
-interface DashboardConversationStatsProps {
-  lastInteraction: string;
-  todayCount: number;
-  weekCount: number;
-  totalYear: number;
-  year: number;
-}
+import type { DashboardConversationStatsProps } from "../props/dashboard-conversation-stats-props";
 
 export const DashboardConversationStats: FC<DashboardConversationStatsProps> = ({
   lastInteraction,

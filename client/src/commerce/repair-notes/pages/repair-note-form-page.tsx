@@ -4,10 +4,7 @@ import { useRepairNotes } from "../hooks/use-repair-notes";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useBranch } from "@common/hooks/use-branch";
 import {
-  INITIAL_FORM,
-  type AdvancePaymentInput,
-  type RepairNoteFormData,
-  type RepairNoteStatus,
+  INITIAL_FORM
 } from "../hooks/use-repair-notes";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useRepairNoteCustomerHistory } from "../hooks/use-repair-note-customer-history";
@@ -17,7 +14,7 @@ import { RepairNoteCustomerHistoryPanel } from "../components/repair-note-custom
 import { RepairNoteForm, REPAIR_NOTE_FORM_STEPS } from "../components/repair-note-form";
 import { useFormSteps } from "@common/hooks/use-form-steps";
 import { noteToForm } from "../utils/note-to-form";
-
+import type { AdvancePaymentInput, RepairNoteFormData, RepairNoteStatus } from "../types/repair-notes";
 export const RepairNoteFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();

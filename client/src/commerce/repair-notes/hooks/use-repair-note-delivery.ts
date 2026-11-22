@@ -4,10 +4,8 @@ import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranch } from "@common/hooks/use-branch";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useCustomers } from "@commerce/customers/hooks/use-customers";
-import type { RepairNoteRecord } from "./use-repair-notes";
-
-export type DeliveryMethod = "efectivo" | "tarjeta" | "transferencia" | "credito";
-export type DeliveryPaymentLine = { method: DeliveryMethod; amount: string };
+import type { RepairNoteRecord } from "../types/repair-notes";
+import type { DeliveryPaymentLine } from "../types/repair-note-delivery";
 
 // Redondeo a centavos para comparar (0.1 + 0.2 nunca cuadra exacto en el navegador).
 const round2 = (value: number) => Math.round(value * 100) / 100;

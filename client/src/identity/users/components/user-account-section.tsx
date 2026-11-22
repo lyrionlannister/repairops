@@ -1,21 +1,11 @@
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
-import type { UserRole } from "../hooks/use-users";
 import { RoleCheckboxes } from "./role-checkboxes";
 import { EyeIcon, EyeCloseIcon } from "@common/icons";
 
-import { PAY_CYCLE_LABELS, type UserFormData } from "../hooks/use-users";
-
-interface UserAccountSectionProps {
-  form: UserFormData;
-  isEdit: boolean;
-  disabled: boolean;
-  showPassword: boolean;
-  onTogglePassword: () => void;
-  onChange: (field: Exclude<keyof UserFormData, "branchIds" | "roles">, value: string) => void;
-  onRolesChange: (roles: UserRole[]) => void;
-}
+import { PAY_CYCLE_LABELS } from "../hooks/use-users";
+import type { UserAccountSectionProps } from "../props/user-account-section-props";
 
 export const UserAccountSection: React.FC<UserAccountSectionProps> = ({
   form,

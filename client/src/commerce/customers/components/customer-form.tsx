@@ -3,19 +3,7 @@ import type { FC } from "react";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-
-import type { CustomerFormData } from "../hooks/use-customers";
-
-interface CustomerFormProps {
-  form: CustomerFormData;
-  loading: boolean;
-  saving: boolean;
-  isEdit: boolean;
-  hasPanel: boolean;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
+import type { CustomerFormProps } from "../props/customer-form-props";
 
 export const CustomerForm: FC<CustomerFormProps> = ({
   form,

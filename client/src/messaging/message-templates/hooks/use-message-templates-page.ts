@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { MessageTemplate } from "./use-message-templates";
+import type { MessageTemplate } from "../types/message-templates";
 
 export const useMessageTemplatesPage = (templates: MessageTemplate[]) => {
   const [search, setSearch] = useState("");

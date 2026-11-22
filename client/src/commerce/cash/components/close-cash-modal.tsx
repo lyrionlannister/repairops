@@ -4,21 +4,7 @@ import { Modal } from "@ui/modal/modal";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-
-interface CloseCashModalProps {
-  isOpen: boolean;
-  closingBalance: string;
-  closeReason: string;
-  closeAuthorizedByEmployeeId: string;
-  showCloseReasonField: boolean;
-  showCloseAuthorizerField: boolean;
-  saving: boolean;
-  onClosingBalanceChange: (value: string) => void;
-  onCloseReasonChange: (value: string) => void;
-  onCloseAuthorizedByEmployeeIdChange: (value: string) => void;
-  onCancel: () => void;
-  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
-}
+import type { CloseCashModalProps } from "../props/close-cash-modal-props";
 
 export const CloseCashModal: FC<CloseCashModalProps> = ({
   isOpen,

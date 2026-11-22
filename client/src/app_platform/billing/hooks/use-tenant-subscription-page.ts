@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { usePlatformTenants, type SubscriptionFormData } from "./use-platform-tenants";
+import { usePlatformTenants } from "./use-platform-tenants";
 import { tenantToForm } from "../utils/format";
+import type { SubscriptionFormData } from "../types/platform-tenants";
 
 const EMPTY_FORM: SubscriptionFormData = { planKey: "basico", extraUsers: "0", extraBranches: "0", status: "trialing" };
 

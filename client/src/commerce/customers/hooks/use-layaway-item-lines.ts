@@ -1,8 +1,7 @@
 import { useState } from "react";
-import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
-import type { OpenLayawayItemInput } from "./use-layaways";
-
-export type LayawayItemLine = { inventoryItemId: string; quantity: string; unitPrice: string };
+import type { InventoryItem } from "@commerce/inventory/types/inventory";
+import type { OpenLayawayItemInput } from "../types/layaways";
+import type { LayawayItemLine } from "../types/layaway-item-lines";
 
 const emptyLine: LayawayItemLine = { inventoryItemId: "", quantity: "1", unitPrice: "" };
 

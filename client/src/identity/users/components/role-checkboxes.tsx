@@ -3,12 +3,7 @@ import { CheckboxField } from "@ui/checkbox/checkbox-field";
 
 import { ROLE_LABELS, type UserRole } from "../hooks/use-users";
 import { toggleRole } from "../utils/roles";
-
-interface RoleCheckboxesProps {
-  roles: UserRole[];
-  disabled: boolean;
-  onChange: (roles: UserRole[]) => void;
-}
+import type { RoleCheckboxesProps } from "../props/role-checkboxes-props";
 
 export const RoleCheckboxes: React.FC<RoleCheckboxesProps> = ({ roles, disabled, onChange }) => (
   <fieldset className="sm:col-span-2">

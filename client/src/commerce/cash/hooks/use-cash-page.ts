@@ -1,19 +1,6 @@
 import { useEffect, useState } from "react";
-
-import type {
-  CashMovementMethod,
-  CashMovementType,
-  CashSessionRecord,
-  CashSummary,
-} from "./use-cash";
-
-export type CashMovementForm = {
-  type: CashMovementType;
-  method: CashMovementMethod;
-  amount: string;
-  note: string;
-  createdByEmployeeId: string;
-};
+import type { CashMovementMethod, CashMovementType, CashSessionRecord, CashSummary } from "../types/cash";
+import type { CashMovementForm } from "../types/cash-page";
 
 export const emptyCashMovementForm: CashMovementForm = {
   type: "income",

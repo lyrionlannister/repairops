@@ -1,12 +1,6 @@
 import { Download, MapPin, Paperclip } from "lucide-react";
-
-import type { Message } from "../hooks/use-messages";
 import { formatFileSize, mapsUrl, messageTypeLabel } from "../utils/message-type";
-
-interface MessageBubbleProps {
-  message: Message;
-  onDownload: (message: Message) => void;
-}
+import type { MessageBubbleProps } from "../props/message-bubble-props";
 
 // Los archivos y ubicaciones se muestran como etiqueta por tipo con descarga; mostrar la
 // imagen incrustada queda para cuando se procesen.

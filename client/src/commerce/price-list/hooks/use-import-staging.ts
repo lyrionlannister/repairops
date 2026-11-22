@@ -1,23 +1,6 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-
-export type StagingStatus = "processing" | "ready" | "error";
-
-export interface StagingRow {
-  brand: string;
-  model: string;
-  price: number;
-}
-
-export interface StagingRecord {
-  importId: string;
-  tenantId: string;
-  supplierId: string;
-  status: StagingStatus;
-  rows: StagingRow[];
-  error?: string;
-  createdAt: string;
-}
+import type { StagingRow, StagingRecord } from "../types/import-staging";
 
 export const useImportStaging = () => {
   const { apiClient } = useApiClient();

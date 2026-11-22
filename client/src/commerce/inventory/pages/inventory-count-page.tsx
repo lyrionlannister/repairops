@@ -9,8 +9,7 @@ import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 import { useBranch } from "@common/hooks/use-branch";
 import { PageShell } from "@common/components/page-shell/page-shell";
-
-type LineDraft = { countedQuantity: string; reason: string };
+import type { LineDraft } from "../types/inventory-count-page";
 
 export const InventoryCountPage: React.FC = () => {
   const { items, fetchAll: fetchItems } = useInventory();

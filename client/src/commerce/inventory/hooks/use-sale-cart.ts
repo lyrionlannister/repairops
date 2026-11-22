@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
-import type { InventoryItem } from "./use-inventory";
-import type { PaymentMethod } from "./use-sales";
-
-export type SaleLineItem = { inventoryItemId: string; quantity: string; unitPrice: string };
-export type SalePaymentLine = {
-  method: PaymentMethod;
-  amount: string;
-  providerReference: string;
-  providerAuthorizationCode: string;
-};
+import type { InventoryItem } from "../types/inventory";
+import type { SaleLineItem, SalePaymentLine } from "../types/sale-cart";
 
 const emptyLine: SaleLineItem = { inventoryItemId: "", quantity: "1", unitPrice: "" };
 const emptyPayment = (amount: string): SalePaymentLine => ({

@@ -1,13 +1,7 @@
 import type { FC } from "react";
 import Chart from "react-apexcharts";
-import type { BusinessSeriesPoint } from "../hooks/use-dashboard-page";
 import { buildBusinessAreaOptions } from "../utils/chart-options";
-
-interface DashboardMainChartProps {
-  dailyBusinessSeries: BusinessSeriesPoint[];
-  dailyBusinessCategories: string[];
-  currencyFormatter: Intl.NumberFormat;
-}
+import type { DashboardMainChartProps } from "../props/dashboard-main-chart-props";
 
 export const DashboardMainChart: FC<DashboardMainChartProps> = ({
   dailyBusinessSeries,

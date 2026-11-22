@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useQuotes, type QuoteFormData } from "../hooks/use-quotes";
+import { useQuotes } from "../hooks/use-quotes";
 import { useQuoteCustomerHistory } from "../hooks/use-quote-customer-history";
 import { useQuoteItemLines } from "../hooks/use-quote-item-lines";
 import { QuoteCustomerHistoryPanel } from "../components/quote-customer-history-panel";
@@ -9,6 +9,7 @@ import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-s
 import { useBranch } from "@common/hooks/use-branch";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useFormSteps } from "@common/hooks/use-form-steps";
+import type { QuoteFormData } from "../types/quotes";
 
 const INITIAL_FORM: QuoteFormData = {
   localId: "",

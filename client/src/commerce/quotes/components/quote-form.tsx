@@ -1,49 +1,13 @@
-import type { FC, RefObject } from "react";
+import type { FC } from "react";
 
 import { Button } from "@ui/button/button";
 import { Step, Stepper } from "@ui/stepper/stepper";
-
-import type { Customer } from "@commerce/customers/hooks/use-customers";
-import type { InventoryItem } from "@commerce/inventory/hooks/use-inventory";
-import type { QuoteFormData } from "../hooks/use-quotes";
-import type { QuoteItemLine } from "../hooks/use-quote-item-lines";
 import { QuoteCustomerSection } from "./quote-customer-section";
 import { QuoteKindDeviceSection } from "./quote-kind-device-section";
 import { QuoteItemLinesSection } from "./quote-item-lines-section";
+import type { QuoteFormProps } from "../props/quote-form-props";
 
 export const QUOTE_FORM_STEPS = ["Cliente", "Tipo y equipo", "Items"];
-
-interface QuoteFormProps {
-  formRef: RefObject<HTMLFormElement | null>;
-  step: number;
-  isLast: boolean;
-  onStepClick: (step: number) => void;
-  form: QuoteFormData;
-  saving: boolean;
-  isEdit: boolean;
-  showCustomerHistory: boolean;
-  onCustomerChange: (customerId: string, customer: Customer | null) => void;
-  onCustomerNameChange: (value: string) => void;
-  onContactNumberChange: (value: string) => void;
-  onValidUntilChange: (value: string) => void;
-  onCreatedByEmployeeIdChange: (value: string) => void;
-  onKindChange: (kind: QuoteFormData["kind"]) => void;
-  onBrandChange: (value: string) => void;
-  onModelChange: (value: string) => void;
-  onReportedFailureChange: (value: string) => void;
-  onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
-  itemLines: QuoteItemLine[];
-  inventoryItems: InventoryItem[];
-  onInventoryItemChange: (index: number, inventoryItemId: string) => void;
-  onLineChange: (index: number, patch: Partial<QuoteItemLine>) => void;
-  onAddLine: () => void;
-  onRemoveLine: (index: number) => void;
-  onBack: () => void;
-  onNext: () => void;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
-}
-
 export const QuoteForm: FC<QuoteFormProps> = ({
   formRef,
   step,

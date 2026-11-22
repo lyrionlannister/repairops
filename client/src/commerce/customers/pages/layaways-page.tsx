@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus, PackageCheck, Ban } from "lucide-react";
-import { useLayaways, type LayawayMethod, type LayawayRecord } from "../hooks/use-layaways";
+import { useLayaways } from "../hooks/use-layaways";
 import { useCustomers } from "../hooks/use-customers";
 import { useBranch } from "@common/hooks/use-branch";
 import { useCash } from "@commerce/cash/hooks/use-cash";
@@ -17,7 +17,7 @@ import { ScrollTable } from "@ui/table/scroll-table";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { METHOD_LABELS, STATUS_LABELS, formatMoney, daysUntil } from "../utils/format";
-
+import type { LayawayMethod, LayawayRecord } from "../types/layaways";
 export const LayawaysPage: React.FC = () => {
   const navigate = useNavigate();
   const { layaways, saving, fetchAll, complete, cancel } = useLayaways();

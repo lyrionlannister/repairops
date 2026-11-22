@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApiClient } from "../../hooks/use-api-client";
 import { usePermissions } from "../../hooks/use-permissions";
-import { ALL_BRANCHES, BranchContext, type BranchRecord } from "../branch-context";
+import { ALL_BRANCHES, BranchContext } from "../branch-context";
+import type { BranchRecord } from "../../types/branch-context";
 
 const STORAGE_KEY = "activeBranchId";
 

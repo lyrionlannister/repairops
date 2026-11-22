@@ -1,5 +1,5 @@
-import type { InventoryItem } from "./use-inventory";
-import type { Branch } from "@identity/branches/hooks/use-branches";
+import type { InventoryItem } from "../types/inventory";
+import type { Branch } from "@identity/branches/types/branches";
 
 export const useInventoryTransferLabels = (items: InventoryItem[], branches: Branch[]) => {
   const branchName = (branchId: string) => branches.find((b) => b.id === branchId)?.name ?? `Sucursal ${branchId}`;

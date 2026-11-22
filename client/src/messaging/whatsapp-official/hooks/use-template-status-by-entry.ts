@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import type { WhatsappTemplateStatusRow, WhatsappTemplateSyncStatus } from "./use-whatsapp-templates";
-
-export type TemplateStatusByEntry = Map<string, { status: WhatsappTemplateSyncStatus; lastSyncedAt: string | null }>;
+import type { WhatsappTemplateStatusRow } from "../types/whatsapp-templates";
+import type { TemplateStatusByEntry } from "../types/template-status-by-entry";
 
 export const useTemplateStatusByEntry = (templates: WhatsappTemplateStatusRow[]): TemplateStatusByEntry =>
   useMemo(

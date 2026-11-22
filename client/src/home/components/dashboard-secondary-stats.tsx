@@ -1,11 +1,6 @@
 import type { FC } from "react";
 import { PackageOpen, AlertTriangle, Landmark } from "lucide-react";
-
-interface DashboardSecondaryStatsProps {
-  openRepairNotes: number;
-  criticalStockItems: number;
-  openCashSessions: number;
-}
+import type { DashboardSecondaryStatsProps } from "../props/dashboard-secondary-stats-props";
 
 export const DashboardSecondaryStats: FC<DashboardSecondaryStatsProps> = ({
   openRepairNotes,
