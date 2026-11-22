@@ -21,8 +21,12 @@ export class UserBranchService {
 
   // Todo usuario que no es owner necesita al menos una sucursal, todas del tenant, y una
   // principal entre ellas (si no se indica, la primera). Devuelve la asignación ya normalizada.
-  async normalize(role: UserRole, branchIds: string[] | undefined, primaryBranchId: string | undefined): Promise<BranchAssignment> {
-    if (role === "owner") return { branchIds: [], primaryBranchId: null };
+  async normalize(
+    roles: readonly UserRole[],
+    branchIds: string[] | undefined,
+    primaryBranchId: string | undefined,
+  ): Promise<BranchAssignment> {
+    if (roles.includes("owner")) return { branchIds: [], primaryBranchId: null };
 
     const unique = [...new Set((branchIds ?? []).map(String))];
     if (unique.length === 0) throw new BranchAssignmentError("Elige al menos una sucursal para el usuario");

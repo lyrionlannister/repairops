@@ -17,7 +17,6 @@ export class CreateLocalConfig1794891049020 implements MigrationInterface {
             "siguiente_numero_venta" integer NOT NULL DEFAULT '1',
             "siguiente_numero_devolucion" integer NOT NULL DEFAULT '1',
             "tasa_impuesto" numeric(5, 2) NOT NULL DEFAULT '16',
-            "tope_descuento_por_rol" jsonb NOT NULL DEFAULT '{}',
             "unidad_redondeo_caja" numeric(4, 2) NOT NULL DEFAULT '0',
             "tope_diferencia_caja_sin_autorizar" numeric(10, 2) NOT NULL DEFAULT '50',
             "moneda" character varying(3) NOT NULL DEFAULT 'MXN',

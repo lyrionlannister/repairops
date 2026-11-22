@@ -9,7 +9,6 @@ export class CreateUsuarios1794891049011 implements MigrationInterface {
             "id" BIGSERIAL NOT NULL,
             "public_id" uuid NOT NULL DEFAULT uuid_generate_v4(),
             "tenant_id" bigint NOT NULL,
-            "rol" character varying(20) NOT NULL DEFAULT 'owner',
             "salario" numeric(10, 2),
             "ciclo_pago" character varying(20),
             "nombre" character varying(100) NOT NULL,

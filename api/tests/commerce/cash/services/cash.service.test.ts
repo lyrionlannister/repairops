@@ -13,6 +13,7 @@ import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
+import { makeUserRoleDao } from "../../../support/authz-deps.js";
 
 // Integration test against a real Postgres (same reasoning as
 // quote.service.test.ts): proves the rounding rule end-to-end through
@@ -30,7 +31,7 @@ describe("CashService", () => {
     const movementDao = new CashMovementDao(AppDataSource.getRepository(CashMovement));
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     userDao = new UserDao(AppDataSource.getRepository(User));
-    service = new CashService(sessionDao, movementDao, localService, userDao);
+    service = new CashService(sessionDao, movementDao, localService, userDao, makeUserRoleDao());
   });
 
   afterAll(async () => {
@@ -145,9 +146,9 @@ describe("CashService", () => {
         lastName: "Ño",
         email: `owner.${authorizedTenant}@test.local`,
         password: "x",
-        role: "owner",
       } as Partial<User>),
     );
+    await runWithTenant(authorizedTenant, () => makeUserRoleDao().replaceForUser(authorizer.id, ["owner"]));
     const session = await runWithTenant(authorizedTenant, () => service.openSession("1", 500));
 
     const closed = await runWithTenant(authorizedTenant, () =>

@@ -9,10 +9,19 @@ export interface BranchScope {
   primaryId: string | null;
 }
 
+// Quién hace la petición. Lo carga tenantMiddleware desde la base; los permisos
+// son strings aquí para que core no dependa de identity/authz.
+export interface RequestActor {
+  userId: string;
+  roles: readonly string[];
+  permissions: ReadonlySet<string>;
+}
+
 interface TenantScope {
   tenantId: string | null;
   isSystemScope: boolean;
   branch: BranchScope | null;
+  actor: RequestActor | null;
 }
 
 export class TenantContextError extends Error {}
@@ -24,15 +33,20 @@ export class BranchAccessError extends Error {
 
 const storage = new AsyncLocalStorage<TenantScope>();
 
-export function runWithTenant<T>(tenantId: string, fn: () => T, branch: BranchScope | null = null): T {
-  return storage.run({ tenantId, isSystemScope: false, branch }, fn);
+export function runWithTenant<T>(
+  tenantId: string,
+  fn: () => T,
+  branch: BranchScope | null = null,
+  actor: RequestActor | null = null,
+): T {
+  return storage.run({ tenantId, isSystemScope: false, branch, actor }, fn);
 }
 
 // Bypass explícito del filtro de tenant. Usar solo para operaciones de
 // sistema de verdad (seeds, callbacks sin JWT que ya validaron el tenant
 // por otra vía) — nunca como atajo para "no sé qué tenant es".
 export function allowSystemScope<T>(fn: () => T): T {
-  return storage.run({ tenantId: null, isSystemScope: true, branch: null }, fn);
+  return storage.run({ tenantId: null, isSystemScope: true, branch: null, actor: null }, fn);
 }
 
 export function getCurrentTenantId(): string {
@@ -57,4 +71,9 @@ export function isSystemScope(): boolean {
 
 export function getBranchScope(): BranchScope | null {
   return storage.getStore()?.branch ?? null;
+}
+
+// null fuera de una petición (jobs, webhooks, seeds): ahí no hay usuario que autorizar.
+export function getRequestActor(): RequestActor | null {
+  return storage.getStore()?.actor ?? null;
 }

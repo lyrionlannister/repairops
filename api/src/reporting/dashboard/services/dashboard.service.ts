@@ -5,10 +5,8 @@ import { LocalService } from "../../../app_platform/local/services/local.service
 import { ChatsService } from "../../../messaging/chats/services/chats.service.js";
 import { redisClient } from "../../../core/config/redis-client.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
-import type { UserRole } from "../../../identity/auth/entities/user.entity.js";
 
 const CACHE_TTL_SECONDS = 60;
-const MONEY_ROLES: UserRole[] = ["owner"];
 
 export class DashboardValidationError extends Error {}
 
@@ -22,7 +20,7 @@ export interface DashboardSummary {
   counts: { openRepairNotes: number; criticalStockItems: number; openCashSessions: number };
   chat: { todayCount: number; weekCount: number; lastAt: string | null };
   activity: Array<Omit<ActivityRow, "amount"> & { amount?: string }>;
-  // Solo para owner y admin: para los demas roles el campo no existe en el JSON.
+  // Solo con dashboard.money: sin ese permiso el campo no existe en el JSON.
   money?: {
     today: string;
     week: string;
@@ -59,10 +57,9 @@ export class DashboardService {
     private chatsService: ChatsService,
   ) {}
 
-  async getSummary(role: UserRole, branchId?: string): Promise<DashboardSummary> {
+  async getSummary(withMoney: boolean, branchId?: string): Promise<DashboardSummary> {
     const branch = this.parseBranch(branchId);
     const { timeZone } = await this.localService.getConfig();
-    const withMoney = MONEY_ROLES.includes(role);
 
     return this.cached(
       `summary:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`,
@@ -98,13 +95,12 @@ export class DashboardService {
   }
 
   async getSeries(
-    role: UserRole,
+    withMoney: boolean,
     query: { granularity?: string; year?: string; branchId?: string },
   ): Promise<DashboardSeries> {
     const branch = this.parseBranch(query.branchId);
     const granularity = query.granularity === "month" ? "month" : "day";
     const { timeZone } = await this.localService.getConfig();
-    const withMoney = MONEY_ROLES.includes(role);
 
     if (granularity === "day") {
       return this.cached(

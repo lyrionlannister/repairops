@@ -19,7 +19,7 @@ export class DashboardController {
   getSummary = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
-      res.status(200).json(await this.dashboardService.getSummary(req.user!.role, branchId ?? undefined));
+      res.status(200).json(await this.dashboardService.getSummary(req.user!.permissions?.has("dashboard.money") ?? false, branchId ?? undefined));
     } catch (error: any) {
       sendError(res, error, fallbackStatusOf(error));
     }
@@ -28,7 +28,7 @@ export class DashboardController {
   getSeries = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
-      const series = await this.dashboardService.getSeries(req.user!.role, {
+      const series = await this.dashboardService.getSeries(req.user!.permissions?.has("dashboard.money") ?? false, {
         granularity: queryString(req.query["granularity"]),
         year: queryString(req.query["year"]),
         branchId: branchId ?? undefined,

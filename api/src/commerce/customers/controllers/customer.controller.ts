@@ -76,7 +76,12 @@ export class CustomerController {
 
   getPayments = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.paymentService.getByCustomerId(req.params["id"] as string));
+      const id = req.params["id"] as string;
+      if (!(await this.service.getById(id))) {
+        res.status(404).json({ error: "Cliente no encontrado" });
+        return;
+      }
+      res.status(200).json(await this.paymentService.getByCustomerId(id));
     } catch (error: any) {
       sendError(res, error, 500);
     }

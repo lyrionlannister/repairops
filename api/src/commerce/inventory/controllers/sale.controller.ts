@@ -51,7 +51,7 @@ export class SaleController {
         return;
       }
       dto.localId = await this.branchAccess.resolveWriteBranch(dto.localId);
-      const sale = await this.service.create(dto, req.user!.role);
+      const sale = await this.service.create(dto, req.user!.roles ?? []);
       res.status(201).json(sale);
     } catch (error: any) {
       sendError(res, error, 400);

@@ -5,6 +5,8 @@ import { AuthController } from "../../identity/auth/controllers/auth.controller.
 import { createAuthRouter } from "../../identity/auth/routes/auth.routes.js";
 import { createAutomationAdminRouter } from "../../app_platform/automation/automation-admin.routes.js";
 import { createN8nIntegrationRouter } from "../../app_platform/integrations/n8n-admin.routes.js";
+import { BillingController } from "../../app_platform/billing/controllers/billing.controller.js";
+import { createBillingRouter, createPlatformBillingRouter } from "../../app_platform/billing/routes/billing.routes.js";
 import { ChatsController } from "../../messaging/chats/controllers/chats.controller.js";
 import { createChatsRouter } from "../../messaging/chats/routes/chats.routes.js";
 import { LocalController } from "../../app_platform/local/controllers/local.controller.js";
@@ -66,6 +68,8 @@ export function registerRoutes(app: Express): void {
   app.use("/api/v1/auth", createAuthRouter(container.resolve(AuthController)));
   app.use("/api/v1/automation", createAutomationAdminRouter());
   app.use("/api/v1/integrations/n8n", createN8nIntegrationRouter());
+  app.use("/api/v1/billing", createBillingRouter(container.resolve(BillingController)));
+  app.use("/api/v1/platform", createPlatformBillingRouter(container.resolve(BillingController)));
   app.use("/api/v1/chats", createChatsRouter(container.resolve(ChatsController)));
   app.use("/api/v1/local", createLocalRouter(container.resolve(LocalController)));
   // El router del webhook (publico, sin JWT) va ANTES que el de status/

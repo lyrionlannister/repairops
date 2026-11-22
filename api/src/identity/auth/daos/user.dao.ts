@@ -22,6 +22,10 @@ export class UserDao extends TenantScopedDao<User> {
     return this.repository.findOneBy({ email } as unknown as FindOptionsWhere<User>);
   }
 
+  async countActive(): Promise<number> {
+    return this.scoped("user").andWhere("user.isActive = true").getCount();
+  }
+
   async toggleStatus(id: string): Promise<User | null> {
     const user = await this.findOne({ id } as Partial<User>);
     if (!user) return null;

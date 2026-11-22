@@ -40,6 +40,10 @@ export class ChatsController {
         res.status(400).json({ error: CHATS_ERROR_MESSAGES.SESSION_ID_REQUIRED });
         return;
       }
+      if (!(await this.chatsService.canAccess(sessionId, "read"))) {
+        res.status(404).json({ error: "Conversación no encontrada" });
+        return;
+      }
       const messages = await this.chatsService.getMessages(sessionId);
       res.status(200).json(messages);
     } catch (error) {
@@ -54,6 +58,10 @@ export class ChatsController {
     try {
       const sessionId = String(req.params.sessionId ?? "");
       const mediaId = String(req.params.mediaId ?? "");
+      if (!(await this.chatsService.canAccess(sessionId, "read"))) {
+        res.status(404).json({ error: "Conversación no encontrada" });
+        return;
+      }
       const message = await this.chatsService.findMediaMessage(sessionId, mediaId);
       const stored = message?.mediaKey ? await this.chatMediaService.read(message.mediaKey) : null;
       if (!message || !stored) {
@@ -114,6 +122,10 @@ export class ChatsController {
   async getTransferStatus(req: Request, res: Response): Promise<void> {
     try {
       const sessionId = Array.isArray(req.params.sessionId) ? req.params.sessionId[0] : req.params.sessionId;
+      if (!(await this.chatsService.canAccess(sessionId, "read"))) {
+        res.status(404).json({ error: "Conversación no encontrada" });
+        return;
+      }
       const isHumanMode = await humanModeService.isActive(sessionId);
       res.status(200).json({ isHumanMode });
     } catch (error) {
@@ -125,6 +137,10 @@ export class ChatsController {
   async activateTransfer(req: Request, res: Response): Promise<void> {
     try {
       const sessionId = Array.isArray(req.params.sessionId) ? req.params.sessionId[0] : req.params.sessionId;
+      if (!(await this.chatsService.canAccess(sessionId, "reply"))) {
+        res.status(404).json({ error: "Conversación no encontrada" });
+        return;
+      }
       const contactName = await AppDataSource.getRepository(ContactName)
         .findOneBy({ tenantId: getCurrentTenantId(), phone: normalizePhone(sessionId) })
         .then((cn) => cn?.name);
@@ -139,6 +155,10 @@ export class ChatsController {
   async deactivateTransfer(req: Request, res: Response): Promise<void> {
     try {
       const sessionId = Array.isArray(req.params.sessionId) ? req.params.sessionId[0] : req.params.sessionId;
+      if (!(await this.chatsService.canAccess(sessionId, "reply"))) {
+        res.status(404).json({ error: "Conversación no encontrada" });
+        return;
+      }
       await humanModeService.deactivate(sessionId);
       res.status(200).json({ isHumanMode: false });
     } catch (error) {
@@ -151,6 +171,10 @@ export class ChatsController {
     try {
       const sessionId = Array.isArray(req.params.sessionId) ? req.params.sessionId[0] : req.params.sessionId;
       const body = req.body?.body as string | undefined;
+      if (!(await this.chatsService.canAccess(sessionId, "reply"))) {
+        res.status(404).json({ error: "Conversación no encontrada" });
+        return;
+      }
 
       if (!body?.trim()) {
         res.status(400).json({ error: "El campo 'body' es requerido" });

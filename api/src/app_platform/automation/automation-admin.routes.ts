@@ -2,6 +2,7 @@ import { Router } from "express";
 import { settingsService } from "../../identity/settings/settings.service.js";
 import { authMiddleware } from "../../identity/auth/middlewares/auth.middleware.js";
 import { tenantMiddleware } from "../../core/tenancy/tenant.middleware.js";
+import { requirePlatformPermission } from "../../identity/authz/require-permission.middleware.js";
 import { optionalEnv } from "../../core/config/env.js";
 
 const allowedDomains = optionalEnv("AUTOMATION_ALLOWED_DOMAINS", "")
@@ -30,7 +31,7 @@ function isAllowedDomain(hostname: string): boolean {
 
 export function createAutomationAdminRouter(): Router {
   const router = Router();
-  router.use(authMiddleware, tenantMiddleware);
+  router.use(authMiddleware, tenantMiddleware, requirePlatformPermission("platform.integrations.manage"));
 
   router.get("/config", async (_req, res) => {
     const config = await settingsService.getAutomationConfig();

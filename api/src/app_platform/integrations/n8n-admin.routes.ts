@@ -2,6 +2,7 @@ import { Router } from "express";
 import { settingsService } from "../../identity/settings/settings.service.js";
 import { authMiddleware } from "../../identity/auth/middlewares/auth.middleware.js";
 import { tenantMiddleware } from "../../core/tenancy/tenant.middleware.js";
+import { requirePlatformPermission } from "../../identity/authz/require-permission.middleware.js";
 
 function validateAbsoluteUrl(url: string): URL | null {
   try {
@@ -15,7 +16,7 @@ function validateAbsoluteUrl(url: string): URL | null {
 
 export function createN8nIntegrationRouter(): Router {
   const router = Router();
-  router.use(authMiddleware, tenantMiddleware);
+  router.use(authMiddleware, tenantMiddleware, requirePlatformPermission("platform.integrations.manage"));
 
   router.get("/", async (_req, res) => {
     const config = await settingsService.getN8nIntegrationConfig();

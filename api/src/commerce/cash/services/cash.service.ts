@@ -4,6 +4,8 @@ import { CashSessionDao } from "../daos/cash-session.dao.js";
 import { CashMovementDao } from "../daos/cash-movement.dao.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { UserDao } from "../../../identity/auth/daos/user.dao.js";
+import { UserRoleDao } from "../../../identity/auth/daos/user-role.dao.js";
+import { effectivePermissions } from "../../../identity/authz/permissions.js";
 import { CashSession } from "../entities/cash-session.entity.js";
 import { CashMovement, CashMovementMethod, CashMovementRelatedEntityType, CashMovementType } from "../entities/cash-movement.entity.js";
 import { roundCashAmount } from "../utils/round-cash-amount.js";
@@ -33,6 +35,7 @@ export class CashService {
     private movementDao: CashMovementDao,
     private localService: LocalService,
     private userDao: UserDao,
+    private userRoleDao: UserRoleDao,
   ) {}
 
   async getAllSessions(branchId?: string | null): Promise<CashSession[]> {
@@ -98,8 +101,9 @@ export class CashService {
         throw new Error(`La diferencia supera el límite sin autorizar (${maxUnauthorized.toFixed(2)}): requiere autorización`);
       }
       const authorizer = await this.userDao.findById(authorizedByEmployeeId);
-      if (!authorizer || authorizer.role !== "owner") {
-        throw new Error("Quien autoriza la diferencia debe ser el owner");
+      const authorizerRoles = authorizer?.isActive ? await this.userRoleDao.findRolesOf(authorizer.id) : [];
+      if (!effectivePermissions(authorizerRoles, false).has("cash.authorize-variance")) {
+        throw new Error("Quien autoriza la diferencia debe poder autorizar diferencias de caja");
       }
     }
 

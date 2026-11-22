@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import { ForbiddenError, lacks } from "../../../identity/authz/access.js";
 import type { EntityManager, FindOptionsWhere } from "typeorm";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -54,11 +55,15 @@ export class QuoteService {
     return this.quoteDao.findById(id);
   }
 
+  // Las sub-lecturas pasan por findById: una cotización que el usuario no ve no deja
+  // ver sus items ni tipos de servicio.
   async getItems(quoteId: string): Promise<QuoteItem[]> {
+    if (!(await this.quoteDao.findById(quoteId))) return [];
     return this.quoteItemDao.findByQuoteId(quoteId);
   }
 
   async getServiceTypeIds(quoteId: string): Promise<string[]> {
+    if (!(await this.quoteDao.findById(quoteId))) return [];
     const links = await this.quoteServiceTypeDao.findByQuoteId(quoteId);
     return links.map((l) => l.serviceTypeId);
   }
@@ -81,6 +86,13 @@ export class QuoteService {
     }
     const tenantId = getCurrentTenantId();
     const totalValue = sumItems(items);
+    // getById ya filtra por taller, sucursal y, para el técnico, notas suyas.
+    if (data.repairNoteId && !(await this.repairNoteService.getById(data.repairNoteId))) {
+      throw new Error("Nota no encontrada");
+    }
+    if (lacks("quotes.write") && !data.repairNoteId) {
+      throw new ForbiddenError("Solo puedes cotizar sobre tus notas asignadas");
+    }
 
     return AppDataSource.transaction(async (manager) => {
       const customerId = await resolveOrCreateCustomer(manager, tenantId, data);
@@ -128,6 +140,7 @@ export class QuoteService {
     }
 
     const tenantId = getCurrentTenantId();
+    if (!(await this.quoteDao.findById(id))) return null;
 
     return AppDataSource.transaction(async (manager) => {
       const quote = await manager.findOneBy(

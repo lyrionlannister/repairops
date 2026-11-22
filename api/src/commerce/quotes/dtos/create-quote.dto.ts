@@ -20,6 +20,11 @@ export class CreateQuoteDto {
   @IsString()
   localId!: string;
 
+  // Cotización sobre una nota existente. Obligatoria para quien solo cotiza sus notas.
+  @IsOptional()
+  @IsString()
+  repairNoteId?: string;
+
   @IsOptional()
   @IsIn(KINDS, { message: "Tipo de cotización inválido" })
   kind?: QuoteKind;

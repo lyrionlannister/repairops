@@ -32,6 +32,7 @@ import { Customer } from "../../../../src/commerce/customers/entities/customer.e
 import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
+import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
 
 describe("SaleService.create", () => {
   let inventoryService: InventoryService;
@@ -56,7 +57,7 @@ describe("SaleService.create", () => {
       cashSessionDao,
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       localService,
-      new UserDao(AppDataSource.getRepository(User)),
+      new UserDao(AppDataSource.getRepository(User)), makeUserRoleDao(),
     );
     serviceTypeDao = new ServiceTypeDao(AppDataSource.getRepository(ServiceType));
     salePaymentDao = new SalePaymentDao(AppDataSource.getRepository(SalePayment));
@@ -68,7 +69,7 @@ describe("SaleService.create", () => {
       localService,
       cashSessionDao,
       serviceTypeDao,
-      new CustomerDao(AppDataSource.getRepository(Customer)),
+      new CustomerDao(AppDataSource.getRepository(Customer)), makeDiscountCapService(),
     );
 
     // Tasa de impuesto en 0 para que estas pruebas se centren en atomicidad
@@ -141,7 +142,7 @@ describe("SaleService.create", () => {
               { lineType: "inventory_item", referenceId: itemOutOfStock.id, quantity: 1, unitPrice: 80 },
             ],
           },
-          "owner",
+          ["owner"],
         ),
       ),
     ).rejects.toThrow();
@@ -176,7 +177,7 @@ describe("SaleService.create", () => {
           payments: [{ method: "tarjeta", amount: 60 }],
           items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 2, unitPrice: 30 }],
         },
-        "owner",
+        ["owner"],
       ),
     );
 
@@ -225,7 +226,7 @@ describe("SaleService.create", () => {
           ],
           items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 60 }],
         },
-        "owner",
+        ["owner"],
       ),
     );
 
@@ -265,7 +266,7 @@ describe("SaleService.create", () => {
             ],
             items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 60 }],
           },
-          "owner",
+          ["owner"],
         ),
       ),
     ).rejects.toThrow("La suma de los pagos no coincide con el total de la venta");
@@ -302,7 +303,7 @@ describe("SaleService.create", () => {
           ],
           items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 40 }],
         },
-        "owner",
+        ["owner"],
       ),
     );
 
@@ -341,7 +342,7 @@ describe("SaleService.create", () => {
             { lineType: "service_type", referenceId: serviceType.id, quantity: 1, unitPrice: 50 },
           ],
         },
-        "owner",
+        ["owner"],
       ),
     );
 
@@ -365,7 +366,7 @@ describe("SaleService.create", () => {
             payments: [{ method: "efectivo", amount: 10 }],
             items: [{ lineType: "service_type", referenceId: "999999", quantity: 1, unitPrice: 10 }],
           },
-          "owner",
+          ["owner"],
         ),
       ),
     ).rejects.toThrow("Tipo de servicio no encontrado");
@@ -383,7 +384,7 @@ describe("SaleService.create", () => {
             payments: [{ method: "efectivo", amount: 10 }],
             items: [{ lineType: "inventory_item", referenceId: "1", quantity: 1, unitPrice: 10 }],
           },
-          "owner",
+          ["owner"],
         ),
       ),
     ).rejects.toThrow("Sesión de caja no encontrada");
@@ -414,8 +415,8 @@ describe("SaleService.create", () => {
       items: [{ lineType: "inventory_item" as const, referenceId: item.id, quantity: 1, unitPrice: 15 }],
     };
 
-    const first = await runWithTenant(tenantId, () => saleService.create(payload, "owner"));
-    const second = await runWithTenant(tenantId, () => saleService.create(payload, "owner"));
+    const first = await runWithTenant(tenantId, () => saleService.create(payload, ["owner"]));
+    const second = await runWithTenant(tenantId, () => saleService.create(payload, ["owner"]));
 
     expect(second.id).toBe(first.id);
     const stock = await runWithTenant(tenantId, () => inventoryService.getById(item.id));
@@ -442,7 +443,7 @@ describe("SaleService.create", () => {
       inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 5 }),
     );
 
-    // El tope por defecto para "cashier" es 10% (local.maxDiscountPercentByRole).
+    // Sin tope fijado por el dueño en la sucursal, el cajero no puede dar descuento.
     await expect(
       runWithTenant(tenantId, () =>
         saleService.create(
@@ -452,12 +453,12 @@ describe("SaleService.create", () => {
             payments: [{ method: "efectivo", amount: 25 }],
             items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 50, discountPercent: 50 }],
           },
-          "cashier",
+          ["cashier"],
         ),
       ),
     ).rejects.toThrow("supera el límite permitido");
 
-    // El mismo descuento sí lo puede aplicar el dueño (sin tope configurado).
+    // El mismo descuento sí lo puede aplicar el dueño: no tiene tope.
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
         {
@@ -466,7 +467,7 @@ describe("SaleService.create", () => {
           payments: [{ method: "efectivo", amount: 25 }],
           items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 50, discountPercent: 50 }],
         },
-        "owner",
+        ["owner"],
       ),
     );
     expect(Number(sale.totalValue)).toBe(25);

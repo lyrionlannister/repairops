@@ -54,11 +54,12 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
   // Sucursal real y un usuario por rol (el personal asignado a ella): ver tests/support/staff.ts.
   let branchId = "";
   let tokens: Record<string, string> = {};
+  let userIds: Record<string, string> = {};
   const tokenFor = (role: UserRole) => tokens[role] as string;
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    ({ branchId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
+    ({ branchId, tokens, userIds } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
     await ensureFixtureTenant(AppDataSource, tenantId);
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
@@ -113,14 +114,14 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     receivedAt: "2026-01-01",
   });
 
-  it("rejects a cashier creating a repair note (403), but allows read", async () => {
+  it("a cashier receives equipment (creates and reads notes)", async () => {
     const cashierToken = tokenFor("cashier");
 
     const createRes = await request(app)
       .post("/repair-notes")
       .set("Authorization", `Bearer ${cashierToken}`)
       .send(newNotePayload());
-    expect(createRes.status).toBe(403);
+    expect(createRes.status).toBe(201);
 
     const readRes = await request(app)
       .get("/repair-notes")
@@ -128,26 +129,66 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     expect(readRes.status).toBe(200);
   });
 
-  it("allows a technician to create, update and cancel a repair note", async () => {
+  it("a technician's note is assigned to them, they edit it, and only the owner cancels", async () => {
     const technicianToken = tokenFor("technician");
 
     const createRes = await request(app)
       .post("/repair-notes")
       .set("Authorization", `Bearer ${technicianToken}`)
-      .send(newNotePayload());
+      .send({ ...newNotePayload(), assignedEmployeeId: userIds["owner"] });
     expect(createRes.status).toBe(201);
+    expect(String(createRes.body.assignedEmployeeId)).toBe(userIds["technician"]);
     const noteId = createRes.body.id;
 
     const updateRes = await request(app)
       .patch(`/repair-notes/${noteId}`)
       .set("Authorization", `Bearer ${technicianToken}`)
-      .send({ technicianNotes: "Diagnóstico actualizado" });
+      .send({ technicianNotes: "Diagnóstico actualizado", assignedEmployeeId: userIds["owner"] });
     expect(updateRes.status).toBe(200);
+    expect(String(updateRes.body.assignedEmployeeId)).toBe(userIds["technician"]);
 
     const cancelRes = await request(app)
       .post(`/repair-notes/${noteId}/cancel`)
       .set("Authorization", `Bearer ${technicianToken}`);
-    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.status).toBe(403);
+
+    const ownerCancel = await request(app)
+      .post(`/repair-notes/${noteId}/cancel`)
+      .set("Authorization", `Bearer ${tokenFor("owner")}`);
+    expect(ownerCancel.status).toBe(200);
+  });
+
+  it("a technician never sees a note assigned to someone else", async () => {
+    const technicianToken = tokenFor("technician");
+    const foreign = await request(app)
+      .post("/repair-notes")
+      .set("Authorization", `Bearer ${tokenFor("owner")}`)
+      .send(newNotePayload());
+    expect(foreign.status).toBe(201);
+    const foreignId = foreign.body.id;
+
+    const list = await request(app).get("/repair-notes").set("Authorization", `Bearer ${technicianToken}`);
+    expect(list.status).toBe(200);
+    expect(list.body.map((note: { id: string }) => note.id)).not.toContain(foreignId);
+    expect(list.body.every((note: { assignedEmployeeId: string }) => String(note.assignedEmployeeId) === userIds["technician"])).toBe(true);
+
+    const byId = await request(app).get(`/repair-notes/${foreignId}`).set("Authorization", `Bearer ${technicianToken}`);
+    expect(byId.status).toBe(404);
+
+    const update = await request(app)
+      .patch(`/repair-notes/${foreignId}`)
+      .set("Authorization", `Bearer ${technicianToken}`)
+      .send({ technicianNotes: "No es mía" });
+    expect(update.status).toBe(404);
+
+    const items = await request(app).get(`/repair-notes/${foreignId}/items`).set("Authorization", `Bearer ${technicianToken}`);
+    expect(items.body).toEqual([]);
+
+    const deliver = await request(app)
+      .post(`/repair-notes/${foreignId}/deliver`)
+      .set("Authorization", `Bearer ${technicianToken}`)
+      .send({ payments: [] });
+    expect(deliver.status).toBe(404);
   });
 
   it("rejects a cashier updating or cancelling an existing note", async () => {

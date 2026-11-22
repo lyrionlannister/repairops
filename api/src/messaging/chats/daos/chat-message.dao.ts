@@ -97,6 +97,25 @@ export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
     );
   }
 
+  // Una conversación es de un técnico si la nota más reciente referenciada en sus
+  // mensajes (repair_note_id, sale del QR) está asignada a él. Si el cliente escanea
+  // después el QR de otra nota, la conversación pasa al técnico de esa nota.
+  async findPhonesOfAssignedNotes(userId: string): Promise<Set<string>> {
+    const rows: Array<{ phone: string }> = await this.repository.query(
+      `SELECT latest.contact_phone AS phone
+       FROM (
+         SELECT DISTINCT ON (m.contact_phone) m.contact_phone, m.repair_note_id
+         FROM chat_messages m
+         WHERE m.tenant_id = $1 AND m.repair_note_id IS NOT NULL
+         ORDER BY m.contact_phone, m.id DESC
+       ) latest
+       JOIN repair_notes rn ON rn.id = latest.repair_note_id AND rn.tenant_id = $1
+       WHERE rn.id_empleado_asignado = $2`,
+      [this.currentTenantId(), userId],
+    );
+    return new Set(rows.map((row) => row.phone));
+  }
+
   async getMessagesByContact(contactPhone: string): Promise<ChatMessage[]> {
     return this.scoped()
       .andWhere("entity.contactPhone = :contactPhone", { contactPhone })

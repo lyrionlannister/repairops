@@ -85,7 +85,7 @@ export class RepairNoteController {
       });
       res.status(200).json(note);
     } catch (error: any) {
-      sendError(res, error, 400);
+      sendError(res, error, error.message === "Nota no encontrada" ? 404 : 400);
     }
   };
 
