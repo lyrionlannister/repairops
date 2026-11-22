@@ -3,8 +3,10 @@ import type { Express } from "express";
 
 import { AuthController } from "../../identity/auth/controllers/auth.controller.js";
 import { createAuthRouter } from "../../identity/auth/routes/auth.routes.js";
-import { createAutomationAdminRouter } from "../../app_platform/automation/automation-admin.routes.js";
-import { createN8nIntegrationRouter } from "../../app_platform/integrations/n8n-admin.routes.js";
+import { createAutomationAdminRouter } from "../../app_platform/automation/routes/automation-admin.routes.js";
+import { AutomationAdminController } from "../../app_platform/automation/controllers/automation-admin.controller.js";
+import { createN8nIntegrationRouter } from "../../app_platform/integrations/routes/n8n-integration.routes.js";
+import { N8nIntegrationController } from "../../app_platform/integrations/controllers/n8n-integration.controller.js";
 import { BillingController } from "../../app_platform/billing/controllers/billing.controller.js";
 import { createBillingRouter, createPlatformBillingRouter } from "../../app_platform/billing/routes/billing.routes.js";
 import { ChatsController } from "../../messaging/chats/controllers/chats.controller.js";
@@ -66,8 +68,8 @@ import { createLayawayRouter } from "../../commerce/customers/routes/layaway.rou
 // ya haya corrido (cada controller/dao se resuelve del contenedor aqui).
 export function registerRoutes(app: Express): void {
   app.use("/api/v1/auth", createAuthRouter(container.resolve(AuthController)));
-  app.use("/api/v1/automation", createAutomationAdminRouter());
-  app.use("/api/v1/integrations/n8n", createN8nIntegrationRouter());
+  app.use("/api/v1/automation", createAutomationAdminRouter(container.resolve(AutomationAdminController)));
+  app.use("/api/v1/integrations/n8n", createN8nIntegrationRouter(container.resolve(N8nIntegrationController)));
   app.use("/api/v1/billing", createBillingRouter(container.resolve(BillingController)));
   app.use("/api/v1/platform", createPlatformBillingRouter(container.resolve(BillingController)));
   app.use("/api/v1/chats", createChatsRouter(container.resolve(ChatsController)));

@@ -5,6 +5,7 @@ import { validate } from "class-validator";
 import { BillingService } from "../services/billing.service.js";
 import { AssignSubscriptionDto } from "../dtos/assign-subscription.dto.js";
 import { sendError } from "../../../core/http/error-response.js";
+import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
 @singleton()
 export class BillingController {
@@ -39,7 +40,7 @@ export class BillingController {
       const dto = plainToInstance(AssignSubscriptionDto, req.body ?? {});
       const errors = await validate(dto);
       if (errors.length > 0) {
-        res.status(400).json({ error: errors.flatMap((e) => Object.values(e.constraints ?? {})) });
+        res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
       const summary = await this.service.assign(req.params["tenantId"] as string, dto);

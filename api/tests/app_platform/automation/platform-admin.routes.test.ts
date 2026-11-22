@@ -3,8 +3,10 @@ import express from "express";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import AppDataSource from "../../../src/core/config/data-source.js";
-import { createAutomationAdminRouter } from "../../../src/app_platform/automation/automation-admin.routes.js";
-import { createN8nIntegrationRouter } from "../../../src/app_platform/integrations/n8n-admin.routes.js";
+import { createAutomationAdminRouter } from "../../../src/app_platform/automation/routes/automation-admin.routes.js";
+import { AutomationAdminController } from "../../../src/app_platform/automation/controllers/automation-admin.controller.js";
+import { createN8nIntegrationRouter } from "../../../src/app_platform/integrations/routes/n8n-integration.routes.js";
+import { N8nIntegrationController } from "../../../src/app_platform/integrations/controllers/n8n-integration.controller.js";
 import { setupStaff } from "../../support/staff.js";
 
 describe("automation y n8n: solo admin de plataforma", () => {
@@ -23,8 +25,8 @@ describe("automation y n8n: solo admin de plataforma", () => {
 
     app = express();
     app.use(express.json());
-    app.use("/automation", createAutomationAdminRouter());
-    app.use("/integrations/n8n", createN8nIntegrationRouter());
+    app.use("/automation", createAutomationAdminRouter(new AutomationAdminController()));
+    app.use("/integrations/n8n", createN8nIntegrationRouter(new N8nIntegrationController()));
   });
 
   afterAll(async () => {

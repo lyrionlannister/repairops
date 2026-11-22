@@ -24,7 +24,6 @@ export class UserRoleDao extends TenantScopedDao<UserRoleAssignment> {
     return result;
   }
 
-  // Dueños activos del taller, opcionalmente sin contar a un usuario.
   async countActiveOwners(exceptUserId?: string): Promise<number> {
     const query = this.scoped("ur")
       .innerJoin("ur.user", "user", "user.isActive = true")

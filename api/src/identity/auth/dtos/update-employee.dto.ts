@@ -24,7 +24,6 @@ export class UpdateEmployeeDto {
   @MinLength(8, { message: "Password debe tener al menos 8 caracteres" })
   password?: string;
 
-  // Los permisos del usuario son la unión de los de sus roles.
   // Sin roles se conservan los actuales.
   @IsOptional()
   @IsArray({ message: "roles debe ser una lista" })

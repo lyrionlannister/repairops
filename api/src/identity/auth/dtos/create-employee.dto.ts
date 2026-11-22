@@ -21,7 +21,6 @@ export class CreateEmployeeDto {
   @MinLength(8, { message: "Password debe tener al menos 8 caracteres" })
   password!: string;
 
-  // Los permisos del usuario son la unión de los de sus roles.
   @IsArray({ message: "roles debe ser una lista" })
   @ArrayNotEmpty({ message: "Elige al menos un rol" })
   @ArrayUnique({ message: "Roles repetidos" })
