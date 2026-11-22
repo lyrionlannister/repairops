@@ -1,4 +1,5 @@
-import { singleton, inject } from "tsyringe";
+import { isRowsTuple } from "../../../core/database/rows-result.js";
+import { singleton } from "tsyringe";
 import { lacks } from "../../../identity/authz/access.js";
 import { EntityManager } from "typeorm";
 import AppDataSource from "../../../core/config/data-source.js";
@@ -10,6 +11,8 @@ import { SupplierDao } from "../../suppliers/daos/supplier.dao.js";
 import { InventoryItem } from "../entities/inventory-item.entity.js";
 import { InventoryMovement, MovementType, RelatedEntityType } from "../entities/inventory-movement.entity.js";
 import type { InventoryImportRow } from "../utils/inventory-import-parser.js";
+import type { Decimal } from "decimal.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 
 export interface RegisterMovementInput {
   inventoryItemId: string;
@@ -30,8 +33,8 @@ type CreateItemPayload = {
   name: string;
   sku?: string | null;
   kind: InventoryItem["kind"];
-  costPrice: number;
-  salePrice: number;
+  costPrice: Decimal.Value;
+  salePrice: Decimal.Value;
   minStock?: number;
   supplierId?: string | null;
 };
@@ -104,12 +107,22 @@ export class InventoryService {
 
   async create(data: CreateItemPayload): Promise<InventoryItem> {
     if (data.supplierId) await this.assertSupplierBelongsToTenant(data.supplierId);
-    return this.itemDao.create({ ...data, quantityOnHand: 0 } as Partial<InventoryItem>);
+    return this.itemDao.create({
+      ...data,
+      costPrice: toMoney(data.costPrice),
+      salePrice: toMoney(data.salePrice),
+      quantityOnHand: 0,
+    });
   }
 
   async update(id: string, data: UpdateItemPayload): Promise<InventoryItem | null> {
     if (data.supplierId) await this.assertSupplierBelongsToTenant(data.supplierId);
-    return this.itemDao.update(id, data as Partial<InventoryItem>);
+    const { costPrice, salePrice, ...rest } = data;
+    return this.itemDao.update(id, {
+      ...rest,
+      ...(costPrice !== undefined && { costPrice: toMoney(costPrice) }),
+      ...(salePrice !== undefined && { salePrice: toMoney(salePrice) }),
+    });
   }
 
   async delete(id: string): Promise<boolean> {
@@ -134,8 +147,8 @@ export class InventoryService {
           name: row.name,
           sku: row.sku,
           kind: row.kind,
-          costPrice: row.costPrice,
-          salePrice: row.salePrice,
+          costPrice: toMoney(row.costPrice),
+          salePrice: toMoney(row.salePrice),
           quantityOnHand: 0,
         });
         const saved = await manager.save(item);
@@ -178,14 +191,14 @@ export class InventoryService {
     const delta =
       input.type === "out" ? -Math.abs(input.quantity) : input.type === "in" ? Math.abs(input.quantity) : input.quantity;
 
-    const result = await manager.query(
+    const result = await manager.query<Array<{ id: string }> | [Array<{ id: string }>, number]>(
       `UPDATE inventory_items
        SET cantidad_disponible = cantidad_disponible + $1
        WHERE id = $2 AND tenant_id = $3 AND cantidad_disponible + $1 >= 0
        RETURNING id`,
       [delta, input.inventoryItemId, tenantId],
     );
-    const rows = Array.isArray(result[0]) ? result[0] : result;
+    const rows = isRowsTuple(result) ? result[0] : result;
     if (rows.length === 0) {
       throw new Error("No se pudo registrar el movimiento: item inexistente o stock insuficiente");
     }

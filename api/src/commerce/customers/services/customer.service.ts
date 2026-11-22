@@ -1,8 +1,10 @@
-import { singleton, inject } from "tsyringe";
+import { Decimal } from "decimal.js";
+import { singleton } from "tsyringe";
 import { CustomerDao } from "../daos/customer.dao.js";
 import { Customer } from "../entities/customer.entity.js";
 import { RepairNoteDao } from "../../repair-notes/daos/repair-note.dao.js";
 import { SalePaymentDao } from "../../payments/daos/sale-payment.dao.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 
 export interface CustomerCreditBalance {
   creditLimit: number;
@@ -10,7 +12,7 @@ export interface CustomerCreditBalance {
   available: number;
 }
 
-type CreatePayload = Pick<Customer, "name" | "phone" | "email" | "creditLimit">;
+type CreatePayload = Pick<Customer, "name" | "phone" | "email"> & { creditLimit?: Decimal.Value };
 type UpdatePayload = Partial<CreatePayload>;
 
 export interface CustomerDeviceHistoryEntry {
@@ -47,8 +49,8 @@ export class CustomerService {
       name,
       phone,
       email: data.email?.trim() || undefined,
-      creditLimit: data.creditLimit,
-    } as Partial<Customer>);
+      ...(data.creditLimit !== undefined && { creditLimit: toMoney(data.creditLimit) }),
+    });
   }
 
   async update(id: string, data: UpdatePayload): Promise<Customer | null> {
@@ -65,7 +67,7 @@ export class CustomerService {
       payload.phone = phone;
     }
     if (data.email !== undefined) payload.email = data.email?.trim() || undefined;
-    if (data.creditLimit !== undefined) payload.creditLimit = data.creditLimit;
+    if (data.creditLimit !== undefined) payload.creditLimit = toMoney(data.creditLimit);
 
     return this.dao.update(id, payload);
   }
@@ -80,7 +82,12 @@ export class CustomerService {
     const customer = await this.dao.findById(customerId);
     if (!customer) return null;
     const balance = await this.salePaymentDao.sumCreditoForCustomer(customerId);
-    return { creditLimit: Number(customer.creditLimit), balance, available: Number(customer.creditLimit) - balance };
+    const creditLimit = new Decimal(customer.creditLimit);
+    return {
+      creditLimit: creditLimit.toNumber(),
+      balance: new Decimal(balance).toNumber(),
+      available: creditLimit.minus(balance).toNumber(),
+    };
   }
 
   // No hay tabla de dispositivos propia: el historial se deriva de las notas

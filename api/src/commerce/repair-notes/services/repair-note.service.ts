@@ -1,6 +1,6 @@
 import { singleton } from "tsyringe";
 import { currentUserId, lacks } from "../../../identity/authz/access.js";
-import type { EntityManager, FindOptionsWhere } from "typeorm";
+import type { EntityManager } from "typeorm";
 import { RepairNoteDao } from "../daos/repair-note.dao.js";
 import { RepairNoteItemDao } from "../daos/repair-note-item.dao.js";
 import { RepairNoteServiceTypeDao } from "../daos/repair-note-service-type.dao.js";
@@ -24,6 +24,7 @@ import { CashMovement } from "../../cash/entities/cash-movement.entity.js";
 import { RepairNotePayment, type RepairNotePaymentMethod } from "../entities/repair-note-payment.entity.js";
 import { sumCreditBalance } from "../../customers/utils/credit-balance.js";
 import { resolveOrCreateCustomer } from "../../customers/utils/resolve-customer.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 
 // tenantId/controlNumber los agrega create() desde el contexto/consecutivo
 // (nunca el caller); totalValue/status/requiresAdvance/deviceOff/
@@ -48,7 +49,7 @@ type UpdatePayload = Partial<
 export interface RepairNoteItemInput {
   inventoryItemId: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice: Decimal.Value;
 }
 
 // Cómo se cobró el anticipo al recibir el equipo (nunca a crédito: es dinero que entra a caja).
@@ -59,7 +60,7 @@ export interface AdvancePaymentInput {
 
 export interface DeliveryPaymentInput {
   method: RepairNotePaymentMethod;
-  amount: number;
+  amount: Decimal.Value;
 }
 
 export interface DeliverInput {
@@ -136,7 +137,7 @@ export class RepairNoteService {
     serviceTypeIds: string[] = [],
     advancePayment?: AdvancePaymentInput,
   ): Promise<RepairNote> {
-    if (!data.localId) throw new Error("La sucursal (localId) es obligatoria");
+    if (!data.localId) throw new Error("La sucursal es obligatoria");
     // repair-notes.create.own: la nota queda asignada a quien la crea, mande lo que mande.
     if (lacks("repair-notes.create")) data = { ...data, assignedEmployeeId: currentUserId() };
     const tenantId = getCurrentTenantId();
@@ -201,7 +202,7 @@ export class RepairNoteService {
           repairNoteId: savedNote.id,
           inventoryItemId: item.inventoryItemId,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
+          unitPrice: toMoney(item.unitPrice),
         });
         const savedNoteItem = await manager.save(noteItem);
         if (!committed) {
@@ -233,13 +234,13 @@ export class RepairNoteService {
     input: AdvancePaymentInput | undefined,
     tenantId: string,
   ): Promise<void> {
-    if (!data.requiresAdvance || !(Number(data.advanceValue) > 0)) return;
+    if (!data.requiresAdvance || !new Decimal(data.advanceValue ?? 0).gt(0)) return;
     if (!input?.createdByEmployeeId) throw new Error("Indica quién cobra el anticipo");
     if (!["efectivo", "tarjeta", "transferencia"].includes(input.method)) {
       throw new Error("El anticipo no puede quedar a crédito: se cobra al recibir el equipo");
     }
     const session = await AppDataSource.manager.findOne(CashSession, {
-      where: { tenantId, localId: data.localId, status: "open" } as unknown as FindOptionsWhere<CashSession>,
+      where: { tenantId, localId: data.localId, status: "open" },
     });
     if (!session) throw new Error("Abre la caja de la sucursal para cobrar el anticipo");
   }
@@ -260,7 +261,7 @@ export class RepairNoteService {
       throw new Error("El anticipo no puede quedar a crédito: se cobra al recibir el equipo");
     }
     const session = await manager.findOne(CashSession, {
-      where: { tenantId, localId: note.localId, status: "open" } as unknown as FindOptionsWhere<CashSession>,
+      where: { tenantId, localId: note.localId, status: "open" },
     });
     if (!session) throw new Error("Abre la caja de la sucursal para cobrar el anticipo");
 
@@ -270,7 +271,7 @@ export class RepairNoteService {
         repairNoteId: note.id,
         kind: "advance",
         method: input.method,
-        amount: advance.toNumber(),
+        amount: toMoney(advance),
       }),
     );
     await manager.save(
@@ -279,7 +280,7 @@ export class RepairNoteService {
         cashSessionId: session.id,
         type: "income",
         method: input.method,
-        amount: advance.toNumber(),
+        amount: toMoney(advance),
         relatedEntityType: "repair_note",
         relatedEntityId: note.id,
         note: `Anticipo nota #${note.controlNumber}`,
@@ -302,16 +303,16 @@ export class RepairNoteService {
     const payments = input.payments ?? [];
     for (const payment of payments) {
       if (!PAYMENT_METHODS.includes(payment.method)) throw new Error("Método de pago inválido");
-      if (!(Number(payment.amount) > 0)) throw new Error("Cada pago debe ser mayor a 0");
+      if (!new Decimal(payment.amount).gt(0)) throw new Error("Cada pago debe ser mayor a 0");
     }
 
     return AppDataSource.transaction(async (manager) => {
-      const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
+      const note = await manager.findOneBy(RepairNote, { id, tenantId });
       if (!note) throw new Error("Nota no encontrada");
       if (note.status !== "done") throw new Error("La nota debe estar Lista para poder entregarse");
 
       const advances = await manager.find(RepairNotePayment, {
-        where: { repairNoteId: id, tenantId, kind: "advance" } as unknown as FindOptionsWhere<RepairNotePayment>,
+        where: { repairNoteId: id, tenantId, kind: "advance" },
       });
       const advancePaid = advances.reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
       const balance = Decimal.max(0, new Decimal(note.totalValue ?? 0).minus(advancePaid));
@@ -323,10 +324,7 @@ export class RepairNoteService {
       const credit = payments.filter((p) => p.method === "credito").reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
       if (credit.gt(0)) {
         if (!note.customerId) throw new Error("Entregar a crédito requiere un cliente registrado");
-        const customer = await manager.findOneBy(Customer, {
-          id: note.customerId,
-          tenantId,
-        } as unknown as FindOptionsWhere<Customer>);
+        const customer = await manager.findOneBy(Customer, { id: note.customerId, tenantId });
         if (!customer) throw new Error("Cliente no encontrado");
         const current = await sumCreditBalance(manager, tenantId, customer.id);
         const limit = new Decimal(customer.creditLimit);
@@ -342,7 +340,7 @@ export class RepairNoteService {
       if (cashPayments.length > 0) {
         if (!input.createdByEmployeeId) throw new Error("Indica quién cobra la entrega");
         session = await manager.findOne(CashSession, {
-          where: { tenantId, localId: note.localId, status: "open" } as unknown as FindOptionsWhere<CashSession>,
+          where: { tenantId, localId: note.localId, status: "open" },
         });
         if (!session) throw new Error("Abre la caja de la sucursal para cobrar la entrega");
       }
@@ -354,7 +352,7 @@ export class RepairNoteService {
             repairNoteId: id,
             kind: "delivery",
             method: payment.method,
-            amount: Number(payment.amount),
+            amount: toMoney(payment.amount),
           }),
         );
         if (payment.method !== "credito" && session) {
@@ -364,7 +362,7 @@ export class RepairNoteService {
               cashSessionId: session.id,
               type: "income",
               method: payment.method,
-              amount: Number(payment.amount),
+              amount: toMoney(payment.amount),
               relatedEntityType: "repair_note",
               relatedEntityId: id,
               note: `Entrega nota #${note.controlNumber}`,
@@ -388,7 +386,7 @@ export class RepairNoteService {
   // Un anticipo ya cobrado es un ingreso en caja: ni su valor ni "requiere anticipo" se editan.
   private async assertAdvanceUnchanged(id: string, data: UpdatePayload, tenantId: string): Promise<void> {
     const charged = await AppDataSource.manager.count(RepairNotePayment, {
-      where: { repairNoteId: id, tenantId, kind: "advance" } as unknown as FindOptionsWhere<RepairNotePayment>,
+      where: { repairNoteId: id, tenantId, kind: "advance" },
     });
     if (charged === 0) return;
     const current = await this.repairNoteDao.findById(id);
@@ -408,14 +406,14 @@ export class RepairNoteService {
     items?: RepairNoteItemInput[],
     serviceTypeIds?: string[],
   ): Promise<RepairNote | null> {
-    if ("localId" in data && !data.localId) throw new Error("La sucursal (localId) es obligatoria");
+    if ("localId" in data && !data.localId) throw new Error("La sucursal es obligatoria");
     const tenantId = getCurrentTenantId();
     // Las escrituras de abajo van directo al manager: este findById es el que aplica
     // sucursal y, para el técnico, que la nota sea suya.
     if (!(await this.repairNoteDao.findById(id))) return null;
     if (lacks("repair-notes.write")) {
       const { assignedEmployeeId: _ignored, ...rest } = data as UpdatePayload & { assignedEmployeeId?: unknown };
-      data = rest as UpdatePayload;
+      data = rest;
     }
 
     if ("advanceValue" in data || "requiresAdvance" in data) {
@@ -432,7 +430,7 @@ export class RepairNoteService {
     if (items === undefined && serviceTypeIds === undefined) {
       let previousStatus: string | undefined;
       const savedNote = await AppDataSource.transaction(async (manager) => {
-        const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
+        const note = await manager.findOneBy(RepairNote, { id, tenantId });
         if (!note) return null;
         previousStatus = note.status;
         Object.assign(note, data);
@@ -449,13 +447,13 @@ export class RepairNoteService {
 
     let previousStatus: string | undefined;
     const savedNote = await AppDataSource.transaction(async (manager) => {
-      const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
+      const note = await manager.findOneBy(RepairNote, { id, tenantId });
       if (!note) return null;
       previousStatus = note.status;
       const wasCommitted = isCommitted(previousStatus);
 
       if (items !== undefined) {
-        const oldItems = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem> });
+        const oldItems = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } });
         for (const oldItem of oldItems) {
           if (wasCommitted) {
             await this.inventoryService.applyMovement(manager, {
@@ -470,7 +468,7 @@ export class RepairNoteService {
             await this.inventoryReservationService.release(manager, "repair_note_item", oldItem.id);
           }
         }
-        await manager.delete(RepairNoteItem, { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem>);
+        await manager.delete(RepairNoteItem, { repairNoteId: id, tenantId });
       }
 
       Object.assign(note, data);
@@ -493,7 +491,7 @@ export class RepairNoteService {
             repairNoteId: id,
             inventoryItemId: item.inventoryItemId,
             quantity: item.quantity,
-            unitPrice: item.unitPrice,
+            unitPrice: toMoney(item.unitPrice),
           });
           const savedNoteItem = await manager.save(noteItem);
           if (!willBeCommitted) {
@@ -511,7 +509,7 @@ export class RepairNoteService {
       }
 
       if (serviceTypeIds !== undefined) {
-        await manager.delete(RepairNoteServiceType, { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteServiceType>);
+        await manager.delete(RepairNoteServiceType, { repairNoteId: id, tenantId });
         for (const serviceTypeId of serviceTypeIds) {
           const link = manager.create(RepairNoteServiceType, { tenantId, repairNoteId: id, serviceTypeId });
           await manager.save(link);
@@ -528,7 +526,7 @@ export class RepairNoteService {
   // a "done"/"delivered" por primera vez), nunca antes.
   private async consumeActiveReservations(manager: EntityManager, repairNoteId: string, tenantId: string): Promise<void> {
     const currentItems = await manager.find(RepairNoteItem, {
-      where: { repairNoteId, tenantId } as unknown as FindOptionsWhere<RepairNoteItem>,
+      where: { repairNoteId, tenantId },
     });
     for (const item of currentItems) {
       await this.inventoryReservationService.consume(manager, "repair_note_item", item.id);
@@ -558,13 +556,13 @@ export class RepairNoteService {
     const tenantId = getCurrentTenantId();
     if (!(await this.repairNoteDao.findById(id))) throw new Error("Nota no encontrada");
     return AppDataSource.transaction(async (manager) => {
-      const note = await manager.findOneBy(RepairNote, { id, tenantId } as unknown as FindOptionsWhere<RepairNote>);
+      const note = await manager.findOneBy(RepairNote, { id, tenantId });
       if (!note) throw new Error("Nota no encontrada");
       if (note.status === "cancelled") throw new Error("La nota ya está cancelada");
       if (note.status === "delivered") throw new Error("No se puede cancelar una nota ya entregada");
 
       const wasCommitted = isCommitted(note.status);
-      const items = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } as unknown as FindOptionsWhere<RepairNoteItem> });
+      const items = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } });
       for (const item of items) {
         if (wasCommitted) {
           await this.inventoryService.applyMovement(manager, {

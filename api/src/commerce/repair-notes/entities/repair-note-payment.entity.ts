@@ -39,7 +39,7 @@ export class RepairNotePayment extends BaseEntity {
   method!: RepairNotePaymentMethod;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false, name: "monto" })
-  amount!: number;
+  amount!: string;
 
   @Column({ type: "timestamp", nullable: false, default: () => "now()", name: "fecha_creacion" })
   createdAt!: Date;

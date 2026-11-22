@@ -6,8 +6,8 @@ import { Decimal } from "decimal.js";
 // dinero por su cuenta (ver skill money-precision).
 export interface SaleTotalsLine {
   quantity: number;
-  unitPrice: number;
-  discountPercent?: number;
+  unitPrice: Decimal.Value;
+  discountPercent?: Decimal.Value;
 }
 
 export interface SaleTotalsLineResult {
@@ -26,7 +26,7 @@ export interface SaleTotalsResult {
 
 const money2 = (value: Decimal) => value.toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
-export function calculateSaleTotals(items: SaleTotalsLine[], taxRatePercent: number): SaleTotalsResult {
+export function calculateSaleTotals(items: SaleTotalsLine[], taxRatePercent: Decimal.Value): SaleTotalsResult {
   const taxRate = new Decimal(taxRatePercent).dividedBy(100);
 
   let subtotal = new Decimal(0);

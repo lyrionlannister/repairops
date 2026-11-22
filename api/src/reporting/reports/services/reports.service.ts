@@ -16,7 +16,7 @@ const CYCLE_DAYS: Record<PayCycle, number> = { weekly: 7, biweekly: 15, monthly:
 // con 2 decimales, igual que antes.
 const toNumber = (value: Decimal.Value): number => new Decimal(value).toDecimalPlaces(2).toNumber();
 
-function prorateSalary(salaryAmount: number | null, payCycle: PayCycle | null, periodDays: number): Decimal {
+function prorateSalary(salaryAmount: string | null, payCycle: PayCycle | null, periodDays: number): Decimal {
   if (!salaryAmount || !payCycle) return new Decimal(0);
   return new Decimal(salaryAmount).dividedBy(CYCLE_DAYS[payCycle]).times(periodDays);
 }

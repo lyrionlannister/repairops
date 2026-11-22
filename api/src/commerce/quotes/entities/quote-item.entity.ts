@@ -31,5 +31,5 @@ export class QuoteItem extends BaseEntity {
   quantity!: number;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "precio_unitario" })
-  unitPrice!: number;
+  unitPrice!: string;
 }

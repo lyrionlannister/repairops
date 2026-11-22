@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { singleton } from "tsyringe";
 import { Decimal } from "decimal.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -12,9 +12,10 @@ import { Sale, SaleOrigin } from "../entities/sale.entity.js";
 import { SaleItem, SaleItemLineType } from "../entities/sale-item.entity.js";
 import { SalePayment, SalePaymentMethod } from "../../payments/entities/sale-payment.entity.js";
 import { SalePaymentDao } from "../../payments/daos/sale-payment.dao.js";
-import { CashMovement, CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
+import { CashMovement } from "../../cash/entities/cash-movement.entity.js";
 import { CustomerDao } from "../../customers/daos/customer.dao.js";
 import { calculateSaleTotals } from "../../pricing/calculate-sale-totals.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 import type { UserRole } from "../../../identity/auth/entities/user.entity.js";
 import { BranchDiscountCapService } from "../../../identity/branches/services/branch-discount-cap.service.js";
 
@@ -22,13 +23,13 @@ export interface SaleItemInput {
   lineType: SaleItemLineType;
   referenceId: string;
   quantity: number;
-  unitPrice: number;
-  discountPercent?: number;
+  unitPrice: Decimal.Value;
+  discountPercent?: Decimal.Value;
 }
 
 export interface PaymentInput {
   method: SalePaymentMethod;
-  amount: number;
+  amount: Decimal.Value;
   providerReference?: string | null;
   providerAuthorizationCode?: string | null;
 }
@@ -129,7 +130,7 @@ export class SaleService {
         unitPrice: item.unitPrice,
         discountPercent: item.discountPercent,
       })),
-      data.applyTax ? Number(local.taxRatePercent) : 0,
+      data.applyTax ? local.taxRatePercent : 0,
     );
 
     const paymentsSum = data.payments.reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
@@ -171,13 +172,10 @@ export class SaleService {
         origin: data.origin ?? "counter",
         createdByEmployeeId: data.createdByEmployeeId ?? null,
         idempotencyKey: data.idempotencyKey ?? null,
-        // totals.* ya están redondeados por el motor de cálculo con Decimal
-        // (ver commerce/pricing) -- Number() aquí solo satisface el tipo de
-        // la columna TypeORM, no repite el cálculo con aritmética nativa.
-        subtotal: Number(totals.subtotal),
-        discountAmount: Number(totals.discountAmount),
-        taxAmount: Number(totals.taxAmount),
-        totalValue: Number(totals.total),
+        subtotal: totals.subtotal,
+        discountAmount: totals.discountAmount,
+        taxAmount: totals.taxAmount,
+        totalValue: totals.total,
       });
       const savedSale = await manager.save(sale);
 
@@ -186,7 +184,7 @@ export class SaleService {
           tenantId,
           saleId: savedSale.id,
           method: paymentInput.method,
-          amount: paymentInput.amount,
+          amount: toMoney(paymentInput.amount),
           providerReference: paymentInput.providerReference ?? null,
           providerAuthorizationCode: paymentInput.providerAuthorizationCode ?? null,
         });
@@ -200,8 +198,8 @@ export class SaleService {
             tenantId,
             cashSessionId: data.cashSessionId,
             type: "income",
-            method: paymentInput.method as CashMovementMethod,
-            amount: paymentInput.amount,
+            method: paymentInput.method,
+            amount: toMoney(paymentInput.amount),
             relatedEntityType: "sale",
             relatedEntityId: savedSale.id,
             createdByEmployeeId: data.createdByEmployeeId ?? null,
@@ -230,8 +228,8 @@ export class SaleService {
           lineType: item.lineType,
           referenceId: item.referenceId,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discountAmount: Number(line.lineDiscount),
+          unitPrice: toMoney(item.unitPrice),
+          discountAmount: line.lineDiscount,
         });
         await manager.save(saleItem);
       }

@@ -25,8 +25,8 @@ describe("parseInventoryImportFile", () => {
 
     expect(errors).toEqual([]);
     expect(rows).toEqual([
-      { name: "Funda iPhone 13", sku: "FND-13", kind: "accessory", costPrice: 50, salePrice: 120, quantity: 10 },
-      { name: "Pantalla A52", sku: "SCR-A52", kind: "part", costPrice: 500, salePrice: 900, quantity: 0 },
+      { name: "Funda iPhone 13", sku: "FND-13", kind: "accessory", costPrice: "50.00", salePrice: "120.00", quantity: 10 },
+      { name: "Pantalla A52", sku: "SCR-A52", kind: "part", costPrice: "500.00", salePrice: "900.00", quantity: 0 },
     ]);
   });
 
@@ -39,7 +39,7 @@ describe("parseInventoryImportFile", () => {
 
     expect(errors).toEqual([]);
     expect(rows).toEqual([
-      { name: "Cable USB-C", sku: "CBL-1", kind: "accessory", costPrice: 20, salePrice: 60, quantity: 5 },
+      { name: "Cable USB-C", sku: "CBL-1", kind: "accessory", costPrice: "20.00", salePrice: "60.00", quantity: 5 },
     ]);
   });
 

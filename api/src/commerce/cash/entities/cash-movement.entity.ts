@@ -35,7 +35,7 @@ export class CashMovement extends BaseEntity {
   // nunca se recalcula despues, asi el total de la sesion siempre cuadra con
   // la suma de sus movimientos.
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false, name: "monto" })
-  amount!: number;
+  amount!: string;
 
   @Column({ type: "varchar", length: 20, default: "manual", name: "tipo_entidad_relacionada" })
   relatedEntityType!: CashMovementRelatedEntityType;

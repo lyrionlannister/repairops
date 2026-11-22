@@ -1,4 +1,4 @@
-import type { EntityManager, FindOptionsWhere } from "typeorm";
+import type { EntityManager } from "typeorm";
 import { Customer } from "../entities/customer.entity.js";
 
 export interface ResolveCustomerInput {
@@ -20,15 +20,15 @@ export async function resolveOrCreateCustomer(
     const customer = await manager.findOneBy(Customer, {
       id: input.customerId,
       tenantId,
-    } as unknown as FindOptionsWhere<Customer>);
+    });
     if (!customer) throw new Error("Cliente no encontrado");
     return customer.id;
   }
   const name = input.customerName?.trim();
   const phone = input.contactNumber?.trim();
   if (!name || !phone) return null;
-  const existing = await manager.findOneBy(Customer, { tenantId, phone } as unknown as FindOptionsWhere<Customer>);
+  const existing = await manager.findOneBy(Customer, { tenantId, phone });
   if (existing && existing.name.trim().toLowerCase() === name.toLowerCase()) return existing.id;
-  const created = await manager.save(manager.create(Customer, { tenantId, name, phone, creditLimit: 0 } as Partial<Customer>));
+  const created = await manager.save(manager.create(Customer, { tenantId, name, phone, creditLimit: "0.00" }));
   return created.id;
 }

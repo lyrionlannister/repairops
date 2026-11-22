@@ -1,6 +1,7 @@
 import { singleton } from "tsyringe";
 import { ForbiddenError, lacks } from "../../../identity/authz/access.js";
-import type { EntityManager, FindOptionsWhere } from "typeorm";
+import { Decimal } from "decimal.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { QuoteDao } from "../daos/quote.dao.js";
@@ -19,7 +20,7 @@ export interface QuoteItemInput {
   inventoryItemId?: string | null;
   description: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice: Decimal.Value;
 }
 
 // tenantId se excluye: AppDataSource.transaction de create() lo agrega desde
@@ -33,8 +34,8 @@ type UpdatePayload = Partial<
   Omit<Quote, "id" | "publicId" | "tenantId" | "totalValue" | "createdAt" | "updatedAt">
 >;
 
-const sumItems = (items: QuoteItemInput[]): number =>
-  items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+const sumItems = (items: QuoteItemInput[]): string =>
+  toMoney(items.reduce((sum, item) => sum.plus(new Decimal(item.unitPrice).times(item.quantity)), new Decimal(0)));
 
 @singleton()
 export class QuoteService {
@@ -101,8 +102,8 @@ export class QuoteService {
         customerId,
         tenantId,
         totalValue,
-        status: "pending" as QuoteStatus,
-      } as Partial<Quote>);
+        status: "pending",
+      });
       const savedQuote = await manager.save(quote);
 
       for (const item of items) {
@@ -112,7 +113,7 @@ export class QuoteService {
           inventoryItemId: item.inventoryItemId ?? null,
           description: item.description,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
+          unitPrice: toMoney(item.unitPrice),
         });
         await manager.save(quoteItem);
       }
@@ -133,7 +134,7 @@ export class QuoteService {
     serviceTypeIds?: string[],
   ): Promise<Quote | null> {
     if (items === undefined && serviceTypeIds === undefined) {
-      return this.quoteDao.update(id, data as Partial<Quote>);
+      return this.quoteDao.update(id, data);
     }
     if (items !== undefined && items.length === 0) {
       throw new Error("La cotización debe tener al menos un item");
@@ -143,10 +144,7 @@ export class QuoteService {
     if (!(await this.quoteDao.findById(id))) return null;
 
     return AppDataSource.transaction(async (manager) => {
-      const quote = await manager.findOneBy(
-        Quote,
-        { id, tenantId } as unknown as FindOptionsWhere<Quote>,
-      );
+      const quote = await manager.findOneBy(Quote, { id, tenantId });
       if (!quote) return null;
 
       if (data.customerId !== undefined || data.customerName !== undefined || data.contactNumber !== undefined) {
@@ -158,7 +156,7 @@ export class QuoteService {
       }
 
       if (items !== undefined) {
-        await manager.delete(QuoteItem, { quoteId: id, tenantId } as unknown as FindOptionsWhere<QuoteItem>);
+        await manager.delete(QuoteItem, { quoteId: id, tenantId });
         Object.assign(quote, data, { totalValue: sumItems(items) });
       } else {
         Object.assign(quote, data);
@@ -173,14 +171,14 @@ export class QuoteService {
             inventoryItemId: item.inventoryItemId ?? null,
             description: item.description,
             quantity: item.quantity,
-            unitPrice: item.unitPrice,
+            unitPrice: toMoney(item.unitPrice),
           });
           await manager.save(quoteItem);
         }
       }
 
       if (serviceTypeIds !== undefined) {
-        await manager.delete(QuoteServiceType, { quoteId: id, tenantId } as unknown as FindOptionsWhere<QuoteServiceType>);
+        await manager.delete(QuoteServiceType, { quoteId: id, tenantId });
         for (const serviceTypeId of serviceTypeIds) {
           const link = manager.create(QuoteServiceType, { tenantId, quoteId: id, serviceTypeId });
           await manager.save(link);
@@ -197,20 +195,20 @@ export class QuoteService {
   // cual, nunca crea una segunda).
   async setStatus(id: string, status: QuoteStatus): Promise<Quote | null> {
     if (status !== "accepted") {
-      return this.quoteDao.update(id, { status } as Partial<Quote>);
+      return this.quoteDao.update(id, { status });
     }
 
     const quote = await this.quoteDao.findById(id);
     if (!quote) return null;
     if (quote.kind !== "repair") {
-      return this.quoteDao.update(id, { status } as Partial<Quote>);
+      return this.quoteDao.update(id, { status });
     }
     if (quote.repairNoteId) {
       return quote;
     }
 
     const note = await this.createRepairNoteFromQuote(quote);
-    const updated = await this.quoteDao.update(id, { status, repairNoteId: note.id } as Partial<Quote>);
+    const updated = await this.quoteDao.update(id, { status, repairNoteId: note.id });
     return updated;
   }
 
@@ -224,7 +222,7 @@ export class QuoteService {
     const noteItems: RepairNoteItemInput[] = items
       .filter((item): item is QuoteItem & { inventoryItemId: string } => Boolean(item.inventoryItemId))
       .map((item) => ({
-        inventoryItemId: item.inventoryItemId as string,
+        inventoryItemId: item.inventoryItemId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
       }));
@@ -240,7 +238,7 @@ export class QuoteService {
         reportedFailure: quote.reportedFailure as string,
         receivedAt,
         totalValue: quote.totalValue,
-      } as Parameters<RepairNoteService["create"]>[0],
+      },
       noteItems,
       serviceTypeLinks.map((l) => l.serviceTypeId),
     );

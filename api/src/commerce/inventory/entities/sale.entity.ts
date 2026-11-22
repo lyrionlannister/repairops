@@ -44,16 +44,16 @@ export class Sale extends BaseEntity {
   origin!: SaleOrigin;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "subtotal" })
-  subtotal!: number;
+  subtotal!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0, name: "monto_descuento" })
-  discountAmount!: number;
+  discountAmount!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0, name: "monto_impuesto" })
-  taxAmount!: number;
+  taxAmount!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "valor_total" })
-  totalValue!: number;
+  totalValue!: string;
 
   @Column({ type: "bigint", nullable: true, name: "id_empleado_creador" })
   createdByEmployeeId!: string | null;

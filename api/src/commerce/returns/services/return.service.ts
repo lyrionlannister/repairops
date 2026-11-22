@@ -1,5 +1,6 @@
 import { singleton } from "tsyringe";
 import { Decimal } from "decimal.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { InventoryService } from "../../inventory/services/inventory.service.js";
@@ -17,7 +18,7 @@ import { CashMovement, CashMovementMethod } from "../../cash/entities/cash-movem
 export interface ReturnItemInput {
   saleItemId: string;
   quantity: number;
-  refundAmount: number;
+  refundAmount: Decimal.Value;
 }
 
 export interface CreateReturnPayload {
@@ -25,7 +26,7 @@ export interface CreateReturnPayload {
   cashSessionId: string;
   refundMethod: CashMovementMethod;
   reason: string;
-  totalRefunded: number;
+  totalRefunded: Decimal.Value;
   createdByEmployeeId?: string | null;
   idempotencyKey?: string | null;
   items: ReturnItemInput[];
@@ -115,7 +116,7 @@ export class ReturnService {
         cashSessionId: data.cashSessionId,
         refundMethod: data.refundMethod,
         reason: data.reason,
-        totalRefunded: data.totalRefunded,
+        totalRefunded: toMoney(data.totalRefunded),
         createdByEmployeeId: data.createdByEmployeeId ?? null,
         idempotencyKey: data.idempotencyKey ?? null,
       });
@@ -165,7 +166,7 @@ export class ReturnService {
           returnId: savedReturn.id,
           saleItemId: saleItem.id,
           quantity: item.quantity,
-          refundAmount: item.refundAmount,
+          refundAmount: toMoney(item.refundAmount),
         });
         await manager.save(returnItem);
       }
@@ -175,7 +176,7 @@ export class ReturnService {
         cashSessionId: data.cashSessionId,
         type: "expense",
         method: data.refundMethod,
-        amount: data.totalRefunded,
+        amount: toMoney(data.totalRefunded),
         relatedEntityType: "return",
         relatedEntityId: savedReturn.id,
         note: data.reason,

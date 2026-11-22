@@ -1,3 +1,4 @@
+import { Decimal } from "decimal.js";
 import { singleton } from "tsyringe";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -26,7 +27,12 @@ export class CustomerDebtService {
       sumCreditBalance(AppDataSource.manager, tenantId, customerId),
       listCreditDebts(AppDataSource.manager, tenantId, customerId),
     ]);
-    const creditLimit = Number(customer.creditLimit);
-    return { creditLimit, balance, available: creditLimit - balance, items };
+    const creditLimit = new Decimal(customer.creditLimit);
+    return {
+      creditLimit: creditLimit.toNumber(),
+      balance: new Decimal(balance).toNumber(),
+      available: creditLimit.minus(balance).toNumber(),
+      items,
+    };
   }
 }

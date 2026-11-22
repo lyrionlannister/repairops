@@ -42,7 +42,7 @@ export class CustomerPayment extends BaseEntity {
   customer?: Customer;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false, name: "monto" })
-  amount!: number;
+  amount!: string;
 
   @Column({ type: "varchar", length: 20, nullable: false, name: "metodo" })
   method!: CashMovementMethod;

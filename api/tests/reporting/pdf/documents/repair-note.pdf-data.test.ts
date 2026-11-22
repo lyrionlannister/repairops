@@ -34,7 +34,7 @@ function makeNote(overrides: Partial<RepairNote> = {}): RepairNote {
 
 describe("toRepairNotePdfData", () => {
   it("entrega el dinero como cadenas decimales exactas y calcula el saldo sin Number", () => {
-    const data = toRepairNotePdfData(makeNote({ totalValue: "0.30" as never, advanceValue: "0.10" as never }), null);
+    const data = toRepairNotePdfData(makeNote({ totalValue: "0.30", advanceValue: "0.10" }), null);
 
     expect(data.totalValue).toBe("0.30");
     expect(data.advanceValue).toBe("0.10");

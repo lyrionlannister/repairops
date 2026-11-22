@@ -20,7 +20,7 @@ export class PriceListItem extends BaseEntity {
   model!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "precio" })
-  price!: number;
+  price!: string;
 
   @Column({ type: "bigint", nullable: false, name: "id_proveedor" })
   supplierId!: string;

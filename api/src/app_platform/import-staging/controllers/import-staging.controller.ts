@@ -9,6 +9,8 @@ import { ImportStagingCallbackDto } from "../dtos/import-staging-callback.dto.js
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 import { sendError } from "../../../core/http/error-response.js";
 
+const SUPPORTED_EXTENSIONS = /\.(pdf|xlsx|xls)$/i;
+
 @singleton()
 export class ImportStagingController {
   constructor(private service: ImportStagingService) {}
@@ -21,21 +23,38 @@ export class ImportStagingController {
       }
       const { supplierId } = req.query;
       if (!supplierId || typeof supplierId !== "string") {
-        res.status(400).json({ error: "Se requiere el parámetro supplierId" });
+        res.status(400).json({ error: "Se requiere el proveedor" });
         return;
       }
 
-      const { importId, tenantId } = await this.service.startUpload(supplierId);
-      const fileName = typeof req.query.fileName === "string" ? req.query.fileName : "lista.pdf";
+      const fileName = typeof req.query.fileName === "string" ? req.query.fileName : "";
+      if (!SUPPORTED_EXTENSIONS.test(fileName)) {
+        res
+          .status(400)
+          .json({ error: "Formato no soportado: sube un PDF o un Excel (.xlsx, .xls)" });
+        return;
+      }
+
+      const started = await this.service.startUpload(supplierId);
+      if (!started) {
+        res.status(404).json({ error: "Proveedor no encontrado" });
+        return;
+      }
+      const { importId, tenantId } = started;
 
       try {
         await triggerImportStagingWorkflow({ tenantId, importId, fileName, fileBuffer: req.body });
       } catch (error) {
         console.error("[import-staging] Error disparando workflow n8n:", error);
+        await this.service.discard(importId);
+        res
+          .status(502)
+          .json({ error: "El servicio de importación no está disponible, intenta de nuevo" });
+        return;
       }
 
       res.status(202).json({ importId, status: "processing" });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -48,7 +67,7 @@ export class ImportStagingController {
         return;
       }
       res.status(200).json(record);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 500);
     }
   };
@@ -67,7 +86,7 @@ export class ImportStagingController {
         return;
       }
       res.status(200).json(record);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -76,7 +95,7 @@ export class ImportStagingController {
     try {
       const result = await this.service.commit(req.params["importId"] as string);
       res.status(200).json(result);
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -85,7 +104,7 @@ export class ImportStagingController {
     try {
       await this.service.discard(req.params["importId"] as string);
       res.status(200).json({ message: "Staging descartado" });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };
@@ -108,7 +127,7 @@ export class ImportStagingController {
         dto.error ? { error: dto.error } : { rows: dto.rows! },
       );
       res.status(200).json({ ok: true });
-    } catch (error: any) {
+    } catch (error) {
       sendError(res, error, 400);
     }
   };

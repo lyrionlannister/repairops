@@ -1,5 +1,4 @@
 import { singleton } from "tsyringe";
-import type { FindOptionsWhere } from "typeorm";
 import { Decimal } from "decimal.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -12,6 +11,7 @@ import { LayawayDao } from "../daos/layaway.dao.js";
 import { LayawayItemDao } from "../daos/layaway-item.dao.js";
 import { Layaway } from "../entities/layaway.entity.js";
 import { LayawayItem } from "../entities/layaway-item.entity.js";
+import { toMoney } from "../../../core/common/utils/money.js";
 
 export interface LayawayItemInput {
   inventoryItemId: string;
@@ -123,8 +123,8 @@ export class LayawayService {
         localId: session.localId,
         customerId: data.customerId,
         status: "open",
-        totalValue: totalValue.toNumber(),
-        depositAmount: depositAmount.toNumber(),
+        totalValue: toMoney(totalValue),
+        depositAmount: toMoney(depositAmount),
         depositMethod: data.depositMethod,
         expiresAt: data.expiresAt,
         createdByEmployeeId: data.createdByEmployeeId ?? null,
@@ -140,7 +140,7 @@ export class LayawayService {
           layawayId: savedLayaway.id,
           inventoryItemId: item.inventoryItemId,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
+          unitPrice: toMoney(item.unitPrice),
         });
         const savedItem = await manager.save(layawayItem);
         await this.reservationService.reserve(manager, {
@@ -156,7 +156,7 @@ export class LayawayService {
         cashSessionId: data.cashSessionId,
         type: "income",
         method: data.depositMethod,
-        amount: depositAmount.toNumber(),
+        amount: toMoney(depositAmount),
         relatedEntityType: "layaway",
         relatedEntityId: savedLayaway.id,
         note: "Anticipo de apartado",
@@ -209,7 +209,7 @@ export class LayawayService {
           cashSessionId,
           type: "income",
           method: payment.method,
-          amount: payment.amount,
+          amount: toMoney(payment.amount),
           relatedEntityType: "layaway",
           relatedEntityId: layawayId,
           note: "Saldo final de apartado",
@@ -245,7 +245,7 @@ export class LayawayService {
       return (await manager.findOneBy(Layaway, {
         id: layawayId,
         tenantId,
-      } as unknown as FindOptionsWhere<Layaway>)) as Layaway;
+      })) as Layaway;
     });
   }
 }

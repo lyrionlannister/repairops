@@ -36,8 +36,8 @@ describe("CustomerPaymentService", () => {
       tenantId,
       name: `Cliente ${Date.now()}`,
       phone: `833${Math.floor(Math.random() * 10000000)}`,
-      creditLimit,
-    } as never);
+      creditLimit: String(creditLimit),
+    });
     const sale = await AppDataSource.getRepository(Sale).save({
       tenantId,
       localId: "6",
@@ -46,12 +46,12 @@ describe("CustomerPaymentService", () => {
       customerName: customer.name,
       cashSessionId: "1",
       origin: "counter",
-      subtotal: debt,
-      totalValue: debt,
+      subtotal: String(debt),
+      totalValue: String(debt),
       createdByEmployeeId: null,
       idempotencyKey: null,
-    } as never);
-    await AppDataSource.getRepository(SalePayment).save({ tenantId, saleId: sale.id, method: "credito", amount: debt } as never);
+    });
+    await AppDataSource.getRepository(SalePayment).save({ tenantId, saleId: sale.id, method: "credito", amount: String(debt) });
     return customer;
   };
 
@@ -66,7 +66,7 @@ describe("CustomerPaymentService", () => {
 
   it("rejects a payment larger than what the customer owes", async () => {
     const localId = "9002";
-    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: 0, status: "open" } as never);
+    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: "0", status: "open" });
     const customer = await customerWithDebt(100, 1000);
 
     await expect(
@@ -78,11 +78,11 @@ describe("CustomerPaymentService", () => {
 
   it("registering a payment lowers the balance and logs a cash movement 'Abono cliente #N'", async () => {
     const localId = "42";
-    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: 0, status: "open" } as never);
+    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: "0", status: "open" });
     const customer = await customerWithDebt(500, 1000);
 
     const before = await runWithTenant(tenantId, () => sumCreditBalance(AppDataSource.manager, tenantId, customer.id));
-    expect(before).toBe(500);
+    expect(before).toBe("500.00");
 
     const payment = await runWithTenant(tenantId, () =>
       service.register({ customerId: customer.id, localId, amount: 200, method: "efectivo", createdByEmployeeId: "1" }),
@@ -90,13 +90,13 @@ describe("CustomerPaymentService", () => {
     expect(Number(payment.amount)).toBe(200);
 
     const after = await runWithTenant(tenantId, () => sumCreditBalance(AppDataSource.manager, tenantId, customer.id));
-    expect(after).toBe(300);
+    expect(after).toBe("300.00");
 
     const history = await runWithTenant(tenantId, () => service.getByCustomerId(customer.id));
     expect(history).toHaveLength(1);
 
-    const session = await AppDataSource.getRepository(CashSession).findOneBy({ tenantId, localId } as never);
-    const movements = await AppDataSource.getRepository(CashMovement).find({ where: { tenantId, cashSessionId: session!.id } as never });
+    const session = await AppDataSource.getRepository(CashSession).findOneBy({ tenantId, localId });
+    const movements = await AppDataSource.getRepository(CashMovement).find({ where: { tenantId, cashSessionId: session!.id } });
     const abonoMovement = movements.find((m) => m.note === `Abono cliente #${customer.id}`);
     expect(abonoMovement).toBeTruthy();
     expect(Number(abonoMovement!.amount)).toBe(200);
@@ -105,13 +105,13 @@ describe("CustomerPaymentService", () => {
 
   it("never lets the balance go negative even if payments summed more than the debt (defense in depth)", async () => {
     const localId = "9001";
-    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: 0, status: "open" } as never);
+    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: "0", status: "open" });
     const customer = await customerWithDebt(100, 1000);
 
     await runWithTenant(tenantId, () =>
       service.register({ customerId: customer.id, localId, amount: 100, method: "efectivo", createdByEmployeeId: "1" }),
     );
     const balance = await runWithTenant(tenantId, () => sumCreditBalance(AppDataSource.manager, tenantId, customer.id));
-    expect(balance).toBe(0);
+    expect(balance).toBe("0.00");
   });
 });

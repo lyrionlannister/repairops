@@ -40,8 +40,8 @@ export class SaleItem extends BaseEntity {
   quantity!: number;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "precio_unitario" })
-  unitPrice!: number;
+  unitPrice!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0, name: "monto_descuento" })
-  discountAmount!: number;
+  discountAmount!: string;
 }

@@ -53,7 +53,7 @@ export class RepairNote extends BaseEntity {
   reportedFailure!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0, name: "valor_total" })
-  totalValue!: number;
+  totalValue!: string;
 
   @Column({ type: "varchar", length: 50, default: "received", name: "estado" })
   status!: string;
@@ -62,7 +62,7 @@ export class RepairNote extends BaseEntity {
   requiresAdvance!: boolean;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true, name: "valor_anticipo" })
-  advanceValue?: number;
+  advanceValue?: string;
 
   @Column({ type: "date", name: "fecha_recepcion" })
   receivedAt!: string;

@@ -28,10 +28,10 @@ export class CashSession extends BaseEntity {
   openedByEmployeeId?: string | null;
 
   @Column({ type: "decimal", precision: 10, scale: 2, name: "saldo_apertura" })
-  openingBalance!: number;
+  openingBalance!: string;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true, name: "saldo_cierre" })
-  closingBalance?: number | null;
+  closingBalance?: string | null;
 
   @Column({ type: "varchar", length: 10, default: "open", name: "estado" })
   status!: CashSessionStatus;
@@ -41,7 +41,7 @@ export class CashSession extends BaseEntity {
   // Un error de caja se corrige con un CashMovement nuevo, nunca editando
   // variance a mano (SPEC-fase3-pos-dinero.md).
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true, name: "diferencia" })
-  variance?: number | null;
+  variance?: string | null;
 
   @Column({ type: "text", nullable: true, name: "motivo_diferencia" })
   varianceReason?: string | null;

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
@@ -258,7 +258,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
       repairNoteService.create({ ...base, customerName: "Ana Nueva", contactNumber: "8330001111" }),
     );
     expect(first.customerId).toBeTruthy();
-    const customer = await AppDataSource.getRepository(Customer).findOneBy({ id: first.customerId! } as never);
+    const customer = await AppDataSource.getRepository(Customer).findOneBy({ id: first.customerId! });
     expect(customer).toMatchObject({ name: "Ana Nueva", phone: "8330001111" });
 
     const second = await runWithTenant(tenantId, () =>
@@ -325,7 +325,7 @@ describe("RepairNoteService: anticipo y entrega", () => {
     await expect(
       runWithTenant(tenantId, () =>
         repairNoteService.create(
-          baseNote("9001", { requiresAdvance: true, advanceValue: 100 }) as never,
+          baseNote("9001", { requiresAdvance: true, advanceValue: 100 }),
           [],
           [],
           { method: "efectivo", createdByEmployeeId: "1" },
@@ -336,11 +336,11 @@ describe("RepairNoteService: anticipo y entrega", () => {
 
   it("charging an advance creates its payment and a cash movement 'Anticipo nota #N'", async () => {
     const localId = "9002";
-    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: 0, status: "open" } as never);
+    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: "0", status: "open" });
 
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        baseNote(localId, { requiresAdvance: true, advanceValue: 150 }) as never,
+        baseNote(localId, { requiresAdvance: true, advanceValue: 150 }),
         [],
         [],
         { method: "efectivo", createdByEmployeeId: "1" },
@@ -350,10 +350,10 @@ describe("RepairNoteService: anticipo y entrega", () => {
     const payments = await runWithTenant(tenantId, () => repairNoteService.getPayments(note.id));
     expect(payments).toHaveLength(1);
     expect(payments[0]).toMatchObject({ kind: "advance", method: "efectivo" });
-    expect(Number(payments[0]!.amount)).toBe(150);
+    expect(Number(payments[0].amount)).toBe(150);
 
-    const session = await AppDataSource.getRepository(CashSession).findOneBy({ tenantId, localId } as never);
-    const movements = await AppDataSource.getRepository(CashMovement).find({ where: { tenantId, cashSessionId: session!.id } as never });
+    const session = await AppDataSource.getRepository(CashSession).findOneBy({ tenantId, localId });
+    const movements = await AppDataSource.getRepository(CashMovement).find({ where: { tenantId, cashSessionId: session!.id } });
     const advanceMovement = movements.find((m) => m.note === `Anticipo nota #${note.controlNumber}`);
     expect(advanceMovement).toBeTruthy();
     expect(Number(advanceMovement!.amount)).toBe(150);
@@ -362,10 +362,10 @@ describe("RepairNoteService: anticipo y entrega", () => {
 
   it("rejects editing the advance once it has already been charged", async () => {
     const localId = "42";
-    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: 0, status: "open" } as never);
+    await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: "0", status: "open" });
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        baseNote(localId, { requiresAdvance: true, advanceValue: 80 }) as never,
+        baseNote(localId, { requiresAdvance: true, advanceValue: 80 }),
         [],
         [],
         { method: "efectivo", createdByEmployeeId: "1" },
@@ -373,17 +373,17 @@ describe("RepairNoteService: anticipo y entrega", () => {
     );
 
     await expect(
-      runWithTenant(tenantId, () => repairNoteService.update(note.id, { advanceValue: 999 } as never)),
+      runWithTenant(tenantId, () => repairNoteService.update(note.id, { advanceValue: "999" })),
     ).rejects.toThrow("ya se cobró");
     await expect(
-      runWithTenant(tenantId, () => repairNoteService.update(note.id, { requiresAdvance: false } as never)),
+      runWithTenant(tenantId, () => repairNoteService.update(note.id, { requiresAdvance: false })),
     ).rejects.toThrow("ya se cobró");
   });
 
   it("deliver rejects when the payments don't sum the note's balance", async () => {
     const localId = "1";
-    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 1000 }) as never));
-    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" } as never));
+    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 1000 })));
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" }));
 
     await expect(
       runWithTenant(tenantId, () => repairNoteService.deliver(note.id, { payments: [{ method: "efectivo", amount: 500 }] })),
@@ -394,11 +394,11 @@ describe("RepairNoteService: anticipo y entrega", () => {
     const localId = "2";
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
-        { localId, customerName: "Sin teléfono", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: 300 } as never,
+        { localId, customerName: "Sin teléfono", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: "300" },
       ),
     );
     expect(note.customerId).toBeNull();
-    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" } as never));
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" }));
 
     await expect(
       runWithTenant(tenantId, () => repairNoteService.deliver(note.id, { payments: [{ method: "credito", amount: 300 }] })),
@@ -411,8 +411,8 @@ describe("RepairNoteService: anticipo y entrega", () => {
       tenantId,
       name: "Cliente Límite",
       phone: "8330004000",
-      creditLimit: 500,
-    } as never);
+      creditLimit: "500",
+    });
 
     const sale = await AppDataSource.getRepository(Sale).save({
       tenantId,
@@ -422,25 +422,25 @@ describe("RepairNoteService: anticipo y entrega", () => {
       customerName: customer.name,
       cashSessionId: "1",
       origin: "counter",
-      subtotal: 200,
-      totalValue: 200,
+      subtotal: "200",
+      totalValue: "200",
       createdByEmployeeId: null,
       idempotencyKey: null,
-    } as never);
-    await AppDataSource.getRepository(SalePayment).save({ tenantId, saleId: sale.id, method: "credito", amount: 200 } as never);
+    });
+    await AppDataSource.getRepository(SalePayment).save({ tenantId, saleId: sale.id, method: "credito", amount: "200" });
 
     const otherNote = await runWithTenant(tenantId, () =>
-      repairNoteService.create({ localId, customerId: customer.id, customerName: customer.name, brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: 200 } as never),
+      repairNoteService.create({ localId, customerId: customer.id, customerName: customer.name, brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: "200" }),
     );
-    await runWithTenant(tenantId, () => repairNoteService.update(otherNote.id, { status: "done" } as never));
+    await runWithTenant(tenantId, () => repairNoteService.update(otherNote.id, { status: "done" }));
     await runWithTenant(tenantId, () => repairNoteService.deliver(otherNote.id, { payments: [{ method: "credito", amount: 200 }] }));
 
     // Deuda existente: 200 (venta) + 200 (nota) = 400. Límite 500. Esta nota
     // de 200 más a crédito dejaría 600 > 500: debe rechazarse.
     const newNote = await runWithTenant(tenantId, () =>
-      repairNoteService.create({ localId, customerId: customer.id, customerName: customer.name, brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: 200 } as never),
+      repairNoteService.create({ localId, customerId: customer.id, customerName: customer.name, brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", totalValue: "200" }),
     );
-    await runWithTenant(tenantId, () => repairNoteService.update(newNote.id, { status: "done" } as never));
+    await runWithTenant(tenantId, () => repairNoteService.update(newNote.id, { status: "done" }));
 
     await expect(
       runWithTenant(tenantId, () => repairNoteService.deliver(newNote.id, { payments: [{ method: "credito", amount: 200 }] })),
@@ -449,7 +449,7 @@ describe("RepairNoteService: anticipo y entrega", () => {
 
   it("deliver only works once the note is 'done'", async () => {
     const localId = "4";
-    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 100 }) as never));
+    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 100 })));
 
     await expect(
       runWithTenant(tenantId, () => repairNoteService.deliver(note.id, { payments: [{ method: "efectivo", amount: 100 }] })),
@@ -458,11 +458,11 @@ describe("RepairNoteService: anticipo y entrega", () => {
 
   it("a note cannot be delivered through a plain status PATCH", async () => {
     const localId = "5";
-    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 100 }) as never));
-    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" } as never));
+    const note = await runWithTenant(tenantId, () => repairNoteService.create(baseNote(localId, { totalValue: 100 })));
+    await runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "done" }));
 
     await expect(
-      runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "delivered" } as never)),
+      runWithTenant(tenantId, () => repairNoteService.update(note.id, { status: "delivered" })),
     ).rejects.toThrow("usa Entregar");
   });
 });
