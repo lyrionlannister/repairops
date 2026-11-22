@@ -1,17 +1,20 @@
-export type CurrentUserRole = "owner" | "employee" | "technician" | "cashier";
+import type { Permission, UserRole } from "../types/auth/permission";
+
+export type CurrentUserRole = UserRole;
 
 export interface CurrentUser {
   id: string;
-  role: CurrentUserRole;
+  roles: CurrentUserRole[];
+  permissions: Permission[];
   firstName: string;
   lastName: string;
   email: string;
   isPlatformAdmin: boolean;
 }
 
-// Lee el usuario que use-login.ts ya guarda en sessionStorage al iniciar
-// sesión -- no hace una llamada nueva a la API. Solo para decisiones de UI
-// (ocultar un botón/ítem de menú); la API es la que de verdad autoriza.
+// Lee el usuario que use-login.ts guarda en sessionStorage al iniciar sesión y que
+// useAuthGuard refresca desde /users/me al montar el shell -- no hace una llamada
+// nueva a la API. Solo para decisiones de UI; la API es la que de verdad autoriza.
 export const useCurrentUser = (): CurrentUser | null => {
   try {
     const raw = sessionStorage.getItem("user");

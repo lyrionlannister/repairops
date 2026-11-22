@@ -1,9 +1,11 @@
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
+import type { UserRole } from "../hooks/use-users";
+import { RoleCheckboxes } from "./role-checkboxes";
 import { EyeIcon, EyeCloseIcon } from "@common/icons";
 
-import { ROLE_LABELS, PAY_CYCLE_LABELS, type UserFormData } from "../hooks/use-users";
+import { PAY_CYCLE_LABELS, type UserFormData } from "../hooks/use-users";
 
 interface UserAccountSectionProps {
   form: UserFormData;
@@ -11,7 +13,8 @@ interface UserAccountSectionProps {
   disabled: boolean;
   showPassword: boolean;
   onTogglePassword: () => void;
-  onChange: (field: Exclude<keyof UserFormData, "branchIds">, value: string) => void;
+  onChange: (field: Exclude<keyof UserFormData, "branchIds" | "roles">, value: string) => void;
+  onRolesChange: (roles: UserRole[]) => void;
 }
 
 export const UserAccountSection: React.FC<UserAccountSectionProps> = ({
@@ -21,6 +24,7 @@ export const UserAccountSection: React.FC<UserAccountSectionProps> = ({
   showPassword,
   onTogglePassword,
   onChange,
+  onRolesChange,
 }) => (
   <div className="grid gap-4 sm:grid-cols-2">
     <div>
@@ -90,15 +94,7 @@ export const UserAccountSection: React.FC<UserAccountSectionProps> = ({
       </div>
     </div>
 
-    <div>
-      <Label className="text-gray-500">Rol</Label>
-      <Select
-        value={form.role}
-        onChange={(value) => onChange("role", value)}
-        disabled={disabled}
-        options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))}
-      />
-    </div>
+    <RoleCheckboxes roles={form.roles} disabled={disabled} onChange={onRolesChange} />
 
     <div>
       <Label className="text-gray-500">Ciclo de pago</Label>

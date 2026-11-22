@@ -15,7 +15,7 @@ const INITIAL_FORM: UserFormData = {
   lastName: "",
   email: "",
   password: "",
-  role: "employee",
+  roles: ["employee"],
   salaryAmount: "",
   payCycle: "",
   branchIds: [],
@@ -27,7 +27,7 @@ export const UserFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { users, loading, fetchUsers, createUser, creating, updateUser, updating } = useUsers();
+  const { users, loading, fetchUsers, createUser, creating, createError, updateUser, updating, updateError } = useUsers();
   const { branches, workingBranchId } = useBranch();
   const context = useEmployeeContext(isEdit ? (id ?? null) : null);
   const [form, setForm] = useState<UserFormData>(INITIAL_FORM);
@@ -52,7 +52,7 @@ export const UserFormPage: React.FC = () => {
     );
   }, [isEdit, workingBranchId]);
 
-  const updateField = (field: Exclude<keyof UserFormData, "branchIds">, value: string) => {
+  const updateField = (field: Exclude<keyof UserFormData, "branchIds" | "roles">, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -71,10 +71,12 @@ export const UserFormPage: React.FC = () => {
       isEdit={isEdit}
       disabled={disabled}
       saving={saving}
+      error={isEdit ? updateError : createError}
       branches={branches}
       showPassword={showPassword}
       onTogglePassword={() => setShowPassword((prev) => !prev)}
       onChange={updateField}
+      onRolesChange={(roles) => setForm((prev) => ({ ...prev, roles }))}
       onBranchAssignmentChange={(branchIds, primaryBranchId) =>
         setForm((prev) => ({ ...prev, branchIds, primaryBranchId }))
       }

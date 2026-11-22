@@ -3,7 +3,7 @@ import type { FC } from "react";
 import { Button } from "@ui/button/button";
 
 import type { BranchRecord } from "@common/contexts/branch-context";
-import type { UserFormData } from "../hooks/use-users";
+import type { UserFormData, UserRole } from "../hooks/use-users";
 import { BranchAssignmentField } from "./branch-assignment-field";
 import { UserAccountSection } from "./user-account-section";
 
@@ -12,10 +12,12 @@ interface UserFormProps {
   isEdit: boolean;
   disabled: boolean;
   saving: boolean;
+  error: string | null;
   branches: BranchRecord[];
   showPassword: boolean;
   onTogglePassword: () => void;
-  onChange: (field: Exclude<keyof UserFormData, "branchIds">, value: string) => void;
+  onChange: (field: Exclude<keyof UserFormData, "branchIds" | "roles">, value: string) => void;
+  onRolesChange: (roles: UserRole[]) => void;
   onBranchAssignmentChange: (branchIds: string[], primaryBranchId: string) => void;
   onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
   onCancel: () => void;
@@ -26,10 +28,12 @@ export const UserForm: FC<UserFormProps> = ({
   isEdit,
   disabled,
   saving,
+  error,
   branches,
   showPassword,
   onTogglePassword,
   onChange,
+  onRolesChange,
   onBranchAssignmentChange,
   onSubmit,
   onCancel,
@@ -45,9 +49,10 @@ export const UserForm: FC<UserFormProps> = ({
       showPassword={showPassword}
       onTogglePassword={onTogglePassword}
       onChange={onChange}
+      onRolesChange={onRolesChange}
     />
 
-    {form.role !== "owner" && (
+    {!form.roles.includes("owner") && (
       <BranchAssignmentField
         branches={branches}
         branchIds={form.branchIds}
@@ -56,6 +61,8 @@ export const UserForm: FC<UserFormProps> = ({
         onChange={onBranchAssignmentChange}
       />
     )}
+
+    {error && <p className="text-sm text-error-500">{error}</p>}
 
     <div className="flex justify-end gap-2 pt-1">
       <Button type="button" variant="outline" onClick={onCancel}>

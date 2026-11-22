@@ -11,6 +11,7 @@ interface BranchFormProps {
   loading: boolean;
   saving: boolean;
   isEdit: boolean;
+  error: string | null;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
   onCancel: () => void;
@@ -21,6 +22,7 @@ export const BranchForm: FC<BranchFormProps> = ({
   loading,
   saving,
   isEdit,
+  error,
   onChange,
   onSubmit,
   onCancel,
@@ -62,6 +64,8 @@ export const BranchForm: FC<BranchFormProps> = ({
         disabled={loading}
       />
     </div>
+
+    {error && <p className="text-sm text-error-500">{error}</p>}
 
     <div className="flex justify-end gap-2 pt-1">
       <Button type="button" variant="outline" onClick={onCancel}>

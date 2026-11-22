@@ -1,6 +1,7 @@
 import { Avatar } from "@common/components/ui/avatar/Avatar";
 import type { Me } from "../hooks/use-me";
-import { ROLE_LABELS, PAY_CYCLE_LABELS } from "@identity/users/hooks/use-users";
+import { PAY_CYCLE_LABELS } from "@identity/users/hooks/use-users";
+import { formatRoles } from "@identity/users/utils/roles";
 
 interface ProfileCardProps {
   me: Me;
@@ -18,8 +19,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ me }) => (
       </div>
       <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
         <div>
-          <dt className="text-xs font-semibold uppercase text-gray-400">Rol</dt>
-          <dd className="mt-1 text-sm text-gray-700 dark:text-gray-300">{ROLE_LABELS[me.role]}</dd>
+          <dt className="text-xs font-semibold uppercase text-gray-400">Roles</dt>
+          <dd className="mt-1 text-sm text-gray-700 dark:text-gray-300">{formatRoles(me.roles)}</dd>
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase text-gray-400">Estado</dt>

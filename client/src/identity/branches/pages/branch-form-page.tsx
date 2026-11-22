@@ -8,6 +8,8 @@ import { useBranches, type BranchFormData } from "../hooks/use-branches";
 import { useBranchContext } from "../hooks/use-branch-context";
 import { BranchContextPanel } from "../components/branch-context-panel";
 import { BranchForm } from "../components/branch-form";
+import { DiscountCapsCard } from "../components/discount-caps-card";
+import { useDiscountCaps } from "../hooks/use-discount-caps";
 
 const emptyForm: BranchFormData = { name: "", address: "", phone: "" };
 
@@ -16,14 +18,20 @@ export const BranchFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { branches, loading, saving, fetchAll, create, update } = useBranches();
+  const { branches, loading, saving, error, fetchAll, create, update } = useBranches();
   const { refreshBranches } = useBranch();
   const [form, setForm] = useState<BranchFormData>(emptyForm);
   const context = useBranchContext(isEdit ? (id ?? null) : null);
+  const discountCaps = useDiscountCaps(isEdit ? (id ?? null) : null);
+  const { fetchCaps } = discountCaps;
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
+
+  useEffect(() => {
+    fetchCaps();
+  }, [fetchCaps]);
 
   useEffect(() => {
     if (!isEdit || !id) return;
@@ -52,6 +60,7 @@ export const BranchFormPage: React.FC = () => {
       loading={loading}
       saving={saving}
       isEdit={isEdit}
+      error={error}
       onChange={handleChange}
       onSubmit={handleSubmit}
       onCancel={() => navigate("/identity/branches")}
@@ -65,7 +74,18 @@ export const BranchFormPage: React.FC = () => {
     >
       {isEdit && id ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">{formCard}</div>
+          <div className="space-y-6 lg:col-span-2">
+            {formCard}
+            <DiscountCapsCard
+              form={discountCaps.form}
+              loading={discountCaps.loading}
+              saving={discountCaps.saving}
+              error={discountCaps.error}
+              saved={discountCaps.saved}
+              onChange={discountCaps.setCap}
+              onSave={discountCaps.save}
+            />
+          </div>
           <div className="lg:col-span-1 space-y-4">
             <BranchContextPanel {...context} />
           </div>

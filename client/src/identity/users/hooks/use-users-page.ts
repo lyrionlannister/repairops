@@ -13,7 +13,7 @@ export const useUsersPage = (users: UserRecord[]) => {
     const byBranch = users.filter(
       (user) =>
         activeBranchId === ALL_BRANCHES ||
-        user.role === "owner" ||
+        user.roles.includes("owner") ||
         user.branchIds.includes(activeBranchId),
     );
 

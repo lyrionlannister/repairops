@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router";
 
 import { useBranch } from "@common/hooks/use-branch";
 import { useServiceTypes } from "@common/hooks/use-service-types";
-import { useCurrentUser } from "@common/hooks/use-current-user";
+import { usePermissions } from "@common/hooks/use-permissions";
 import { useEmployees } from "@identity/users/hooks/use-employees";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { NEXT_STATUS, useRepairNotes, type RepairNoteItemRecord } from "./use-repair-notes";
@@ -22,7 +22,7 @@ export const useRepairNoteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const currentUser = useCurrentUser();
+  const { canAny } = usePermissions();
   const { workingBranchId } = useBranch();
   const {
     note,
@@ -133,8 +133,7 @@ export const useRepairNoteDetail = () => {
     technicianName,
     serviceTypeNames,
     itemLines,
-    // Un cajero no edita notas (igual que en la tabla; el API lo bloquea con requireRole).
-    canEdit: currentUser?.role !== "cashier",
+    canEdit: canAny("repair-notes.write", "repair-notes.write.own"),
     canCancel: !isClosed,
     confirm,
     setConfirm,

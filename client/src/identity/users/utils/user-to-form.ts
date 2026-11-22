@@ -6,7 +6,7 @@ export const userToForm = (user: UserRecord): UserFormData => ({
   lastName: user.lastName,
   email: user.email,
   password: "",
-  role: user.role,
+  roles: user.roles,
   salaryAmount: user.salaryAmount != null ? String(user.salaryAmount) : "",
   payCycle: user.payCycle ?? "",
   branchIds: user.branchIds ?? [],

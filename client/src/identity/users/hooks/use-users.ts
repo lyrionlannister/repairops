@@ -1,14 +1,16 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
 
-export type UserRole = "owner" | "employee" | "technician" | "cashier";
+import type { UserRole } from "@common/types/auth/permission";
+
+export type { UserRole };
 export type PayCycle = "weekly" | "biweekly" | "monthly";
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   owner: "Dueño",
-  employee: "Empleado",
-  technician: "Técnico",
   cashier: "Cajero",
+  technician: "Técnico",
+  employee: "Recepción",
 };
 
 export const PAY_CYCLE_LABELS: Record<PayCycle, string> = {
@@ -22,7 +24,7 @@ export interface UserFormData {
   lastName: string;
   email: string;
   password: string;
-  role: UserRole;
+  roles: UserRole[];
   salaryAmount: string;
   payCycle: PayCycle | "";
   branchIds: string[];
@@ -34,7 +36,7 @@ export interface UserRecord {
   firstName: string;
   lastName: string;
   email: string;
-  role: UserRole;
+  roles: UserRole[];
   salaryAmount: number | null;
   payCycle: PayCycle | null;
   // Sucursales del usuario (vacío para el owner, que accede a todas).
@@ -50,7 +52,7 @@ interface CreateUserPayload {
   lastName: string;
   email: string;
   password: string;
-  role: UserRole;
+  roles: UserRole[];
   salaryAmount?: number;
   payCycle?: PayCycle;
   branchIds?: string[];
@@ -63,7 +65,7 @@ interface UpdateUserPayload {
   lastName: string;
   email: string;
   password?: string;
-  role: UserRole;
+  roles: UserRole[];
   salaryAmount?: number;
   payCycle?: PayCycle;
   branchIds?: string[];
@@ -75,10 +77,10 @@ const toPayload = (form: UserFormData) => ({
   firstName: form.firstName,
   lastName: form.lastName,
   email: form.email,
-  role: form.role,
+  roles: form.roles,
   salaryAmount: form.salaryAmount ? Number(form.salaryAmount) : undefined,
   payCycle: form.payCycle || undefined,
-  ...(form.role === "owner"
+  ...(form.roles.includes("owner")
     ? {}
     : { branchIds: form.branchIds, primaryBranchId: form.primaryBranchId || undefined }),
 });
@@ -94,6 +96,7 @@ export const useUsers = () => {
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -179,6 +182,7 @@ export const useUsers = () => {
   const toggleUserStatus = useCallback(
     async (id: string): Promise<void> => {
       setTogglingId(id);
+      setToggleError(null);
       try {
         const response = await apiClient(`/auth/users/${id}/toggle-status`, {
           method: "PATCH",
@@ -191,6 +195,9 @@ export const useUsers = () => {
         setUsers((prev) =>
           prev.map((u) => (u.id === id ? { ...u, isActive: updated.isActive } : u)),
         );
+      } catch (err) {
+        // 402 al reactivar por encima del plan, o 400 al desactivar al último dueño.
+        setToggleError(err instanceof Error ? err.message : "Error al cambiar estado del usuario");
       } finally {
         setTogglingId(null);
       }
@@ -215,5 +222,6 @@ export const useUsers = () => {
     clearUpdateError: () => setUpdateError(null),
     toggleUserStatus,
     togglingId,
+    toggleError,
   };
 };

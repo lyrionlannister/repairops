@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { UserPlus, Pencil, Search } from "lucide-react";
-import { useUsers, ROLE_LABELS } from "../hooks/use-users";
+import { useUsers } from "../hooks/use-users";
+import { formatRoles } from "../utils/roles";
+import { usePlan } from "../../../app_platform/billing/hooks/use-plan";
+import { PlanUsageCard } from "../../../app_platform/billing/components/plan-usage-card";
 import { useUsersPage } from "../hooks/use-users-page";
 import { Toggle } from "@ui/toggle/toggle";
 import { Input } from "@ui/inputs/input";
@@ -14,12 +17,14 @@ import { formatDate } from "../utils/format";
 
 export const UsersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { users, loading, error, fetchUsers, toggleUserStatus, togglingId } = useUsers();
+  const { users, loading, error, fetchUsers, toggleUserStatus, togglingId, toggleError } = useUsers();
+  const { summary: planSummary, fetchPlan } = usePlan();
   const { search, setSearch, filteredUsers } = useUsersPage(users);
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchPlan();
+  }, [fetchUsers, fetchPlan]);
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
     usePaginatedList(filteredUsers);
@@ -38,6 +43,9 @@ export const UsersPage: React.FC = () => {
         </Button>
       }
     >
+      {planSummary && <PlanUsageCard summary={planSummary} />}
+      {toggleError && <p className="text-sm text-error-500">{toggleError}</p>}
+
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="relative max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-gray-400" />
@@ -104,12 +112,12 @@ export const UsersPage: React.FC = () => {
                     {user.firstName} {user.lastName}
                   </td>
                   <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{user.email}</td>
-                  <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{ROLE_LABELS[user.role]}</td>
+                  <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{formatRoles(user.roles)}</td>
                   <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{formatDate(user.createdAt)}</td>
                   <td className="px-4 py-4">
                     <Toggle
                       checked={user.isActive}
-                      onChange={() => toggleUserStatus(user.id)}
+                      onChange={() => toggleUserStatus(user.id).then(fetchPlan)}
                       disabled={togglingId === user.id}
                     />
                   </td>

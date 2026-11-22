@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApiClient } from "./use-api-client";
+import type { Permission, UserRole } from "../types/auth/permission";
 
 export interface LoginPayload {
   email: string;
@@ -11,7 +12,8 @@ interface LoginResponse {
   user: {
     id: string;
     tenantId: string;
-    role: "owner" | "employee" | "technician" | "cashier";
+    roles: UserRole[];
+    permissions: Permission[];
     isPlatformAdmin: boolean;
     firstName: string;
     lastName: string;
@@ -65,7 +67,7 @@ export const useLogin = () => {
 
       // El token de sesion viaja en una cookie httpOnly (Set-Cookie de la
       // API) -- nunca llega aqui ni se guarda donde JS pueda leerlo. Esto
-      // solo es el perfil para mostrar en la UI (nombre, rol para ocultar
+      // solo es el perfil para mostrar en la UI (nombre, permisos para ocultar
       // menus), no la credencial.
       sessionStorage.setItem("user", JSON.stringify(result.user));
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApiClient } from "../../hooks/use-api-client";
-import { useCurrentUser } from "../../hooks/use-current-user";
+import { usePermissions } from "../../hooks/use-permissions";
 import { ALL_BRANCHES, BranchContext, type BranchRecord } from "../branch-context";
 
 const STORAGE_KEY = "activeBranchId";
@@ -10,7 +10,7 @@ const STORAGE_KEY = "activeBranchId";
 // este contexto solo evita que cada pantalla decida por su cuenta.
 export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { apiClient } = useApiClient();
-  const isOwner = useCurrentUser()?.role === "owner";
+  const { isOwner } = usePermissions();
   const [branches, setBranches] = useState<BranchRecord[]>([]);
   const [activeBranchId, setActiveBranchIdState] = useState<string>(
     () => sessionStorage.getItem(STORAGE_KEY) ?? "",
