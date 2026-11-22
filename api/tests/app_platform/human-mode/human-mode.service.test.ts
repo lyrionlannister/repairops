@@ -1,7 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
-import { redisClient } from "../../../src/core/config/redis-client.js";
-import { humanModeService } from "../../../src/app_platform/human-mode/human-mode.service.js";
-import { runWithTenant, TenantContextError } from "../../../src/core/tenancy/tenant-context.js";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+
+// Con pool vmThreads un redis-client real cargado por otro archivo puede quedar en cache;
+// se reimporta tras resetModules para que el servicio tome el mock de este archivo.
+let redisClient: typeof import("../../../src/core/config/redis-client.js").redisClient;
+let humanModeService: typeof import("../../../src/app_platform/human-mode/human-mode.service.js").humanModeService;
+let runWithTenant: typeof import("../../../src/core/tenancy/tenant-context.js").runWithTenant;
+let TenantContextError: typeof import("../../../src/core/tenancy/tenant-context.js").TenantContextError;
+beforeAll(async () => {
+  vi.resetModules();
+  ({ runWithTenant, TenantContextError } = await import("../../../src/core/tenancy/tenant-context.js"));
+  ({ redisClient } = await import("../../../src/core/config/redis-client.js"));
+  ({ humanModeService } = await import("../../../src/app_platform/human-mode/human-mode.service.js"));
+});
 
 vi.mock("../../../src/core/config/redis-client.js", () => ({
   redisClient: { get: vi.fn(), set: vi.fn(), del: vi.fn() },

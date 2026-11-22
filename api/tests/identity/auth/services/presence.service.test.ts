@@ -1,6 +1,16 @@
-import { describe, expect, it, vi } from "vitest";
-import { PresenceService } from "../../../../src/identity/auth/services/presence.service.js";
-import { runWithTenant, TenantContextError } from "../../../../src/core/tenancy/tenant-context.js";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import type { PresenceService as PresenceServiceType } from "../../../../src/identity/auth/services/presence.service.js";
+
+// Con pool vmThreads un redis-client real cargado por otro archivo puede quedar en cache;
+// se reimporta tras resetModules para que el servicio tome el mock de este archivo.
+let PresenceService: typeof PresenceServiceType;
+let runWithTenant: typeof import("../../../../src/core/tenancy/tenant-context.js").runWithTenant;
+let TenantContextError: typeof import("../../../../src/core/tenancy/tenant-context.js").TenantContextError;
+beforeAll(async () => {
+  vi.resetModules();
+  ({ runWithTenant, TenantContextError } = await import("../../../../src/core/tenancy/tenant-context.js"));
+  ({ PresenceService } = await import("../../../../src/identity/auth/services/presence.service.js"));
+});
 
 const sets = new Map<string, Map<string, number>>();
 
