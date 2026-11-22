@@ -1,5 +1,5 @@
 import type { WhatsappTemplateSyncStatus } from "../hooks/use-whatsapp-templates";
-import type { WhatsappTemplateCategory } from "../hooks/use-whatsapp-template-catalog";
+import type { WhatsappTemplateCatalogEntryRow, WhatsappTemplateCategory } from "../hooks/use-whatsapp-template-catalog";
 
 export const EMPTY_CONNECT_FORM = { wabaId: "", phoneNumberId: "", accessToken: "" };
 
@@ -29,3 +29,16 @@ export const parseVariables = (variablesText: string): string[] =>
     .split(",")
     .map((v) => v.trim())
     .filter((v) => v.length > 0);
+
+export type CatalogFormData = typeof EMPTY_CATALOG_FORM;
+
+export const entryToCatalogForm = (entry: WhatsappTemplateCatalogEntryRow): CatalogFormData => ({
+  key: entry.key,
+  metaName: entry.metaName,
+  category: entry.category,
+  language: entry.language,
+  text: entry.text,
+  variablesText: entry.variables.join(", "),
+});
+
+export const formatSyncedAt = (value: string | null | undefined): string => (value ? new Date(value).toLocaleString() : "—");

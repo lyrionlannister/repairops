@@ -5,7 +5,8 @@ import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { ROLE_LABELS } from "@identity/users/hooks/use-users";
 
-import { CAPPED_ROLES, type CappedRole, type DiscountCapForm } from "../hooks/use-discount-caps";
+import type { CappedRole, DiscountCapForm } from "../hooks/use-discount-caps";
+import { CAPPED_ROLES } from "../utils/discount-caps";
 
 interface DiscountCapsCardProps {
   form: DiscountCapForm;

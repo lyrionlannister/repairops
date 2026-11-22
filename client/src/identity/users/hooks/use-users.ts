@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "../../../core/common/hooks/use-api-client";
+import { formToPayload } from "../utils/user-to-form";
 
 import type { UserRole } from "@common/types/auth/permission";
 
@@ -72,19 +73,6 @@ interface UpdateUserPayload {
   primaryBranchId?: string;
 }
 
-// El owner accede a todas las sucursales: nunca se le asignan branchIds/primaryBranchId.
-const toPayload = (form: UserFormData) => ({
-  firstName: form.firstName,
-  lastName: form.lastName,
-  email: form.email,
-  roles: form.roles,
-  salaryAmount: form.salaryAmount ? Number(form.salaryAmount) : undefined,
-  payCycle: form.payCycle || undefined,
-  ...(form.roles.includes("owner")
-    ? {}
-    : { branchIds: form.branchIds, primaryBranchId: form.primaryBranchId || undefined }),
-});
-
 export const useUsers = () => {
   const { apiClient } = useApiClient();
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -124,7 +112,7 @@ export const useUsers = () => {
       setCreateError(null);
       setCreateSuccess(false);
       try {
-        const payload: CreateUserPayload = { ...toPayload(form), password: form.password };
+        const payload: CreateUserPayload = { ...formToPayload(form), password: form.password };
         const response = await apiClient("/auth/employees", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -154,7 +142,7 @@ export const useUsers = () => {
       try {
         // password vacío en edición = no cambiar la contraseña actual.
         const payload: UpdateUserPayload = {
-          ...toPayload(form),
+          ...formToPayload(form),
           ...(form.password ? { password: form.password } : {}),
         };
         const response = await apiClient(`/auth/users/${id}`, {

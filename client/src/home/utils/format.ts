@@ -16,3 +16,11 @@ export const formatRelativeTime = (dateValue: string): string => {
 // cliente no suma ni compara dinero.
 const MONEY = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const formatMoney = (amount: string): string => MONEY.format(Number(amount));
+
+// Una sola instancia: Intl.NumberFormat es caro de construir en cada render.
+export const MXN_FORMATTER = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});

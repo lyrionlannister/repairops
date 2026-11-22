@@ -6,7 +6,7 @@ import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
 
 import type { PlanOption, SubscriptionFormData } from "../hooks/use-platform-tenants";
-import { STATUS_LABELS } from "../utils/format";
+import { planOptionLabel, STATUS_LABELS } from "../utils/format";
 
 interface SubscriptionFormProps {
   form: SubscriptionFormData;
@@ -16,9 +16,6 @@ interface SubscriptionFormProps {
   onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }
-
-const limitLabel = (value: number | null, one: string, many: string) =>
-  value === null ? `${many} sin límite` : `${value} ${value === 1 ? one : many}`;
 
 export const SubscriptionForm: FC<SubscriptionFormProps> = ({
   form,
@@ -41,7 +38,7 @@ export const SubscriptionForm: FC<SubscriptionFormProps> = ({
           disabled={disabled}
           options={plans.map((plan) => ({
             value: plan.key,
-            label: `${plan.name} (${limitLabel(plan.maxUsers, "usuario", "usuarios")}, ${limitLabel(plan.maxBranches, "sucursal", "sucursales")})`,
+            label: planOptionLabel(plan),
           }))}
         />
       </div>

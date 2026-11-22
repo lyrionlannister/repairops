@@ -21,18 +21,6 @@ export interface SubscriptionFormData {
   status: SubscriptionStatus;
 }
 
-export const tenantToForm = (tenant: TenantPlan): SubscriptionFormData => ({
-  planKey: tenant.plan.key,
-  extraUsers: String(tenant.extraUsers),
-  extraBranches: String(tenant.extraBranches),
-  status: tenant.status,
-});
-
-const readError = async (res: Response, fallback: string) => {
-  const body = (await res.json().catch(() => ({}))) as { error?: string | string[] };
-  return Array.isArray(body.error) ? body.error.join(", ") : (body.error ?? fallback);
-};
-
 // Solo admin de plataforma (platform.tenants.read / platform.subscriptions.manage).
 export const usePlatformTenants = () => {
   const { apiClient } = useApiClient();
@@ -50,8 +38,8 @@ export const usePlatformTenants = () => {
         apiClient("/platform/tenants"),
         apiClient("/platform/plans"),
       ]);
-      if (!tenantsRes.ok) throw new Error(await readError(tenantsRes, "Error al cargar talleres"));
-      if (!plansRes.ok) throw new Error(await readError(plansRes, "Error al cargar planes"));
+      if (!tenantsRes.ok) throw new Error("Error al cargar talleres");
+      if (!plansRes.ok) throw new Error("Error al cargar planes");
       setTenants(await tenantsRes.json());
       setPlans(await plansRes.json());
     } catch (err) {
@@ -64,7 +52,6 @@ export const usePlatformTenants = () => {
   const assign = useCallback(
     async (tenantId: string, form: SubscriptionFormData): Promise<boolean> => {
       setSaving(true);
-      setError(null);
       try {
         const res = await apiClient(`/platform/tenants/${tenantId}/subscription`, {
           method: "PATCH",
@@ -76,11 +63,8 @@ export const usePlatformTenants = () => {
             status: form.status,
           }),
         });
-        if (!res.ok) throw new Error(await readError(res, "Error al asignar el plan"));
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
-        return false;
+        // El motivo de un rechazo (p.ej. el uso no cabe en el plan) ya sale en el toast de useApiClient.
+        return res.ok;
       } finally {
         setSaving(false);
       }

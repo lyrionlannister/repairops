@@ -1,12 +1,11 @@
 import { Plus, Upload } from "lucide-react";
 
-import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useBranch } from "@common/hooks/use-branch";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useInventoryPage } from "../hooks/use-inventory-page";
-import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
+import { useSupplierName } from "../hooks/use-supplier-name";
 import { usePermissions } from "@common/hooks/use-permissions";
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
@@ -19,16 +18,10 @@ export const InventoryPage = () => {
   const { workingBranchId } = useBranch();
   const { items, loading, saving, error, fetchAll, remove, bulkImport, registerMovement } =
     useBranchScopedInventory(workingBranchId);
-  const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
+  const supplierName = useSupplierName();
   const { can } = usePermissions();
-  const canReadSuppliers = can("suppliers.read");
   const canManage = can("inventory.manage");
   const navigate = useNavigate();
-  const supplierName = (supplierId: string | null) => suppliers.find((s) => s.id === supplierId)?.name ?? "—";
-
-  useEffect(() => {
-    if (canReadSuppliers) fetchSuppliers();
-  }, [fetchSuppliers, canReadSuppliers]);
 
   const {
     deleteConfirmId,
