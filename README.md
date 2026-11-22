@@ -93,7 +93,7 @@ Scripts de cada paquete:
 
 ```bash
 # api/
-pnpm dev          # tsc --watch + nodemon
+pnpm dev          # tsc --watch + node --watch
 pnpm test         # tsc --noEmit
 pnpm test:unit    # vitest
 pnpm test:arch    # dependency-cruiser contra .dependency-cruiser.cjs
