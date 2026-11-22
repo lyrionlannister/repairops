@@ -1,58 +1,20 @@
 import type { CSSProperties, FC, ReactNode } from "react";
 import Barcode from "react-barcode";
 import { QRCodeSVG } from "qrcode.react";
+import {
+  ThermalTicket,
+  TicketBand,
+  TicketDashed,
+  TicketLeader,
+} from "@common/components/ticket/thermal-ticket";
+import {
+  TICKET_BLACK,
+  TICKET_SIZES,
+  TICKET_WHITE,
+  formatTicketDate,
+} from "@common/utils/ticket-format";
 import { fmtCurrency } from "../utils/format";
-import { formatTicketDate, initialsOf } from "../utils/ticket-format";
 import type { ThermalReceiptProps } from "../props/thermal-receipt-props";
-
-// Tamaños del diseño por ancho de rollo (px a 96 dpi; el navegador imprime el ancho en mm reales).
-const SIZES = {
-  80: {
-    pad: "14px 14px 22px",
-    base: 11,
-    name: 16,
-    small: 9.5,
-    label: 9,
-    falla: 8.5,
-    folio: 32,
-    saldo: 20,
-    legal: 8,
-    logo: 38,
-    qr: "37mm",
-    barcode: 190,
-    barcodeH: 40,
-  },
-  58: {
-    pad: "11px 10px 18px",
-    base: 10,
-    name: 13,
-    small: 8.5,
-    label: 8,
-    falla: 7.5,
-    folio: 26,
-    saldo: 20,
-    legal: 7.5,
-    logo: 32,
-    qr: "31mm",
-    barcode: 150,
-    barcodeH: 34,
-  },
-} as const;
-
-const BLACK = "#000000";
-const WHITE = "#ffffff";
-
-const Dashed: FC<{ margin: string }> = ({ margin }) => (
-  <div style={{ margin, borderTop: `1px dashed ${BLACK}` }} />
-);
-
-const Leader: FC<{ label: string; value: string; bold?: boolean }> = ({ label, value, bold }) => (
-  <div style={{ display: "flex", alignItems: "baseline" }}>
-    <span>{label}</span>
-    <span style={{ flexGrow: 1, borderBottom: `1px dotted ${BLACK}`, margin: "0 4px" }} />
-    <span style={{ fontWeight: bold ? 700 : 400 }}>{value}</span>
-  </div>
-);
 
 export const ThermalReceipt: FC<ThermalReceiptProps> = ({
   note,
@@ -60,12 +22,11 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
   serviceTypeNames,
   widthMm,
 }) => {
-  const s = SIZES[widthMm];
+  const s = TICKET_SIZES[widthMm];
   const wide = widthMm === 80;
   const total = Number(note.totalValue);
   const advance = note.requiresAdvance ? Number(note.advanceValue ?? 0) : 0;
   const balance = total - advance;
-  const name = local?.name ?? "Taller de reparación";
 
   const label: CSSProperties = { fontSize: s.label, letterSpacing: 1, fontWeight: 500 };
   const rows: Array<[string, ReactNode, boolean]> = [
@@ -80,104 +41,14 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
   ];
 
   return (
-    <div
-      style={{
-        width: `${widthMm}mm`,
-        boxSizing: "border-box",
-        fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-        color: BLACK,
-        background: WHITE,
-        padding: s.pad,
-        fontSize: s.base,
-        lineHeight: 1.4,
-      }}
+    <ThermalTicket
+      local={local}
+      widthMm={widthMm}
+      documentLabel="NOTA DE REPARACIÓN"
+      folio={`Nº ${note.controlNumber}`}
+      dateLine={`${formatTicketDate(note.receivedAt)} · ${note.receivedTime}`}
     >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: wide ? 3 : 2,
-          textAlign: "center",
-        }}
-      >
-        {local?.logo ? (
-          <img
-            src={local.logo}
-            alt=""
-            style={{
-              width: s.logo,
-              height: s.logo,
-              objectFit: "contain",
-              filter: "grayscale(1) contrast(200%)",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: s.logo,
-              height: s.logo,
-              background: BLACK,
-              color: WHITE,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-              fontSize: wide ? 16 : 14,
-              letterSpacing: 1,
-            }}
-          >
-            {initialsOf(name)}
-          </div>
-        )}
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: s.name,
-            fontWeight: 700,
-            letterSpacing: 0.5,
-            textTransform: "uppercase",
-          }}
-        >
-          {name}
-        </div>
-        {local?.address && <div style={{ fontSize: s.small }}>{local.address}</div>}
-        {local?.phone && <div style={{ fontSize: s.small }}>Tel. {local.phone}</div>}
-      </div>
-
-      <div
-        style={{
-          margin: wide ? "12px 0 10px" : "10px 0 8px",
-          borderTop: `2px solid ${BLACK}`,
-          borderBottom: `1px solid ${BLACK}`,
-          height: 3,
-        }}
-      />
-
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: wide ? 9 : 8, letterSpacing: wide ? 3 : 2, fontWeight: 500 }}>
-          NOTA DE REPARACIÓN
-        </div>
-        <div
-          style={{
-            margin: "6px auto 0",
-            background: BLACK,
-            color: WHITE,
-            padding: "6px 0 4px",
-            fontSize: s.folio,
-            fontWeight: 700,
-            letterSpacing: 1,
-            lineHeight: 1,
-          }}
-        >
-          Nº {note.controlNumber}
-        </div>
-        <div style={{ marginTop: 6, fontSize: wide ? 10 : 9 }}>
-          {formatTicketDate(note.receivedAt)} · {note.receivedTime}
-        </div>
-      </div>
-
-      <Dashed margin={wide ? "12px 0 8px" : "10px 0 7px"} />
+      <TicketDashed margin={wide ? "12px 0 8px" : "10px 0 7px"} />
 
       {wide ? (
         <div style={{ display: "grid", gridTemplateColumns: "62px 1fr", rowGap: 4, columnGap: 6 }}>
@@ -202,7 +73,7 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
       <div
         style={{
           marginTop: wide ? 8 : 7,
-          border: `1px solid ${BLACK}`,
+          border: `1px solid ${TICKET_BLACK}`,
           padding: wide ? "5px 7px" : "4px 6px",
         }}
       >
@@ -210,30 +81,13 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
         <div style={{ marginTop: 2 }}>{note.reportedFailure}</div>
       </div>
 
-      <Dashed margin={wide ? "10px 0 8px" : "9px 0 7px"} />
+      <TicketDashed margin={wide ? "10px 0 8px" : "9px 0 7px"} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <Leader label="Costo total" value={fmtCurrency(total)} bold />
-        {note.requiresAdvance && <Leader label="Anticipo" value={fmtCurrency(advance)} />}
+        <TicketLeader label="Costo total" value={fmtCurrency(total)} bold />
+        {note.requiresAdvance && <TicketLeader label="Anticipo" value={fmtCurrency(advance)} />}
       </div>
-      <div
-        style={{
-          marginTop: wide ? 7 : 6,
-          borderTop: `2px solid ${BLACK}`,
-          borderBottom: `2px solid ${BLACK}`,
-          padding: wide ? "6px 0" : "5px 0",
-          display: "flex",
-          flexDirection: wide ? "row" : "column",
-          alignItems: wide ? "baseline" : "center",
-          justifyContent: "space-between",
-          textAlign: "center",
-        }}
-      >
-        <span style={{ fontSize: wide ? 10 : 8.5, fontWeight: 700, letterSpacing: 1 }}>
-          SALDO A LIQUIDAR
-        </span>
-        <span style={{ fontSize: s.saldo, fontWeight: 700 }}>{fmtCurrency(balance)}</span>
-      </div>
+      <TicketBand widthMm={widthMm} label="SALDO A LIQUIDAR" value={fmtCurrency(balance)} />
 
       {local?.warrantyClause && (
         <div
@@ -253,7 +107,7 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
           <div
             style={{
               margin: `${wide ? 12 : 11}px ${wide ? -14 : -10}px 0`,
-              borderTop: `1px dashed ${BLACK}`,
+              borderTop: `1px dashed ${TICKET_BLACK}`,
               position: "relative",
               height: 0,
             }}
@@ -263,7 +117,7 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
                 position: "absolute",
                 left: wide ? 10 : 8,
                 top: -9,
-                background: WHITE,
+                background: TICKET_WHITE,
                 padding: "0 4px",
                 fontSize: 11,
                 lineHeight: 1,
@@ -276,7 +130,7 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
           <div
             style={{
               marginTop: wide ? 14 : 13,
-              border: `2px solid ${BLACK}`,
+              border: `2px solid ${TICKET_BLACK}`,
               padding: wide ? "10px 10px 9px" : "8px 6px 7px",
               display: "flex",
               flexDirection: "column",
@@ -299,8 +153,8 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
               value={note.whatsappQrUrl}
               level="L"
               marginSize={0}
-              fgColor={BLACK}
-              bgColor={WHITE}
+              fgColor={TICKET_BLACK}
+              bgColor={TICKET_WHITE}
               style={{ marginTop: 8, width: s.qr, height: s.qr, display: "block" }}
             />
             <div
@@ -317,7 +171,7 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
               style={{
                 marginTop: 7,
                 width: "100%",
-                borderTop: `1px solid ${BLACK}`,
+                borderTop: `1px solid ${TICKET_BLACK}`,
                 paddingTop: wide ? 6 : 5,
                 fontSize: wide ? 9 : 8,
                 lineHeight: 1.5,
@@ -374,6 +228,6 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
       <div style={{ marginTop: 2, textAlign: "center", fontSize: wide ? 8.5 : 8 }}>
         Conserva este ticket para recoger tu equipo
       </div>
-    </div>
+    </ThermalTicket>
   );
 };
