@@ -4,19 +4,26 @@ import { formatMoney, formatRelativeTime } from "../utils/format";
 import type { DashboardRecentActivityProps } from "../props/dashboard-recent-activity-props";
 
 export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ recentActivity }) => (
-  <div className="h-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/3 sm:p-6">
+  <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/3 sm:p-6">
     <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Actividad reciente</h3>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Últimos movimientos de caja</p>
     {recentActivity.length === 0 ? (
-      <p className="mt-4 text-sm text-gray-400 dark:text-gray-500">Sin actividad registrada todavía.</p>
+      <p className="mt-4 text-sm text-gray-400 dark:text-gray-500">
+        Sin actividad registrada todavía.
+      </p>
     ) : (
-      <div className="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="custom-scrollbar mt-4 max-h-80 divide-y divide-gray-100 overflow-y-auto pr-1 dark:divide-gray-800">
         {recentActivity.map((item) => (
-          <div key={`${item.kind}-${item.id}`} className="flex items-center justify-between gap-3 py-3">
+          <div
+            key={`${item.kind}-${item.id}`}
+            className="flex items-center justify-between gap-3 py-3"
+          >
             <div className="flex items-center gap-3">
               <div
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                  item.kind === "repair" ? "bg-blue-100 dark:bg-blue-500/10" : "bg-emerald-100 dark:bg-emerald-500/10"
+                  item.kind === "repair"
+                    ? "bg-blue-100 dark:bg-blue-500/10"
+                    : "bg-emerald-100 dark:bg-emerald-500/10"
                 }`}
               >
                 {item.kind === "repair" ? (
@@ -32,9 +39,13 @@ export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ rece
             </div>
             <div className="text-right">
               {item.amount !== undefined && (
-                <p className="text-sm font-semibold text-gray-800 dark:text-white/90">{formatMoney(item.amount)}</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                  {formatMoney(item.amount)}
+                </p>
               )}
-              <p className="text-xs text-gray-400 dark:text-gray-500">{formatRelativeTime(item.date)}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {formatRelativeTime(item.date)}
+              </p>
             </div>
           </div>
         ))}

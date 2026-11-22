@@ -9,7 +9,7 @@ import type { SummaryResponse, SeriesResponse, BusinessSeriesPoint, ActivityItem
 // Respuesta de GET /dashboard/summary. Los importes llegan como cadenas decimales.
 const MONTH_LABELS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-const EMPTY_COUNTS = { openRepairNotes: 0, criticalStockItems: 0, openCashSessions: 0 };
+const EMPTY_COUNTS = { openRepairNotes: 0, criticalStockItems: 0, openCashSessions: 0, onlineUsers: 0 };
 
 // Dos peticiones al cargar (resumen y serie diaria) más la serie mensual del año
 // elegido; todo el cálculo (zona horaria del taller, dinero cobrado) ya viene hecho.

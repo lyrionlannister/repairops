@@ -1,8 +1,9 @@
 import { singleton } from "tsyringe";
 import { Decimal } from "decimal.js";
-import { DashboardDao, ActivityRow } from "../daos/dashboard.dao.js";
+import { DashboardDao, ActivityRow, OperationalCountsRow } from "../daos/dashboard.dao.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { ChatsService } from "../../../messaging/chats/services/chats.service.js";
+import { PresenceService } from "../../../identity/auth/services/presence.service.js";
 import { redisClient } from "../../../core/config/redis-client.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 
@@ -17,7 +18,12 @@ export interface Trend {
 
 export interface DashboardSummary {
   timeZone: string;
-  counts: { openRepairNotes: number; criticalStockItems: number; openCashSessions: number };
+  counts: {
+    openRepairNotes: number;
+    criticalStockItems: number;
+    openCashSessions: number;
+    onlineUsers: number;
+  };
   chat: { todayCount: number; weekCount: number; lastAt: string | null };
   activity: Array<Omit<ActivityRow, "amount"> & { amount?: string }>;
   // Solo con dashboard.money: sin ese permiso el campo no existe en el JSON.
@@ -55,12 +61,26 @@ export class DashboardService {
     private dashboardDao: DashboardDao,
     private localService: LocalService,
     private chatsService: ChatsService,
+    private presenceService: PresenceService,
   ) {}
 
   async getSummary(withMoney: boolean, branchId?: string): Promise<DashboardSummary> {
     const branch = this.parseBranch(branchId);
     const { timeZone } = await this.localService.getConfig();
 
+    // Los conectados quedan fuera de la cache de 60 s: un login reciente debe verse al recargar.
+    const [summary, onlineUsers] = await Promise.all([
+      this.cachedSummary(withMoney, branch, timeZone),
+      this.presenceService.countOnline(),
+    ]);
+    return { ...summary, counts: { ...summary.counts, onlineUsers } };
+  }
+
+  private cachedSummary(
+    withMoney: boolean,
+    branch: string | null,
+    timeZone: string,
+  ): Promise<Omit<DashboardSummary, "counts"> & { counts: OperationalCountsRow }> {
     return this.cached(
       `summary:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`,
       async () => {
@@ -73,7 +93,7 @@ export class DashboardService {
           this.chatsService.getLastInteractionAt(),
         ]);
 
-        const summary: DashboardSummary = {
+        const summary: Omit<DashboardSummary, "counts"> & { counts: OperationalCountsRow } = {
           timeZone,
           counts,
           chat: { todayCount: daily[daily.length - 1]?.count ?? 0, weekCount, lastAt },

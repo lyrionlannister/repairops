@@ -1,5 +1,5 @@
 export interface SummaryResponse {
-  counts: { openRepairNotes: number; criticalStockItems: number; openCashSessions: number };
+  counts: { openRepairNotes: number; criticalStockItems: number; openCashSessions: number; onlineUsers: number };
   chat: { todayCount: number; weekCount: number; lastAt: string | null };
   activity: Array<{ id: string; kind: ActivityItem["kind"]; title: string; subtitle: string; amount?: string; occurredAt: string }>;
   money?: {

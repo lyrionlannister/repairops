@@ -32,7 +32,11 @@ export const DashboardHome: React.FC = () => {
   const currencyFormatter = MXN_FORMATTER;
 
   return (
-    <PageShell scrollHeader title="Panel inicial" description="Métricas operativas del negocio y la atención.">
+    <PageShell
+      scrollHeader
+      title="Panel inicial"
+      description="Métricas operativas del negocio y la atención."
+    >
       <section className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
         {showMoney && (
           <div className="flex flex-col gap-4 md:gap-6 lg:col-span-2">
@@ -57,6 +61,7 @@ export const DashboardHome: React.FC = () => {
             openRepairNotes={businessMetrics.openRepairNotes}
             criticalStockItems={businessMetrics.criticalStockItems}
             openCashSessions={businessMetrics.openCashSessions}
+            onlineUsers={businessMetrics.onlineUsers}
           />
           <div className="flex-1">
             <DashboardRecentActivity recentActivity={recentActivity} />

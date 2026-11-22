@@ -3,6 +3,7 @@ import { DashboardService, DashboardValidationError } from "../../../../src/repo
 import type { DashboardDao } from "../../../../src/reporting/dashboard/daos/dashboard.dao.js";
 import type { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import type { ChatsService } from "../../../../src/messaging/chats/services/chats.service.js";
+import type { PresenceService } from "../../../../src/identity/auth/services/presence.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 const store = new Map<string, string>();
@@ -39,7 +40,8 @@ function build() {
     getWeekSessionCount: vi.fn().mockResolvedValue(5),
     getLastInteractionAt: vi.fn().mockResolvedValue(null),
   } as unknown as ChatsService;
-  return { dao, service: new DashboardService(dao, localService, chatsService) };
+  const presenceService = { countOnline: vi.fn().mockResolvedValue(2) } as unknown as PresenceService;
+  return { dao, service: new DashboardService(dao, localService, chatsService, presenceService) };
 }
 
 beforeEach(() => store.clear());

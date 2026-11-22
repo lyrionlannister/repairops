@@ -4,6 +4,8 @@ import type { UserRole } from "../../identity/auth/entities/user.entity.js";
 import { effectivePermissions } from "../../identity/authz/permissions.js";
 import { runWithTenant, type BranchScope } from "./tenant-context.js";
 import AppDataSource from "../config/data-source.js";
+import { container } from "tsyringe";
+import { PresenceService } from "../../identity/auth/services/presence.service.js";
 
 // El JWT dura 24 h: si roles, flag de plataforma o estado activo se tomaran del token,
 // desactivar o cambiar los roles de alguien no surtiría efecto hasta que expirara.
@@ -68,7 +70,16 @@ export const tenantMiddleware = async (
     user.isPlatformAdmin = access.isPlatformAdmin;
     user.permissions = permissions;
     const branch = access.roles.includes("owner") ? null : await loadBranchScope(tenantId, user.id);
-    runWithTenant(tenantId, () => next(), branch, { userId: user.id, roles: access.roles, permissions });
+    runWithTenant(
+      tenantId,
+      () => {
+        container
+          .resolve(PresenceService)
+          .touch(user.id)
+          .catch(() => {});
+        next();
+      },
+      branch, { userId: user.id, roles: access.roles, permissions });
   } catch (error) {
     next(error);
   }
