@@ -91,8 +91,6 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?VITE_API_BASE_URL is required}
     image: repairops-client
     container_name: repairops-client
     depends_on:
@@ -120,6 +118,19 @@ services:
       automation:
         condition: service_healthy
       client:
+        condition: service_healthy
+
+  cloudflared:
+    image: docker.io/cloudflare/cloudflared:2025.2.0
+    container_name: repairops-cloudflared
+    # Túnel gestionado desde el dashboard de Cloudflare (Zero Trust): las rutas
+    # públicas viven allá, no aquí. Solo debe publicarse el webhook de Meta.
+    command: tunnel --no-autoupdate run
+    env_file:
+      - ./infra/cloudflared/.env
+    restart: unless-stopped
+    depends_on:
+      api:
         condition: service_healthy
 
 volumes:

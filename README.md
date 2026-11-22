@@ -68,15 +68,22 @@ pnpm schema:check         # falla si el esquema diverge de las entidades (gate d
 
 ## Variables de entorno
 
-- Raíz (`.env.example`): puertos publicados al host (`APP_PORT`, `N8N_PORT`, `POSTGRES_PORT`, `REDIS_PORT`) y `VITE_API_BASE_URL` (build-arg del cliente).
+- Raíz (`.env.example`): puertos publicados al host (`APP_PORT`, `N8N_PORT`, `POSTGRES_PORT`, `REDIS_PORT`); Compose no puede leerlos del `.env` de cada servicio para sustituir `${...}`).
 - `api/.env.example`: credenciales de Postgres/Redis, `JWT_SECRET`, `N8N_INTERNAL_TOKEN`, `ENCRYPTION_KEY` (AES-256-GCM, cifrado de credenciales de WhatsApp), variables de la cuenta piloto de WhatsApp, `WHATSAPP_APP_SECRET`/`WHATSAPP_WEBHOOK_VERIFY_TOKEN`, `STRIPE_PUBLIC_KEY`/`STRIPE_PRIVATE_KEY`.
-- Cada servicio (`automation/`, `infra/database/`, `infra/redis/`) trae su propio `.env` inyectado vía `env_file`.
+- Cada servicio (`automation/`, `infra/database/`, `infra/redis/`, `infra/cloudflared/`) trae su propio `.env` inyectado vía `env_file`.
+- `client/.env.production.example`: `VITE_API_BASE_URL` que `vite build` hornea en la imagen; `client/.env` es solo para `pnpm dev`.
 
 ## Desarrollo local
 
 ```bash
 cp .env.example .env
 cp api/.env.example api/.env
+cp automation/.env.example automation/.env
+cp infra/database/.env.example infra/database/.env
+cp infra/redis/.env.example infra/redis/.env
+cp infra/cloudflared/.env.example infra/cloudflared/.env
+cp client/.env.example client/.env
+cp client/.env.production.example client/.env.production
 docker compose up --build -d   # o: podman compose up --build -d
 ```
 
