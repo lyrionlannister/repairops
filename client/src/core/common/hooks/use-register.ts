@@ -19,9 +19,7 @@ export const useRegister = () => {
     }
   };
 
-  const register = async (
-    data: RegisterPayload,
-  ): Promise<RegisterResponse | null> => {
+  const register = async (data: RegisterPayload): Promise<RegisterResponse | null> => {
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -45,12 +43,17 @@ export const useRegister = () => {
         throw new Error("Respuesta invalida del servidor al registrar usuario");
       }
 
+      // Auto-login: la API ya puso la cookie de sesión al registrar. Esto
+      // solo marca "hay sesión" para el guard de rutas (ver auth-guards.tsx) --
+      // el shell protegido la refresca completa (roles/permisos) desde
+      // /auth/users/me al montar.
+      sessionStorage.setItem("user", JSON.stringify(result.user));
+
       setSuccess(true);
       setLoading(false);
       return result;
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Error desconocido en el registro";
+      const errorMessage = err instanceof Error ? err.message : "Error desconocido en el registro";
       setError(errorMessage);
       setLoading(false);
       return null;

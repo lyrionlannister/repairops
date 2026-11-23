@@ -5,10 +5,7 @@ import { Input } from "../../../core/common/components/ui/inputs/input";
 import { Label } from "../../../core/common/components/ui/inputs/label";
 import { Button } from "../../../core/common/components/ui/button/button";
 import { EyeCloseIcon, EyeIcon } from "../../../core/common/icons";
-import {
-  INITIAL_REGISTER_FORM_DATA,
-  REGISTER_REDIRECT_DELAY_MS,
-} from "../constants/auth.constants";
+import { INITIAL_REGISTER_FORM_DATA } from "../constants/auth.constants";
 import { updateRegisterFormField } from "../helpers/auth-form.helpers";
 import type { RegisterPayload } from "../../../core/common/types/register";
 
@@ -31,9 +28,9 @@ export const RegisterForm: React.FC = () => {
 
     const result = await register(formData);
     if (result) {
-      setTimeout(() => {
-        navigate("/identity/sign-in", { replace: true });
-      }, REGISTER_REDIRECT_DELAY_MS);
+      // Auto-login ya hecho (ver useRegister): directo al onboarding de
+      // planes, no de vuelta a sign-in.
+      navigate("/identity/onboarding", { replace: true });
     }
   };
 

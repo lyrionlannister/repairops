@@ -7,18 +7,20 @@ export const PlanUsageCard: FC<PlanUsageCardProps> = ({ summary }) => (
     <div>
       <p className="text-xs font-semibold uppercase text-gray-400">Plan</p>
       <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-        {summary.plan.name} · {STATUS_LABELS[summary.status]}
+        {summary.plan?.name ?? "Sin plan"} · {STATUS_LABELS[summary.status]}
       </p>
     </div>
     <dl className="grid grid-cols-2 gap-4 text-sm">
       <div>
         <dt className="text-xs text-gray-500 dark:text-gray-400">Usuarios activos</dt>
-        <dd className="font-medium text-gray-800 dark:text-white/90">{formatUsage(summary.usage.users, summary.limits.users)}</dd>
+        <dd className="font-medium text-gray-800 dark:text-white/90">
+          {formatUsage(summary.usage.users, summary.limits?.users ?? null)}
+        </dd>
       </div>
       <div>
         <dt className="text-xs text-gray-500 dark:text-gray-400">Sucursales activas</dt>
         <dd className="font-medium text-gray-800 dark:text-white/90">
-          {formatUsage(summary.usage.branches, summary.limits.branches)}
+          {formatUsage(summary.usage.branches, summary.limits?.branches ?? null)}
         </dd>
       </div>
     </dl>

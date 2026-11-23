@@ -1,12 +1,15 @@
 import { ChatsPage } from "../messaging/chats/pages/chats-page";
 import { AuthPage } from "../identity/auth/pages/auth-page";
 import { RegisterPage } from "../identity/auth/pages/register-page";
+import { OnboardingBusinessPage } from "../identity/auth/pages/onboarding-business-page";
+import { OnboardingPlanPage } from "../identity/auth/pages/onboarding-plan-page";
 import { NotFound } from "../core/common/pages/not-found";
 import { HomePage } from "../home/pages/home-page";
 import { UsersPage } from "../identity/users/pages/users-page";
 import { UserFormPage } from "../identity/users/pages/user-form-page";
 import { LocalPage } from "../app_platform/local/pages/local-page";
 import { TenantsPage } from "../app_platform/billing/pages/tenants-page";
+import { BillingOverviewPage } from "../app_platform/billing/pages/billing-overview-page";
 import { TenantSubscriptionPage } from "../app_platform/billing/pages/tenant-subscription-page";
 import { ProfilePage } from "../identity/auth/pages/profile-page";
 import { RepairNotesPage } from "../commerce/repair-notes/pages/repair-notes-page";
@@ -53,6 +56,14 @@ export const publicRoutes = [
     element: <RegisterPage />,
   },
   {
+    path: "/identity/onboarding",
+    element: <OnboardingBusinessPage />,
+  },
+  {
+    path: "/identity/onboarding/plan",
+    element: <OnboardingPlanPage />,
+  },
+  {
     path: "*",
     element: <NotFound />,
   },
@@ -82,6 +93,10 @@ export const protectedRoutes = [
   {
     path: "/platform/local",
     element: <LocalPage />,
+  },
+  {
+    path: "/platform/billing",
+    element: <BillingOverviewPage />,
   },
   {
     path: "/platform/tenants",

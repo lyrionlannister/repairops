@@ -27,8 +27,11 @@ export const AuthForm: React.FC = () => {
 
     const result = await login(formData);
     if (result) {
+      // Onboarding sin terminar (sin plan o Checkout sin completar): de
+      // vuelta a elegir/reanudar plan, nunca al home.
+      const target = result.user.subscriptionStatus === "incomplete" ? "/identity/onboarding" : "/";
       setTimeout(() => {
-        navigate("/", { replace: true });
+        navigate(target, { replace: true });
       }, AUTH_REDIRECT_DELAY_MS);
     }
   };

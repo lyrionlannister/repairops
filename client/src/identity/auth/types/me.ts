@@ -12,4 +12,5 @@ export interface Me {
   isPlatformAdmin: boolean;
   salaryAmount: number | null;
   payCycle: "weekly" | "biweekly" | "monthly" | null;
+  subscriptionStatus: "incomplete" | "trialing" | "active" | "past_due" | "canceled";
 }

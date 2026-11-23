@@ -55,9 +55,7 @@ export const useLogin = () => {
       return result;
     } catch (err) {
       const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Error desconocido al iniciar sesión";
+        err instanceof Error ? err.message : "Error desconocido al iniciar sesión";
       setError(errorMessage);
       setLoading(false);
       return null;
