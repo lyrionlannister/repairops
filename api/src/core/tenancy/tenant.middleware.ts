@@ -7,7 +7,10 @@ import AppDataSource from "../config/data-source.js";
 import { container } from "tsyringe";
 import { PresenceService } from "../../identity/auth/services/presence.service.js";
 import { publicIdResponses } from "../http/public-id/public-id-response.js";
-import { PublicIdNotFoundError, resolveRequestPublicIds } from "../http/public-id/public-id-request.js";
+import {
+  PublicIdNotFoundError,
+  resolveRequestPublicIds,
+} from "../http/public-id/public-id-request.js";
 import { UUID } from "../http/public-id/public-id-metadata.js";
 
 // El JWT dura 24 h: si roles, flag de plataforma o estado activo se tomaran del token,
@@ -17,6 +20,7 @@ interface Access {
   tenantId: string;
   roles: UserRole[];
   isPlatformAdmin: boolean;
+  subscriptionStatus: string | null;
 }
 
 // El JWT solo trae public_ids (usuario y tenant): aqui se resuelven a los ids internos,
@@ -25,15 +29,40 @@ async function loadAccess(tenantPublicId: string, userPublicId: string): Promise
   if (!UUID.test(userPublicId) || !UUID.test(tenantPublicId)) return null;
   const rows: Access[] = await AppDataSource.query(
     `SELECT u.id::text AS "id", u.tenant_id::text AS "tenantId", u.es_platform_admin AS "isPlatformAdmin",
+            s.status AS "subscriptionStatus",
             COALESCE(array_agg(ur.role::text) FILTER (WHERE ur.role IS NOT NULL), '{}') AS "roles"
      FROM usuarios u
      JOIN tenants t ON t.id = u.tenant_id
      LEFT JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+     LEFT JOIN subscriptions s ON s.tenant_id = t.id
      WHERE u.public_id = $1 AND t.public_id = $2 AND u.activo = true
-     GROUP BY u.id`,
+     GROUP BY u.id, s.status`,
     [userPublicId, tenantPublicId],
   );
   return rows[0] ?? null;
+}
+
+// Un taller con pago rechazado o cancelado sigue autenticado (necesita serlo
+// para arreglar su pago), pero nada de la app salvo su propia sesión y la
+// pantalla de planes -- /billing/select-plan genera un Checkout nuevo
+// (BillingService.selectPlan) sin importar el estado actual de la suscripción.
+const BLOCKING_STATUSES = new Set(["past_due", "canceled"]);
+const SUBSCRIPTION_RECOVERY_BASE_URLS = new Set(["/api/v1/auth", "/api/v1/billing"]);
+
+// Exportadas sueltas (no un objeto) para probarlas sin levantar Express/DI --
+// la decisión en sí es pura, lo único que necesita el middleware real es Access.
+export function isSubscriptionBlocked(status: string | null, baseUrl: string): boolean {
+  return (
+    status !== null &&
+    BLOCKING_STATUSES.has(status) &&
+    !SUBSCRIPTION_RECOVERY_BASE_URLS.has(baseUrl)
+  );
+}
+
+export function subscriptionBlockedMessage(status: string): string {
+  return status === "canceled"
+    ? "Tu suscripción fue cancelada. Elige un plan para seguir usando RepairOps."
+    : "Tu pago no se pudo procesar. Actualiza tu método de pago para seguir usando RepairOps.";
 }
 
 // Sucursales del personal (no owner): se leen de la base en cada petición porque las
@@ -73,6 +102,14 @@ export const tenantMiddleware = async (
     const access = await loadAccess(user.tenantPublicId, user.publicId);
     if (!access) {
       res.status(401).json({ error: "No autenticado" });
+      return;
+    }
+    if (isSubscriptionBlocked(access.subscriptionStatus, req.baseUrl)) {
+      res.status(402).json({
+        error: subscriptionBlockedMessage(access.subscriptionStatus!),
+        code: "subscription_blocked",
+        status: access.subscriptionStatus,
+      });
       return;
     }
     const permissions = effectivePermissions(access.roles, access.isPlatformAdmin);

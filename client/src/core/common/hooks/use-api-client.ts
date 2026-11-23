@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useNavigate } from "react-router";
 import { useToast } from "./use-toast";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -43,6 +44,7 @@ let lastToastKey = "";
 let lastToastAt = 0;
 
 export const useApiClient = () => {
+  const navigate = useNavigate();
   const { showToast: rawShowToast } = useToast();
   const showToast = useCallback(
     (toast: Parameters<typeof rawShowToast>[0]) => {
@@ -98,6 +100,19 @@ export const useApiClient = () => {
               title: SPECIFIC_TITLE.find(([re]) => re.test(endpoint))?.[1] ?? SUCCESS_TITLE[method],
               variant: "success",
             });
+        } else if (response.status === 402) {
+          const body = await response
+            .clone()
+            .json()
+            .catch(() => ({}));
+          const message = String((body as { error?: unknown }).error ?? `Error ${response.status}`);
+          showToast({ title: "No se pudo completar la acción", message, variant: "error" });
+          // Suscripción vencida/cancelada: nada en la app sirve hasta que
+          // elija plan de nuevo (ver tenant.middleware.ts), lo manda directo
+          // ahí en vez de dejarlo varado en la pantalla que falló.
+          if ((body as { code?: string }).code === "subscription_blocked") {
+            navigate("/identity/onboarding/plan", { replace: true });
+          }
         } else if (response.status !== 401 || endpoint.startsWith("/auth/login")) {
           // 401 en otras rutas = sesion vencida (el guard redirige), no un mensaje.
           const body = await response
@@ -114,7 +129,7 @@ export const useApiClient = () => {
 
       return response;
     },
-    [showToast],
+    [showToast, navigate],
   );
 
   return useMemo(() => ({ apiClient }), [apiClient]);
