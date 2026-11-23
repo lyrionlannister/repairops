@@ -5,14 +5,20 @@ import { authenticatedOnly, requirePermission } from "../../authz/require-permis
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
 import { publicIdResponses } from "../../../core/http/public-id/public-id-response.js";
 import { resolvePublicIdParam } from "../../../core/http/public-id/public-id-request.js";
+import {
+  loginRateLimit,
+  refreshRateLimit,
+  registerRateLimit,
+} from "../../../core/http/rate-limit.js";
 
 export const createAuthRouter = (authController: AuthController): Router => {
   const router = Router();
 
   // login y registro no pasan por tenantMiddleware, que es quien traduce las respuestas.
   router.use(publicIdResponses);
-  router.post("/register", authController.register);
-  router.post("/login", authController.login);
+  router.post("/register", registerRateLimit, authController.register);
+  router.post("/login", loginRateLimit, authController.login);
+  router.post("/refresh", refreshRateLimit, authController.refresh);
   router.post("/logout", authController.logout);
   router.get(
     "/users/me",

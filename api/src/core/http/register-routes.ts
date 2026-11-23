@@ -69,6 +69,8 @@ import { ReturnController } from "../../commerce/returns/controllers/return.cont
 import { createReturnRouter } from "../../commerce/returns/routes/return.routes.js";
 import { LayawayController } from "../../commerce/customers/controllers/layaway.controller.js";
 import { createLayawayRouter } from "../../commerce/customers/routes/layaway.routes.js";
+import { PlatformController } from "../../app_platform/platform/controllers/platform.controller.js";
+import { createPlatformRouter } from "../../app_platform/platform/routes/platform.routes.js";
 
 // Monta todas las rutas de /api/v1/* -- requiere que registerRepositories()
 // ya haya corrido (cada controller/dao se resuelve del contenedor aqui).
@@ -90,6 +92,7 @@ export function registerRoutes(app: Express): void {
   );
   app.use("/api/v1/billing", createBillingRouter(container.resolve(BillingController)));
   app.use("/api/v1/platform", createPlatformBillingRouter(container.resolve(BillingController)));
+  app.use("/api/v1/platform", createPlatformRouter(container.resolve(PlatformController)));
   app.use("/api/v1/chats", createChatsRouter(container.resolve(ChatsController)));
   app.use("/api/v1/local", createLocalRouter(container.resolve(LocalController)));
   // El router del webhook (publico, sin JWT) va ANTES que el de status/

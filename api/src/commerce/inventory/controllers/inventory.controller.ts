@@ -19,7 +19,9 @@ export class InventoryController {
 
   getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      const branchId = await this.branchAccess.resolveReadBranch(
+        queryString(req.query["branchId"]),
+      );
       res.status(200).json(await this.service.getAllWithAvailability(branchId));
     } catch (error) {
       sendError(res, error, 500);
@@ -150,7 +152,6 @@ export class InventoryController {
         type: dto.type,
         quantity: dto.quantity,
         reason: dto.reason,
-        createdByEmployeeId: dto.createdByEmployeeId,
       });
       res.status(201).json(movement);
     } catch (error) {

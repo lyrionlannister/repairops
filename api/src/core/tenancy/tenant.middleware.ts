@@ -13,7 +13,7 @@ import {
 } from "../http/public-id/public-id-request.js";
 import { UUID } from "../http/public-id/public-id-metadata.js";
 
-// El JWT dura 24 h: si roles, flag de plataforma o estado activo se tomaran del token,
+// El JWT dura 15 min: si roles, flag de plataforma o estado activo se tomaran del token,
 // desactivar o cambiar los roles de alguien no surtiría efecto hasta que expirara.
 interface Access {
   id: string;

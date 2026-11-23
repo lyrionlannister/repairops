@@ -64,6 +64,7 @@ export const PLATFORM_PERMISSIONS = [
   "platform.templates.manage",
   "platform.integrations.manage",
   "platform.tenants.read",
+  "platform.tenants.manage",
   "platform.plans.manage",
   "platform.subscriptions.manage",
 ] as const;

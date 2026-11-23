@@ -9,6 +9,8 @@ import { ImportStagingCallbackDto } from "../dtos/import-staging-callback.dto.js
 import { ImportStagingProgressDto } from "../dtos/import-staging-progress.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 import { sendError } from "../../../core/http/error-response.js";
+import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
+import type { AuthenticatedRequest } from "../../../identity/auth/middlewares/auth.middleware.js";
 import type { StagingRecord } from "../types.js";
 
 const SUPPORTED_EXTENSIONS = /\.(pdf|xlsx|xls)$/i;
@@ -47,8 +49,23 @@ export class ImportStagingController {
       }
       const { importId, tenantId } = started;
 
+      // El public_id del tenant (viene en el JWT) es lo que el workflow de
+      // n8n manda como header X-Tenant-Public-Id en /callback y /progress.
+      const tenantPublicId = (req as AuthenticatedRequest).user?.tenantPublicId;
+      if (!tenantPublicId) {
+        await this.service.discard(importId);
+        res.status(401).json({ error: "Sesión inválida" });
+        return;
+      }
+
       try {
-        await triggerImportStagingWorkflow({ tenantId, importId, fileName, fileBuffer: req.body });
+        await triggerImportStagingWorkflow({
+          tenantId,
+          tenantPublicId,
+          importId,
+          fileName,
+          fileBuffer: req.body,
+        });
       } catch (error) {
         console.error("[import-staging] Error disparando workflow n8n:", error);
         await this.service.discard(importId);
@@ -186,12 +203,17 @@ export class ImportStagingController {
         res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
-      await this.service.applyProgress(
-        dto.tenantId,
-        dto.importId,
-        dto.chunksTotal,
-        dto.itemsInChunk,
-      );
+      // El tenant es el del header X-Tenant-Public-Id (ya validado por
+      // requireTenantFromHeader); el tenantId del body solo se acepta si
+      // coincide con ese tenant, nunca se confía en el body solo.
+      const tenantId = getCurrentTenantId();
+      if (dto.tenantId !== tenantId) {
+        res
+          .status(401)
+          .json({ error: "El taller del progreso no coincide con el tenant autorizado" });
+        return;
+      }
+      await this.service.applyProgress(tenantId, dto.importId, dto.chunksTotal, dto.itemsInChunk);
       res.status(200).json({ ok: true });
     } catch (error) {
       sendError(res, error, 400);
@@ -210,8 +232,18 @@ export class ImportStagingController {
         res.status(400).json({ error: "Se requiere rows o error" });
         return;
       }
+      // El tenant es el del header X-Tenant-Public-Id (ya validado por
+      // requireTenantFromHeader); el tenantId del body solo se acepta si
+      // coincide con ese tenant, nunca se confía en el body solo.
+      const tenantId = getCurrentTenantId();
+      if (dto.tenantId !== tenantId) {
+        res
+          .status(401)
+          .json({ error: "El taller del callback no coincide con el tenant autorizado" });
+        return;
+      }
       await this.service.applyCallback(
-        dto.tenantId,
+        tenantId,
         dto.importId,
         dto.error ? { error: dto.error } : { rows: dto.rows! },
       );

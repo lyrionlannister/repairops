@@ -25,7 +25,7 @@ export interface AuthenticatedRequest extends Request {
 
 // Sin cookie-parser: solo necesitamos leer un valor, no vale la pena la
 // dependencia por esto. req.headers.cookie llega como "a=1; b=2".
-const readCookie = (req: Request, name: string): string | undefined => {
+export const readCookie = (req: Request, name: string): string | undefined => {
   const header = req.headers.cookie;
   if (!header) return undefined;
   const match = header.split("; ").find((pair) => pair.startsWith(`${name}=`));
@@ -37,14 +37,11 @@ export const authMiddleware = (
   res: Response,
   next: NextFunction,
 ): void => {
-  // Orden: header Authorization (clientes no-browser, scripts), cookie
-  // httpOnly (el SPA, desde la migracion a cookie para que el token no sea
-  // legible por JS), y por ultimo query string como fallback para
-  // EventSource (SSE), que no puede mandar headers custom.
-  const token =
-    req.headers.authorization?.split(" ")[1] ??
-    readCookie(req, ACCESS_TOKEN_COOKIE) ??
-    (req.query.token as string | undefined);
+  // Orden: header Authorization (clientes no-browser, scripts) y cookie
+  // httpOnly (el SPA). Sin fallback por query string: EventSource manda
+  // cookies con withCredentials, así que ningún cliente actual lo necesita,
+  // y un token en la URL termina en logs del servidor y del proxy.
+  const token = req.headers.authorization?.split(" ")[1] ?? readCookie(req, ACCESS_TOKEN_COOKIE);
 
   if (!token) {
     res.status(401).json({ error: "No autenticado" });

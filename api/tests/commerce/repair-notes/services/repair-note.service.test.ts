@@ -22,6 +22,8 @@ import type { WhatsappNotificationQueueService } from "../../../../src/messaging
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
+import { PriceListItem } from "../../../../src/commerce/price-list/entities/price-list-item.entity.js";
+import { PriceListDao } from "../../../../src/commerce/price-list/daos/price-list.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryService } from "../../../../src/commerce/inventory/services/inventory.service.js";
 import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
@@ -70,6 +72,8 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
       new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
       notificationQueueStub,
+      itemDao,
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
   };
 
@@ -521,6 +525,8 @@ describe("RepairNoteService: anticipo y entrega", () => {
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
       new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
       notificationQueueStub,
+      itemDao,
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
   };
 

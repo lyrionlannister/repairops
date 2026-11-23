@@ -14,10 +14,16 @@ const store = new Map<string, string>();
 
 function build() {
   return new WhatsappSendService(
-    {} as WhatsappOutboundMessageDao,
+    {
+      create: vi.fn().mockResolvedValue({ status: "sent" }),
+    } as unknown as WhatsappOutboundMessageDao,
     {} as WhatsappTemplateStatusDao,
     {} as WhatsappTemplateCatalogEntryDao,
-    {} as WhatsappAccountService,
+    {
+      getOrCreateForTenant: vi
+        .fn()
+        .mockResolvedValue({ id: "acc-1", phoneNumberId: "phone-1", accessToken: "token-1" }),
+    } as unknown as WhatsappAccountService,
     { assertCanSend: vi.fn().mockResolvedValue(undefined) } as unknown as WhatsappQuotaService,
   );
 }

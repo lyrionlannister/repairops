@@ -1,9 +1,15 @@
 import { singleton, inject } from "tsyringe";
+import { createHash, randomBytes } from "node:crypto";
 import { hash, compare } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Repository } from "typeorm";
 import { UserDao } from "../daos/user.dao.js";
 import { UserRoleDao } from "../daos/user-role.dao.js";
+import { RefreshTokenDao } from "../daos/refresh-token.dao.js";
+import { TenantInvitationDao } from "../daos/tenant-invitation.dao.js";
+import { AuditLogService, AUDIT_ACTIONS } from "../../../core/audit/services/audit-log.service.js";
+import { BusinessError } from "../../../core/http/business-error.js";
+import { registrationMode } from "../../../core/config/env.js";
 import { RegisterUserDto } from "../dtos/register-user.dto.js";
 import { LoginUserDto } from "../dtos/login-user.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
@@ -25,7 +31,6 @@ import { PlanLimitService } from "../../../app_platform/billing/services/plan-li
 import { StripePriceDao } from "../../../app_platform/billing/daos/stripe-price.dao.js";
 import { SubscriptionDao } from "../../../app_platform/billing/daos/subscription.dao.js";
 import type { SubscriptionStatus } from "../../../app_platform/billing/entities/subscription.entity.js";
-import { createCustomer } from "../../../app_platform/billing/clients/stripe.client.js";
 import {
   effectivePermissions,
   roleCatalog,
@@ -33,8 +38,13 @@ import {
   type RoleCatalogEntry,
 } from "../../authz/permissions.js";
 import { toMoneyOrNull } from "../../../core/common/utils/money.js";
+import { REFRESH_TOKEN_MAX_AGE_MS } from "../constants/auth.constants.js";
 
 const { sign } = jwt;
+
+// Solo se guarda el hash SHA-256 de un token opaco (refresh o invitación):
+// si la base se filtra, los tokens no sirven sin el valor en claro.
+const hashToken = (token: string): string => createHash("sha256").update(token).digest("hex");
 
 export class UserRoleRuleError extends Error {}
 
@@ -59,21 +69,109 @@ export class AuthService {
     private stripePriceDao: StripePriceDao,
     private subscriptionDao: SubscriptionDao,
     private userRoleDao: UserRoleDao,
+    private refreshTokenDao: RefreshTokenDao,
+    private tenantInvitationDao: TenantInvitationDao,
+    private auditLogService: AuditLogService,
   ) {}
 
   // Ya no pide plan en el registro: el owner entra directo (auto-login) a un
   // onboarding de cards (ver BillingService.selectPlan) que recién ahí crea
   // la Checkout Session de Stripe. Sin plan elegido todavía, el resto de la
   // app sigue bloqueada (status 'incomplete' -- ver AuthService.login).
-  async register(data: RegisterUserDto): Promise<{ owner: SessionUser; token: string }> {
+  //
+  // REGISTRATION_MODE (ver core/config/env.ts) decide quién puede registrar:
+  // - `closed` (default): POST /register rechaza; el tenant lo crea el
+  //   platform-admin (createTenantByAdmin) o una invitación (invite).
+  // - `invite`: exige un token de invitación de un solo uso en el body.
+  // - `open`: registro público como antes (solo para desarrollo).
+  async register(data: RegisterUserDto & { invitationToken?: string }): Promise<{
+    owner: SessionUser;
+    token: string;
+    refreshToken: string;
+  }> {
+    const mode = registrationMode();
+    if (mode === "closed") {
+      throw new BusinessError(
+        "El registro está cerrado. Pide a un administrador de la plataforma que cree tu taller.",
+        403,
+      );
+    }
+    if (mode === "invite") {
+      const token = data.invitationToken?.trim();
+      if (!token) {
+        throw new BusinessError("Se requiere un token de invitación para registrarse.", 403);
+      }
+      const invitation = await this.tenantInvitationDao.findByTokenHash(hashToken(token));
+      if (
+        !invitation ||
+        invitation.usedAt !== null ||
+        invitation.expiresAt.getTime() <= Date.now()
+      ) {
+        throw new BusinessError("Invitación inválida o expirada.", 403);
+      }
+    }
     const { owner, tenant } = await this.createTenantWithOwner(data, false);
-    const token = this.signToken(owner, tenant);
+    if (mode === "invite") {
+      // Consumo atómico: si otro registro usó el mismo token a la vez, el
+      // tenant ya se creó pero la invitación no se puede reutilizar -- el
+      // caso es raro y se deja registrado en el log del servidor.
+      const consumed = await this.tenantInvitationDao.consume(
+        hashToken(data.invitationToken!.trim()),
+      );
+      if (!consumed) {
+        console.error("[auth] La invitación ya había sido consumida:", data.email);
+      }
+    }
+    const session = await this.issueSession(owner, tenant);
     // Sin esto, sessionStorage queda con un User a secas (sin roles/permisos/
     // subscriptionStatus) hasta que useAuthGuard lo refresque de forma
     // asíncrona -- el primer render de /home (justo al volver del Checkout de
     // Stripe) alcanza a pintar "Sin acceso" antes de que llegue ese refresh.
     const sessionOwner = await runWithTenant(tenant.id, () => this.toSessionUser(owner));
-    return { owner: sessionOwner, token };
+    return { owner: sessionOwner, token: session.accessToken, refreshToken: session.refreshToken };
+  }
+
+  // Creación de tenant por el platform-admin (modo `closed`): mismo alta
+  // que el registro público pero sin auto-login -- el owner entra con sus
+  // credenciales y sigue el onboarding de planes normal.
+  async createTenantByAdmin(data: RegisterUserDto): Promise<{ owner: PublicUser; tenant: Tenant }> {
+    const { owner, tenant } = await this.createTenantWithOwner(data, false);
+    const publicOwner = await runWithTenant(tenant.id, async () => ({
+      ...withoutPassword(owner),
+      roles: await this.userRoleDao.findRolesOf(owner.id),
+    }));
+    return { owner: publicOwner, tenant };
+  }
+
+  // Invitación de un solo uso (modo `invite`): el token en claro se devuelve
+  // una sola vez; en base solo queda su hash.
+  async createInvitation(input: {
+    email?: string | null;
+    expiresInDays?: number;
+    createdByAdminId: string | null;
+  }): Promise<{ token: string; expiresAt: Date }> {
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + (input.expiresInDays ?? 7) * 24 * 60 * 60 * 1000);
+    await this.tenantInvitationDao.create({
+      tokenHash: hashToken(token),
+      email: input.email ?? null,
+      expiresAt,
+      usedAt: null,
+      createdByAdminId: input.createdByAdminId,
+    });
+    return { token, expiresAt };
+  }
+
+  async listPendingInvitations(): Promise<
+    Array<{ publicId: string; email: string | null; expiresAt: Date; createdAt: Date }>
+  > {
+    const invitations = await this.tenantInvitationDao.listPending();
+    return invitations.map(({ publicId, email, expiresAt, createdAt }) => ({
+      publicId,
+      email,
+      expiresAt,
+      createdAt,
+    }));
   }
 
   async registerPlatformAdmin(data: RegisterUserDto): Promise<User> {
@@ -94,7 +192,7 @@ export class AuthService {
       this.userDao.findByEmailAcrossTenants(data.email),
     );
     if (existingUser) {
-      throw new Error("Correo electrónico ya registrado");
+      throw new BusinessError("Correo electrónico ya registrado");
     }
 
     const tenant = await allowSystemScope(() =>
@@ -109,12 +207,12 @@ export class AuthService {
       if (isPlatformAdmin) {
         await this.billingService.startSubscription("platform", "active");
       } else {
-        const stripeCustomer = await createCustomer({
+        const stripeCustomerId = await this.billingService.createCustomerForTenant({
           email: data.email,
           name: `${data.firstName} ${data.lastName}`,
           tenantPublicId: tenant.publicId,
         });
-        await this.billingService.startSubscriptionWithoutPlan(stripeCustomer.id);
+        await this.billingService.startSubscriptionWithoutPlan(stripeCustomerId);
       }
 
       const hashedPassword = await hash(data.password, 10);
@@ -158,7 +256,7 @@ export class AuthService {
   async createEmployee(data: CreateEmployeeDto): Promise<PublicUser> {
     const existingUser = await this.userDao.findByEmail(data.email);
     if (existingUser) {
-      throw new Error("Correo electrónico ya registrado");
+      throw new BusinessError("Correo electrónico ya registrado");
     }
 
     const roles = this.normalizeRoles(data.roles);
@@ -185,6 +283,12 @@ export class AuthService {
       return created;
     });
 
+    await this.auditLogService.recordForCurrentActor({
+      action: AUDIT_ACTIONS.AUTH_USER_CREATED,
+      entity: "user",
+      entityId: user.publicId,
+      details: { email: user.email, roles },
+    });
     return { ...withoutPassword(user), roles };
   }
 
@@ -194,7 +298,7 @@ export class AuthService {
   async updateEmployee(id: string, data: UpdateEmployeeDto): Promise<PublicUser | null> {
     const existingUser = await this.userDao.findByEmail(data.email);
     if (existingUser && existingUser.id !== id) {
-      throw new Error("Correo electrónico ya registrado");
+      throw new BusinessError("Correo electrónico ya registrado");
     }
 
     const target = await this.userDao.findById(id);
@@ -232,6 +336,14 @@ export class AuthService {
       await this.userBranchService.assign(updated.id, assignment);
       return updated;
     });
+    if (user && JSON.stringify([...currentRoles].sort()) !== JSON.stringify([...roles].sort())) {
+      await this.auditLogService.recordForCurrentActor({
+        action: AUDIT_ACTIONS.AUTH_ROLE_CHANGED,
+        entity: "user",
+        entityId: user.publicId,
+        details: { email: user.email, previousRoles: currentRoles, newRoles: roles },
+      });
+    }
     return user ? { ...withoutPassword(user), roles } : null;
   }
 
@@ -282,27 +394,66 @@ export class AuthService {
         })
       : await this.planLimitService.withCapacity("users", () => this.userDao.toggleStatus(id));
     if (!user) return null;
+    await this.auditLogService.recordForCurrentActor({
+      action: AUDIT_ACTIONS.AUTH_USER_STATUS_CHANGED,
+      entity: "user",
+      entityId: user.publicId,
+      details: { email: user.email, isActive: user.isActive },
+    });
     return { ...withoutPassword(user), roles: await this.userRoleDao.findRolesOf(id) };
   }
 
-  async login(data: LoginUserDto): Promise<{ user: SessionUser; token: string }> {
+  async login(data: LoginUserDto): Promise<{
+    user: SessionUser;
+    token: string;
+    refreshToken: string;
+  }> {
     // findByEmail necesita tenant en contexto, pero en login todavia no se
     // sabe el tenant del usuario: se busca en scope de sistema por email
     // (unico campo sin ambiguedad antes de autenticar) y luego se re-entra
     // al tenant real para el resto de la operacion.
+    //
+    // Un solo mensaje genérico para los tres fallos (correo inexistente,
+    // contraseña inválida, usuario inactivo): distinguirlos delata si el
+    // correo existe. El motivo real queda en la bitácora, no en la respuesta.
     const user = await allowSystemScope(() => this.userDao.findByEmailAcrossTenants(data.email));
     if (!user) {
-      throw new Error("Correo electrónico no registrado");
+      await this.auditLogService.record({
+        tenantId: null,
+        actorEmail: data.email,
+        action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
+        entity: "user",
+        details: { reason: "email_not_found" },
+      });
+      throw new BusinessError("Correo o contraseña inválidos");
     }
 
     return runWithTenant(user.tenantId, async () => {
       const isPasswordValid = await compare(data.password, user.password);
       if (!isPasswordValid) {
-        throw new Error("Contraseña invalida");
+        await this.auditLogService.record({
+          tenantId: user.tenantId,
+          userId: user.id,
+          actorEmail: data.email,
+          action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
+          entity: "user",
+          entityId: user.publicId,
+          details: { reason: "wrong_password" },
+        });
+        throw new BusinessError("Correo o contraseña inválidos");
       }
 
       if (!user.isActive) {
-        throw new Error("Usuario inactivo");
+        await this.auditLogService.record({
+          tenantId: user.tenantId,
+          userId: user.id,
+          actorEmail: data.email,
+          action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
+          entity: "user",
+          entityId: user.publicId,
+          details: { reason: "inactive_user" },
+        });
+        throw new BusinessError("Correo o contraseña inválidos");
       }
 
       // Solo identidad: roles, permisos y el flag de plataforma se leen de la base en
@@ -314,15 +465,91 @@ export class AuthService {
       // seleccionando el mismo plan otra vez -- ver BillingService.selectPlan,
       // que siempre genera una Checkout Session nueva). El client decide a
       // dónde navegar según subscriptionStatus.
-      return { user: await this.toSessionUser(user), token: this.signToken(user, tenant) };
+      const sessionUser = await this.toSessionUser(user);
+      const session = await this.issueSession(user, tenant);
+      await this.auditLogService.record({
+        tenantId: user.tenantId,
+        userId: user.id,
+        actorEmail: user.email,
+        action: AUDIT_ACTIONS.AUTH_LOGIN,
+        entity: "user",
+        entityId: user.publicId,
+      });
+      return { user: sessionUser, token: session.accessToken, refreshToken: session.refreshToken };
     });
+  }
+
+  // Renueva la sesión con un refresh token: rota (el viejo queda revocado y
+  // apunta al nuevo) y devuelve un par nuevo. Reutilizar un token ya rotado
+  // es robo: se revoca toda la familia de tokens del usuario.
+  async refreshSession(
+    refreshToken: string,
+  ): Promise<{ user: SessionUser; token: string; refreshToken: string }> {
+    const row = await this.refreshTokenDao.findByTokenHash(hashToken(refreshToken));
+    if (!row || row.revokedAt !== null || row.expiresAt.getTime() <= Date.now()) {
+      if (row && row.revokedAt !== null && row.replacedByTokenHash !== null) {
+        await this.refreshTokenDao.revokeAllForUser(row.userId, row.tenantId);
+      }
+      throw new BusinessError("Sesión expirada");
+    }
+
+    return runWithTenant(row.tenantId, async () => {
+      const user = await this.userDao.findById(row.userId);
+      if (!user || !user.isActive) {
+        await this.refreshTokenDao.revokeAllForUser(row.userId, row.tenantId);
+        throw new BusinessError("Sesión expirada");
+      }
+      const tenant = await this.tenantRepository.findOneByOrFail({ id: row.tenantId });
+      const session = await this.issueSession(user, tenant, row);
+      return {
+        user: await this.toSessionUser(user),
+        token: session.accessToken,
+        refreshToken: session.refreshToken,
+      };
+    });
+  }
+
+  // Cierra la sesión: revoca el refresh token si llega uno válido. El access
+  // token (15 min) expira solo; sin refresh válido no se puede renovar.
+  async revokeSession(refreshToken?: string | null): Promise<void> {
+    if (!refreshToken) return;
+    const row = await this.refreshTokenDao.findByTokenHash(hashToken(refreshToken));
+    if (row && row.revokedAt === null) {
+      await this.refreshTokenDao.update(row.id, { revokedAt: new Date() });
+    }
+  }
+
+  // Emite un par access (15 min) + refresh (7 días). Si llega `previous`,
+  // lo revoca y lo apunta al nuevo (rotación).
+  private async issueSession(
+    user: User,
+    tenant: Tenant,
+    previous?: { id: string; tokenHash: string },
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const refreshToken = randomBytes(32).toString("hex");
+    const refreshTokenHash = hashToken(refreshToken);
+    await this.refreshTokenDao.create({
+      tenantId: tenant.id,
+      userId: user.id,
+      tokenHash: refreshTokenHash,
+      replacedByTokenHash: null,
+      expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_MS),
+      revokedAt: null,
+    });
+    if (previous) {
+      await this.refreshTokenDao.update(previous.id, {
+        revokedAt: new Date(),
+        replacedByTokenHash: refreshTokenHash,
+      });
+    }
+    return { accessToken: this.signToken(user, tenant), refreshToken };
   }
 
   private signToken(user: User, tenant: Tenant): string {
     return sign(
       { id: user.publicId, email: user.email, tenantId: tenant.publicId },
       requireJwtSecret(),
-      { expiresIn: "24h" },
+      { expiresIn: "15m" },
     );
   }
 

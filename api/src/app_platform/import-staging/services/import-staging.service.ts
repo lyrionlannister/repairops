@@ -6,6 +6,7 @@ import { PriceListDao } from "../../../commerce/price-list/daos/price-list.dao.j
 import { SupplierDao } from "../../../commerce/suppliers/daos/supplier.dao.js";
 import type { RedisLike, StagingRecord, StagingRow } from "../types.js";
 import { REDIS_CLIENT } from "../../../core/di/tokens.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 const TTL_SECONDS = 3600;
 
@@ -109,13 +110,13 @@ export class ImportStagingService {
     const tenantId = getCurrentTenantId();
     const key = this.key(tenantId, importId);
     const raw = await this.redis.get(key);
-    if (!raw) throw new Error("Staging de importación no encontrado o expirado");
+    if (!raw) throw new BusinessError("Staging de importación no encontrado o expirado");
     const record = JSON.parse(raw) as StagingRecord;
     if (record.status !== "ready") {
-      throw new Error("El staging aún no está listo para confirmar");
+      throw new BusinessError("El staging aún no está listo para confirmar");
     }
     if (record.rows.length === 0) {
-      throw new Error("No hay filas para importar");
+      throw new BusinessError("No hay filas para importar");
     }
 
     await this.priceListDao.replaceForSupplier(

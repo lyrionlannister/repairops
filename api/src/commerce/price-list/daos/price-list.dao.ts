@@ -29,6 +29,17 @@ export class PriceListDao extends TenantScopedDao<PriceListItem> {
       .getMany();
   }
 
+  // Resolución del precio de lista aplicable a un item de inventario: la
+  // lista de precios no tiene FK al item (solo proveedor + marca/modelo), así
+  // que el vínculo es proveedor del item + modelo igual al nombre del item.
+  // Si no hay fila, no hay precio de lista aplicable y manda precio_venta.
+  async findBySupplierAndModel(supplierId: string, model: string): Promise<PriceListItem | null> {
+    return this.scoped()
+      .andWhere("entity.supplierId = :supplierId", { supplierId })
+      .andWhere("entity.model = :model", { model })
+      .getOne();
+  }
+
   async replaceForSupplier(supplierId: string, items: PriceListItemInput[]): Promise<void> {
     const tenantId = this.currentTenantId();
     await this.repository.manager.transaction(async (manager) => {

@@ -8,6 +8,31 @@ const sendRequest = async (url: string, options: RequestInit = {}) => {
   return await fetch(url, options);
 };
 
+// Una sola renovación en vuelo: varias peticiones con 401 a la vez esperan
+// el mismo refresh. Sin esto, dos refresh concurrentes con el mismo token
+// harían saltar la detección de reutilización del servidor y revocarían
+// toda la familia de tokens (el usuario quedaría deslogueado).
+let refreshPromise: Promise<boolean> | null = null;
+
+const tryRefreshSession = async (): Promise<boolean> => {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+        });
+        return res.ok;
+      } catch {
+        return false;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+  return refreshPromise;
+};
+
 // Todo mensaje de la API se muestra como toast (exito en mutaciones, error en
 // cualquier metodo). Excepciones: chats/notificaciones son alta frecuencia o
 // polling, y logout redirige solo, asi que unicamente avisa errores.
@@ -91,6 +116,27 @@ export const useApiClient = () => {
             variant: "error",
           });
         throw error;
+      }
+
+      // Access token de 15 min: ante un 401, se intenta renovar la sesión
+      // una sola vez y reintentar la petición original. Si el refresh falla,
+      // la respuesta 401 sigue su curso normal (el guard redirige al login).
+      // Nunca en las rutas de auth: ahí un 401 es un fallo real de login.
+      if (response.status === 401 && !endpoint.startsWith("/auth/")) {
+        const refreshed = await tryRefreshSession();
+        if (refreshed) {
+          try {
+            response = await sendRequest(url, { ...options, credentials: "include" });
+          } catch (error) {
+            if (notify)
+              showToast({
+                title: "Sin conexión",
+                message: "No se pudo contactar al servidor.",
+                variant: "error",
+              });
+            throw error;
+          }
+        }
       }
 
       if (notify) {

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { Tenant } from "../../../../src/core/tenancy/entities/tenant.entity.js";
@@ -24,6 +24,16 @@ import type { ServiceTypeService } from "../../../../src/commerce/service-types/
 import type { BranchService } from "../../../../src/identity/branches/services/branch.service.js";
 import { makeUserRoleDao } from "../../../support/authz-deps.js";
 import { setupStaff } from "../../../support/staff.js";
+
+// Mock compartido de Stripe (tests/support/stripe-client.mock.ts): con
+// pool vmThreads el servicio queda ligado a la instancia del primer
+// archivo que lo importa; si cada archivo usa su propia factoría, los
+// demás afirman sobre otra instancia (0 llamadas) o sobre el cliente
+// real ("Falta STRIPE_PRIVATE_KEY") solo en la suite completa.
+vi.mock(
+  "../../../../src/app_platform/billing/clients/stripe.client.js",
+  async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
+);
 
 // Integración contra Postgres real: las reglas de roles corren en transacción.
 describe("reglas de roles de usuario", () => {

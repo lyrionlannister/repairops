@@ -103,7 +103,6 @@ export class CustomerController {
         localId,
         amount: dto.amount,
         method: dto.method,
-        createdByEmployeeId: dto.createdByEmployeeId,
       });
       res.status(201).json(payment);
     } catch (error) {

@@ -30,6 +30,8 @@ import type { WhatsappNotificationQueueService } from "../../../../src/messaging
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
+import { PriceListItem } from "../../../../src/commerce/price-list/entities/price-list-item.entity.js";
+import { PriceListDao } from "../../../../src/commerce/price-list/daos/price-list.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryService } from "../../../../src/commerce/inventory/services/inventory.service.js";
 import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
@@ -78,6 +80,8 @@ describe("QuoteService", () => {
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
       new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
       { notifyStatusChange: async () => {} } as unknown as WhatsappNotificationQueueService,
+      itemDao,
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
 
     service = new QuoteService(
@@ -87,6 +91,8 @@ describe("QuoteService", () => {
       localService,
       repairNoteService,
       serviceTypeDao,
+      itemDao,
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
     repairNoteServiceRef = repairNoteService;
   });

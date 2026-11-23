@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { User } from "../../../../src/identity/auth/entities/user.entity.js";
@@ -17,6 +17,16 @@ import {
 import { BillingService } from "../../../../src/app_platform/billing/services/billing.service.js";
 import { PlanLimitReachedError } from "../../../../src/app_platform/billing/errors/plan-limit-reached.error.js";
 import { setupStaff } from "../../../support/staff.js";
+
+// Mock compartido de Stripe (tests/support/stripe-client.mock.ts): con
+// pool vmThreads el servicio queda ligado a la instancia del primer
+// archivo que lo importa; si cada archivo usa su propia factoría, los
+// demás afirman sobre otra instancia (0 llamadas) o sobre el cliente
+// real ("Falta STRIPE_PRIVATE_KEY") solo en la suite completa.
+vi.mock(
+  "../../../../src/app_platform/billing/clients/stripe.client.js",
+  async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
+);
 
 // Integración contra Postgres real: el bloqueo de la suscripción solo se puede probar
 // con transacciones de verdad.
@@ -51,8 +61,7 @@ describe("PlanLimitService", () => {
       password: "x",
       role: "cashier",
     });
-  const addBranch = () =>
-    branchDao.create({ name: `Sucursal ${++seq}`, isActive: true });
+  const addBranch = () => branchDao.create({ name: `Sucursal ${++seq}`, isActive: true });
 
   beforeAll(async () => {
     await AppDataSource.initialize();

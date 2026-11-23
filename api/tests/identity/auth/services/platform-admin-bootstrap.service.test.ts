@@ -4,13 +4,24 @@ import type { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import type { AuthService } from "../../../../src/identity/auth/services/auth.service.js";
 import type { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { mockEntity } from "../../../support/mock-entity.js";
+// Mock compartido de Stripe (tests/support/stripe-client.mock.ts): con
+// pool vmThreads el servicio queda ligado a la instancia del primer
+// archivo que lo importa; si cada archivo usa su propia factoría, los
+// demás afirman sobre otra instancia (0 llamadas) o sobre el cliente
+// real ("Falta STRIPE_PRIVATE_KEY") solo en la suite completa.
+vi.mock(
+  "../../../../src/app_platform/billing/clients/stripe.client.js",
+  async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
+);
 
 function makeUserDao(existing: User | null = null) {
   return { findByEmailAcrossTenants: vi.fn().mockResolvedValue(existing) } as unknown as UserDao;
 }
 
 function makeAuthService() {
-  return { registerPlatformAdmin: vi.fn().mockResolvedValue(mockEntity<User>({ id: "1" })) } as unknown as AuthService;
+  return {
+    registerPlatformAdmin: vi.fn().mockResolvedValue(mockEntity<User>({ id: "1" })),
+  } as unknown as AuthService;
 }
 
 describe("PlatformAdminBootstrapService.ensureFromEnv", () => {
@@ -29,7 +40,9 @@ describe("PlatformAdminBootstrapService.ensureFromEnv", () => {
     const userDao = makeUserDao();
     const authService = makeAuthService();
 
-    await expect(new PlatformAdminBootstrapService(userDao, authService).ensureFromEnv()).resolves.toBe("skipped");
+    await expect(
+      new PlatformAdminBootstrapService(userDao, authService).ensureFromEnv(),
+    ).resolves.toBe("skipped");
     expect(userDao.findByEmailAcrossTenants).not.toHaveBeenCalled();
     expect(authService.registerPlatformAdmin).not.toHaveBeenCalled();
   });
@@ -37,7 +50,9 @@ describe("PlatformAdminBootstrapService.ensureFromEnv", () => {
   it("creates the platform admin when the email is free", async () => {
     const authService = makeAuthService();
 
-    await expect(new PlatformAdminBootstrapService(makeUserDao(), authService).ensureFromEnv()).resolves.toBe("created");
+    await expect(
+      new PlatformAdminBootstrapService(makeUserDao(), authService).ensureFromEnv(),
+    ).resolves.toBe("created");
     expect(authService.registerPlatformAdmin).toHaveBeenCalledWith(
       expect.objectContaining({ email: "root@example.com", password: "super-secret-123" }),
     );
@@ -47,9 +62,9 @@ describe("PlatformAdminBootstrapService.ensureFromEnv", () => {
     const authService = makeAuthService();
     const existing = mockEntity<User>({ email: "root@example.com", isPlatformAdmin: true });
 
-    await expect(new PlatformAdminBootstrapService(makeUserDao(existing), authService).ensureFromEnv()).resolves.toBe(
-      "exists",
-    );
+    await expect(
+      new PlatformAdminBootstrapService(makeUserDao(existing), authService).ensureFromEnv(),
+    ).resolves.toBe("exists");
     expect(authService.registerPlatformAdmin).not.toHaveBeenCalled();
   });
 
@@ -57,9 +72,9 @@ describe("PlatformAdminBootstrapService.ensureFromEnv", () => {
     const authService = makeAuthService();
     const existing = mockEntity<User>({ email: "root@example.com", isPlatformAdmin: false });
 
-    await expect(new PlatformAdminBootstrapService(makeUserDao(existing), authService).ensureFromEnv()).resolves.toBe(
-      "conflict",
-    );
+    await expect(
+      new PlatformAdminBootstrapService(makeUserDao(existing), authService).ensureFromEnv(),
+    ).resolves.toBe("conflict");
     expect(authService.registerPlatformAdmin).not.toHaveBeenCalled();
   });
 
@@ -67,9 +82,9 @@ describe("PlatformAdminBootstrapService.ensureFromEnv", () => {
     process.env.PLATFORM_ADMIN_PASSWORD = "short";
     const authService = makeAuthService();
 
-    await expect(new PlatformAdminBootstrapService(makeUserDao(), authService).ensureFromEnv()).rejects.toThrow(
-      "PLATFORM_ADMIN_* inválido",
-    );
+    await expect(
+      new PlatformAdminBootstrapService(makeUserDao(), authService).ensureFromEnv(),
+    ).rejects.toThrow("PLATFORM_ADMIN_* inválido");
     expect(authService.registerPlatformAdmin).not.toHaveBeenCalled();
   });
 });

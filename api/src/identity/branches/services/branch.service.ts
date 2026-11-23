@@ -3,6 +3,7 @@ import { BranchDao } from "../daos/branch.dao.js";
 import { Branch } from "../entities/branch.entity.js";
 import { getBranchScope } from "../../../core/tenancy/tenant-context.js";
 import { PlanLimitService } from "../../../app_platform/billing/services/plan-limit.service.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 type CreatePayload = Pick<Branch, "name" | "address" | "phone">;
 type UpdatePayload = Partial<CreatePayload>;
@@ -33,7 +34,7 @@ export class BranchService {
   async create(data: CreatePayload): Promise<Branch> {
     const name = data.name?.trim();
     if (!name) {
-      throw new Error("El nombre de la sucursal es obligatorio");
+      throw new BusinessError("El nombre de la sucursal es obligatorio");
     }
 
     return this.planLimitService.withCapacity("branches", () =>
@@ -52,7 +53,7 @@ export class BranchService {
     if (data.name !== undefined) {
       const name = data.name.trim();
       if (!name) {
-        throw new Error("El nombre de la sucursal es obligatorio");
+        throw new BusinessError("El nombre de la sucursal es obligatorio");
       }
       payload.name = name;
     }

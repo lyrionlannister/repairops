@@ -9,6 +9,7 @@ import { InventoryCount } from "../entities/inventory-count.entity.js";
 import { InventoryCountItem } from "../entities/inventory-count-item.entity.js";
 import { InventoryService } from "./inventory.service.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 export class InventoryCountCloseBlockedError extends Error {
   constructor(public readonly missingReasonItemIds: string[]) {
@@ -41,7 +42,7 @@ export class InventoryCountService {
   // ciego, mismo criterio que CashService.closeSession).
   async open(branchId: string, openedByEmployeeId?: string | null): Promise<InventoryCount> {
     const branch = await this.branchDao.findById(branchId);
-    if (!branch) throw new Error("Sucursal no encontrada");
+    if (!branch) throw new BusinessError("Sucursal no encontrada");
 
     const tenantId = getCurrentTenantId();
     const items = await this.itemDao.findByLocalId(branchId);
@@ -75,13 +76,17 @@ export class InventoryCountService {
     });
   }
 
-  async setCounted(countItemId: string, countedQuantity: number, reason?: string | null): Promise<InventoryCountItem> {
+  async setCounted(
+    countItemId: string,
+    countedQuantity: number,
+    reason?: string | null,
+  ): Promise<InventoryCountItem> {
     const countItem = await this.countItemDao.findById(countItemId);
-    if (!countItem) throw new Error("Línea de conteo no encontrada");
+    if (!countItem) throw new BusinessError("Línea de conteo no encontrada");
 
     const count = await this.countDao.findById(countItem.countId);
     if (!count || count.status !== "open") {
-      throw new Error("El conteo ya está cerrado");
+      throw new BusinessError("El conteo ya está cerrado");
     }
 
     const updated = await this.countItemDao.update(countItemId, {
@@ -97,8 +102,8 @@ export class InventoryCountService {
   // contar no generan movimiento.
   async close(countId: string, closedByEmployeeId?: string | null): Promise<InventoryCount> {
     const count = await this.countDao.findById(countId);
-    if (!count) throw new Error("Conteo no encontrado");
-    if (count.status !== "open") throw new Error("El conteo ya está cerrado");
+    if (!count) throw new BusinessError("Conteo no encontrado");
+    if (count.status !== "open") throw new BusinessError("El conteo ya está cerrado");
 
     const items = await this.countItemDao.findByCountId(countId);
     const toAdjust: Array<{ countItem: InventoryCountItem; delta: number }> = [];

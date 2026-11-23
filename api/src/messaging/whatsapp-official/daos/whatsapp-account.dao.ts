@@ -3,6 +3,7 @@ import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { WhatsappAccount } from "../entities/whatsapp-account.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 @singleton()
 export class WhatsappAccountDao extends TenantScopedDao<WhatsappAccount> {
@@ -21,13 +22,16 @@ export class WhatsappAccountDao extends TenantScopedDao<WhatsappAccount> {
   }
 
   async connectOwnAccount(
-    credentials: Pick<WhatsappAccount, "wabaId" | "phoneNumberId" | "accessToken" | "displayPhoneNumber">,
+    credentials: Pick<
+      WhatsappAccount,
+      "wabaId" | "phoneNumberId" | "accessToken" | "displayPhoneNumber"
+    >,
   ): Promise<WhatsappAccount> {
     // Reemplaza las credenciales de la fila existente del tenant -- nunca
     // inserta una segunda, tenant_id es unique (ver plan Fase 4, Checkpoint 6).
     const existing = await this.findByTenant();
     if (!existing) {
-      throw new Error("No existe cuenta de WhatsApp para este tenant todavía");
+      throw new BusinessError("No existe cuenta de WhatsApp para este tenant todavía");
     }
     const updated = await this.update(existing.id, {
       ...credentials,
@@ -35,7 +39,7 @@ export class WhatsappAccountDao extends TenantScopedDao<WhatsappAccount> {
       status: "connected",
     });
     if (!updated) {
-      throw new Error("No se pudo actualizar la cuenta de WhatsApp");
+      throw new BusinessError("No se pudo actualizar la cuenta de WhatsApp");
     }
     return updated;
   }
@@ -52,7 +56,7 @@ export class WhatsappAccountDao extends TenantScopedDao<WhatsappAccount> {
       // es unique) -- mismo criterio que LocalDao.findOrCreate.
       const existingAfterRace = await this.findByTenant();
       if (existingAfterRace) return existingAfterRace;
-      throw new Error("No se pudo crear ni encontrar WhatsappAccount para el tenant");
+      throw new BusinessError("No se pudo crear ni encontrar WhatsappAccount para el tenant");
     }
   }
 }

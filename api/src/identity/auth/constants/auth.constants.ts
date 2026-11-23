@@ -16,4 +16,18 @@ export const ACCESS_TOKEN_COOKIE_OPTIONS = {
   sameSite: "strict",
   path: "/",
 } as const;
-export const ACCESS_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+// El access token dura 15 minutos: si se roba, expira solo. La sesión se
+// renueva con el refresh token (POST /auth/refresh) sin pedir la contraseña.
+export const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
+
+// Refresh token: 7 días, con rotación en cada uso y revocación en servidor.
+// `path` restringe la cookie a las rutas de auth, así no viaja en cada
+// petición a la API.
+export const REFRESH_TOKEN_COOKIE = "refreshToken";
+export const REFRESH_TOKEN_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "strict",
+  path: "/api/v1/auth",
+} as const;
+export const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;

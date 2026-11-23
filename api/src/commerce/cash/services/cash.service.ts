@@ -19,6 +19,8 @@ import { roundCashAmount } from "../utils/round-cash-amount.js";
 import { buildCashSummary, buildVarianceStats, cashMethodTotals } from "../utils/cash-summary.js";
 import type { CashCutRow, CashSummary, CashVarianceStats } from "../types/cash-report.types.js";
 import type { CashMovementView } from "../types/cash-movement-view.types.js";
+import { BusinessError } from "../../../core/http/business-error.js";
+import { AuditLogService, AUDIT_ACTIONS } from "../../../core/audit/services/audit-log.service.js";
 
 export interface RegisterCashMovementInput {
   cashSessionId: string;
@@ -45,6 +47,7 @@ export class CashService {
     private localService: LocalService,
     private userDao: UserDao,
     private userRoleDao: UserRoleDao,
+    private auditLogService: AuditLogService,
   ) {}
 
   async getAllSessions(branchId?: string | null): Promise<CashSession[]> {
@@ -64,14 +67,21 @@ export class CashService {
   async openSession(localId: string, openingBalance: Decimal.Value): Promise<CashSession> {
     const existing = await this.sessionDao.findOpenByLocal(localId);
     if (existing) {
-      throw new Error("Ya hay una sesión de caja abierta para este local");
+      throw new BusinessError("Ya hay una sesión de caja abierta para este local");
     }
-    return this.sessionDao.create({
+    const session = await this.sessionDao.create({
       localId,
       openingBalance: toMoney(openingBalance),
       openedByEmployeeId: currentUserId(),
       status: "open",
     });
+    await this.auditLogService.recordForCurrentActor({
+      action: AUDIT_ACTIONS.CASH_SESSION_OPENED,
+      entity: "cash-session",
+      entityId: session.publicId,
+      details: { localId, openingBalance: toMoney(openingBalance) },
+    });
+    return session;
   }
 
   // Arqueo ciego: el esperado se calcula aqui, en el momento del cierre,
@@ -88,8 +98,8 @@ export class CashService {
     authorizedByEmployeeId?: string | null,
   ): Promise<CashSession> {
     const session = await this.sessionDao.findById(id);
-    if (!session) throw new Error("Sesión de caja no encontrada");
-    if (session.status === "closed") throw new Error("La sesión ya está cerrada");
+    if (!session) throw new BusinessError("Sesión de caja no encontrada");
+    if (session.status === "closed") throw new BusinessError("La sesión ya está cerrada");
 
     const cash = cashMethodTotals(await this.movementDao.findBySession(id)).efectivo;
     const expectedCashBalance = new Decimal(session.openingBalance)
@@ -98,14 +108,14 @@ export class CashService {
     const variance = new Decimal(closingBalance).minus(expectedCashBalance);
 
     if (!variance.isZero() && !reason) {
-      throw new Error("Hay una diferencia de caja: se requiere un motivo para cerrar");
+      throw new BusinessError("Hay una diferencia de caja: se requiere un motivo para cerrar");
     }
 
     const local = await this.localService.getConfig();
     const maxUnauthorized = new Decimal(local.maxUnauthorizedCashVariance);
     if (variance.abs().greaterThan(maxUnauthorized)) {
       if (!authorizedByEmployeeId) {
-        throw new Error(
+        throw new BusinessError(
           `La diferencia supera el límite sin autorizar (${maxUnauthorized.toFixed(2)}): requiere autorización`,
         );
       }
@@ -114,7 +124,9 @@ export class CashService {
         ? await this.userRoleDao.findRolesOf(authorizer.id)
         : [];
       if (!effectivePermissions(authorizerRoles, false).has("cash.authorize-variance")) {
-        throw new Error("Quien autoriza la diferencia debe poder autorizar diferencias de caja");
+        throw new BusinessError(
+          "Quien autoriza la diferencia debe poder autorizar diferencias de caja",
+        );
       }
     }
 
@@ -129,7 +141,31 @@ export class CashService {
       varianceAuthorizedByEmployeeId: authorizedByEmployeeId ?? null,
       closedByEmployeeId: currentUserId(),
     });
-    if (!updated) throw new Error("Sesión de caja no encontrada");
+    if (!updated) throw new BusinessError("Sesión de caja no encontrada");
+    await this.auditLogService.recordForCurrentActor({
+      action: AUDIT_ACTIONS.CASH_SESSION_CLOSED,
+      entity: "cash-session",
+      entityId: updated.publicId,
+      details: {
+        localId: session.localId,
+        cutNumber,
+        variance: toMoney(variance),
+        varianceReason: variance.isZero() ? null : (reason ?? null),
+        varianceAuthorizedByEmployeeId: authorizedByEmployeeId ?? null,
+      },
+    });
+    if (!variance.isZero() && authorizedByEmployeeId) {
+      await this.auditLogService.recordForCurrentActor({
+        action: AUDIT_ACTIONS.CASH_VARIANCE_AUTHORIZED,
+        entity: "cash-session",
+        entityId: updated.publicId,
+        details: {
+          localId: session.localId,
+          variance: toMoney(variance),
+          authorizedByEmployeeId,
+        },
+      });
+    }
     return updated;
   }
 
@@ -138,9 +174,9 @@ export class CashService {
   // para que el total de la sesion siempre cuadre con la suma registrada.
   async registerMovement(input: RegisterCashMovementInput): Promise<CashMovement> {
     const session = await this.sessionDao.findById(input.cashSessionId);
-    if (!session) throw new Error("Sesión de caja no encontrada");
+    if (!session) throw new BusinessError("Sesión de caja no encontrada");
     if (session.status !== "open") {
-      throw new Error("No se pueden registrar movimientos en una sesión cerrada");
+      throw new BusinessError("No se pueden registrar movimientos en una sesión cerrada");
     }
 
     let amount = toMoney(input.amount);

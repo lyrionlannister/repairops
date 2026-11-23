@@ -4,15 +4,21 @@ import { ImportStagingController } from "../controllers/import-staging.controlle
 import { authMiddleware } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { requirePermission } from "../../../identity/authz/require-permission.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
-import { requireInternalToken } from "../../../messaging/n8n/n8n-public.routes.js";
+import {
+  requireInternalToken,
+  requireTenantFromHeader,
+} from "../../../messaging/n8n/n8n-public.routes.js";
 
 export const createImportStagingRouter = (controller: ImportStagingController): Router => {
   const router = Router();
 
   // Callback de n8n: sin JWT, gateado por el mismo secreto compartido que /api/v1/n8n/*.
-  router.post("/callback", requireInternalToken, controller.callback);
+  // El tenant viene en el header X-Tenant-Public-Id (validado contra la base)
+  // y el tenantId del body solo se acepta si coincide con ese tenant -- nunca
+  // se confía en el body solo. Ver requireTenantFromHeader en n8n-public.routes.ts.
+  router.post("/callback", requireInternalToken, requireTenantFromHeader, controller.callback);
   // Progreso por bloque (ver Reportar progreso en el workflow n8n): mismo gate.
-  router.post("/progress", requireInternalToken, controller.progress);
+  router.post("/progress", requireInternalToken, requireTenantFromHeader, controller.progress);
 
   router.use(authMiddleware, tenantMiddleware);
   router.post(

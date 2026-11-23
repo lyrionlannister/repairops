@@ -56,6 +56,9 @@ import { StripeInvoicePayment } from "../../app_platform/billing/entities/stripe
 import { StripeWebhookEvent } from "../../app_platform/billing/entities/stripe-webhook-event.entity.js";
 import { WhatsappMessagePackage } from "../../messaging/whatsapp-official/entities/whatsapp-message-package.entity.js";
 import { WhatsappMetaPricing } from "../../messaging/whatsapp-official/entities/whatsapp-meta-pricing.entity.js";
+import { AuditLog } from "../../core/audit/entities/audit-log.entity.js";
+import { RefreshToken } from "../../identity/auth/entities/refresh-token.entity.js";
+import { TenantInvitation } from "../../identity/auth/entities/tenant-invitation.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
@@ -128,6 +131,9 @@ export const appDataSourceOptions: DataSourceOptions = {
     StripeWebhookEvent,
     WhatsappMessagePackage,
     WhatsappMetaPricing,
+    AuditLog,
+    RefreshToken,
+    TenantInvitation,
   ],
 };
 
