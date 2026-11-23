@@ -18,7 +18,7 @@ import {
 
 export const signInNavbarItems: NavItem[] = [
   {
-    name: "Dashboard",
+    name: "Inicio",
     icon: <LayoutDashboard className="w-5 h-5" />,
     path: "/home",
     permissions: ["dashboard.read"],
@@ -63,11 +63,30 @@ export const signInNavbarItems: NavItem[] = [
     group: "Ventas y stock",
     new: false,
     subItems: [
-      { name: "Venta Rápida", path: "/commerce/sales/new", permissions: ["sales.create"] },
-      { name: "Ventas", path: "/commerce/sales", permissions: ["sales.read"] },
-      { name: "Apartados", path: "/commerce/layaways", permissions: ["layaways.read"] },
-      { name: "Devoluciones", path: "/commerce/returns", permissions: ["sales.read"] },
-      { name: "Cotizaciones", path: "/commerce/quotes", permissions: ["quotes.read", "quotes.read.own"] },
+      {
+        name: "Venta Rápida",
+        path: "/commerce/sales/new",
+        permissions: ["sales.create"] },
+      {
+        name: "Ventas",
+        path: "/commerce/sales",
+        permissions: ["sales.read"]
+      },
+      {
+        name: "Apartados",
+        path: "/commerce/layaways",
+        permissions: ["layaways.read"]
+      },
+      {
+        name: "Devoluciones",
+        path: "/commerce/returns",
+        permissions: ["sales.read"]
+      },
+      {
+        name: "Cotizaciones",
+        path: "/commerce/quotes",
+        permissions: ["quotes.read", "quotes.read.own"],
+      },
     ],
   },
   {
@@ -76,10 +95,22 @@ export const signInNavbarItems: NavItem[] = [
     group: "Ventas y stock",
     new: false,
     subItems: [
-      { name: "Catálogo", path: "/commerce/inventory", permissions: ["inventory.read", "inventory.lookup"] },
+      {
+        name: "Catálogo",
+        path: "/commerce/inventory",
+        permissions: ["inventory.read", "inventory.lookup"],
+      },
       { name: "Lista de Precios", path: "/commerce/price-list", permissions: ["settings.manage"] },
-      { name: "Conteo de inventario", path: "/commerce/inventory/counts", permissions: ["inventory.count"] },
-      { name: "Transferencias", path: "/commerce/inventory/transfers", permissions: ["inventory.transfer"] },
+      {
+        name: "Conteo de inventario",
+        path: "/commerce/inventory/counts",
+        permissions: ["inventory.count"],
+      },
+      {
+        name: "Transferencias",
+        path: "/commerce/inventory/transfers",
+        permissions: ["inventory.transfer"],
+      },
     ],
   },
   {
@@ -88,7 +119,11 @@ export const signInNavbarItems: NavItem[] = [
     group: "Administración",
     new: false,
     subItems: [
-      { name: "Templates", path: "/messaging/message-templates", permissions: ["message-templates.manage"] },
+      {
+        name: "Templates",
+        path: "/messaging/message-templates",
+        permissions: ["message-templates.manage"],
+      },
       { name: "WhatsApp", path: "/messaging/whatsapp", permissions: ["whatsapp.read"] },
     ],
   },

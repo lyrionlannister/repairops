@@ -8,11 +8,13 @@ export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ rece
     <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Actividad reciente</h3>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Últimos movimientos de caja</p>
     {recentActivity.length === 0 ? (
-      <p className="mt-4 text-sm text-gray-400 dark:text-gray-500">
-        Sin actividad registrada todavía.
-      </p>
+      <div className="mt-4 flex min-h-64 flex-1 items-center justify-center">
+        <p className="text-sm text-gray-400 dark:text-gray-500">
+          Sin actividad registrada todavía.
+        </p>
+      </div>
     ) : (
-      <div className="custom-scrollbar mt-4 max-h-80 divide-y divide-gray-100 overflow-y-auto pr-1 dark:divide-gray-800">
+      <div className="custom-scrollbar mt-4 min-h-64 flex-1 divide-y divide-gray-100 overflow-y-auto pr-1 dark:divide-gray-800">
         {recentActivity.map((item) => (
           <div
             key={`${item.kind}-${item.id}`}

@@ -38,7 +38,7 @@ export const DashboardHome: React.FC = () => {
       title="Panel inicial"
       description="Métricas operativas del negocio y la atención."
     >
-      <section className="grid grid-cols-1 gap-4 md:gap-6 xl:grid-cols-3">
+      <section className="grid grid-cols-1 items-start gap-4 md:gap-6 xl:grid-cols-3">
         {showMoney && (
           <div className="flex min-w-0 flex-col gap-4 md:gap-6 xl:col-span-2">
             <DashboardRevenueCards
@@ -52,6 +52,13 @@ export const DashboardHome: React.FC = () => {
               dailyBusinessSeries={dailyBusinessSeries}
               dailyBusinessCategories={dailyBusinessCategories}
               currencyFormatter={currencyFormatter}
+            />
+            <DashboardConversationStats
+              lastInteraction={lastInteraction}
+              todayCount={todayCount}
+              weekCount={weekCount}
+              totalYear={totalYear}
+              year={year}
             />
           </div>
         )}
@@ -73,13 +80,15 @@ export const DashboardHome: React.FC = () => {
         </div>
       </section>
 
-      <DashboardConversationStats
-        lastInteraction={lastInteraction}
-        todayCount={todayCount}
-        weekCount={weekCount}
-        totalYear={totalYear}
-        year={year}
-      />
+      {!showMoney && (
+        <DashboardConversationStats
+          lastInteraction={lastInteraction}
+          todayCount={todayCount}
+          weekCount={weekCount}
+          totalYear={totalYear}
+          year={year}
+        />
+      )}
 
       <DashboardSecondaryCharts
         daily={daily}
