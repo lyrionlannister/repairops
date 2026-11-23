@@ -21,7 +21,6 @@ export function toConversationDto(
     sessionId: row.sessionId,
     phone,
     contactName: contactNameByPhone.get(phone),
-    lastId: row.lastId,
     messageCount: row.messageCount,
     lastContent: row.lastContent ?? "",
     lastType: row.lastDirection ? toClientType(row.lastDirection) : "human",
@@ -29,8 +28,7 @@ export function toConversationDto(
 }
 
 export function toMessageDto(entry: {
-  id: string | number;
-  publicId?: string;
+  publicId: string;
   contactPhone: string;
   body: string;
   direction: ChatDirection;
@@ -42,13 +40,13 @@ export function toMessageDto(entry: {
   locationLng?: string | null;
 }): MessageDto {
   return {
-    id: Number(entry.id),
+    id: entry.publicId,
     sessionId: entry.contactPhone,
     content: entry.body,
     type: toClientType(entry.direction),
     fromMe: entry.direction === "outbound",
     messageType: entry.messageType ?? "text",
-    ...(entry.mediaKey && entry.publicId ? { mediaId: entry.publicId, mediaMime: entry.mediaMime ?? undefined, mediaSize: entry.mediaSize ?? undefined } : {}),
+    ...(entry.mediaKey ? { mediaId: entry.publicId, mediaMime: entry.mediaMime ?? undefined, mediaSize: entry.mediaSize ?? undefined } : {}),
     ...(entry.locationLat && entry.locationLng ? { location: { lat: entry.locationLat, lng: entry.locationLng } } : {}),
   };
 }

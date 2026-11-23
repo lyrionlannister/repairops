@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { describeDevices } from "../utils/devices";
 import { useRepairNotes } from "./use-repair-notes";
 import type { RepairNoteStatus } from "../types/repair-notes";
 import type { RepairNoteHistoryEntry } from "../types/repair-note-customer-history";
@@ -21,8 +22,7 @@ export function useRepairNoteCustomerHistory(customerId: string | null, excludeI
       .filter((n) => n.customerId === customerId && n.id !== excludeId)
       .map((n) => ({
         id: n.id,
-        brand: n.brand,
-        model: n.model,
+        devicesLabel: describeDevices(n.devices),
         status: n.status as RepairNoteStatus,
         totalValue: Number(n.totalValue),
         receivedAt: n.receivedAt,

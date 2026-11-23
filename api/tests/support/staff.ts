@@ -12,19 +12,30 @@ export async function setupStaff(
   ds: Queryable,
   tenantId: string,
   roles: UserRole[],
-): Promise<{ branchId: string; tokens: Record<string, string>; userIds: Record<string, string> }> {
+): Promise<{
+  branchId: string;
+  branchPublicId: string;
+  tokens: Record<string, string>;
+  userIds: Record<string, string>;
+  userPublicIds: Record<string, string>;
+}> {
   await ds.query(`INSERT INTO tenants (id, nombre) VALUES ($1, 'test-fixture') ON CONFLICT (id) DO NOTHING`, [tenantId]);
-  const [{ id: branchId }] = await ds.query(
-    `INSERT INTO branches (tenant_id, nombre) VALUES ($1, 'Sucursal de prueba') RETURNING id::text AS id`,
+  const [{ publicId: tenantPublicId }] = await ds.query(`SELECT public_id::text AS "publicId" FROM tenants WHERE id = $1`, [
+    tenantId,
+  ]);
+  const [{ id: branchId, publicId: branchPublicId }] = await ds.query(
+    `INSERT INTO branches (tenant_id, nombre) VALUES ($1, 'Sucursal de prueba')
+     RETURNING id::text AS id, public_id::text AS "publicId"`,
     [tenantId],
   );
 
   const tokens: Record<string, string> = {};
   const userIds: Record<string, string> = {};
+  const userPublicIds: Record<string, string> = {};
   for (const role of roles) {
-    const [{ id }] = await ds.query(
+    const [{ id, publicId }] = await ds.query(
       `INSERT INTO usuarios (tenant_id, nombre, apellido, email, contrasena)
-       VALUES ($1, 'Test', $2, $3, 'x') RETURNING id::text AS id`,
+       VALUES ($1, 'Test', $2, $3, 'x') RETURNING id::text AS id, public_id::text AS "publicId"`,
       [tenantId, role, `${role}.${tenantId}@test.local`],
     );
     await ds.query(`INSERT INTO user_roles (tenant_id, user_id, role) VALUES ($1, $2, $3)`, [tenantId, id, role]);
@@ -36,7 +47,8 @@ export async function setupStaff(
       ]);
     }
     userIds[role] = id;
-    tokens[role] = jwt.sign({ id, email: `${role}@x.com`, tenantId }, requireJwtSecret());
+    userPublicIds[role] = publicId;
+    tokens[role] = jwt.sign({ id: publicId, email: `${role}@x.com`, tenantId: tenantPublicId }, requireJwtSecret());
   }
-  return { branchId, tokens, userIds };
+  return { branchId, branchPublicId, tokens, userIds, userPublicIds };
 }

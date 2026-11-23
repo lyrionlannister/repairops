@@ -20,6 +20,7 @@ import { RevenueAttributionService } from "../../../../src/commerce/revenue-attr
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
+import { RepairNoteDevice } from "../../../../src/commerce/repair-notes/entities/repair-note-device.entity.js";
 import { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/daos/repair-note-service-type.dao.js";
 import { ReportsService } from "../../../../src/reporting/reports/services/reports.service.js";
 import { ReportsDao } from "../../../../src/reporting/reports/daos/reports.dao.js";
@@ -101,9 +102,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 1,
           customerName: "Cliente",
-          brand: "Samsung",
-          model: "A1",
-          reportedFailure: "Pantalla rota",
           totalValue: 500,
           receivedAt: today(),
           receivedTime: "12:00",
@@ -180,9 +178,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 1,
           customerName: "Dentro",
-          brand: "A",
-          model: "B",
-          reportedFailure: "x",
           totalValue: 200,
           receivedAt: "2026-01-10",
           receivedTime: "12:00",
@@ -195,9 +190,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 2,
           customerName: "Fuera",
-          brand: "A",
-          model: "B",
-          reportedFailure: "x",
           totalValue: 9999,
           receivedAt: "2026-02-15",
           receivedTime: "12:00",
@@ -311,9 +303,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 1,
           customerName: "A",
-          brand: "A",
-          model: "A",
-          reportedFailure: "x",
           totalValue: 200,
           receivedAt: today(),
           receivedTime: "12:00",
@@ -322,17 +311,24 @@ describe("ReportsService", () => {
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
+      const addDevice = (repairNoteId: string, position: number) =>
+        AppDataSource.getRepository(RepairNoteDevice).save({
+          tenantId: typeTenant,
+          repairNoteId,
+          position,
+          brand: "Marca",
+          model: "Modelo",
+          reportedFailure: "Falla",
+        });
+      const deviceA = await addDevice(noteA.id, 0);
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteA.id, serviceTypeId: repairType.id }),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteA.id, repairNoteDeviceId: deviceA.id, serviceTypeId: repairType.id }),
       );
 
       const noteB = await runWithTenant(typeTenant, () =>
         repairNoteDao.create({
           controlNumber: 2,
           customerName: "B",
-          brand: "A",
-          model: "A",
-          reportedFailure: "x",
           totalValue: 300,
           receivedAt: today(),
           receivedTime: "12:00",
@@ -341,11 +337,16 @@ describe("ReportsService", () => {
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
+      const deviceB1 = await addDevice(noteB.id, 0);
+      const deviceB2 = await addDevice(noteB.id, 1);
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: repairType.id }),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, repairNoteDeviceId: deviceB1.id, serviceTypeId: repairType.id }),
       );
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: maintenanceType.id }),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, repairNoteDeviceId: deviceB2.id, serviceTypeId: repairType.id }),
+      );
+      await runWithTenant(typeTenant, () =>
+        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, repairNoteDeviceId: deviceB2.id, serviceTypeId: maintenanceType.id }),
       );
 
       const report = await runWithTenant(typeTenant, () => reportsService.getRepairNotesByType(WIDE_PERIOD));

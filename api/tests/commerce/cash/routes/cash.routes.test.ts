@@ -36,7 +36,7 @@ describe("cash routes: permisos por rol (modulo Caja)", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    ({ branchId: localId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
+    ({ branchPublicId: localId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const cashService = new CashService(
@@ -84,7 +84,7 @@ describe("cash routes: permisos por rol (modulo Caja)", () => {
     const movementRes = await request(app)
       .post(`/cash/sessions/${sessionId}/movements`)
       .set("Authorization", `Bearer ${cashierToken}`)
-      .send({ type: "income", method: "efectivo", amount: 50, createdByEmployeeId: "1" });
+      .send({ type: "income", method: "efectivo", amount: 50 });
     expect(movementRes.status).toBe(201);
 
     const closeRes = await request(app)

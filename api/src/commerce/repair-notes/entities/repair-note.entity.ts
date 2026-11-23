@@ -43,15 +43,6 @@ export class RepairNote extends BaseEntity {
   @Column({ type: "varchar", length: 50, nullable: true, name: "numero_contacto" })
   contactNumber?: string;
 
-  @Column({ type: "varchar", length: 255, nullable: false, name: "marca" })
-  brand!: string;
-
-  @Column({ type: "varchar", length: 255, nullable: false, name: "modelo" })
-  model!: string;
-
-  @Column({ type: "text", nullable: false, name: "falla_reportada" })
-  reportedFailure!: string;
-
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0, name: "valor_total" })
   totalValue!: string;
 
@@ -84,9 +75,6 @@ export class RepairNote extends BaseEntity {
 
   @Column({ type: "bigint", nullable: true, name: "id_empleado_asignado" })
   assignedEmployeeId?: string | null;
-
-  @Column({ type: "boolean", default: false, name: "dispositivo_apagado" })
-  deviceOff!: boolean;
 
   @Column({ type: "boolean", default: false, name: "tiene_garantia" })
   hasWarranty!: boolean;

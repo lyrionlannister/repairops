@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { Search } from "lucide-react";
-import type { RepairNoteStatus } from "../types/repair-notes";
+import type { RepairNoteStatusFilter } from "../types/repair-notes";
 import type { RepairNotesFilterBarProps } from "../props/repair-notes-filter-bar-props";
 
 export const RepairNotesFilterBar: FC<RepairNotesFilterBarProps> = ({
@@ -22,10 +22,11 @@ export const RepairNotesFilterBar: FC<RepairNotesFilterBarProps> = ({
     </div>
     <select
       value={statusFilter}
-      onChange={(e) => onStatusFilterChange(e.target.value as RepairNoteStatus | "all")}
+      onChange={(e) => onStatusFilterChange(e.target.value as RepairNoteStatusFilter)}
       className="rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-950/60 dark:text-white/90"
     >
       <option value="all">Todos los estados</option>
+      <option value="open">Abiertas</option>
       <option value="received">Recibido</option>
       <option value="in_repair">En Reparación</option>
       <option value="done">Listo</option>

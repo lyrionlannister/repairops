@@ -6,6 +6,12 @@ export interface StagingRow {
 
 export type StagingStatus = "processing" | "ready" | "error";
 
+export interface StagingProgress {
+  chunksTotal: number;
+  chunksDone: number;
+  itemsFound: number;
+}
+
 export interface StagingRecord {
   importId: string;
   tenantId: string;
@@ -14,6 +20,7 @@ export interface StagingRecord {
   rows: StagingRow[];
   error?: string;
   createdAt: string;
+  progress?: StagingProgress;
 }
 
 /** Subconjunto de ioredis que la service necesita -- permite mockear en tests sin un Redis real. */

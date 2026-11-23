@@ -6,6 +6,7 @@ import { Spanish } from "flatpickr/dist/l10n/es.js";
 import "flatpickr/dist/flatpickr.css";
 import { Calendar } from "lucide-react";
 import type { DatePickerProps } from "../../../props/date-picker-props";
+import { clearNativeValidity, handleNativeInvalid } from "../../../utils/native-validation";
 
 export const DatePicker: FC<DatePickerProps> = ({
   id,
@@ -54,6 +55,8 @@ export const DatePicker: FC<DatePickerProps> = ({
         placeholder={placeholder}
         disabled={disabled}
         required={required}
+        onInvalid={handleNativeInvalid}
+        onInput={clearNativeValidity}
         className={`h-11 w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 shadow-theme-xs transition-colors duration-200 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-500 disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500 ${className}`}
       />
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
@@ -62,4 +65,3 @@ export const DatePicker: FC<DatePickerProps> = ({
     </div>
   );
 };
-

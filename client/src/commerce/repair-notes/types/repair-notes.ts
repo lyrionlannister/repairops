@@ -1,3 +1,11 @@
+export interface RepairNoteDevice {
+  brand: string;
+  model: string;
+  reportedFailure: string;
+  deviceOff: boolean;
+  serviceTypeIds: string[];
+}
+
 export interface RepairNoteRecord {
   id: string;
   controlNumber: number;
@@ -6,9 +14,7 @@ export interface RepairNoteRecord {
   whatsappQrUrl?: string | null;
   customerName: string;
   contactNumber?: string;
-  brand: string;
-  model: string;
-  reportedFailure: string;
+  devices: RepairNoteDevice[];
   totalValue: number;
   status: RepairNoteStatus;
   requiresAdvance: boolean;
@@ -21,7 +27,6 @@ export interface RepairNoteRecord {
   assignedEmployeeId?: string | null;
   localId?: string | null;
   customerId?: string | null;
-  deviceOff: boolean;
   hasWarranty: boolean;
   hasExtendedWarranty: boolean;
   extendedWarrantyDays?: number;
@@ -32,9 +37,7 @@ export interface RepairNoteRecord {
 export interface RepairNoteFormData {
   customerName: string;
   contactNumber: string;
-  brand: string;
-  model: string;
-  reportedFailure: string;
+  devices: RepairNoteDevice[];
   totalValue: string;
   status: RepairNoteStatus;
   requiresAdvance: boolean;
@@ -46,8 +49,6 @@ export interface RepairNoteFormData {
   assignedEmployeeId: string;
   localId: string;
   customerId: string;
-  serviceTypeIds: string[];
-  deviceOff: boolean;
   hasWarranty: boolean;
   hasExtendedWarranty: boolean;
   extendedWarrantyDays: string;
@@ -69,3 +70,5 @@ export interface RepairNoteItemRecord extends RepairNoteItemInput {
 }
 
 export type RepairNoteStatus = "received" | "in_repair" | "done" | "delivered" | "cancelled";
+
+export type RepairNoteStatusFilter = RepairNoteStatus | "all" | "open";

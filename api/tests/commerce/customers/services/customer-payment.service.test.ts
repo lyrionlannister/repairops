@@ -76,7 +76,7 @@ describe("CustomerPaymentService", () => {
     ).rejects.toThrow("no puede ser mayor a lo que debe");
   });
 
-  it("registering a payment lowers the balance and logs a cash movement 'Abono cliente #N'", async () => {
+  it("registering a payment lowers the balance and logs a cash movement 'Abono cliente <nombre>'", async () => {
     const localId = "42";
     await AppDataSource.getRepository(CashSession).save({ tenantId, localId, openingBalance: "0", status: "open" });
     const customer = await customerWithDebt(500, 1000);
@@ -97,7 +97,7 @@ describe("CustomerPaymentService", () => {
 
     const session = await AppDataSource.getRepository(CashSession).findOneBy({ tenantId, localId });
     const movements = await AppDataSource.getRepository(CashMovement).find({ where: { tenantId, cashSessionId: session!.id } });
-    const abonoMovement = movements.find((m) => m.note === `Abono cliente #${customer.id}`);
+    const abonoMovement = movements.find((m) => m.note === `Abono cliente ${customer.name}`);
     expect(abonoMovement).toBeTruthy();
     expect(Number(abonoMovement!.amount)).toBe(200);
     expect(abonoMovement!.relatedEntityType).toBe("customer_payment");

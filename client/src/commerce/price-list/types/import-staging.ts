@@ -4,6 +4,12 @@ export interface StagingRow {
   price: number;
 }
 
+export interface StagingProgress {
+  chunksTotal: number;
+  chunksDone: number;
+  itemsFound: number;
+}
+
 export interface StagingRecord {
   importId: string;
   tenantId: string;
@@ -12,6 +18,7 @@ export interface StagingRecord {
   rows: StagingRow[];
   error?: string;
   createdAt: string;
+  progress?: StagingProgress;
 }
 
 export type StagingStatus = "processing" | "ready" | "error";

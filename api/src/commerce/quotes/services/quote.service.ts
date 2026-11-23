@@ -27,11 +27,11 @@ export interface QuoteItemInput {
 // el contexto (nunca lo manda el caller), igual criterio que InventoryService.
 type CreatePayload = Omit<
   Quote,
-  "id" | "publicId" | "tenantId" | "totalValue" | "status" | "kind" | "createdAt" | "updatedAt"
+  "id" | "publicId" | "tenantId" | "quoteNumber" | "totalValue" | "status" | "kind" | "createdAt" | "updatedAt"
 > &
   Partial<Pick<Quote, "kind">>;
 type UpdatePayload = Partial<
-  Omit<Quote, "id" | "publicId" | "tenantId" | "totalValue" | "createdAt" | "updatedAt">
+  Omit<Quote, "id" | "publicId" | "tenantId" | "quoteNumber" | "totalValue" | "createdAt" | "updatedAt">
 >;
 
 const sumItems = (items: QuoteItemInput[]): string =>
@@ -95,12 +95,15 @@ export class QuoteService {
       throw new ForbiddenError("Solo puedes cotizar sobre tus notas asignadas");
     }
 
+    const quoteNumber = await this.localService.consumeFolio("quote");
+
     return AppDataSource.transaction(async (manager) => {
       const customerId = await resolveOrCreateCustomer(manager, tenantId, data);
       const quote = manager.create(Quote, {
         ...data,
         customerId,
         tenantId,
+        quoteNumber,
         totalValue,
         status: "pending",
       });
@@ -233,14 +236,18 @@ export class QuoteService {
         customerId: quote.customerId ?? undefined,
         customerName: quote.customerName,
         contactNumber: quote.contactNumber ?? undefined,
-        brand: quote.brand as string,
-        model: quote.model as string,
-        reportedFailure: quote.reportedFailure as string,
+        devices: [
+          {
+            brand: quote.brand as string,
+            model: quote.model as string,
+            reportedFailure: quote.reportedFailure as string,
+            serviceTypeIds: serviceTypeLinks.map((l) => l.serviceTypeId),
+          },
+        ],
         receivedAt,
         totalValue: quote.totalValue,
       },
       noteItems,
-      serviceTypeLinks.map((l) => l.serviceTypeId),
     );
   }
 

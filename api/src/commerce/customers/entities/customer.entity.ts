@@ -15,8 +15,8 @@ export class Customer extends BaseEntity {
   @Column({ type: "varchar", length: 255, nullable: false, name: "nombre" })
   name!: string;
 
-  @Column({ type: "varchar", length: 50, nullable: false, name: "telefono" })
-  phone!: string;
+  @Column({ type: "varchar", length: 50, nullable: true, name: "telefono" })
+  phone?: string | null;
 
   @Column({ type: "varchar", length: 255, nullable: true, name: "email" })
   email?: string | null;

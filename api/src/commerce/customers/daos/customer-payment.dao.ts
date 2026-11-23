@@ -6,11 +6,16 @@ import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 
 @singleton()
 export class CustomerPaymentDao extends TenantScopedDao<CustomerPayment> {
+
   constructor(@inject(repositoryToken(CustomerPayment)) repository: Repository<CustomerPayment>) {
     super(repository);
   }
 
   async findByCustomerId(customerId: string): Promise<CustomerPayment[]> {
-    return this.scoped().andWhere("entity.customerId = :customerId", { customerId }).orderBy("entity.createdAt", "DESC").getMany();
+    return this.scoped()
+      .andWhere("entity.customerId = :customerId", { customerId })
+      .orderBy("entity.createdAt", "DESC")
+      .getMany();
   }
+  
 }

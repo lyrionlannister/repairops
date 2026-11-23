@@ -24,7 +24,7 @@ export function useNotifications() {
   }, [fetchNotifications]);
 
   const markRead = useCallback(
-    async (id: number): Promise<void> => {
+    async (id: string): Promise<void> => {
       try {
         await apiClient(`/notifications/${id}/read`, { method: "PATCH" });
         setNotifications((prev) =>

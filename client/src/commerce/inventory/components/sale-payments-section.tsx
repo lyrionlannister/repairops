@@ -4,6 +4,7 @@ import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
+import { DatePicker } from "@ui/date-picker/date-picker";
 import { PAYMENT_LABELS, formatMoney } from "../utils/format";
 import type { PaymentMethod } from "../types/sales";
 import type { SalePaymentsSectionProps } from "../props/sale-payments-section-props";
@@ -14,6 +15,7 @@ export const SalePaymentsSection: FC<SalePaymentsSectionProps> = ({
   paymentsSum,
   paymentsMatchTotal,
   hasCreditoWithoutCustomer,
+  hasCreditoWithoutDueDate,
   total,
   onPaymentChange,
   onAddPayment,
@@ -57,6 +59,15 @@ export const SalePaymentsSection: FC<SalePaymentsSectionProps> = ({
             </div>
           </>
         )}
+        {payment.method === "credito" && (
+          <div className="w-full sm:w-48">
+            <DatePicker
+              placeholder="Fecha límite de pago"
+              value={payment.dueDate}
+              onChange={(dueDate) => onPaymentChange(index, { dueDate })}
+            />
+          </div>
+        )}
         {payments.length > 1 && (
           <button
             type="button"
@@ -79,6 +90,9 @@ export const SalePaymentsSection: FC<SalePaymentsSectionProps> = ({
     )}
     {hasCreditoWithoutCustomer && (
       <p className="text-sm text-red-500">Una venta a crédito requiere elegir un cliente registrado.</p>
+    )}
+    {hasCreditoWithoutDueDate && (
+      <p className="text-sm text-red-500">Indica la fecha límite en la que el cliente debe pagar el crédito.</p>
     )}
   </div>
 );

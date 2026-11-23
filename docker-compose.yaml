@@ -9,7 +9,7 @@ services:
     ports:
       - "${POSTGRES_PORT:?POSTGRES_PORT is required}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres18_data:/var/lib/postgresql
       - ./infra/database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -141,6 +141,7 @@ services:
 
 volumes:
   postgres_data:
+  postgres18_data:
   redis_data:
   automation_data:
   

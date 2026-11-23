@@ -47,7 +47,7 @@ export const CustomerSelect: FC<CustomerSelectProps> = ({
 
   const q = debouncedQuery.trim().toLowerCase();
   const filtered = q
-    ? customers.filter((c) => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)).slice(0, 8)
+    ? customers.filter((c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q)).slice(0, 8)
     : customers.slice(0, 8);
 
   const handlePick = (c: Customer) => {

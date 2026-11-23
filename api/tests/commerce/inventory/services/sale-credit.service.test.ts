@@ -91,7 +91,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
 
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
-        { localId: "1", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
+        { localId: "1", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100, dueDate: "2099-12-31" }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
         ["owner"],
       ),
     );
@@ -107,7 +107,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
     await expect(
       runWithTenant(tenantId, () =>
         saleService.create(
-          { localId: "2", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
+          { localId: "2", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100, dueDate: "2099-12-31" }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
           ["owner"],
         ),
       ),
@@ -125,7 +125,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
     await expect(
       runWithTenant(tenantId, () =>
         saleService.create(
-          { localId: "3", cashSessionId: session.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
+          { localId: "3", cashSessionId: session.id, payments: [{ method: "credito", amount: 100, dueDate: "2099-12-31" }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
           ["owner"],
         ),
       ),
@@ -140,7 +140,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
 
     await runWithTenant(tenantId, () =>
       saleService.create(
-        { localId: "4", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
+        { localId: "4", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100, dueDate: "2099-12-31" }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
         ["owner"],
       ),
     );
@@ -148,10 +148,26 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
     await expect(
       runWithTenant(tenantId, () =>
         saleService.create(
-          { localId: "4", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
+          { localId: "4", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100, dueDate: "2099-12-31" }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
           ["owner"],
         ),
       ),
     ).rejects.toThrow("supera el límite disponible");
+  });
+
+  it("rejects a credit sale without a due date", async () => {
+    const session = await openSessionHelper("5");
+    const item = await makeItem("CRED-NODATE", "5");
+    await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 5 }));
+    const customer = await runWithTenant(tenantId, () => customerDao.create({ name: "Cliente Sin Plazo", phone: "555", creditLimit: 500 }));
+
+    await expect(
+      runWithTenant(tenantId, () =>
+        saleService.create(
+          { localId: "5", cashSessionId: session.id, customerId: customer.id, payments: [{ method: "credito", amount: 100 }], items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 100 }] },
+          ["owner"],
+        ),
+      ),
+    ).rejects.toThrow("fecha límite");
   });
 });

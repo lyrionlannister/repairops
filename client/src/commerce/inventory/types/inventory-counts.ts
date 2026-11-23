@@ -8,6 +8,7 @@ export interface InventoryCountItemRecord {
 
 export interface InventoryCountRecord {
   id: string;
+  countNumber: number;
   branchId: string;
   status: InventoryCountStatus;
   openedAt: string;

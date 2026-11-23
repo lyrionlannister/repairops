@@ -7,4 +7,5 @@ export type SalePaymentLine = {
   amount: string;
   providerReference: string;
   providerAuthorizationCode: string;
+  dueDate: string;
 };

@@ -14,6 +14,7 @@ import { SalePayment, SalePaymentMethod } from "../../payments/entities/sale-pay
 import { SalePaymentDao } from "../../payments/daos/sale-payment.dao.js";
 import { CashMovement } from "../../cash/entities/cash-movement.entity.js";
 import { CustomerDao } from "../../customers/daos/customer.dao.js";
+import { resolveCreditDueDate } from "../../customers/utils/credit-due-date.js";
 import { calculateSaleTotals } from "../../pricing/calculate-sale-totals.js";
 import { toMoney } from "../../../core/common/utils/money.js";
 import type { UserRole } from "../../../identity/auth/entities/user.entity.js";
@@ -32,6 +33,7 @@ export interface PaymentInput {
   amount: Decimal.Value;
   providerReference?: string | null;
   providerAuthorizationCode?: string | null;
+  dueDate?: string | null;
 }
 
 export interface CreateSalePayload {
@@ -137,6 +139,8 @@ export class SaleService {
     if (!paymentsSum.equals(new Decimal(totals.total))) {
       throw new Error("La suma de los pagos no coincide con el total de la venta");
     }
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: local.timeZone });
+    const dueDates = data.payments.map((p) => resolveCreditDueDate(p.method, p.dueDate, today));
 
     // Sexta precondicion (Fase 5, Rama Cliente): credito exige cliente y
     // respeta su limite. El saldo se recalcula aqui mismo, nunca se confia
@@ -179,7 +183,7 @@ export class SaleService {
       });
       const savedSale = await manager.save(sale);
 
-      for (const paymentInput of data.payments) {
+      for (const [paymentIndex, paymentInput] of data.payments.entries()) {
         const payment = manager.create(SalePayment, {
           tenantId,
           saleId: savedSale.id,
@@ -187,6 +191,7 @@ export class SaleService {
           amount: toMoney(paymentInput.amount),
           providerReference: paymentInput.providerReference ?? null,
           providerAuthorizationCode: paymentInput.providerAuthorizationCode ?? null,
+          dueDate: dueDates[paymentIndex] ?? null,
         });
         await manager.save(payment);
 

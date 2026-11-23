@@ -41,6 +41,7 @@ import { CustomersPage } from "../commerce/customers/pages/customers-page";
 import { ReportsPage } from "../reporting/reports/pages/reports-page";
 import { CustomerFormPage } from "../commerce/customers/pages/customer-form-page";
 import { CustomerDetailPage } from "../commerce/customers/pages/customer-detail-page";
+import { CustomerDevicesPage } from "../commerce/customers/pages/customer-devices-page";
 
 export const publicRoutes = [
   {
@@ -165,6 +166,10 @@ export const protectedRoutes = [
   {
     path: "/commerce/customers/:id",
     element: <CustomerDetailPage />,
+  },
+  {
+    path: "/commerce/customers/:id/devices",
+    element: <CustomerDevicesPage />,
   },
   {
     path: "/commerce/customers/:id/edit",

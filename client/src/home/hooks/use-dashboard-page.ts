@@ -92,6 +92,7 @@ export const useDashboardPage = () => {
     monthlyBusinessSeries,
     todayDelta: summary?.money?.todayTrend ?? null,
     monthDelta: summary?.money?.monthTrend ?? null,
+    credit: summary?.money?.credit ?? null,
     recentActivity,
   };
 };

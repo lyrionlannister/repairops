@@ -3,9 +3,11 @@ import { QuoteController } from "../controllers/quote.controller.js";
 import { authMiddleware } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { requirePermission } from "../../../identity/authz/require-permission.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
+import { publicIdParam } from "../../../core/http/public-id/public-id-request.js";
 
 export const createQuoteRouter = (controller: QuoteController): Router => {
   const router = Router();
+  router.param("id", publicIdParam("quotes"));
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", requirePermission("quotes.read", "quotes.read.own"), controller.getAll);
   router.get("/:id", requirePermission("quotes.read", "quotes.read.own"), controller.getById);

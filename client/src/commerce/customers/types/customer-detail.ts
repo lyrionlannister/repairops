@@ -3,6 +3,7 @@ export interface CustomerDebtRow {
   kind: "sale" | "repair_note";
   reference: number;
   date: string;
+  dueDate: string | null;
   amount: string;
 }
 

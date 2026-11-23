@@ -38,7 +38,7 @@ export const CashCutReceipt: FC<CashCutReceiptProps> = ({ detail, local, widthMm
       local={local}
       widthMm={widthMm}
       documentLabel="CORTE DE CAJA"
-      folio={`Nº ${cut.id}`}
+      folio={`Nº ${cut.cutNumber}`}
       dateLine={`${formatTicketDate(localDate(cut.closedAt))} · ${cut.closedAt ? formatTime(cut.closedAt) : ""}`}
     >
       <TicketDashed margin={wide ? "12px 0 8px" : "10px 0 7px"} />

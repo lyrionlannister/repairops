@@ -71,7 +71,7 @@ export class CustomerPaymentService {
           amount: toMoney(amount),
           relatedEntityType: "customer_payment",
           relatedEntityId: savedPayment.id,
-          note: `Abono cliente #${customer.id}`,
+          note: `Abono cliente ${customer.name}`,
           createdByEmployeeId: input.createdByEmployeeId ?? null,
         }),
       );

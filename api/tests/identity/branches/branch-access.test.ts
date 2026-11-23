@@ -56,9 +56,6 @@ describe("acceso por sucursal", () => {
           localId,
           controlNumber: index + 1,
           customerName: `Cliente ${index}`,
-          brand: "A",
-          model: "B",
-          reportedFailure: "x",
           receivedAt: "2026-01-01",
           receivedTime: "12:00",
           publicRef: generatePublicRef(),
@@ -89,7 +86,7 @@ describe("acceso por sucursal", () => {
     });
 
     it("el personal no escribe en otra sucursal, y sin sucursal usa su principal", async () => {
-      const base = { controlNumber: 99, customerName: "X", brand: "A", model: "B", reportedFailure: "x", receivedAt: "2026-01-01", receivedTime: "12:00", publicRef: generatePublicRef() };
+      const base = { controlNumber: 99, customerName: "X", receivedAt: "2026-01-01", receivedTime: "12:00", publicRef: generatePublicRef() };
       await expect(runWithTenant(tenantId, () => dao.create({ ...base, localId: branchB }), scopeA)).rejects.toBeInstanceOf(BranchAccessError);
       const created = await runWithTenant(tenantId, () => dao.create({ ...base, controlNumber: 100, publicRef: generatePublicRef() }), scopeA);
       expect(String(created.localId)).toBe(branchA);
@@ -160,12 +157,26 @@ describe("acceso por sucursal", () => {
   });
 
   describe("tenantMiddleware", () => {
+    // El JWT lleva public_ids de usuario y tenant; tenantMiddleware completa los ids internos.
+    async function jwtUser(id: string, tenant = tenantId) {
+      const [{ publicId }] = await AppDataSource.query<Array<{ publicId: string }>>(
+        `SELECT public_id::text AS "publicId" FROM usuarios WHERE id = $1`,
+        [id],
+      );
+      const [tenantRow] = await AppDataSource.query<Array<{ publicId: string }>>(
+        `SELECT public_id::text AS "publicId" FROM tenants WHERE id = $1`,
+        [tenant],
+      );
+      const tenantPublicId = tenantRow?.publicId ?? "00000000-0000-7000-8000-000000000000";
+      return { id: "", publicId, email: "x", tenantId: "", tenantPublicId };
+    }
+
     async function scopeFor(role: "owner" | "cashier", id: string) {
       let captured: BranchScope | null | undefined;
       const next = vi.fn(() => {
         captured = getBranchScope();
       });
-      await tenantMiddleware({ user: { id, email: "x", tenantId } } as never, {} as never, next);
+      await tenantMiddleware({ user: await jwtUser(id), body: {}, query: {} } as never, fakeRes() as never, next);
       return { captured, next };
     }
 
@@ -187,16 +198,23 @@ describe("acceso por sucursal", () => {
 
     it("toma roles y flag de plataforma de la base, no del JWT", async () => {
       await AppDataSource.query(`UPDATE usuarios SET es_platform_admin = true WHERE id = $1`, [cashierA]);
-      const user: { id: string; email: string; tenantId: string; roles?: string[]; isPlatformAdmin?: boolean } = {
-        id: cashierA,
-        email: "x",
-        tenantId,
+      const user: {
+        id: string;
+        publicId: string;
+        email: string;
+        tenantId: string;
+        tenantPublicId: string;
+        roles?: string[];
+        isPlatformAdmin?: boolean;
+      } = {
+        ...(await jwtUser(cashierA)),
         roles: ["owner"],
         isPlatformAdmin: false,
       };
       const next = vi.fn();
-      await tenantMiddleware({ user } as never, fakeRes() as never, next);
+      await tenantMiddleware({ user, body: {}, query: {} } as never, fakeRes() as never, next);
       expect(next).toHaveBeenCalledOnce();
+      expect(user.id).toBe(cashierA);
       expect(user.roles).toEqual(["cashier"]);
       expect(user.isPlatformAdmin).toBe(true);
       await AppDataSource.query(`UPDATE usuarios SET es_platform_admin = false WHERE id = $1`, [cashierA]);
@@ -206,7 +224,7 @@ describe("acceso por sucursal", () => {
       await AppDataSource.query(`UPDATE usuarios SET activo = false WHERE id = $1`, [cashierA]);
       const res = fakeRes();
       const next = vi.fn();
-      await tenantMiddleware({ user: { id: cashierA, email: "x", tenantId } } as never, res as never, next);
+      await tenantMiddleware({ user: await jwtUser(cashierA) } as never, res as never, next);
       expect(next).not.toHaveBeenCalled();
       expect(res.statusCode).toBe(401);
       await AppDataSource.query(`UPDATE usuarios SET activo = true WHERE id = $1`, [cashierA]);
@@ -215,7 +233,7 @@ describe("acceso por sucursal", () => {
     it("un usuario de otro tenant recibe 401", async () => {
       const res = fakeRes();
       const next = vi.fn();
-      await tenantMiddleware({ user: { id: cashierA, email: "x", tenantId: otherTenantId } } as never, res as never, next);
+      await tenantMiddleware({ user: await jwtUser(cashierA, otherTenantId) } as never, res as never, next);
       expect(next).not.toHaveBeenCalled();
       expect(res.statusCode).toBe(401);
     });

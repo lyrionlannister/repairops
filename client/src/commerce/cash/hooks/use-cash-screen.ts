@@ -10,14 +10,16 @@ import { useCashInsights } from "./use-cash-insights";
 import { useCashCuts } from "./use-cash-cuts";
 import type { CashMovementType } from "../types/cash";
 
-export const useCashScreen = () => {
+// Sin branchId usa la sucursal de trabajo; con uno, la caja de esa sucursal (vista del owner).
+export const useCashScreen = (branchIdOverride?: string) => {
   const { local, fetchLocal } = useLocal();
   const { branches, workingBranchId } = useBranch();
+  const branchId = branchIdOverride ?? workingBranchId;
   const currentUser = useCurrentUser();
   const cash = useCash();
-  const page = useCashPage({ local, branchId: workingBranchId, fetchLocal, ...cash });
+  const page = useCashPage({ local, branchId, fetchLocal, ...cash });
   const insights = useCashInsights(cash.session, cash.movements, cash.summary);
-  const cuts = useCashCuts(workingBranchId, cash.closedSession?.id ?? null);
+  const cuts = useCashCuts(branchId, cash.closedSession?.id ?? null);
   const navigate = useNavigate();
   const pagination = usePaginatedList(insights.rows);
 
@@ -40,7 +42,7 @@ export const useCashScreen = () => {
     saving: cash.saving,
     justClosed: Boolean(cash.closedSession),
     dismissClosed: cash.clearClosedSession,
-    branchName: branches.find((branch) => branch.id === workingBranchId)?.name ?? "—",
+    branchName: branches.find((branch) => branch.id === branchId)?.name ?? "—",
     openerName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : "—",
     suggestedBalance,
     insights,

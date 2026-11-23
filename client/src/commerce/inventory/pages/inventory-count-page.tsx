@@ -83,7 +83,7 @@ export const InventoryCountPage: React.FC = () => {
         <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium text-gray-800 dark:text-white/90">
-              Conteo #{count.id} {!isOpen && <Lock className="ml-1 inline size-4 text-gray-400" />}
+              Conteo #{count.countNumber} {!isOpen && <Lock className="ml-1 inline size-4 text-gray-400" />}
             </h2>
             <span className="text-sm text-gray-500 dark:text-gray-400">{isOpen ? "Abierto" : "Cerrado"}</span>
           </div>

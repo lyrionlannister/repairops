@@ -45,9 +45,8 @@ export const CustomerProfileCard: FC<CustomerProfileCardProps> = ({
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label className="text-gray-500">Teléfono</Label>
+            <Label className="text-gray-500">Teléfono (opcional)</Label>
             <Input
-              required
               value={draft.phone}
               onChange={(e) => onDraftChange({ ...draft, phone: e.target.value })}
               disabled={saving}
@@ -79,7 +78,7 @@ export const CustomerProfileCard: FC<CustomerProfileCardProps> = ({
           <dt className="flex size-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
             <Phone className="size-4" />
           </dt>
-          <dd className="font-medium text-gray-800 dark:text-white/90">{customer.phone}</dd>
+          <dd className="font-medium text-gray-800 dark:text-white/90">{customer.phone || "—"}</dd>
         </div>
         <div className="flex items-center gap-3">
           <dt className="flex size-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">

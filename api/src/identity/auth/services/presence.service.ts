@@ -31,6 +31,14 @@ export class PresenceService {
       .exec();
   }
 
+  async listOnline(): Promise<Set<string>> {
+    try {
+      return new Set(await redisClient.zrangebyscore(this.key(), Date.now() - ONLINE_WINDOW_MS, "+inf"));
+    } catch {
+      return new Set();
+    }
+  }
+
   async countOnline(): Promise<number> {
     try {
       return await redisClient.zcount(this.key(), Date.now() - ONLINE_WINDOW_MS, "+inf");

@@ -45,7 +45,9 @@ export const WhatsappOfficialPage = () => {
         title="Plantillas de la empresa"
         description={
           page.catalogReadOnly
-            ? "Plantillas del sistema que usa la cuenta piloto compartida. Conecta tu propia cuenta para administrarlas."
+            ? page.canConnect
+              ? "Plantillas del sistema que usa la cuenta piloto compartida. Conecta tu propia cuenta para administrarlas."
+              : "Plantillas del sistema que usa la cuenta piloto compartida de la plataforma."
             : "Plantillas de tu taller. Se sincronizan con tu cuenta de WhatsApp Business."
         }
         readOnly={page.catalogReadOnly}

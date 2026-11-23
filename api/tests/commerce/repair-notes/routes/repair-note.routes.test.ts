@@ -14,6 +14,8 @@ import { RepairNote } from "../../../../src/commerce/repair-notes/entities/repai
 import { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
 import { RepairNotePayment } from "../../../../src/commerce/repair-notes/entities/repair-note-payment.entity.js";
 import { RepairNotePaymentDao } from "../../../../src/commerce/repair-notes/daos/repair-note-payment.dao.js";
+import { RepairNoteDeviceDao } from "../../../../src/commerce/repair-notes/daos/repair-note-device.dao.js";
+import { RepairNoteDevice } from "../../../../src/commerce/repair-notes/entities/repair-note-device.entity.js";
 import { RepairNoteItem } from "../../../../src/commerce/repair-notes/entities/repair-note-item.entity.js";
 import { RepairNoteItemDao } from "../../../../src/commerce/repair-notes/daos/repair-note-item.dao.js";
 import { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
@@ -22,6 +24,7 @@ import { ServiceType } from "../../../../src/commerce/service-types/entities/ser
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteService } from "../../../../src/commerce/repair-notes/services/repair-note.service.js";
 import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
+import type { WhatsappNotificationQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-notification-queue.service.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
@@ -53,11 +56,16 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
   let branchId = "";
   let tokens: Record<string, string> = {};
   let userIds: Record<string, string> = {};
+  // Por la API solo viajan public_ids de usuario (JWT, body y respuestas).
   const tokenFor = (role: UserRole) => tokens[role];
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    ({ branchId, tokens, userIds } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
+    ({
+      branchPublicId: branchId,
+      tokens,
+      userPublicIds: userIds,
+    } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
     await ensureFixtureTenant(AppDataSource, tenantId);
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
@@ -80,6 +88,8 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       { getDisplayPhoneNumber: async () => null } as unknown as WhatsappAccountService,
       inventoryReservationService,
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
+      new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
+      { notifyStatusChange: async () => {} } as unknown as WhatsappNotificationQueueService,
     );
     const authService = new AuthService(
       new UserDao(AppDataSource.getRepository(User)),
@@ -106,9 +116,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     localId: branchId,
     customerName: "Cliente de prueba",
     contactNumber: "5551234567",
-    brand: "Marca",
-    model: "Modelo",
-    reportedFailure: "Falla de prueba",
+    devices: [{ brand: "Marca", model: "Modelo", reportedFailure: "Falla de prueba" }],
     receivedAt: "2026-01-01",
   });
 
@@ -165,12 +173,21 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     expect(foreign.status).toBe(201);
     const foreignId = foreign.body.id;
 
-    const list = await request(app).get("/repair-notes").set("Authorization", `Bearer ${technicianToken}`);
+    const list = await request(app)
+      .get("/repair-notes")
+      .set("Authorization", `Bearer ${technicianToken}`);
     expect(list.status).toBe(200);
     expect(list.body.map((note: { id: string }) => note.id)).not.toContain(foreignId);
-    expect(list.body.every((note: { assignedEmployeeId: string }) => String(note.assignedEmployeeId) === userIds["technician"])).toBe(true);
+    expect(
+      list.body.every(
+        (note: { assignedEmployeeId: string }) =>
+          String(note.assignedEmployeeId) === userIds["technician"],
+      ),
+    ).toBe(true);
 
-    const byId = await request(app).get(`/repair-notes/${foreignId}`).set("Authorization", `Bearer ${technicianToken}`);
+    const byId = await request(app)
+      .get(`/repair-notes/${foreignId}`)
+      .set("Authorization", `Bearer ${technicianToken}`);
     expect(byId.status).toBe(404);
 
     const update = await request(app)
@@ -179,7 +196,9 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       .send({ technicianNotes: "No es mía" });
     expect(update.status).toBe(404);
 
-    const items = await request(app).get(`/repair-notes/${foreignId}/items`).set("Authorization", `Bearer ${technicianToken}`);
+    const items = await request(app)
+      .get(`/repair-notes/${foreignId}/items`)
+      .set("Authorization", `Bearer ${technicianToken}`);
     expect(items.body).toEqual([]);
 
     const deliver = await request(app)

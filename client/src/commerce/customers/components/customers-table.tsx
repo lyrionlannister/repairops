@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Pencil, Plus, Trash2, Smartphone, Users, Eye } from "lucide-react";
 import { Button } from "@ui/button/button";
 import { DataTable } from "@ui/table/data-table";
+import { CustomerCreditStatus } from "./customer-credit-status";
 import type { CustomersTableProps } from "../props/customers-table-props";
 
 export const CustomersTable: FC<CustomersTableProps> = ({
@@ -17,7 +18,6 @@ export const CustomersTable: FC<CustomersTableProps> = ({
   canEdit,
   canDelete,
   onPageSizeChange,
-  onOpenHistory,
   onRequestDelete,
 }) => {
   const navigate = useNavigate();
@@ -57,6 +57,7 @@ export const CustomersTable: FC<CustomersTableProps> = ({
           <col />
           <col />
           <col />
+          <col />
           <col className="w-36" />
         </colgroup>
       }
@@ -73,6 +74,9 @@ export const CustomersTable: FC<CustomersTableProps> = ({
           </th>
           <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
             Límite crédito
+          </th>
+          <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+            Saldo
           </th>
           <th className="px-4 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
             Acciones
@@ -94,12 +98,17 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                 {customer.name}
               </button>
             </td>
-            <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{customer.phone}</td>
+            <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
+              {customer.phone || "—"}
+            </td>
             <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
               {customer.email || "—"}
             </td>
             <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
               {customer.creditLimit > 0 ? `$${customer.creditLimit.toLocaleString("es-MX")}` : "—"}
+            </td>
+            <td className="px-4 py-4">
+              <CustomerCreditStatus customer={customer} />
             </td>
             <td className="px-4 py-4 text-right">
               <div className="flex items-center justify-end gap-1">
@@ -111,7 +120,7 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                   <Eye className="size-4" />
                 </button>
                 <button
-                  onClick={() => onOpenHistory(customer)}
+                  onClick={() => navigate(`/commerce/customers/${customer.id}/devices`)}
                   className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/30 dark:hover:text-brand-400"
                   title="Historial de equipos"
                 >

@@ -50,6 +50,7 @@ export const QuickSalePage: React.FC = () => {
     paymentsSum,
     paymentsMatchTotal,
     hasCreditoWithoutCustomer,
+    hasCreditoWithoutDueDate,
     validLines,
     updateLine,
     handleItemChange,
@@ -85,7 +86,7 @@ export const QuickSalePage: React.FC = () => {
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!workingBranchId || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer)
+    if (!workingBranchId || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer || hasCreditoWithoutDueDate)
       return;
     if (validLines.length === 0) return;
 
@@ -102,6 +103,7 @@ export const QuickSalePage: React.FC = () => {
         amount: Number(p.amount) || 0,
         providerReference: p.providerReference || undefined,
         providerAuthorizationCode: p.providerAuthorizationCode || undefined,
+        dueDate: p.method === "credito" ? p.dueDate : undefined,
       })),
       items: validLines.map((l) => ({
         lineType: "inventory_item" as const,
@@ -217,6 +219,7 @@ export const QuickSalePage: React.FC = () => {
             paymentsSum={paymentsSum}
             paymentsMatchTotal={paymentsMatchTotal}
             hasCreditoWithoutCustomer={hasCreditoWithoutCustomer}
+            hasCreditoWithoutDueDate={hasCreditoWithoutDueDate}
             total={total}
             onPaymentChange={updatePayment}
             onAddPayment={addPayment}
@@ -227,7 +230,7 @@ export const QuickSalePage: React.FC = () => {
             type="submit"
             variant="primary"
             className="w-full"
-            disabled={creating || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer}
+            disabled={creating || !cashSession || !paymentsMatchTotal || hasCreditoWithoutCustomer || hasCreditoWithoutDueDate}
           >
             <ShoppingCart className="mr-1.5 size-4" />
             {creating ? "Registrando..." : "Registrar venta"}

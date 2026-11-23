@@ -14,6 +14,7 @@ import { RepairNoteCustomerHistoryPanel } from "../components/repair-note-custom
 import { RepairNoteForm, REPAIR_NOTE_FORM_STEPS } from "../components/repair-note-form";
 import { useFormSteps } from "@common/hooks/use-form-steps";
 import { noteToForm } from "../utils/note-to-form";
+import { EMPTY_DEVICE, removeDeviceAt, updateDeviceAt } from "../utils/devices";
 import type { AdvancePaymentInput, RepairNoteFormData, RepairNoteStatus } from "../types/repair-notes";
 export const RepairNoteFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,7 +29,6 @@ export const RepairNoteFormPage: React.FC = () => {
     fetchNotes,
     fetchNote,
     fetchNoteItems,
-    fetchNoteServiceTypeIds,
     createNote,
     updateNote,
     clearError,
@@ -37,7 +37,6 @@ export const RepairNoteFormPage: React.FC = () => {
   const { workingBranchId } = useBranch();
 
   const [form, setForm] = useState<RepairNoteFormData>(INITIAL_FORM);
-  const [initialServiceTypeIds, setInitialServiceTypeIds] = useState<string[]>([]);
   const [advanceMethod, setAdvanceMethod] = useState<AdvancePaymentInput["method"]>("efectivo");
   const [advanceEmployeeId, setAdvanceEmployeeId] = useState("");
 
@@ -72,15 +71,14 @@ export const RepairNoteFormPage: React.FC = () => {
     if (isEdit && id) {
       fetchNote(id);
       fetchNoteItems(id).then(loadFromRecords);
-      fetchNoteServiceTypeIds(id).then(setInitialServiceTypeIds);
     }
-  }, [isEdit, id, fetchNote, fetchNoteItems, fetchNoteServiceTypeIds]);
+  }, [isEdit, id, fetchNote, fetchNoteItems]);
 
   useEffect(() => {
     if (note && isEdit) {
-      setForm({ ...noteToForm(note), serviceTypeIds: initialServiceTypeIds });
+      setForm(noteToForm(note));
     }
-  }, [note, isEdit, initialServiceTypeIds]);
+  }, [note, isEdit]);
 
   const set = (field: keyof RepairNoteFormData, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -147,18 +145,16 @@ export const RepairNoteFormPage: React.FC = () => {
               ...prev,
               customerId,
               customerName: customer ? customer.name : prev.customerName,
-              contactNumber: customer ? customer.phone : prev.contactNumber,
+              contactNumber: customer ? (customer.phone ?? "") : prev.contactNumber,
             }))
           }
           onCustomerNameChange={(value) => set("customerName", value)}
           onContactNumberChange={(value) => set("contactNumber", value)}
-          onBrandChange={(value) => set("brand", value)}
-          onModelChange={(value) => set("model", value)}
-          onReportedFailureChange={(value) => set("reportedFailure", value)}
-          onServiceTypeIdsChange={(serviceTypeIds) =>
-            setForm((prev) => ({ ...prev, serviceTypeIds }))
+          onDeviceChange={(index, patch) =>
+            setForm((prev) => ({ ...prev, devices: updateDeviceAt(prev.devices, index, patch) }))
           }
-          onDeviceOffChange={(value) => set("deviceOff", value)}
+          onAddDevice={() => setForm((prev) => ({ ...prev, devices: [...prev.devices, { ...EMPTY_DEVICE }] }))}
+          onRemoveDevice={(index) => setForm((prev) => ({ ...prev, devices: removeDeviceAt(prev.devices, index) }))}
           onReceivedAtChange={(value) => set("receivedAt", value)}
           onDeliveryDateChange={(value) => set("deliveryDate", value)}
           onAssignedEmployeeIdChange={(value) => set("assignedEmployeeId", value)}

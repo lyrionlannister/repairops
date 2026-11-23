@@ -11,6 +11,8 @@ export interface ButtonProps {
     | "danger"
     | "warning";
   type?: "button" | "submit" | "reset";
+  // id del <form> que envía este botón cuando vive fuera de él.
+  form?: string;
   startIcon?: ReactNode;
   endIcon?: ReactNode;
   onClick?: () => void;

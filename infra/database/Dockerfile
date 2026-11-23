@@ -1,3 +1,3 @@
-FROM docker.io/library/postgres:17-alpine
+FROM docker.io/library/postgres:18-alpine
 
 EXPOSE 5432

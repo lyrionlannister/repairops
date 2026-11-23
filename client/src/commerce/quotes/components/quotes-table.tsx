@@ -64,6 +64,7 @@ export const QuotesTable: FC<QuotesTableProps> = ({
       className="min-w-175"
       colgroup={
         <colgroup>
+          <col className="w-20" />
           <col />
           <col className="w-24" />
           <col className="w-32" />
@@ -74,7 +75,7 @@ export const QuotesTable: FC<QuotesTableProps> = ({
       }
       header={
         <TableRow className="border-b border-gray-200 dark:border-gray-800">
-          {["Cliente", "Tipo", "Estado", "Válida hasta", "Total", "Acciones"].map((h) => (
+          {["Folio", "Cliente", "Tipo", "Estado", "Válida hasta", "Total", "Acciones"].map((h) => (
             <TableCell
               key={h}
               isHeader
@@ -94,6 +95,9 @@ export const QuotesTable: FC<QuotesTableProps> = ({
               key={quote.id}
               className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50 dark:border-gray-800/50 dark:hover:bg-white/2"
             >
+              <TableCell className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
+                #{quote.quoteNumber}
+              </TableCell>
               <TableCell className="px-4 py-4">
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
                   {quote.customerName}

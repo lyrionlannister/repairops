@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
-import { useApiClient } from "@common/hooks/use-api-client";
+import { useApiClient, API_BASE_URL } from "@common/hooks/use-api-client";
 import type { StagingRow, StagingRecord } from "../types/import-staging";
+
+type StagingEvent = StagingRecord | { status: "error"; error: string };
 
 export const useImportStaging = () => {
   const { apiClient } = useApiClient();
@@ -38,17 +40,26 @@ export const useImportStaging = () => {
     [apiClient],
   );
 
-  const fetchById = useCallback(
-    async (importId: string): Promise<StagingRecord | null> => {
-      try {
-        const res = await apiClient(`/import-staging/${importId}`);
-        if (!res.ok) return null;
-        return (await res.json()) as StagingRecord;
-      } catch {
-        return null;
-      }
+  // Reemplaza el polling: un solo stream que manda el estado cada vez que
+  // cambia (incluido el progreso por bloque) y se cierra solo al llegar a un
+  // estado terminal. Devuelve la función de limpieza -- el caller DEBE
+  // invocarla apenas reciba un estado terminal (ready/error), si no el
+  // navegador reintenta la conexión sola y vuelve a abrir el stream.
+  const subscribeToImport = useCallback(
+    (importId: string, onUpdate: (event: StagingEvent) => void): (() => void) => {
+      const source = new EventSource(`${API_BASE_URL}/import-staging/${importId}/events`, {
+        withCredentials: true,
+      });
+      source.onmessage = (event) => {
+        onUpdate(JSON.parse(event.data) as StagingEvent);
+      };
+      source.onerror = () => {
+        source.close();
+        onUpdate({ status: "error", error: "Se perdió la conexión con el servidor" });
+      };
+      return () => source.close();
     },
-    [apiClient],
+    [],
   );
 
   const updateRows = useCallback(
@@ -83,7 +94,9 @@ export const useImportStaging = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al confirmar la importación");
+          throw new Error(
+            (body as { error?: string }).error ?? "Error al confirmar la importación",
+          );
         }
         return (await res.json()) as { imported: number };
       } catch (err) {
@@ -110,5 +123,15 @@ export const useImportStaging = () => {
     [apiClient],
   );
 
-  return { uploading, saving, error, upload, fetchById, updateRows, commit, discard, clearError: () => setError(null) };
+  return {
+    uploading,
+    saving,
+    error,
+    upload,
+    subscribeToImport,
+    updateRows,
+    commit,
+    discard,
+    clearError: () => setError(null),
+  };
 };

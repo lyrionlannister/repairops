@@ -3,10 +3,12 @@ import { RepairNoteController } from "../controllers/repair-note.controller.js";
 import { authMiddleware } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { requirePermission } from "../../../identity/authz/require-permission.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
+import { publicIdParam } from "../../../core/http/public-id/public-id-request.js";
 
 
 export const createRepairNoteRouter = (controller: RepairNoteController): Router => {
   const router = Router();
+  router.param("id", publicIdParam("repair_notes"));
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", requirePermission("repair-notes.read", "repair-notes.read.own"), controller.getAll);
   router.get("/by-control-number/:controlNumber", requirePermission("repair-notes.read", "repair-notes.read.own"), controller.getByControlNumber);

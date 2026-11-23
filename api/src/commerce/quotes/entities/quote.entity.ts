@@ -1,4 +1,4 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, Check } from "typeorm";
+import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, Check, Unique } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 import { Branch } from "../../../identity/branches/entities/branch.entity.js";
@@ -11,6 +11,7 @@ export type QuoteKind = "product" | "repair";
 @Entity("quotes")
 @Index("IDX_quotes_tenant", ["tenantId"])
 @Index("IDX_quotes_local", ["localId"])
+@Unique("UQ_quotes_tenant_numero", ["tenantId", "quoteNumber"])
 @Check("CHK_quotes_tipo", `"tipo" IN ('product', 'repair')`)
 @Check("CHK_quotes_reparacion_datos", `"tipo" = 'product' OR ("marca" IS NOT NULL AND "modelo" IS NOT NULL AND "falla_reportada" IS NOT NULL)`)
 export class Quote extends BaseEntity {
@@ -28,6 +29,9 @@ export class Quote extends BaseEntity {
   @ManyToOne(() => Branch, { onDelete: "NO ACTION" })
   @JoinColumn({ name: "local_id", foreignKeyConstraintName: "FK_quotes_local" })
   branch?: Branch;
+
+  @Column({ type: "int", nullable: false, name: "numero_cotizacion" })
+  quoteNumber!: number;
 
   @Column({ type: "varchar", length: 20, default: "product", name: "tipo" })
   kind!: QuoteKind;

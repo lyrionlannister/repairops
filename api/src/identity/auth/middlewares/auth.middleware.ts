@@ -7,13 +7,16 @@ import { ACCESS_TOKEN_COOKIE } from "../constants/auth.constants.js";
 
 const { verify } = jwt;
 
-// El JWT solo prueba identidad (id, email, tenantId). roles, permisos y el flag de
-// plataforma los completa tenantMiddleware desde la base en cada petición.
+// El JWT solo prueba identidad (public_id del usuario y del tenant, email): ningun id
+// interno viaja en el token. id, tenantId, roles, permisos y el flag de plataforma los completa
+// tenantMiddleware desde la base en cada petición.
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
+    publicId: string;
     email: string;
     tenantId: string;
+    tenantPublicId: string;
     roles?: UserRole[];
     permissions?: ReadonlySet<Permission>;
     isPlatformAdmin?: boolean;
@@ -51,7 +54,7 @@ export const authMiddleware = (
   try {
     const decoded = verify(token, requireJwtSecret());
     const { id, email, tenantId } = decoded as { id: string; email: string; tenantId: string };
-    req.user = { id, email, tenantId };
+    req.user = { id: "", publicId: id, email, tenantId: "", tenantPublicId: tenantId };
     next();
   } catch (error) {
     if (error instanceof Error && error.name === "TokenExpiredError") {

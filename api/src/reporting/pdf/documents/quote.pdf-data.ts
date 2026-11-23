@@ -7,7 +7,7 @@ import { moneyString } from "../format-money.js";
 import { paletteOf, toPdfLocal, type PdfLocal } from "./pdf-local.js";
 
 export interface QuotePdfData {
-  id: string;
+  folio: string;
   kind: QuoteKind;
   customerName: string;
   contactNumber: string | null;
@@ -31,7 +31,7 @@ export function toQuotePdfData(
   options: { serviceTypeNames?: string[] } = {},
 ): QuotePdfData {
   return {
-    id: quote.id,
+    folio: `Nº ${quote.quoteNumber}`,
     kind: quote.kind,
     customerName: quote.customerName,
     contactNumber: quote.contactNumber ?? null,

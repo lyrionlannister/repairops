@@ -157,7 +157,7 @@ export const QuoteFormPage: React.FC = () => {
               ...prev,
               customerId,
               customerName: customer ? customer.name : prev.customerName,
-              contactNumber: customer ? customer.phone : prev.contactNumber,
+              contactNumber: customer ? (customer.phone ?? "") : prev.contactNumber,
             }))
           }
           onCustomerNameChange={(value) => set("customerName", value)}

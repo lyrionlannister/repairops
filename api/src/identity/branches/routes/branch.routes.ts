@@ -3,9 +3,11 @@ import { BranchController } from "../controllers/branch.controller.js";
 import { authMiddleware } from "../../auth/middlewares/auth.middleware.js";
 import { requirePermission } from "../../../identity/authz/require-permission.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
+import { publicIdParam } from "../../../core/http/public-id/public-id-request.js";
 
 export const createBranchRouter = (controller: BranchController): Router => {
   const router = Router();
+  router.param("id", publicIdParam("branches"));
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", requirePermission("branches.read"), controller.getAll);
   router.get("/:id", requirePermission("branches.read"), controller.getById);

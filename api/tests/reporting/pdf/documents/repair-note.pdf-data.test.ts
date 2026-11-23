@@ -1,17 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { toRepairNotePdfData } from "../../../../src/reporting/pdf/documents/repair-note.pdf-data.js";
-import type { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
 import type { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 
-function makeNote(overrides: Partial<RepairNote> = {}): RepairNote {
+type NoteWithDevices = Parameters<typeof toRepairNotePdfData>[0];
+
+function makeNote(overrides: Partial<NoteWithDevices> = {}): NoteWithDevices {
   return {
     controlNumber: 42,
     publicRef: "7F3K2A9B",
     customerName: "Juan Pérez",
     contactNumber: "5551234567",
-    brand: "Samsung",
-    model: "A15",
-    reportedFailure: "Pantalla rota",
+    devices: [{ brand: "Samsung", model: "A15", reportedFailure: "Pantalla rota", deviceOff: false, serviceTypeIds: [] }],
     totalValue: "500.00",
     requiresAdvance: true,
     advanceValue: "100.00",
@@ -24,12 +23,11 @@ function makeNote(overrides: Partial<RepairNote> = {}): RepairNote {
     serviceDiagnostic: false,
     serviceRevision: false,
     serviceWaterDamage: false,
-    deviceOff: false,
     hasWarranty: true,
     hasExtendedWarranty: false,
     extendedWarrantyDays: undefined,
     ...overrides,
-  } as unknown as RepairNote;
+  } as unknown as NoteWithDevices;
 }
 
 describe("toRepairNotePdfData", () => {

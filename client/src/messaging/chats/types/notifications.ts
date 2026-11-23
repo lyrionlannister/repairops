@@ -1,5 +1,5 @@
 export interface AppNotification {
-  id: number;
+  id: string;
   type: "conversation_transferred" | "new_human_message";
   sessionId: string;
   phone: string;

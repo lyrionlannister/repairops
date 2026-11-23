@@ -10,8 +10,13 @@ function ownCustomersOnly(): string | null {
   return !can("customers.read") && can("customers.read.own") ? currentUserId() : null;
 }
 
-const OWN_NOTES_CUSTOMERS = `SELECT rn.customer_id FROM repair_notes rn
-  WHERE rn.tenant_id = :tenantId AND rn.id_empleado_asignado = :ownCustomersUserId AND rn.customer_id IS NOT NULL`;
+const OWN_NOTES_CUSTOMERS = `
+SELECT 
+  rn.customer_id
+FROM repair_notes rn
+WHERE rn.tenant_id = :tenantId 
+AND rn.id_empleado_asignado = :ownCustomersUserId 
+AND rn.customer_id IS NOT NULL`;
 
 @singleton()
 export class CustomerDao extends TenantScopedDao<Customer> {
@@ -22,7 +27,8 @@ export class CustomerDao extends TenantScopedDao<Customer> {
   protected override scoped(alias = "entity") {
     const query = super.scoped(alias);
     const userId = ownCustomersOnly();
-    if (userId) query.andWhere(`${alias}.id IN (${OWN_NOTES_CUSTOMERS})`, { ownCustomersUserId: userId });
+    if (userId)
+      query.andWhere(`${alias}.id IN (${OWN_NOTES_CUSTOMERS})`, { ownCustomersUserId: userId });
     return query;
   }
 

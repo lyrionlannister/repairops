@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, Index, Unique } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Branch } from "../../../identity/branches/entities/branch.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
@@ -10,6 +10,7 @@ export type InventoryCountStatus = "open" | "closed";
 // retrofitea aqui).
 @Entity("inventory_counts")
 @Index("IDX_inventory_counts_tenant", ["tenantId"])
+@Unique("UQ_inventory_counts_tenant_numero", ["tenantId", "countNumber"])
 export class InventoryCount extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -27,6 +28,9 @@ export class InventoryCount extends BaseEntity {
 
   @Column({ type: "varchar", length: 10, default: "open", name: "estado" })
   status!: InventoryCountStatus;
+
+  @Column({ type: "int", nullable: false, name: "numero_conteo" })
+  countNumber!: number;
 
   @Column({ type: "bigint", nullable: true, name: "id_empleado_apertura" })
   openedByEmployeeId!: string | null;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useTicketFormat } from "@common/hooks/use-ticket-format";
 import { useParams } from "react-router";
 
@@ -6,13 +6,13 @@ import { useServiceTypes } from "@common/hooks/use-service-types";
 import { usePdfPreview } from "@common/hooks/use-pdf-preview";
 import { useLocal } from "../../../app_platform/local/hooks/use-local";
 import { useRepairNotes } from "./use-repair-notes";
+import { deviceServiceTypeNames, uniqueNames } from "../utils/devices";
 
 export const useRepairNotePrintPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { note, loading: loadingNote, fetchNote, fetchNoteServiceTypeIds } = useRepairNotes();
+  const { note, loading: loadingNote, fetchNote } = useRepairNotes();
   const { local, loading: loadingLocal, fetchLocal } = useLocal();
   const { serviceTypes, fetchAll: fetchServiceTypes } = useServiceTypes();
-  const [serviceTypeNames, setServiceTypeNames] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) fetchNote(id);
@@ -22,15 +22,10 @@ export const useRepairNotePrintPage = () => {
 
   const format = useTicketFormat(local?.defaultTicketSize);
 
-  useEffect(() => {
-    if (!note) return;
-    fetchNoteServiceTypeIds(note.id).then((ids) => {
-      const nameById = new Map(serviceTypes.map((t) => [t.id, t.name]));
-      setServiceTypeNames(
-        ids.map((typeId) => nameById.get(typeId)).filter((n): n is string => Boolean(n)),
-      );
-    });
-  }, [note, serviceTypes, fetchNoteServiceTypeIds]);
+  const serviceTypeNames = useMemo(
+    () => uniqueNames(deviceServiceTypeNames(note?.devices ?? [], serviceTypes)),
+    [note?.devices, serviceTypes],
+  );
 
   const pdf = usePdfPreview(!format.isThermal && id ? `/repair-notes/${id}/pdf` : null);
 

@@ -1,4 +1,4 @@
 
 export type DeliveryMethod = "efectivo" | "tarjeta" | "transferencia" | "credito";
 
-export type DeliveryPaymentLine = { method: DeliveryMethod; amount: string };
+export type DeliveryPaymentLine = { method: DeliveryMethod; amount: string; dueDate?: string };

@@ -55,20 +55,21 @@ describe("toConversationDto", () => {
 
 describe("toMessageDto", () => {
   it("marks outbound messages (AI or agent) as fromMe and type ai", () => {
-    const dto = toMessageDto({ id: "1", contactPhone: "5215512345678", body: "hola", direction: "outbound" });
+    const dto = toMessageDto({ publicId: "01a205b6-0000-7000-8000-000000000001", contactPhone: "5215512345678", body: "hola", direction: "outbound" });
     expect(dto.fromMe).toBe(true);
     expect(dto.type).toBe("ai");
   });
 
   it("marks inbound messages as customer (type human), not fromMe", () => {
-    const dto = toMessageDto({ id: "2", contactPhone: "5215512345678", body: "hola", direction: "inbound" });
+    const dto = toMessageDto({ publicId: "01a205b6-0000-7000-8000-000000000002", contactPhone: "5215512345678", body: "hola", direction: "inbound" });
     expect(dto.fromMe).toBe(false);
     expect(dto.type).toBe("human");
   });
 
-  it("converts the bigint id to a number and uses the phone as sessionId", () => {
-    const dto = toMessageDto({ id: "42", contactPhone: "5215512345678", body: "x", direction: "inbound" });
-    expect(dto.id).toBe(42);
+  it("expone el public_id como id (nunca el id interno) y usa el telefono como sessionId", () => {
+    const publicId = "01a205b6-ac88-71bd-9308-81a096468dfb";
+    const dto = toMessageDto({ publicId, contactPhone: "5215512345678", body: "x", direction: "inbound" });
+    expect(dto.id).toBe(publicId);
     expect(dto.sessionId).toBe("5215512345678");
   });
 });

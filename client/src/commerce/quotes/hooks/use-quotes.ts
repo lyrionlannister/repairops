@@ -79,7 +79,7 @@ export const useQuotes = () => {
       try {
         const res = await apiClient(`/quotes/${id}/service-types`);
         if (!res.ok) return [];
-        return (await res.json()) as string[];
+        return ((await res.json()) as { serviceTypeIds: string[] }).serviceTypeIds;
       } catch {
         return [];
       }

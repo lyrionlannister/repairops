@@ -29,11 +29,11 @@ describe("LocalDao.consumeControlNumber", () => {
   it("never hands out the same control number twice to concurrent callers", async () => {
     const results = await runWithTenant(tenantId, () =>
       Promise.all([
-        dao.consumeControlNumber(),
-        dao.consumeControlNumber(),
-        dao.consumeControlNumber(),
-        dao.consumeControlNumber(),
-        dao.consumeControlNumber(),
+        dao.consume("control"),
+        dao.consume("control"),
+        dao.consume("control"),
+        dao.consume("control"),
+        dao.consume("control"),
       ]),
     );
 

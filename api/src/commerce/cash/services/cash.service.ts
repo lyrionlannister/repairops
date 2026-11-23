@@ -118,8 +118,10 @@ export class CashService {
       }
     }
 
+    const cutNumber = await this.localService.consumeFolio("cut");
     const updated = await this.sessionDao.update(id, {
       status: "closed",
+      cutNumber,
       closingBalance: toMoney(closingBalance),
       closedAt: new Date(),
       variance: toMoney(variance),

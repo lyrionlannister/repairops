@@ -27,6 +27,7 @@ export const DashboardHome: React.FC = () => {
     todayDelta,
     monthDelta,
     recentActivity,
+    credit,
   } = useDashboardPage();
 
   const currencyFormatter = MXN_FORMATTER;
@@ -37,9 +38,9 @@ export const DashboardHome: React.FC = () => {
       title="Panel inicial"
       description="Métricas operativas del negocio y la atención."
     >
-      <section className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
+      <section className="grid grid-cols-1 items-start gap-4 md:gap-6 xl:grid-cols-3">
         {showMoney && (
-          <div className="flex flex-col gap-4 md:gap-6 lg:col-span-2">
+          <div className="flex min-w-0 flex-col gap-4 md:gap-6 xl:col-span-2">
             <DashboardRevenueCards
               monthlyRevenue={businessMetrics.monthlyRevenue}
               weeklyRevenue={businessMetrics.weeklyRevenue}
@@ -52,30 +53,42 @@ export const DashboardHome: React.FC = () => {
               dailyBusinessCategories={dailyBusinessCategories}
               currencyFormatter={currencyFormatter}
             />
+            <DashboardConversationStats
+              lastInteraction={lastInteraction}
+              todayCount={todayCount}
+              weekCount={weekCount}
+              totalYear={totalYear}
+              year={year}
+            />
           </div>
         )}
         <div
-          className={`flex flex-col gap-4 md:gap-6 ${showMoney ? "" : "lg:col-span-3 lg:grid lg:grid-cols-2"}`}
+          className={`flex min-w-0 flex-col gap-4 md:gap-6 ${showMoney ? "md:grid md:grid-cols-2 xl:flex" : "md:grid md:grid-cols-2 xl:col-span-3"}`}
         >
-          <DashboardSecondaryStats
-            openRepairNotes={businessMetrics.openRepairNotes}
-            criticalStockItems={businessMetrics.criticalStockItems}
-            openCashSessions={businessMetrics.openCashSessions}
-            onlineUsers={businessMetrics.onlineUsers}
-          />
-          <div className="flex-1">
+          <div className="shrink-0">
+            <DashboardSecondaryStats
+              openRepairNotes={businessMetrics.openRepairNotes}
+              criticalStockItems={businessMetrics.criticalStockItems}
+              openCashSessions={businessMetrics.openCashSessions}
+              onlineUsers={businessMetrics.onlineUsers}
+              credit={credit}
+            />
+          </div>
+          <div className="min-h-0 flex-1">
             <DashboardRecentActivity recentActivity={recentActivity} />
           </div>
         </div>
       </section>
 
-      <DashboardConversationStats
-        lastInteraction={lastInteraction}
-        todayCount={todayCount}
-        weekCount={weekCount}
-        totalYear={totalYear}
-        year={year}
-      />
+      {!showMoney && (
+        <DashboardConversationStats
+          lastInteraction={lastInteraction}
+          todayCount={todayCount}
+          weekCount={weekCount}
+          totalYear={totalYear}
+          year={year}
+        />
+      )}
 
       <DashboardSecondaryCharts
         daily={daily}

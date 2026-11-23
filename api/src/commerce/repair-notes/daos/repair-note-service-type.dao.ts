@@ -13,4 +13,12 @@ export class RepairNoteServiceTypeDao extends TenantScopedDao<RepairNoteServiceT
   async findByRepairNoteId(repairNoteId: string): Promise<RepairNoteServiceType[]> {
     return this.scoped().andWhere("entity.repairNoteId = :repairNoteId", { repairNoteId }).getMany();
   }
+
+  async findByRepairNoteIds(repairNoteIds: string[]): Promise<RepairNoteServiceType[]> {
+    if (repairNoteIds.length === 0) return [];
+    return this.scoped()
+      .andWhere("entity.repairNoteId IN (:...repairNoteIds)", { repairNoteIds })
+      .orderBy("entity.id", "ASC")
+      .getMany();
+  }
 }

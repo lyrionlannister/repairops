@@ -35,13 +35,12 @@ export const CustomerForm: FC<CustomerFormProps> = ({
     </div>
 
     <div>
-      <Label className="text-gray-500">Teléfono</Label>
+      <Label className="text-gray-500">Teléfono (opcional)</Label>
       <Input
         name="phone"
         value={form.phone}
         onChange={onChange}
         placeholder="Ej. 833 123 4567"
-        required
         disabled={loading}
       />
     </div>

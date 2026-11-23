@@ -1,14 +1,10 @@
+import type { RepairNoteDevice } from "../types/repair-notes";
+
 export interface RepairNoteDeviceSectionProps {
-  brand: string;
-  model: string;
-  reportedFailure: string;
-  serviceTypeIds: string[];
-  deviceOff: boolean;
+  devices: RepairNoteDevice[];
   knownBrands: string[];
   saving: boolean;
-  onBrandChange: (value: string) => void;
-  onModelChange: (value: string) => void;
-  onReportedFailureChange: (value: string) => void;
-  onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
-  onDeviceOffChange: (value: boolean) => void;
+  onDeviceChange: (index: number, patch: Partial<RepairNoteDevice>) => void;
+  onAddDevice: () => void;
+  onRemoveDevice: (index: number) => void;
 }

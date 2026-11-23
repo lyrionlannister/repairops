@@ -15,6 +15,7 @@ import { Supplier } from "../../commerce/suppliers/entities/supplier.entity.js";
 import { Notification } from "../../messaging/notifications/entities/notification.entity.js";
 import { Tenant } from "../tenancy/entities/tenant.entity.js";
 import { RepairNoteItem } from "../../commerce/repair-notes/entities/repair-note-item.entity.js";
+import { RepairNoteDevice } from "../../commerce/repair-notes/entities/repair-note-device.entity.js";
 import { RepairNoteServiceType } from "../../commerce/repair-notes/entities/repair-note-service-type.entity.js";
 import { ServiceType } from "../../commerce/service-types/entities/service-type.entity.js";
 import { InventoryItem } from "../../commerce/inventory/entities/inventory-item.entity.js";
@@ -36,6 +37,7 @@ import { WhatsappAccount } from "../../messaging/whatsapp-official/entities/what
 import { WhatsappTemplateStatus } from "../../messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
 import { WhatsappOutboundMessage } from "../../messaging/whatsapp-official/entities/whatsapp-outbound-message.entity.js";
 import { WhatsappTemplateCatalogEntry } from "../../messaging/whatsapp-official/entities/whatsapp-template-catalog-entry.entity.js";
+import { WhatsappPendingNotification } from "../../messaging/whatsapp-official/entities/whatsapp-pending-notification.entity.js";
 import { Return } from "../../commerce/returns/entities/return.entity.js";
 import { ReturnItem } from "../../commerce/returns/entities/return-item.entity.js";
 import { InventoryTransfer } from "../../commerce/inventory/entities/inventory-transfer.entity.js";
@@ -76,6 +78,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     Local,
     RepairNote,
     RepairNoteItem,
+    RepairNoteDevice,
     RepairNoteServiceType,
     ServiceType,
     MessageTemplate,
@@ -101,6 +104,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     WhatsappTemplateStatus,
     WhatsappOutboundMessage,
     WhatsappTemplateCatalogEntry,
+    WhatsappPendingNotification,
     Return,
     ReturnItem,
     InventoryTransfer,

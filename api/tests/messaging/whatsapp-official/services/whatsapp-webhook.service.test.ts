@@ -5,6 +5,7 @@ import type { WhatsappSendService } from "../../../../src/messaging/whatsapp-off
 import type { ChatsService } from "../../../../src/messaging/chats/services/chats.service.js";
 import type { ChatMediaService } from "../../../../src/messaging/chats/services/chat-media.service.js";
 import type { WhatsappAutomationQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-automation-queue.service.js";
+import type { WhatsappNotificationQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-notification-queue.service.js";
 import type { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import type { WhatsappAccount } from "../../../../src/messaging/whatsapp-official/entities/whatsapp-account.entity.js";
 import type { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
@@ -29,17 +30,29 @@ const note = mockEntity<RepairNote>({
   publicRef: "7F3K2A9B",
 });
 
-function makeDeps(resolved: { account: WhatsappAccount; note: RepairNote | null } | null = { account, note }) {
-  const tenantResolver = { resolve: vi.fn().mockResolvedValue(resolved) } as unknown as WhatsappTenantResolver;
+function makeDeps(
+  resolved: { account: WhatsappAccount; note: RepairNote | null } | null = { account, note },
+) {
+  const tenantResolver = {
+    resolve: vi.fn().mockResolvedValue(resolved),
+  } as unknown as WhatsappTenantResolver;
   const sendFreeText = vi.fn().mockResolvedValue("wamid.out-1");
   const whatsappSendService = {
     sendFreeText,
     sendFreeTextOnce: vi.fn((_key: string, ...args: unknown[]) => sendFreeText(...args)),
   } as unknown as WhatsappSendService;
-  const chatsService = { recordMessage: vi.fn().mockResolvedValue(undefined) } as unknown as ChatsService;
-  const localService = { getConfig: vi.fn().mockResolvedValue({ name: "Celulares Pérez" }) } as unknown as LocalService;
+  const chatsService = {
+    recordMessage: vi.fn().mockResolvedValue(undefined),
+  } as unknown as ChatsService;
+  const localService = {
+    getConfig: vi.fn().mockResolvedValue({ name: "Celulares Pérez" }),
+  } as unknown as LocalService;
   const chatMediaService = {
-    ingest: vi.fn().mockResolvedValue({ mediaKey: "tenants/tenant-1/chat/5215500000000/wamid.in-1.jpg", mediaMime: "image/jpeg", mediaSize: 10 }),
+    ingest: vi.fn().mockResolvedValue({
+      mediaKey: "tenants/tenant-1/chat/5215500000000/wamid.in-1.jpg",
+      mediaMime: "image/jpeg",
+      mediaSize: 10,
+    }),
   } as unknown as ChatMediaService;
   const excludedPhoneRepository = { exists: vi.fn().mockResolvedValue(false) } as any;
   const whatsappSettingsRepository = {
@@ -48,7 +61,12 @@ function makeDeps(resolved: { account: WhatsappAccount; note: RepairNote | null 
     save: vi.fn(),
   } as any;
   const contactNameRepository = { save: vi.fn().mockResolvedValue(undefined) } as any;
-  const automationQueue = { enqueue: vi.fn().mockResolvedValue(undefined) } as unknown as WhatsappAutomationQueueService;
+  const automationQueue = {
+    enqueue: vi.fn().mockResolvedValue(undefined),
+  } as unknown as WhatsappAutomationQueueService;
+  const notificationQueue = {
+    flushPending: vi.fn().mockResolvedValue(undefined),
+  } as unknown as WhatsappNotificationQueueService;
 
   const service = new WhatsappWebhookService(
     tenantResolver,
@@ -60,6 +78,7 @@ function makeDeps(resolved: { account: WhatsappAccount; note: RepairNote | null 
     whatsappSettingsRepository,
     contactNameRepository,
     automationQueue,
+    notificationQueue,
   );
   return {
     service,
@@ -69,6 +88,7 @@ function makeDeps(resolved: { account: WhatsappAccount; note: RepairNote | null 
     excludedPhoneRepository,
     whatsappSettingsRepository,
     automationQueue,
+    notificationQueue,
   };
 }
 
@@ -79,7 +99,8 @@ const incoming = {
   body: "Hola (ref: 7F3K2A9B)",
   messageType: "text" as const,
 };
-const READY_REPLY = "Nota #1042 de Celulares Pérez:\n¡Tu equipo ya está listo! Ya puedes pasar por él.";
+const READY_REPLY =
+  "Nota #1042 de Celulares Pérez:\n¡Tu equipo ya está listo! Ya puedes pasar por él.";
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -96,11 +117,17 @@ describe("WhatsappWebhookService.handleIncomingMessage", () => {
   });
 
   it("con ref valido guarda el entrante, responde el estado y guarda la respuesta", async () => {
-    const { service, chatsService, whatsappSendService } = makeDeps();
+    const { service, chatsService, whatsappSendService, notificationQueue } = makeDeps();
     vi.mocked(humanModeService.isActive).mockResolvedValue(false);
 
     await service.handleIncomingMessage({ ...incoming, contactName: "Ana" });
 
+    expect(notificationQueue.flushPending).toHaveBeenCalledWith(
+      "note-9",
+      "5215500000000",
+      "phone-1",
+      "token-1",
+    );
     expect(chatsService.recordMessage).toHaveBeenNthCalledWith(1, {
       contactPhone: "5215500000000",
       direction: "inbound",
@@ -142,18 +169,25 @@ describe("WhatsappWebhookService.handleIncomingMessage", () => {
     expect(sent).not.toMatch(/Ana|\$|saldo/i);
   });
 
-  it("sin nota (sin ref o ref inexistente) guarda el mensaje pero no responde", async () => {
-    const { service, chatsService, whatsappSendService } = makeDeps({ account, note: null });
+  it("sin nota (sin ref o ref inexistente) guarda el mensaje, no responde y no intenta destrabar pendientes", async () => {
+    const { service, chatsService, whatsappSendService, notificationQueue } = makeDeps({
+      account,
+      note: null,
+    });
     vi.mocked(humanModeService.isActive).mockResolvedValue(false);
 
     await service.handleIncomingMessage({ ...incoming, body: "hola" });
 
     expect(chatsService.recordMessage).toHaveBeenCalledTimes(1);
     expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
+    expect(notificationQueue.flushPending).not.toHaveBeenCalled();
   });
 
   it("un estado desconocido no genera respuesta", async () => {
-    const { service, whatsappSendService } = makeDeps({ account, note: { ...note, status: "raro" } });
+    const { service, whatsappSendService } = makeDeps({
+      account,
+      note: { ...note, status: "raro" },
+    });
     vi.mocked(humanModeService.isActive).mockResolvedValue(false);
 
     await service.handleIncomingMessage(incoming);
@@ -173,7 +207,10 @@ describe("WhatsappWebhookService.handleIncomingMessage", () => {
 
   it("con las respuestas automáticas apagadas guarda el mensaje y no responde", async () => {
     const { service, whatsappSettingsRepository, chatsService, whatsappSendService } = makeDeps();
-    vi.mocked(whatsappSettingsRepository.findOneBy).mockResolvedValue({ tenantId: "tenant-1", aiRepliesEnabled: false });
+    vi.mocked(whatsappSettingsRepository.findOneBy).mockResolvedValue({
+      tenantId: "tenant-1",
+      aiRepliesEnabled: false,
+    });
 
     await service.handleIncomingMessage(incoming);
 
@@ -187,7 +224,9 @@ describe("WhatsappWebhookService.handleIncomingMessage", () => {
 
     await service.handleIncomingMessage(incoming);
 
-    expect(chatsService.recordMessage).toHaveBeenCalledWith(expect.objectContaining({ direction: "inbound" }));
+    expect(chatsService.recordMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ direction: "inbound" }),
+    );
     expect(whatsappSendService.sendFreeText).not.toHaveBeenCalled();
   });
 });
@@ -233,7 +272,9 @@ describe("WhatsappWebhookService reenvio a n8n", () => {
 
     await service.handleIncomingMessage(incoming);
 
-    expect(automationQueue.enqueue).toHaveBeenCalledWith(expect.objectContaining({ repairNoteId: "note-9" }));
+    expect(automationQueue.enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ repairNoteId: "note-9" }),
+    );
     expect(whatsappSendService.sendFreeText).toHaveBeenCalledTimes(1);
   });
 
@@ -244,7 +285,10 @@ describe("WhatsappWebhookService reenvio a n8n", () => {
 
     vi.mocked(humanModeService.isActive).mockResolvedValue(false);
     const off = makeDeps({ account, note: null });
-    vi.mocked(off.whatsappSettingsRepository.findOneBy).mockResolvedValue({ tenantId: "tenant-1", aiRepliesEnabled: false });
+    vi.mocked(off.whatsappSettingsRepository.findOneBy).mockResolvedValue({
+      tenantId: "tenant-1",
+      aiRepliesEnabled: false,
+    });
     await off.service.handleIncomingMessage({ ...incoming, body: "hola" });
 
     const empty = makeDeps({ account, note: null });
@@ -258,7 +302,10 @@ describe("WhatsappWebhookService reenvio a n8n", () => {
 
 describe("WhatsappWebhookService mensajes que no son texto", () => {
   it("guarda una foto descargada con su clave de archivo y no responde", async () => {
-    const { service, chatMediaService, chatsService, whatsappSendService } = makeDeps({ account, note: null });
+    const { service, chatMediaService, chatsService, whatsappSendService } = makeDeps({
+      account,
+      note: null,
+    });
     vi.mocked(humanModeService.isActive).mockResolvedValue(false);
 
     await service.handleIncomingMessage({
@@ -271,7 +318,12 @@ describe("WhatsappWebhookService mensajes que no son texto", () => {
     });
 
     expect(chatMediaService.ingest).toHaveBeenCalledWith(
-      expect.objectContaining({ mediaId: "media-1", waMessageId: "wamid.in-1", contactPhone: "5215500000000", accessToken: "token-1" }),
+      expect.objectContaining({
+        mediaId: "media-1",
+        waMessageId: "wamid.in-1",
+        contactPhone: "5215500000000",
+        accessToken: "token-1",
+      }),
     );
     expect(chatsService.recordMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -299,7 +351,12 @@ describe("WhatsappWebhookService mensajes que no son texto", () => {
     });
 
     expect(chatsService.recordMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ messageType: "audio", mediaKey: null, mediaMime: null, mediaSize: null }),
+      expect.objectContaining({
+        messageType: "audio",
+        mediaKey: null,
+        mediaMime: null,
+        mediaSize: null,
+      }),
     );
   });
 
@@ -317,12 +374,20 @@ describe("WhatsappWebhookService mensajes que no son texto", () => {
 
     expect(chatMediaService.ingest).not.toHaveBeenCalled();
     expect(chatsService.recordMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ messageType: "location", locationLat: "19.432600", locationLng: "-99.133200", mediaKey: null }),
+      expect.objectContaining({
+        messageType: "location",
+        locationLat: "19.432600",
+        locationLng: "-99.133200",
+        mediaKey: null,
+      }),
     );
   });
 
   it("un teléfono excluido no descarga ni guarda archivos", async () => {
-    const { service, excludedPhoneRepository, chatMediaService, chatsService } = makeDeps({ account, note: null });
+    const { service, excludedPhoneRepository, chatMediaService, chatsService } = makeDeps({
+      account,
+      note: null,
+    });
     vi.mocked(excludedPhoneRepository.exists).mockResolvedValue(true);
 
     await service.handleIncomingMessage({

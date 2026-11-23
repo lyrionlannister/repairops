@@ -205,14 +205,15 @@ export class AuthService {
 
   // Listado ligero para poblar los <Select> de empleado en otros modulos.
   async listEmployees(): Promise<
-    Array<Pick<User, "id" | "firstName" | "lastName"> & { roles: UserRole[] }>
+    Array<Pick<User, "id" | "publicId" | "firstName" | "lastName"> & { roles: UserRole[] }>
   > {
     const [users, roles] = await Promise.all([
       this.userDao.findAll(),
       this.userRoleDao.findAllOfTenant(),
     ]);
-    return users.map(({ id, firstName, lastName }) => ({
+    return users.map(({ id, publicId, firstName, lastName }) => ({
       id,
+      publicId,
       firstName,
       lastName,
       roles: roles.get(String(id)) ?? [],
@@ -274,8 +275,9 @@ export class AuthService {
 
       // Solo identidad: roles, permisos y el flag de plataforma se leen de la base en
       // cada petición (tenantMiddleware), así un cambio aplica sin esperar a que expire.
+      const tenant = await this.tenantRepository.findOneByOrFail({ id: user.tenantId });
       const token = sign(
-        { id: user.id, email: user.email, tenantId: user.tenantId },
+        { id: user.publicId, email: user.email, tenantId: tenant.publicId },
         requireJwtSecret(),
         { expiresIn: "24h" },
       );

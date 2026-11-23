@@ -4,6 +4,8 @@ import { repositoryToken } from "../../../core/di/repository-token.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { CashMovement } from "../../../commerce/cash/entities/cash-movement.entity.js";
 
+// today/yesterday: ingreso total cobrado (ventas + reparaciones), para "Ingreso del día".
+// week/month/previousMonth/salesToday: solo ventas de productos, para las cards "Ventas".
 export interface IncomeSummaryRow {
   today: string;
   yesterday: string;
@@ -21,6 +23,7 @@ export interface OperationalCountsRow {
 
 export interface ActivityRow {
   id: string;
+  publicId: string;
   kind: "sale" | "repair" | "other";
   title: string;
   subtitle: string;
@@ -58,7 +61,9 @@ const IS_REPAIRS = `m.tipo_entidad_relacionada IN ('repair_note', 'quote')`;
 // se calculan en la zona horaria del tenant con AT TIME ZONE.
 @singleton()
 export class DashboardDao {
-  constructor(@inject(repositoryToken(CashMovement)) private repository: Repository<CashMovement>) {}
+  constructor(
+    @inject(repositoryToken(CashMovement)) private repository: Repository<CashMovement>,
+  ) {}
 
   async getIncomeSummary(timeZone: string, branchId: string | null): Promise<IncomeSummaryRow> {
     const rows = await this.repository.query<IncomeSummaryRow[]>(
@@ -82,9 +87,9 @@ export class DashboardDao {
       SELECT
         COALESCE(SUM(amount) FILTER (WHERE created_at >= b.day_start), 0)::numeric(14,2)::text AS "today",
         COALESCE(SUM(amount) FILTER (WHERE created_at >= b.yesterday_start AND created_at < b.day_start), 0)::numeric(14,2)::text AS "yesterday",
-        COALESCE(SUM(amount) FILTER (WHERE created_at >= b.week_start), 0)::numeric(14,2)::text AS "week",
-        COALESCE(SUM(amount) FILTER (WHERE created_at >= b.month_start), 0)::numeric(14,2)::text AS "month",
-        COALESCE(SUM(amount) FILTER (WHERE created_at >= b.prev_month_start AND created_at < b.month_start), 0)::numeric(14,2)::text AS "previousMonth",
+        COALESCE(SUM(amount) FILTER (WHERE created_at >= b.week_start AND is_sales), 0)::numeric(14,2)::text AS "week",
+        COALESCE(SUM(amount) FILTER (WHERE created_at >= b.month_start AND is_sales), 0)::numeric(14,2)::text AS "month",
+        COALESCE(SUM(amount) FILTER (WHERE created_at >= b.prev_month_start AND created_at < b.month_start AND is_sales), 0)::numeric(14,2)::text AS "previousMonth",
         COALESCE(SUM(amount) FILTER (WHERE created_at >= b.day_start AND is_sales), 0)::numeric(14,2)::text AS "salesToday"
       FROM moves CROSS JOIN bounds b
       `,
@@ -117,6 +122,7 @@ export class DashboardDao {
       `
       SELECT
         m.id::text AS id,
+        m.public_id::text AS "publicId",
         CASE WHEN m.tipo_entidad_relacionada IN ('sale', 'layaway', 'return') THEN 'sale'
              WHEN m.tipo_entidad_relacionada IN ('repair_note', 'quote') THEN 'repair'
              ELSE 'other' END AS kind,
@@ -150,7 +156,11 @@ export class DashboardDao {
     );
   }
 
-  async getDailySeries(timeZone: string, branchId: string | null, days = 30): Promise<DailySeriesRow[]> {
+  async getDailySeries(
+    timeZone: string,
+    branchId: string | null,
+    days = 30,
+  ): Promise<DailySeriesRow[]> {
     return this.repository.query<DailySeriesRow[]>(
       `
       WITH days AS (
@@ -176,7 +186,11 @@ export class DashboardDao {
     );
   }
 
-  async getMonthlySeries(timeZone: string, branchId: string | null, year: number): Promise<MonthlySeriesRow[]> {
+  async getMonthlySeries(
+    timeZone: string,
+    branchId: string | null,
+    year: number,
+  ): Promise<MonthlySeriesRow[]> {
     return this.repository.query<MonthlySeriesRow[]>(
       `
       WITH months AS (SELECT generate_series(1, 12) AS month), moves AS (

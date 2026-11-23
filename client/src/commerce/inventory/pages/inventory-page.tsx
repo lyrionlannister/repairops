@@ -5,6 +5,8 @@ import { useBranch } from "@common/hooks/use-branch";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useInventoryPage } from "../hooks/use-inventory-page";
+import { useCriticalStockFilter } from "../hooks/use-critical-stock-filter";
+import { CheckboxField } from "@ui/checkbox/checkbox-field";
 import { useSupplierName } from "../hooks/use-supplier-name";
 import { usePermissions } from "@common/hooks/use-permissions";
 import { Button } from "@ui/button/button";
@@ -52,8 +54,9 @@ export const InventoryPage = () => {
     saving,
   });
 
+  const { criticalOnly, setCriticalOnly, visibleItems } = useCriticalStockFilter(items);
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
-    usePaginatedList(items);
+    usePaginatedList(visibleItems);
 
   return (
     <PageShell
@@ -74,6 +77,16 @@ export const InventoryPage = () => {
         )
       }
     >
+      <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
+        <CheckboxField
+          label="Solo stock crítico"
+          checked={criticalOnly}
+          onChange={(checked) => {
+            setCriticalOnly(checked);
+            setPage(1);
+          }}
+        />
+      </div>
 
       <InventoryTable
         loading={loading}

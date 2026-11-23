@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useToast } from "./use-toast";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const sendRequest = async (url: string, options: RequestInit = {}) => {
   return await fetch(url, options);
@@ -72,7 +72,8 @@ export const useApiClient = () => {
       const method = (options.method ?? "GET").toUpperCase();
       const isMutation = method in SUCCESS_TITLE;
       const notify = !SILENT_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
-      const notifySuccess = isMutation && !SILENT_SUCCESS_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
+      const notifySuccess =
+        isMutation && !SILENT_SUCCESS_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
 
       // La sesion viaja en una cookie httpOnly (nunca legible por JS, ver
       // OWASP Session Management Cheat Sheet): no hay header Authorization
@@ -81,16 +82,28 @@ export const useApiClient = () => {
       try {
         response = await sendRequest(url, { ...options, credentials: "include" });
       } catch (error) {
-        if (notify) showToast({ title: "Sin conexión", message: "No se pudo contactar al servidor.", variant: "error" });
+        if (notify)
+          showToast({
+            title: "Sin conexión",
+            message: "No se pudo contactar al servidor.",
+            variant: "error",
+          });
         throw error;
       }
 
       if (notify) {
         if (response.ok) {
-          if (notifySuccess) showToast({ title: SPECIFIC_TITLE.find(([re]) => re.test(endpoint))?.[1] ?? SUCCESS_TITLE[method], variant: "success" });
+          if (notifySuccess)
+            showToast({
+              title: SPECIFIC_TITLE.find(([re]) => re.test(endpoint))?.[1] ?? SUCCESS_TITLE[method],
+              variant: "success",
+            });
         } else if (response.status !== 401 || endpoint.startsWith("/auth/login")) {
           // 401 en otras rutas = sesion vencida (el guard redirige), no un mensaje.
-          const body = await response.clone().json().catch(() => ({}));
+          const body = await response
+            .clone()
+            .json()
+            .catch(() => ({}));
           showToast({
             title: "No se pudo completar la acción",
             message: String((body as { error?: unknown }).error ?? `Error ${response.status}`),

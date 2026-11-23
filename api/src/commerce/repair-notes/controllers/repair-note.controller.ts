@@ -65,13 +65,9 @@ export class RepairNoteController {
 
   create = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { items, serviceTypeIds, advancePayment, ...data } = req.body as CreateRepairNoteBody;
-      if (!data.customerId && !String(data.contactNumber ?? "").trim()) {
-        res.status(400).json({ error: "El teléfono del cliente es obligatorio" });
-        return;
-      }
+      const { items, advancePayment, ...data } = req.body as CreateRepairNoteBody;
       data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
-      const note = await this.repairNoteService.create(data, items, serviceTypeIds, advancePayment);
+      const note = await this.repairNoteService.create(data, items, advancePayment);
       res.status(201).json(note);
     } catch (error) {
       sendError(res, error, 400);
@@ -102,9 +98,9 @@ export class RepairNoteController {
   update = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params["id"] as string;
-      const { items, serviceTypeIds, ...data } = req.body as UpdateRepairNoteBody;
+      const { items, ...data } = req.body as UpdateRepairNoteBody;
       if (data.localId !== undefined) data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
-      const note = await this.repairNoteService.update(id, data, items, serviceTypeIds);
+      const note = await this.repairNoteService.update(id, data, items);
       if (!note) {
         res.status(404).json({ error: "Nota no encontrada" });
         return;
@@ -135,7 +131,8 @@ export class RepairNoteController {
 
   getServiceTypes = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.repairNoteService.getServiceTypeIds(req.params["id"] as string));
+      const serviceTypeIds = await this.repairNoteService.getServiceTypeIds(req.params["id"] as string);
+      res.status(200).json({ serviceTypeIds });
     } catch (error) {
       sendError(res, error, 500);
     }
@@ -152,7 +149,7 @@ export class RepairNoteController {
       const assignedEmployeeName = note.assignedEmployeeId
         ? await this.authService.getEmployeeName(note.assignedEmployeeId)
         : null;
-      const serviceTypeNames = await this.repairNoteService.getServiceTypeNames(note.id);
+      const serviceTypeNames = await this.repairNoteService.serviceTypeNameResolver();
       const qrUrl = await this.repairNoteService.getWhatsappQrUrl(note);
       const data = toRepairNotePdfData(note, local, { assignedEmployeeName, serviceTypeNames, qrUrl });
       const buffer = await this.pdfRendererService.render(RepairNoteDocument, { data });

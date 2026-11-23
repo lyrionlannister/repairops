@@ -20,16 +20,30 @@ const DEFAULT_CONDITIONS =
 export const RepairNoteDocument: React.FC<{ data: RepairNotePdfData }> = ({ data }) => {
   const styles = createNoteStyles(data.palette);
   const name = data.local.name ?? "Reparación de Celulares y Tablets";
+  const single = data.devices.length === 1 ? data.devices[0] : null;
+  const deviceTitle = single ? `${single.brand} ${single.model}` : `${data.devices.length} equipos`;
   const serviceLine = [
-    data.serviceTypeNames.length > 0 && `Servicio: ${data.serviceTypeNames.join(", ")}`,
-    data.deviceOff && "Equipo apagado",
+    single && single.serviceTypeNames.length > 0 && `Servicio: ${single.serviceTypeNames.join(", ")}`,
+    single?.deviceOff && "Equipo apagado",
   ]
     .filter(Boolean)
     .join(" · ");
   const warranty = data.hasWarranty
     ? `Con garantía${data.hasExtendedWarranty ? ` extendida (${data.extendedWarrantyDays ?? "?"} días)` : ""}`
     : "Sin garantía";
-  const falla = [{ label: "FALLA REPORTADA", text: data.reportedFailure }];
+  const falla = single
+    ? [{ label: "FALLA REPORTADA", text: single.reportedFailure }]
+    : data.devices.map((device, index) => ({
+        label: [
+          `EQUIPO ${index + 1} · ${device.brand} ${device.model}`,
+          device.serviceTypeNames.length > 0 && device.serviceTypeNames.join(", "),
+          device.deviceOff && "APAGADO",
+        ]
+          .filter(Boolean)
+          .join(" · ")
+          .toUpperCase(),
+        text: device.reportedFailure,
+      }));
   if (data.additionalFindings) falla.push({ label: "HALLAZGOS ADICIONALES", text: data.additionalFindings });
   const hasTechnicianInfo = Boolean(data.assignedEmployeeName || data.technicianNotes);
 
@@ -51,7 +65,7 @@ export const RepairNoteDocument: React.FC<{ data: RepairNotePdfData }> = ({ data
         <View style={styles.body}>
           <View style={styles.twoCols} wrap={false}>
             <TintCard styles={styles} label="CLIENTE" title={data.customerName} sub={data.contactNumber ? `Tel. ${data.contactNumber}` : null} />
-            <TintCard styles={styles} label="EQUIPO" title={`${data.brand} ${data.model}`} sub={serviceLine || null} />
+            <TintCard styles={styles} label="EQUIPO" title={deviceTitle} sub={serviceLine || null} />
           </View>
 
           <PlainCard styles={styles} blocks={falla} />

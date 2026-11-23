@@ -1,21 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Customer } from "../types/customers";
+import { useSearchParams } from "react-router";
+import type { Customer, CustomerCreditFilter } from "../types/customers";
+import { matchesCreditFilter, parseCreditFilter } from "../utils/overdue";
 
 export const useCustomersPage = ({
   customers,
   fetchAll,
-  fetchDevices,
   remove,
 }: {
   customers: Customer[];
   fetchAll: () => Promise<void>;
-  fetchDevices: (customerId: string) => Promise<void>;
   remove: (id: string) => Promise<boolean>;
 }) => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [historyCustomer, setHistoryCustomer] = useState<Customer | null>(null);
+  const [searchParams] = useSearchParams();
+  const [creditFilter, setCreditFilter] = useState<CustomerCreditFilter>(() =>
+    parseCreditFilter(searchParams.get("credit")),
+  );
 
   useEffect(() => {
     fetchAll();
@@ -23,14 +26,15 @@ export const useCustomersPage = ({
 
   const filteredCustomers = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return customers;
     return customers.filter(
       (c) =>
-        c.name.toLowerCase().includes(term) ||
-        c.phone.toLowerCase().includes(term) ||
-        (c.email ?? "").toLowerCase().includes(term),
+        matchesCreditFilter(c, creditFilter) &&
+        (!term ||
+          c.name.toLowerCase().includes(term) ||
+          (c.phone ?? "").toLowerCase().includes(term) ||
+          (c.email ?? "").toLowerCase().includes(term)),
     );
-  }, [search, customers]);
+  }, [search, creditFilter, customers]);
 
   const handleDelete = async (id: string) => {
     const ok = await remove(id);
@@ -41,12 +45,6 @@ export const useCustomersPage = ({
     setDeleteConfirmId(null);
   };
 
-  const openHistory = (customer: Customer) => {
-    setHistoryCustomer(customer);
-    fetchDevices(customer.id);
-  };
-
-  const closeHistory = () => setHistoryCustomer(null);
 
   return {
     deleteConfirmId,
@@ -54,10 +52,9 @@ export const useCustomersPage = ({
     successMsg,
     search,
     setSearch,
+    creditFilter,
+    setCreditFilter,
     filteredCustomers,
-    historyCustomer,
     handleDelete,
-    openHistory,
-    closeHistory,
   };
 };

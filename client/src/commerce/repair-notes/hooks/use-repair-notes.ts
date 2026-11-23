@@ -1,14 +1,13 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
+import { EMPTY_DEVICE } from "../utils/devices";
 import type { RepairNoteRecord, RepairNoteFormData, AdvancePaymentInput, RepairNoteItemInput, RepairNoteItemRecord, RepairNoteStatus } from "../types/repair-notes";
 
 export const INITIAL_FORM: RepairNoteFormData = {
   customerName: "",
   contactNumber: "",
-  brand: "",
-  model: "",
-  reportedFailure: "",
+  devices: [EMPTY_DEVICE],
   totalValue: "0",
   status: "received",
   requiresAdvance: false,
@@ -20,8 +19,6 @@ export const INITIAL_FORM: RepairNoteFormData = {
   assignedEmployeeId: "",
   localId: "",
   customerId: "",
-  serviceTypeIds: [],
-  deviceOff: false,
   hasWarranty: false,
   hasExtendedWarranty: false,
   extendedWarrantyDays: "",
@@ -217,19 +214,6 @@ export const useRepairNotes = () => {
     [apiClient],
   );
 
-  const fetchNoteServiceTypeIds = useCallback(
-    async (id: string): Promise<string[]> => {
-      try {
-        const response = await apiClient(`/repair-notes/${id}/service-types`);
-        if (!response.ok) return [];
-        return (await response.json()) as string[];
-      } catch {
-        return [];
-      }
-    },
-    [apiClient],
-  );
-
   const cancelNote = useCallback(
     async (id: string): Promise<RepairNoteRecord | null> => {
       setError(null);
@@ -278,7 +262,6 @@ export const useRepairNotes = () => {
     fetchNotes,
     fetchNote,
     fetchNoteItems,
-    fetchNoteServiceTypeIds,
     createNote,
     updateNote,
     cancelNote,

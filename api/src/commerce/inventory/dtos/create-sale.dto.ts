@@ -4,6 +4,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
+  IsDateString,
   IsIn,
   IsNotEmpty,
   IsNumber,
@@ -61,6 +62,10 @@ export class PaymentInputDto {
   @IsOptional()
   @IsString({ message: "Código de autorización debe ser texto" })
   providerAuthorizationCode?: string;
+
+  @IsOptional()
+  @IsDateString({ strict: true }, { message: "Fecha límite de pago inválida" })
+  dueDate?: string;
 }
 
 export class CreateSaleDto {

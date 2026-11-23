@@ -25,7 +25,7 @@ const ORIGIN_LABELS: Record<string, string> = {
 };
 
 export interface CashCutPdfData {
-  id: string;
+  folio: string;
   closedDate: string;
   openedAt: string;
   closedAt: string;
@@ -64,7 +64,7 @@ export function toCashCutPdfData(
   const cash = summary.byMethod.efectivo ?? { income: "0", expense: "0" };
 
   return {
-    id: cut.id,
+    folio: `Nº ${cut.cutNumber}`,
     closedDate: new Date(cut.closedAt ?? cut.openedAt).toLocaleDateString("en-CA", { timeZone }),
     openedAt: dateTime(cut.openedAt),
     closedAt: dateTime(cut.closedAt),

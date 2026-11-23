@@ -10,6 +10,7 @@ import {
 } from "../constants/auth.constants.js";
 import { getValidationMessages } from "../helpers/auth.helpers.js";
 import { AuthService } from "../services/auth.service.js";
+import { PresenceService } from "../services/presence.service.js";
 import { RegisterUserDto } from "../dtos/register-user.dto.js";
 import { LoginUserDto } from "../dtos/login-user.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
@@ -19,7 +20,10 @@ import { sendError } from "../../../core/http/error-response.js";
 
 @singleton()
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private presenceService: PresenceService,
+  ) {}
 
   register = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -46,8 +50,8 @@ export class AuthController {
 
   getUsers = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const users = await this.authService.getAllUsers();
-      res.status(200).json(users);
+      const [users, online] = await Promise.all([this.authService.getAllUsers(), this.presenceService.listOnline()]);
+      res.status(200).json(users.map((user) => ({ ...user, online: online.has(String(user.id)) })));
     } catch (error) {
       sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);
     }

@@ -30,7 +30,7 @@ export const CustomerFormPage: React.FC = () => {
     if (customer) {
       setForm({
         name: customer.name,
-        phone: customer.phone,
+        phone: customer.phone ?? "",
         email: customer.email ?? "",
         creditLimit: String(customer.creditLimit),
       });

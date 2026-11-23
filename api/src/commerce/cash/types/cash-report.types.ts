@@ -36,6 +36,8 @@ export interface CashSummary {
 
 export interface CashCutRow {
   id: string;
+  publicId: string;
+  cutNumber: number;
   localId: string;
   openedAt: Date;
   closedAt: Date | null;

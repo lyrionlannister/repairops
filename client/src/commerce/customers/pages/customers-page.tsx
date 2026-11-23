@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
+import { Select } from "@ui/select/select";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { usePaginatedList } from "@common/hooks/use-paginated-list";
@@ -11,24 +12,23 @@ import { usePermissions } from "@common/hooks/use-permissions";
 import { useCustomers } from "../hooks/use-customers";
 import { useCustomersPage } from "../hooks/use-customers-page";
 import { CustomersTable } from "../components/customers-table";
-import { CustomerDeviceHistoryModal } from "../components/customer-device-history-modal";
+import { CREDIT_FILTER_OPTIONS, parseCreditFilter } from "../utils/overdue";
 
 export const CustomersPage = () => {
   const navigate = useNavigate();
   const { can } = usePermissions();
-  const { customers, devices, loading, saving, fetchAll, fetchDevices, remove } = useCustomers();
+  const { customers, loading, saving, fetchAll, remove } = useCustomers();
 
   const {
     deleteConfirmId,
     setDeleteConfirmId,
     search,
     setSearch,
+    creditFilter,
+    setCreditFilter,
     filteredCustomers,
-    historyCustomer,
     handleDelete,
-    openHistory,
-    closeHistory,
-  } = useCustomersPage({ customers, fetchAll, fetchDevices, remove });
+  } = useCustomersPage({ customers, fetchAll, remove });
 
   const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
     usePaginatedList(filteredCustomers);
@@ -48,7 +48,8 @@ export const CustomersPage = () => {
     >
 
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
-        <div className="relative max-w-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-gray-400" />
           <Input
             name="search"
@@ -60,6 +61,16 @@ export const CustomersPage = () => {
             placeholder="Buscar cliente"
             className="pl-9"
           />
+        </div>
+        <Select
+          value={creditFilter}
+          onChange={(value) => {
+            setCreditFilter(parseCreditFilter(value));
+            setPage(1);
+          }}
+          options={CREDIT_FILTER_OPTIONS}
+          className="w-full sm:w-60"
+        />
         </div>
       </div>
 
@@ -75,11 +86,9 @@ export const CustomersPage = () => {
         startIndex={startIndex}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        onOpenHistory={openHistory}
         onRequestDelete={setDeleteConfirmId}
       />
 
-      <CustomerDeviceHistoryModal historyCustomer={historyCustomer} devices={devices} onClose={closeHistory} />
 
       <ConfirmModal
         isOpen={deleteConfirmId !== null}

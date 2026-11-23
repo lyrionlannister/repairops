@@ -25,10 +25,10 @@ describe("QuoteDao tenant isolation", () => {
 
   it("findAllOrdered only returns the current tenant's quotes", async () => {
     await runWithTenant(tenantA, () =>
-      dao.create({ localId: "1", customerName: "Cliente A", status: "pending", totalValue: 0 }),
+      dao.create({ localId: "1", customerName: "Cliente A", quoteNumber: 1, status: "pending", totalValue: 0 }),
     );
     await runWithTenant(tenantB, () =>
-      dao.create({ localId: "1", customerName: "Cliente B", status: "pending", totalValue: 0 }),
+      dao.create({ localId: "1", customerName: "Cliente B", quoteNumber: 2, status: "pending", totalValue: 0 }),
     );
 
     const quotesA = await runWithTenant(tenantA, () => dao.findAllOrdered());
@@ -40,7 +40,7 @@ describe("QuoteDao tenant isolation", () => {
 
   it("findById returns null for a row that belongs to another tenant", async () => {
     const created = await runWithTenant(tenantA, () =>
-      dao.create({ localId: "1", customerName: "Solo A", status: "pending", totalValue: 0 }),
+      dao.create({ localId: "1", customerName: "Solo A", quoteNumber: 3, status: "pending", totalValue: 0 }),
     );
 
     const fromOwnTenant = await runWithTenant(tenantA, () => dao.findById(created.id));
@@ -52,7 +52,7 @@ describe("QuoteDao tenant isolation", () => {
 
   it("delete cannot remove a row that belongs to another tenant", async () => {
     const created = await runWithTenant(tenantA, () =>
-      dao.create({ localId: "1", customerName: "Protegido", status: "pending", totalValue: 0 }),
+      dao.create({ localId: "1", customerName: "Protegido", quoteNumber: 4, status: "pending", totalValue: 0 }),
     );
 
     const deletedByOther = await runWithTenant(tenantB, () => dao.delete(created.id));

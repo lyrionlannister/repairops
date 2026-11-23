@@ -2,6 +2,8 @@ import { Router, type NextFunction, type Request, type Response } from "express"
 import { MessageTemplateDao } from "../message-templates/daos/message-template.dao.js";
 import { PriceListDao } from "../../commerce/price-list/daos/price-list.dao.js";
 import { RepairNoteDao } from "../../commerce/repair-notes/daos/repair-note.dao.js";
+import { RepairNoteDeviceDao } from "../../commerce/repair-notes/daos/repair-note-device.dao.js";
+import { toDeviceView } from "../../commerce/repair-notes/utils/devices.js";
 import { runWithTenant } from "../../core/tenancy/tenant-context.js";
 import { env } from "../../core/config/env.js";
 
@@ -30,6 +32,7 @@ export const createN8nPublicRouter = (
   messageTemplateDao: MessageTemplateDao,
   priceListDao: PriceListDao,
   repairNoteDao: RepairNoteDao,
+  repairNoteDeviceDao: RepairNoteDeviceDao,
 ): Router => {
   const router = Router({ mergeParams: true });
   router.use(requireInternalToken);
@@ -94,6 +97,9 @@ export const createN8nPublicRouter = (
       const note = await withTenant(req.params.tenantId, () =>
         repairNoteDao.findByControlNumber(controlNumber),
       );
+      const devices = note
+        ? (await withTenant(req.params.tenantId, () => repairNoteDeviceDao.findByRepairNoteIds([note.id]))).map((device) => toDeviceView(device))
+        : [];
 
       if (!note) {
         res.status(200).json({ exists: false });
@@ -125,8 +131,9 @@ export const createN8nPublicRouter = (
         deliveryDate: note.deliveryDate ?? null,
         isInWarrantyRange,
         customerName: note.customerName,
-        brand: note.brand,
-        model: note.model,
+        brand: devices[0]?.brand ?? null,
+        model: devices.map((d) => d.model).join(", "),
+        devices: devices.map(({ brand, model }) => ({ brand, model })),
       });
     } catch (error) {
       console.error("Error consultando nota para n8n:", error);

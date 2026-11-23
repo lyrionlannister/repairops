@@ -27,11 +27,11 @@ describe("LocalDao.consumeReturnNumber", () => {
   it("never hands out the same return number twice to concurrent callers", async () => {
     const results = await runWithTenant(tenantId, () =>
       Promise.all([
-        dao.consumeReturnNumber(),
-        dao.consumeReturnNumber(),
-        dao.consumeReturnNumber(),
-        dao.consumeReturnNumber(),
-        dao.consumeReturnNumber(),
+        dao.consume("return"),
+        dao.consume("return"),
+        dao.consume("return"),
+        dao.consume("return"),
+        dao.consume("return"),
       ]),
     );
 
@@ -42,7 +42,7 @@ describe("LocalDao.consumeReturnNumber", () => {
     const otherTenantId = `${Date.now()}${Math.floor(Math.random() * 1000)}1`;
     await ensureFixtureTenant(AppDataSource, otherTenantId);
     const [returnNumber, saleNumber] = await runWithTenant(otherTenantId, () =>
-      Promise.all([dao.consumeReturnNumber(), dao.consumeSaleNumber()]),
+      Promise.all([dao.consume("return"), dao.consume("sale")]),
     );
     expect(returnNumber).toBe(1);
     expect(saleNumber).toBe(1);

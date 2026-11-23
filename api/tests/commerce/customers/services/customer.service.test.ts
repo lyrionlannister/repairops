@@ -3,7 +3,11 @@ import { CustomerService } from "../../../../src/commerce/customers/services/cus
 import type { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import type { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
 import type { SalePaymentDao } from "../../../../src/commerce/payments/daos/sale-payment.dao.js";
+import type { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/daos/repair-note-service-type.dao.js";
+import type { RepairNoteDeviceDao } from "../../../../src/commerce/repair-notes/daos/repair-note-device.dao.js";
+import type { RepairNoteDevice } from "../../../../src/commerce/repair-notes/entities/repair-note-device.entity.js";
 import type { Customer } from "../../../../src/commerce/customers/entities/customer.entity.js";
+import type { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
 import type { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
 import { mockEntity } from "../../../support/mock-entity.js";
 
@@ -23,6 +27,18 @@ function makeRepairNoteDao() {
   } as unknown as RepairNoteDao;
 }
 
+function makeRepairNoteDeviceDao(devices: Array<Partial<RepairNoteDevice>> = []) {
+  return {
+    findByRepairNoteIds: vi.fn().mockResolvedValue(devices.map((d) => mockEntity<RepairNoteDevice>(d))),
+  } as unknown as RepairNoteDeviceDao;
+}
+
+function makeServiceTypeLinkDao() {
+  return {
+    findByRepairNoteIds: vi.fn().mockResolvedValue([]),
+  } as unknown as RepairNoteServiceTypeDao;
+}
+
 function makeSalePaymentDao() {
   return {
     sumCreditoForCustomer: vi.fn(),
@@ -30,19 +46,27 @@ function makeSalePaymentDao() {
 }
 
 describe("CustomerService", () => {
-  it("create rejects a blank name or phone", async () => {
+  it("create rejects a blank name", async () => {
     const dao = makeDao();
-    const service = new CustomerService(dao, makeRepairNoteDao(), makeSalePaymentDao());
+    const service = new CustomerService(dao, makeRepairNoteDao(), makeSalePaymentDao(), makeRepairNoteDeviceDao(), makeServiceTypeLinkDao());
 
     await expect(service.create({ name: "  ", phone: "555" })).rejects.toThrow("nombre");
-    await expect(service.create({ name: "Juan", phone: "  " })).rejects.toThrow("teléfono");
     expect(dao.create).not.toHaveBeenCalled();
+  });
+
+  it("create accepts a customer without phone", async () => {
+    const dao = makeDao();
+    vi.mocked(dao.create).mockResolvedValue(mockEntity<Customer>({ id: "c-1" }));
+    const service = new CustomerService(dao, makeRepairNoteDao(), makeSalePaymentDao(), makeRepairNoteDeviceDao(), makeServiceTypeLinkDao());
+
+    await service.create({ name: "Juan", phone: "  " });
+    expect(dao.create).toHaveBeenCalledWith(expect.objectContaining({ name: "Juan", phone: null }));
   });
 
   it("create trims fields and treats email as optional", async () => {
     const dao = makeDao();
     vi.mocked(dao.create).mockResolvedValue(mockEntity<Customer>({ id: "c-1" }));
-    const service = new CustomerService(dao, makeRepairNoteDao(), makeSalePaymentDao());
+    const service = new CustomerService(dao, makeRepairNoteDao(), makeSalePaymentDao(), makeRepairNoteDeviceDao(), makeServiceTypeLinkDao());
 
     await service.create({ name: " Juan Pérez ", phone: " 5551234567 " });
 
@@ -56,29 +80,41 @@ describe("CustomerService", () => {
   it("getDeviceHistory dedupes by brand+model, keeps the most recent date, and counts notes", async () => {
     const repairNoteDao = makeRepairNoteDao();
     vi.mocked(repairNoteDao.findByCustomerId).mockResolvedValue([
-      mockEntity<RepairNote>({ brand: "Samsung", model: "A15", receivedAt: "2026-01-10", controlNumber: 10 }),
-      mockEntity<RepairNote>({ brand: "samsung", model: "a15", receivedAt: "2026-03-05", controlNumber: 22 }),
-      mockEntity<RepairNote>({ brand: "Apple", model: "iPhone 12", receivedAt: "2026-02-01", controlNumber: 15 }),
+      mockEntity<RepairNote>({ id: "n1", receivedAt: "2026-01-10", controlNumber: 10 }),
+      mockEntity<RepairNote>({ id: "n2", receivedAt: "2026-03-05", controlNumber: 22 }),
+      mockEntity<RepairNote>({ id: "n3", receivedAt: "2026-02-01", controlNumber: 15 }),
     ]);
-    const service = new CustomerService(makeDao(), repairNoteDao, makeSalePaymentDao());
+    const deviceDao = makeRepairNoteDeviceDao([
+      { id: "d1", repairNoteId: "n1", brand: "Samsung", model: "A15" },
+      { repairNoteId: "n2", brand: "samsung", model: "a15" },
+      { repairNoteId: "n2", brand: "Samsung", model: "A15 " },
+      { repairNoteId: "n3", brand: "Apple", model: "iPhone 12" },
+    ]);
+    const links = makeServiceTypeLinkDao();
+    vi.mocked(links.findByRepairNoteIds).mockResolvedValue([
+      mockEntity<RepairNoteServiceType>({ repairNoteId: "n1", repairNoteDeviceId: "d1", serviceTypeId: "st-1" }),
+    ]);
+    const service = new CustomerService(makeDao(), repairNoteDao, makeSalePaymentDao(), deviceDao, links);
 
     const history = await service.getDeviceHistory("c-1");
 
     expect(history).toHaveLength(2);
-    expect(history[0]).toEqual({
+    expect(history[0]).toMatchObject({
       brand: "Samsung",
       model: "A15",
       lastReceivedAt: "2026-03-05",
       controlNumber: 22,
       notesCount: 2,
     });
-    expect(history[1].brand).toBe("Apple");
+    expect(history[0]?.visits.map((v) => v.controlNumber)).toEqual([22, 22, 10]);
+    expect(history[0]?.visits[2]).toMatchObject({ repairNoteId: "n1", serviceTypeIds: ["st-1"] });
+    expect(history[1]?.brand).toBe("Apple");
   });
 
   it("getDeviceHistory returns an empty list when the customer has no notes", async () => {
     const repairNoteDao = makeRepairNoteDao();
     vi.mocked(repairNoteDao.findByCustomerId).mockResolvedValue([]);
-    const service = new CustomerService(makeDao(), repairNoteDao, makeSalePaymentDao());
+    const service = new CustomerService(makeDao(), repairNoteDao, makeSalePaymentDao(), makeRepairNoteDeviceDao(), makeServiceTypeLinkDao());
 
     expect(await service.getDeviceHistory("c-1")).toEqual([]);
   });
