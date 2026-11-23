@@ -60,6 +60,34 @@ export class ImportStagingService {
     await this.redis.set(key, JSON.stringify(record), "EX", TTL_SECONDS);
   }
 
+  /**
+   * Llamado desde n8n una vez por bloque terminado (exito o error), sin contexto de
+   * tenant en el request. No-op si el staging ya no existe o ya no esta "processing"
+   * (evita resucitar un import ya finalizado por un ping de progreso tardio). El
+   * incremento no es atomico (RedisLike solo expone get/set/del, no INCR) -- se
+   * acepta el riesgo de una carrera si dos bloques terminan casi al mismo tiempo,
+   * porque el progreso es solo informativo y el resultado final sigue viniendo de
+   * applyCallback.
+   */
+  async applyProgress(
+    tenantId: string,
+    importId: string,
+    chunksTotal: number,
+    itemsInChunk: number,
+  ): Promise<void> {
+    const key = this.key(tenantId, importId);
+    const raw = await this.redis.get(key);
+    if (!raw) return;
+    const record = JSON.parse(raw) as StagingRecord;
+    if (record.status !== "processing") return;
+    record.progress = {
+      chunksTotal,
+      chunksDone: (record.progress?.chunksDone ?? 0) + 1,
+      itemsFound: (record.progress?.itemsFound ?? 0) + itemsInChunk,
+    };
+    await this.redis.set(key, JSON.stringify(record), "EX", TTL_SECONDS);
+  }
+
   async getById(importId: string): Promise<StagingRecord | null> {
     const tenantId = getCurrentTenantId();
     const raw = await this.redis.get(this.key(tenantId, importId));

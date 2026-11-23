@@ -145,6 +145,48 @@ describe("ImportStagingService", () => {
     expect(updated?.rows).toEqual([{ brand: "Samsung", model: "A15 corregido", price: 260 }]);
   });
 
+  it("applyProgress acumula bloques y productos encontrados", async () => {
+    const redis = makeFakeRedis();
+    const service = new ImportStagingService(redis, makePriceListDao(), makeSupplierDao());
+
+    const { importId } = await startUploadOrThrow(service);
+    await service.applyProgress(TENANT_A, importId, 5, 12);
+    await service.applyProgress(TENANT_A, importId, 5, 8);
+
+    const record = await runWithTenant(TENANT_A, () => service.getById(importId));
+    expect(record?.progress).toEqual({ chunksTotal: 5, chunksDone: 2, itemsFound: 20 });
+  });
+
+  it("applyProgress no hace nada si el staging ya no esta processing", async () => {
+    const redis = makeFakeRedis();
+    const service = new ImportStagingService(redis, makePriceListDao(), makeSupplierDao());
+
+    const { importId } = await startUploadOrThrow(service);
+    await service.applyCallback(TENANT_A, importId, { error: "PDF ilegible" });
+    await service.applyProgress(TENANT_A, importId, 5, 12);
+
+    const record = await runWithTenant(TENANT_A, () => service.getById(importId));
+    expect(record?.progress).toBeUndefined();
+  });
+
+  it("applyProgress no hace nada si el staging no existe", async () => {
+    const redis = makeFakeRedis();
+    const service = new ImportStagingService(redis, makePriceListDao(), makeSupplierDao());
+
+    await expect(service.applyProgress(TENANT_A, "no-existe", 5, 12)).resolves.toBeUndefined();
+  });
+
+  it("applyProgress esta aislado por tenant (no afecta el staging de otro tenant)", async () => {
+    const redis = makeFakeRedis();
+    const service = new ImportStagingService(redis, makePriceListDao(), makeSupplierDao());
+
+    const { importId } = await startUploadOrThrow(service);
+    await service.applyProgress(TENANT_B, importId, 5, 12);
+
+    const record = await runWithTenant(TENANT_A, () => service.getById(importId));
+    expect(record?.progress).toBeUndefined();
+  });
+
   it("discard borra el staging sin confirmar", async () => {
     const redis = makeFakeRedis();
     const service = new ImportStagingService(redis, makePriceListDao(), makeSupplierDao());

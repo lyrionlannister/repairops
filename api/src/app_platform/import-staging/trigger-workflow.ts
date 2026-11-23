@@ -21,6 +21,7 @@ export async function triggerImportStagingWorkflow(params: {
   form.set("tenantId", params.tenantId);
   form.set("importId", params.importId);
   form.set("callbackUrl", `${API_INTERNAL_URL}/api/v1/import-staging/callback`);
+  form.set("progressUrl", `${API_INTERNAL_URL}/api/v1/import-staging/progress`);
   form.set("internalToken", optionalEnv("N8N_INTERNAL_TOKEN", ""));
   form.set("file", new Blob([new Uint8Array(params.fileBuffer)]), params.fileName);
 
