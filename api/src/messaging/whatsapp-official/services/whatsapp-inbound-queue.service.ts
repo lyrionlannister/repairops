@@ -4,7 +4,11 @@ import {
   WhatsappWebhookService,
   type IncomingWhatsappMessage,
 } from "./whatsapp-webhook.service.js";
-import { extractIncomingMessages } from "../helpers/whatsapp-webhook.helpers.js";
+import { WhatsappMessageCostService } from "./whatsapp-message-cost.service.js";
+import {
+  extractIncomingMessages,
+  extractStatusUpdates,
+} from "../helpers/whatsapp-webhook.helpers.js";
 import { queueOptions, retainJobs } from "../../../core/config/queue.js";
 
 const QUEUE_NAME = "whatsapp-inbound";
@@ -16,9 +20,24 @@ export class WhatsappInboundQueueService {
   private queue: Queue<IncomingWhatsappMessage> | null = null;
   private worker: Worker<IncomingWhatsappMessage> | null = null;
 
-  constructor(private whatsappWebhookService: WhatsappWebhookService) {}
+  constructor(
+    private whatsappWebhookService: WhatsappWebhookService,
+    private whatsappMessageCostService: WhatsappMessageCostService,
+  ) {}
 
   async enqueuePayload(payload: unknown): Promise<void> {
+    // Los status de costo se resuelven inline, no por cola: es un UPDATE
+    // idempotente (pisa el mismo valor si Meta reenvia), no necesita el orden
+    // ni el buffer que si necesitan los mensajes entrantes. Un error aqui
+    // nunca debe tumbar el ack del webhook ni bloquear los mensajes.
+    for (const update of extractStatusUpdates(payload)) {
+      try {
+        await this.whatsappMessageCostService.recordStatusUpdate(update);
+      } catch (error) {
+        console.error("Error registrando costo de status de WhatsApp:", error);
+      }
+    }
+
     const messages = extractIncomingMessages(payload);
     if (messages.length === 0) return;
 
