@@ -14,7 +14,7 @@ export interface RepairNotePdfData {
   qrUrl: string | null;
   customerName: string;
   contactNumber: string | null;
-  devices: RepairNoteDeviceView[];
+  devices: Array<RepairNoteDeviceView & { serviceTypeNames: string[] }>;
   additionalFindings: string | null;
   totalValue: string;
   requiresAdvance: boolean;
@@ -25,7 +25,6 @@ export interface RepairNotePdfData {
   deliveryDate: string | null;
   assignedEmployeeName: string | null;
   technicianNotes: string | null;
-  serviceTypeNames: string[];
   hasWarranty: boolean;
   hasExtendedWarranty: boolean;
   extendedWarrantyDays: number | null;
@@ -36,7 +35,11 @@ export interface RepairNotePdfData {
 export function toRepairNotePdfData(
   note: RepairNote & { devices: RepairNoteDeviceView[] },
   local: Local | null,
-  options: { assignedEmployeeName?: string | null; serviceTypeNames?: string[]; qrUrl?: string | null } = {},
+  options: {
+    assignedEmployeeName?: string | null;
+    serviceTypeNames?: (ids: string[]) => string[];
+    qrUrl?: string | null;
+  } = {},
 ): RepairNotePdfData {
   const total = new Decimal(note.totalValue ?? 0);
   const advance = note.requiresAdvance && note.advanceValue != null ? new Decimal(note.advanceValue) : new Decimal(0);
@@ -47,7 +50,10 @@ export function toRepairNotePdfData(
     qrUrl: options.qrUrl ?? null,
     customerName: note.customerName,
     contactNumber: note.contactNumber ?? null,
-    devices: note.devices,
+    devices: note.devices.map((device) => ({
+      ...device,
+      serviceTypeNames: options.serviceTypeNames?.(device.serviceTypeIds) ?? [],
+    })),
     additionalFindings: note.additionalFindings ?? null,
     totalValue: moneyString(total),
     requiresAdvance: note.requiresAdvance,
@@ -58,7 +64,6 @@ export function toRepairNotePdfData(
     deliveryDate: note.deliveryDate ?? null,
     assignedEmployeeName: options.assignedEmployeeName ?? null,
     technicianNotes: note.technicianNotes ?? null,
-    serviceTypeNames: options.serviceTypeNames ?? [],
     hasWarranty: note.hasWarranty,
     hasExtendedWarranty: note.hasExtendedWarranty,
     extendedWarrantyDays: note.extendedWarrantyDays ?? null,

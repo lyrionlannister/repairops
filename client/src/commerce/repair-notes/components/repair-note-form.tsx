@@ -31,7 +31,6 @@ export const RepairNoteForm: FC<RepairNoteFormProps> = ({
   onDeviceChange,
   onAddDevice,
   onRemoveDevice,
-  onServiceTypeIdsChange,
   onReceivedAtChange,
   onDeliveryDateChange,
   onAssignedEmployeeIdChange,
@@ -81,13 +80,11 @@ export const RepairNoteForm: FC<RepairNoteFormProps> = ({
     <Step index={1} current={step}>
       <RepairNoteDeviceSection
         devices={form.devices}
-        serviceTypeIds={form.serviceTypeIds}
         knownBrands={knownBrands}
         saving={saving}
         onDeviceChange={onDeviceChange}
         onAddDevice={onAddDevice}
         onRemoveDevice={onRemoveDevice}
-        onServiceTypeIdsChange={onServiceTypeIdsChange}
       />
     </Step>
 

@@ -3,7 +3,7 @@ import { EMPTY_DEVICE } from "./devices";
 export const noteToForm = (n: RepairNoteRecord): RepairNoteFormData => ({
   customerName: n.customerName,
   contactNumber: n.contactNumber ?? "",
-  devices: n.devices.length > 0 ? n.devices.map((d) => ({ ...d })) : [{ ...EMPTY_DEVICE }],
+  devices: n.devices.length > 0 ? n.devices.map((d) => ({ ...d, serviceTypeIds: [...(d.serviceTypeIds ?? [])] })) : [{ ...EMPTY_DEVICE }],
   totalValue: String(n.totalValue),
   status: n.status as RepairNoteStatus,
   requiresAdvance: n.requiresAdvance,
@@ -15,7 +15,6 @@ export const noteToForm = (n: RepairNoteRecord): RepairNoteFormData => ({
   assignedEmployeeId: n.assignedEmployeeId ?? "",
   localId: n.localId ?? "",
   customerId: n.customerId ?? "",
-  serviceTypeIds: [],
   hasWarranty: n.hasWarranty,
   hasExtendedWarranty: n.hasExtendedWarranty,
   extendedWarrantyDays: n.extendedWarrantyDays != null ? String(n.extendedWarrantyDays) : "",

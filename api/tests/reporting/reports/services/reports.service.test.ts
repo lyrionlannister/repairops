@@ -20,6 +20,7 @@ import { RevenueAttributionService } from "../../../../src/commerce/revenue-attr
 import { ServiceType } from "../../../../src/commerce/service-types/entities/service-type.entity.js";
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
+import { RepairNoteDevice } from "../../../../src/commerce/repair-notes/entities/repair-note-device.entity.js";
 import { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/daos/repair-note-service-type.dao.js";
 import { ReportsService } from "../../../../src/reporting/reports/services/reports.service.js";
 import { ReportsDao } from "../../../../src/reporting/reports/daos/reports.dao.js";
@@ -310,8 +311,18 @@ describe("ReportsService", () => {
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
+      const addDevice = (repairNoteId: string, position: number) =>
+        AppDataSource.getRepository(RepairNoteDevice).save({
+          tenantId: typeTenant,
+          repairNoteId,
+          position,
+          brand: "Marca",
+          model: "Modelo",
+          reportedFailure: "Falla",
+        });
+      const deviceA = await addDevice(noteA.id, 0);
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteA.id, serviceTypeId: repairType.id }),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteA.id, repairNoteDeviceId: deviceA.id, serviceTypeId: repairType.id }),
       );
 
       const noteB = await runWithTenant(typeTenant, () =>
@@ -326,11 +337,16 @@ describe("ReportsService", () => {
           publicRef: generatePublicRef(),
         } as Partial<RepairNote>),
       );
+      const deviceB1 = await addDevice(noteB.id, 0);
+      const deviceB2 = await addDevice(noteB.id, 1);
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: repairType.id }),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, repairNoteDeviceId: deviceB1.id, serviceTypeId: repairType.id }),
       );
       await runWithTenant(typeTenant, () =>
-        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, serviceTypeId: maintenanceType.id }),
+        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, repairNoteDeviceId: deviceB2.id, serviceTypeId: repairType.id }),
+      );
+      await runWithTenant(typeTenant, () =>
+        repairNoteServiceTypeDao.create({ repairNoteId: noteB.id, repairNoteDeviceId: deviceB2.id, serviceTypeId: maintenanceType.id }),
       );
 
       const report = await runWithTenant(typeTenant, () => reportsService.getRepairNotesByType(WIDE_PERIOD));

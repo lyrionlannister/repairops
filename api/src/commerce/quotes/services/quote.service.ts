@@ -241,13 +241,13 @@ export class QuoteService {
             brand: quote.brand as string,
             model: quote.model as string,
             reportedFailure: quote.reportedFailure as string,
+            serviceTypeIds: serviceTypeLinks.map((l) => l.serviceTypeId),
           },
         ],
         receivedAt,
         totalValue: quote.totalValue,
       },
       noteItems,
-      serviceTypeLinks.map((l) => l.serviceTypeId),
     );
   }
 

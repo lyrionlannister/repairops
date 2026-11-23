@@ -23,7 +23,7 @@ export const RepairNoteDocument: React.FC<{ data: RepairNotePdfData }> = ({ data
   const single = data.devices.length === 1 ? data.devices[0] : null;
   const deviceTitle = single ? `${single.brand} ${single.model}` : `${data.devices.length} equipos`;
   const serviceLine = [
-    data.serviceTypeNames.length > 0 && `Servicio: ${data.serviceTypeNames.join(", ")}`,
+    single && single.serviceTypeNames.length > 0 && `Servicio: ${single.serviceTypeNames.join(", ")}`,
     single?.deviceOff && "Equipo apagado",
   ]
     .filter(Boolean)
@@ -34,7 +34,14 @@ export const RepairNoteDocument: React.FC<{ data: RepairNotePdfData }> = ({ data
   const falla = single
     ? [{ label: "FALLA REPORTADA", text: single.reportedFailure }]
     : data.devices.map((device, index) => ({
-        label: `EQUIPO ${index + 1} · ${device.brand} ${device.model}${device.deviceOff ? " · APAGADO" : ""}`.toUpperCase(),
+        label: [
+          `EQUIPO ${index + 1} · ${device.brand} ${device.model}`,
+          device.serviceTypeNames.length > 0 && device.serviceTypeNames.join(", "),
+          device.deviceOff && "APAGADO",
+        ]
+          .filter(Boolean)
+          .join(" · ")
+          .toUpperCase(),
         text: device.reportedFailure,
       }));
   if (data.additionalFindings) falla.push({ label: "HALLAZGOS ADICIONALES", text: data.additionalFindings });

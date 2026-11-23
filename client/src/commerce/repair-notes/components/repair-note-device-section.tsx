@@ -12,13 +12,11 @@ import type { RepairNoteDeviceSectionProps } from "../props/repair-note-device-s
 
 export const RepairNoteDeviceSection: FC<RepairNoteDeviceSectionProps> = ({
   devices,
-  serviceTypeIds,
   knownBrands,
   saving,
   onDeviceChange,
   onAddDevice,
   onRemoveDevice,
-  onServiceTypeIdsChange,
 }) => (
   <>
     {devices.map((device, index) => (
@@ -83,6 +81,14 @@ export const RepairNoteDeviceSection: FC<RepairNoteDeviceSectionProps> = ({
             />
           </div>
           <div className="sm:col-span-2">
+            <Label className="text-gray-500">Tipo de servicio</Label>
+            <ServiceTypeMultiSelect
+              value={device.serviceTypeIds}
+              onChange={(serviceTypeIds) => onDeviceChange(index, { serviceTypeIds })}
+              disabled={saving}
+            />
+          </div>
+          <div className="sm:col-span-2">
             <CheckboxField
               label="Equipo apagado"
               checked={device.deviceOff}
@@ -104,14 +110,5 @@ export const RepairNoteDeviceSection: FC<RepairNoteDeviceSectionProps> = ({
       <Plus className="mr-1.5 size-4" />
       Agregar otro equipo
     </Button>
-
-    <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3">
-      <SectionTitle>Tipo de servicio</SectionTitle>
-      <ServiceTypeMultiSelect
-        value={serviceTypeIds}
-        onChange={onServiceTypeIdsChange}
-        disabled={saving}
-      />
-    </div>
   </>
 );

@@ -29,7 +29,6 @@ export const RepairNoteFormPage: React.FC = () => {
     fetchNotes,
     fetchNote,
     fetchNoteItems,
-    fetchNoteServiceTypeIds,
     createNote,
     updateNote,
     clearError,
@@ -38,7 +37,6 @@ export const RepairNoteFormPage: React.FC = () => {
   const { workingBranchId } = useBranch();
 
   const [form, setForm] = useState<RepairNoteFormData>(INITIAL_FORM);
-  const [initialServiceTypeIds, setInitialServiceTypeIds] = useState<string[]>([]);
   const [advanceMethod, setAdvanceMethod] = useState<AdvancePaymentInput["method"]>("efectivo");
   const [advanceEmployeeId, setAdvanceEmployeeId] = useState("");
 
@@ -73,15 +71,14 @@ export const RepairNoteFormPage: React.FC = () => {
     if (isEdit && id) {
       fetchNote(id);
       fetchNoteItems(id).then(loadFromRecords);
-      fetchNoteServiceTypeIds(id).then(setInitialServiceTypeIds);
     }
-  }, [isEdit, id, fetchNote, fetchNoteItems, fetchNoteServiceTypeIds]);
+  }, [isEdit, id, fetchNote, fetchNoteItems]);
 
   useEffect(() => {
     if (note && isEdit) {
-      setForm({ ...noteToForm(note), serviceTypeIds: initialServiceTypeIds });
+      setForm(noteToForm(note));
     }
-  }, [note, isEdit, initialServiceTypeIds]);
+  }, [note, isEdit]);
 
   const set = (field: keyof RepairNoteFormData, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -158,9 +155,6 @@ export const RepairNoteFormPage: React.FC = () => {
           }
           onAddDevice={() => setForm((prev) => ({ ...prev, devices: [...prev.devices, { ...EMPTY_DEVICE }] }))}
           onRemoveDevice={(index) => setForm((prev) => ({ ...prev, devices: removeDeviceAt(prev.devices, index) }))}
-          onServiceTypeIdsChange={(serviceTypeIds) =>
-            setForm((prev) => ({ ...prev, serviceTypeIds }))
-          }
           onReceivedAtChange={(value) => set("receivedAt", value)}
           onDeliveryDateChange={(value) => set("deliveryDate", value)}
           onAssignedEmployeeIdChange={(value) => set("assignedEmployeeId", value)}

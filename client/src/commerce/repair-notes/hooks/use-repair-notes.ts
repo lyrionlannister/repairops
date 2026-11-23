@@ -19,7 +19,6 @@ export const INITIAL_FORM: RepairNoteFormData = {
   assignedEmployeeId: "",
   localId: "",
   customerId: "",
-  serviceTypeIds: [],
   hasWarranty: false,
   hasExtendedWarranty: false,
   extendedWarrantyDays: "",
@@ -215,19 +214,6 @@ export const useRepairNotes = () => {
     [apiClient],
   );
 
-  const fetchNoteServiceTypeIds = useCallback(
-    async (id: string): Promise<string[]> => {
-      try {
-        const response = await apiClient(`/repair-notes/${id}/service-types`);
-        if (!response.ok) return [];
-        return ((await response.json()) as { serviceTypeIds: string[] }).serviceTypeIds;
-      } catch {
-        return [];
-      }
-    },
-    [apiClient],
-  );
-
   const cancelNote = useCallback(
     async (id: string): Promise<RepairNoteRecord | null> => {
       setError(null);
@@ -276,7 +262,6 @@ export const useRepairNotes = () => {
     fetchNotes,
     fetchNote,
     fetchNoteItems,
-    fetchNoteServiceTypeIds,
     createNote,
     updateNote,
     cancelNote,

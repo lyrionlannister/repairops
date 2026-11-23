@@ -115,11 +115,19 @@ export class RepairNoteService {
   }
 
   async withDevices(notes: RepairNote[]): Promise<RepairNoteWithDevices[]> {
-    const devices = await this.repairNoteDeviceDao.findByRepairNoteIds(notes.map((n) => n.id));
+    const noteIds = notes.map((n) => n.id);
+    const [devices, links] = await Promise.all([
+      this.repairNoteDeviceDao.findByRepairNoteIds(noteIds),
+      this.repairNoteServiceTypeDao.findByRepairNoteIds(noteIds),
+    ]);
+    const typesByDevice = new Map<string, string[]>();
+    for (const link of links) {
+      typesByDevice.set(link.repairNoteDeviceId, [...(typesByDevice.get(link.repairNoteDeviceId) ?? []), link.serviceTypeId]);
+    }
     const byNote = new Map<string, RepairNoteDeviceView[]>();
     for (const device of devices) {
       const list = byNote.get(device.repairNoteId) ?? [];
-      list.push(toDeviceView(device));
+      list.push(toDeviceView(device, typesByDevice.get(device.id) ?? []));
       byNote.set(device.repairNoteId, list);
     }
     return notes.map((note) => Object.assign(note, { devices: byNote.get(note.id) ?? [] }));
@@ -131,8 +139,8 @@ export class RepairNoteService {
     return withDevices ?? null;
   }
 
-  // Reemplaza los equipos de la nota dentro de la transaccion del caller; el orden
-  // del arreglo es la posicion impresa en los tickets.
+  // Reemplaza los equipos de la nota (y, por CASCADE, sus tipos de servicio) dentro de
+  // la transaccion del caller; el orden del arreglo es la posicion impresa en los tickets.
   private async replaceDevices(
     manager: EntityManager,
     repairNoteId: string,
@@ -140,9 +148,17 @@ export class RepairNoteService {
     devices: RepairNoteDeviceView[],
   ): Promise<void> {
     await manager.delete(RepairNoteDevice, { repairNoteId, tenantId });
-    await manager.save(
-      devices.map((device, position) => manager.create(RepairNoteDevice, { ...device, tenantId, repairNoteId, position })),
+    const saved = await manager.save(
+      devices.map(({ serviceTypeIds: _types, ...device }, position) =>
+        manager.create(RepairNoteDevice, { ...device, tenantId, repairNoteId, position }),
+      ),
     );
+    const links = saved.flatMap((device, position) =>
+      (devices[position]?.serviceTypeIds ?? []).map((serviceTypeId) =>
+        manager.create(RepairNoteServiceType, { tenantId, repairNoteId, repairNoteDeviceId: device.id, serviceTypeId }),
+      ),
+    );
+    if (links.length > 0) await manager.save(links);
   }
 
   // Las sub-lecturas pasan por findById: una nota que el usuario no ve (otro taller,
@@ -155,26 +171,21 @@ export class RepairNoteService {
   async getServiceTypeIds(repairNoteId: string): Promise<string[]> {
     if (!(await this.repairNoteDao.findById(repairNoteId))) return [];
     const links = await this.repairNoteServiceTypeDao.findByRepairNoteId(repairNoteId);
-    return links.map((l) => l.serviceTypeId);
+    return [...new Set(links.map((l) => l.serviceTypeId))];
   }
 
-  async getServiceTypeNames(repairNoteId: string): Promise<string[]> {
-    const [links, types] = await Promise.all([
-      this.repairNoteServiceTypeDao.findByRepairNoteId(repairNoteId),
-      this.serviceTypeDao.findAllOrdered(),
-    ]);
+  async serviceTypeNameResolver(): Promise<(ids: string[]) => string[]> {
+    const types = await this.serviceTypeDao.findAllOrdered();
     const nameById = new Map(types.map((t) => [t.id, t.name]));
-    return links.map((l) => nameById.get(l.serviceTypeId)).filter((n): n is string => Boolean(n));
+    return (ids) => ids.map((id) => nameById.get(id)).filter((n): n is string => Boolean(n));
   }
 
   // Si la nota lleva items (accesorios/partes usados), crearla y reservar su
   // stock (o descontarlo real si la nota ya nace "comprometida", caso raro)
-  // corre en una sola transaccion. serviceTypeIds va en la misma transaccion:
-  // nunca queda una nota sin sus tipos de servicio por un fallo a medio camino.
+  // corre en una sola transaccion, junto con los equipos y sus tipos de servicio.
   async create(
     data: CreatePayload,
     items: RepairNoteItemInput[] = [],
-    serviceTypeIds: string[] = [],
     advancePayment?: AdvancePaymentInput,
   ): Promise<RepairNoteWithDevices> {
     if (!data.localId) throw new Error("La sucursal es obligatoria");
@@ -196,7 +207,7 @@ export class RepairNoteService {
     // reintenta la transaccion completa con otra referencia.
     for (let attempt = 1; ; attempt++) {
       try {
-        const note = await this.createWithRef(fields, devices, items, serviceTypeIds, controlNumber, tenantId, advancePayment, receivedTime);
+        const note = await this.createWithRef(fields, devices, items, controlNumber, tenantId, advancePayment, receivedTime);
         return Object.assign(note, { devices });
       } catch (error) {
         const isRefCollision =
@@ -211,7 +222,6 @@ export class RepairNoteService {
     data: NoteCreateFields,
     devices: RepairNoteDeviceView[],
     items: RepairNoteItemInput[],
-    serviceTypeIds: string[],
     controlNumber: number,
     tenantId: string,
     advancePayment: AdvancePaymentInput | undefined,
@@ -258,15 +268,6 @@ export class RepairNoteService {
             quantity: item.quantity,
           });
         }
-      }
-
-      for (const serviceTypeId of serviceTypeIds) {
-        const link = manager.create(RepairNoteServiceType, {
-          tenantId,
-          repairNoteId: savedNote.id,
-          serviceTypeId,
-        });
-        await manager.save(link);
       }
 
       return savedNote;
@@ -443,7 +444,7 @@ export class RepairNoteService {
     if (!sameValue || !sameFlag) throw new Error("El anticipo ya se cobró y no se puede modificar");
   }
 
-  // Reemplazar los items/tipos de servicio de una nota existente libera (o
+  // Reemplazar los items de una nota existente libera (o
   // revierte, si la nota ya estaba comprometida) los items anteriores y
   // reserva (o descuenta real, si la nota queda comprometida) los nuevos --
   // todo en la misma transaccion que el update de la nota.
@@ -451,7 +452,6 @@ export class RepairNoteService {
     id: string,
     data: UpdatePayload,
     items?: RepairNoteItemInput[],
-    serviceTypeIds?: string[],
   ): Promise<RepairNoteWithDevices | null> {
     if ("localId" in data && !data.localId) throw new Error("La sucursal es obligatoria");
     const { devices: rawDevices, ...noteFields } = data;
@@ -477,7 +477,7 @@ export class RepairNoteService {
       }
     }
 
-    if (items === undefined && serviceTypeIds === undefined) {
+    if (items === undefined) {
       let previousStatus: string | undefined;
       const savedNote = await AppDataSource.transaction(async (manager) => {
         const note = await manager.findOneBy(RepairNote, { id, tenantId });
@@ -558,14 +558,6 @@ export class RepairNoteService {
       } else if (willBeCommitted && !wasCommitted) {
         // Status cruzo a comprometido en esta misma llamada, sin tocar items.
         await this.consumeActiveReservations(manager, id, tenantId);
-      }
-
-      if (serviceTypeIds !== undefined) {
-        await manager.delete(RepairNoteServiceType, { repairNoteId: id, tenantId });
-        for (const serviceTypeId of serviceTypeIds) {
-          const link = manager.create(RepairNoteServiceType, { tenantId, repairNoteId: id, serviceTypeId });
-          await manager.save(link);
-        }
       }
 
       return savedNote;

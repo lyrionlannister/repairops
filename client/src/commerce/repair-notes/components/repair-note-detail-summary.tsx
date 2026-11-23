@@ -116,15 +116,24 @@ export const RepairNoteDetailSummary: FC<RepairNoteDetailSummaryProps> = ({
                     {device.deviceOff && (
                       <span className="ml-1 text-xs font-medium text-orange-600 dark:text-orange-400">(apagado)</span>
                     )}
+                    {(serviceTypeNames[index] ?? []).length > 0 && (
+                      <span className="mt-1 flex flex-wrap gap-1">
+                        {serviceTypeNames[index]?.map((name) => (
+                          <span
+                            key={name}
+                            className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-500/10 dark:text-brand-400"
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
 
             <ul className="space-y-3.5">
-              {serviceTypeNames.map((name) => (
-                <Check_ key={name}>{name}</Check_>
-              ))}
               {itemLines.map((line) => (
                 <Check_ key={line.id}>
                   {line.quantity} × {line.name} (

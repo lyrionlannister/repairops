@@ -3,6 +3,7 @@ export interface RepairNoteDevice {
   model: string;
   reportedFailure: string;
   deviceOff: boolean;
+  serviceTypeIds: string[];
 }
 
 export interface RepairNoteRecord {
@@ -48,7 +49,6 @@ export interface RepairNoteFormData {
   assignedEmployeeId: string;
   localId: string;
   customerId: string;
-  serviceTypeIds: string[];
   hasWarranty: boolean;
   hasExtendedWarranty: boolean;
   extendedWarrantyDays: string;

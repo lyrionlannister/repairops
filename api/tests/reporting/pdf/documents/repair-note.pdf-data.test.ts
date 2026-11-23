@@ -10,7 +10,7 @@ function makeNote(overrides: Partial<NoteWithDevices> = {}): NoteWithDevices {
     publicRef: "7F3K2A9B",
     customerName: "Juan Pérez",
     contactNumber: "5551234567",
-    devices: [{ brand: "Samsung", model: "A15", reportedFailure: "Pantalla rota", deviceOff: false }],
+    devices: [{ brand: "Samsung", model: "A15", reportedFailure: "Pantalla rota", deviceOff: false, serviceTypeIds: [] }],
     totalValue: "500.00",
     requiresAdvance: true,
     advanceValue: "100.00",

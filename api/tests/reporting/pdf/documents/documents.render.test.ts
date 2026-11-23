@@ -17,7 +17,16 @@ const noteData = (overrides: Partial<RepairNotePdfData> = {}): RepairNotePdfData
   qrUrl: "https://wa.me/5215512345678?text=Hola%2C%20nota%20%231042",
   customerName: "Juan Pérez",
   contactNumber: "5551234567",
-  devices: [{ brand: "Samsung", model: "A15", reportedFailure: "Pantalla rota", deviceOff: false }],
+  devices: [
+    {
+      brand: "Samsung",
+      model: "A15",
+      reportedFailure: "Pantalla rota",
+      deviceOff: false,
+      serviceTypeIds: ["1", "2"],
+      serviceTypeNames: ["Reparación", "Diagnóstico"],
+    },
+  ],
   additionalFindings: null,
   totalValue: "1500.00",
   requiresAdvance: true,
@@ -28,7 +37,6 @@ const noteData = (overrides: Partial<RepairNotePdfData> = {}): RepairNotePdfData
   deliveryDate: "2026-01-15",
   assignedEmployeeName: "Luis",
   technicianNotes: "Revisar touch",
-  serviceTypeNames: ["Reparación", "Diagnóstico"],
   hasWarranty: true,
   hasExtendedWarranty: true,
   extendedWarrantyDays: 30,
@@ -80,7 +88,7 @@ describe("documentos PDF", () => {
     const buffer = await renderer.render(RepairNoteDocument, {
       data: noteData({
         technicianNotes: long,
-        devices: [{ brand: "Samsung", model: "A15", reportedFailure: long, deviceOff: false }],
+        devices: [{ brand: "Samsung", model: "A15", reportedFailure: long, deviceOff: false, serviceTypeIds: [], serviceTypeNames: [] }],
       }),
     });
     expect(isPdf(buffer)).toBe(true);
@@ -91,9 +99,9 @@ describe("documentos PDF", () => {
     const buffer = await renderer.render(RepairNoteDocument, {
       data: noteData({
         devices: [
-          { brand: "Samsung", model: "A15", reportedFailure: "Pantalla rota", deviceOff: false },
-          { brand: "Apple", model: "iPhone 12", reportedFailure: "No carga", deviceOff: true },
-          { brand: "Xiaomi", model: "Redmi 9", reportedFailure: "Bateria", deviceOff: false },
+          { brand: "Samsung", model: "A15", reportedFailure: "Pantalla rota", deviceOff: false, serviceTypeIds: ["1"], serviceTypeNames: ["Reparación"] },
+          { brand: "Apple", model: "iPhone 12", reportedFailure: "No carga", deviceOff: true, serviceTypeIds: [], serviceTypeNames: [] },
+          { brand: "Xiaomi", model: "Redmi 9", reportedFailure: "Bateria", deviceOff: false, serviceTypeIds: ["2"], serviceTypeNames: ["Diagnóstico"] },
         ],
       }),
     });

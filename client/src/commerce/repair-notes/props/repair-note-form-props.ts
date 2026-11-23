@@ -21,7 +21,6 @@ export interface RepairNoteFormProps {
   onDeviceChange: (index: number, patch: Partial<RepairNoteDevice>) => void;
   onAddDevice: () => void;
   onRemoveDevice: (index: number) => void;
-  onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
   onReceivedAtChange: (value: string) => void;
   onDeliveryDateChange: (value: string) => void;
   onAssignedEmployeeIdChange: (value: string) => void;

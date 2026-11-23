@@ -9,6 +9,7 @@ import { useEmployees } from "@identity/users/hooks/use-employees";
 import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { NEXT_STATUS, useRepairNotes } from "./use-repair-notes";
 import { useRepairNoteDelivery } from "./use-repair-note-delivery";
+import { deviceServiceTypeNames } from "../utils/devices";
 import type { RepairNoteItemRecord } from "../types/repair-notes";
 import type { DetailItemLine, SavedKind } from "../types/repair-note-detail";
 
@@ -25,7 +26,6 @@ export const useRepairNoteDetail = () => {
     error,
     fetchNote,
     fetchNoteItems,
-    fetchNoteServiceTypeIds,
     cancelNote,
     deleteNote,
     changeStatus,
@@ -37,7 +37,6 @@ export const useRepairNoteDetail = () => {
   );
 
   const [itemRecords, setItemRecords] = useState<RepairNoteItemRecord[]>([]);
-  const [serviceTypeIds, setServiceTypeIds] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<"cancel" | "delete" | null>(null);
   const [busy, setBusy] = useState(false);
   const [advancing, setAdvancing] = useState(false);
@@ -52,7 +51,6 @@ export const useRepairNoteDetail = () => {
     if (!id) return;
     fetchNote(id);
     fetchNoteItems(id).then(setItemRecords);
-    fetchNoteServiceTypeIds(id).then(setServiceTypeIds);
     fetchEmployees();
     fetchServiceTypes();
     fetchInventory();
@@ -60,7 +58,6 @@ export const useRepairNoteDetail = () => {
     id,
     fetchNote,
     fetchNoteItems,
-    fetchNoteServiceTypeIds,
     fetchEmployees,
     fetchServiceTypes,
     fetchInventory,
@@ -76,12 +73,10 @@ export const useRepairNoteDetail = () => {
     return null;
   }, [employees, note?.assignedEmployeeId, currentUser]);
 
-  const serviceTypeNames = useMemo(() => {
-    const nameById = new Map(serviceTypes.map((t) => [t.id, t.name]));
-    return serviceTypeIds
-      .map((typeId) => nameById.get(typeId))
-      .filter((n): n is string => Boolean(n));
-  }, [serviceTypes, serviceTypeIds]);
+  const serviceTypeNames = useMemo(
+    () => deviceServiceTypeNames(note?.devices ?? [], serviceTypes),
+    [note?.devices, serviceTypes],
+  );
 
   const itemLines = useMemo<DetailItemLine[]>(
     () =>

@@ -98,7 +98,7 @@ export const createN8nPublicRouter = (
         repairNoteDao.findByControlNumber(controlNumber),
       );
       const devices = note
-        ? (await withTenant(req.params.tenantId, () => repairNoteDeviceDao.findByRepairNoteIds([note.id]))).map(toDeviceView)
+        ? (await withTenant(req.params.tenantId, () => repairNoteDeviceDao.findByRepairNoteIds([note.id]))).map((device) => toDeviceView(device))
         : [];
 
       if (!note) {

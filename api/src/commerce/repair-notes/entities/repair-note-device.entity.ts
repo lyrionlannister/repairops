@@ -3,8 +3,8 @@ import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 import { RepairNote } from "./repair-note.entity.js";
 
-// Equipos recibidos en una nota (1..N). Estado, total, anticipo, tipos de servicio y
-// refacciones siguen siendo de la nota: se reciben, cobran y entregan juntos.
+// Equipos recibidos en una nota (1..N), cada uno con sus tipos de servicio. Estado,
+// total, anticipo y refacciones siguen siendo de la nota: se reciben, cobran y entregan juntos.
 @Entity("repair_note_devices")
 @Index("IDX_repair_note_devices_tenant", ["tenantId"])
 @Unique("UQ_repair_note_devices_nota_posicion", ["repairNoteId", "position"])

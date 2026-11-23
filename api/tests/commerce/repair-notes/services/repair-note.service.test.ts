@@ -253,6 +253,36 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
       ),
     ).rejects.toThrow("sucursal");
   });
+  it("guarda los tipos de servicio de cada equipo y los reemplaza al editar los equipos", async () => {
+    const types = new ServiceTypeDao(AppDataSource.getRepository(ServiceType));
+    const repair = await runWithTenant(tenantId, () => types.create({ name: "Reparación por equipo" }));
+    const diagnosis = await runWithTenant(tenantId, () => types.create({ name: "Diagnóstico por equipo" }));
+    const note = await runWithTenant(tenantId, () =>
+      repairNoteService.create({
+        localId: "1",
+        customerName: "Cliente Tipos",
+        receivedAt: "2026-01-01",
+        devices: [
+          { brand: "Samsung", model: "A52", reportedFailure: "No carga", serviceTypeIds: [repair.id, repair.id] },
+          { brand: "Apple", model: "iPhone 12", reportedFailure: "Mojado", serviceTypeIds: [diagnosis.id] },
+        ],
+      }),
+    );
+
+    const loaded = await runWithTenant(tenantId, () => repairNoteService.getById(note.id));
+    expect(loaded?.devices.map((d) => d.serviceTypeIds)).toEqual([[repair.id], [diagnosis.id]]);
+
+    await runWithTenant(tenantId, () =>
+      repairNoteService.update(note.id, {
+        devices: [{ brand: "Samsung", model: "A52", reportedFailure: "No carga", serviceTypeIds: [diagnosis.id, repair.id] }],
+      }),
+    );
+    const edited = await runWithTenant(tenantId, () => repairNoteService.getById(note.id));
+    expect(edited?.devices).toHaveLength(1);
+    expect([...(edited?.devices[0]?.serviceTypeIds ?? [])].sort()).toEqual([diagnosis.id, repair.id].sort());
+    expect(await runWithTenant(`${tenantId}9`, () => repairNoteService.getById(note.id))).toBeNull();
+  });
+
   it("crea un cliente cuando la nota llega sin customerId, y lo reutiliza con el mismo nombre y teléfono", async () => {
     const base = { localId: "1", devices: [{ brand: "Apple", model: "iPhone 12", reportedFailure: "No enciende" }], receivedAt: "2026-01-01" };
     const first = await runWithTenant(tenantId, () =>
@@ -327,7 +357,6 @@ describe("RepairNoteService: anticipo y entrega", () => {
         repairNoteService.create(
           baseNote("9001", { requiresAdvance: true, advanceValue: 100 }),
           [],
-          [],
           { method: "efectivo", createdByEmployeeId: "1" },
         ),
       ),
@@ -341,7 +370,6 @@ describe("RepairNoteService: anticipo y entrega", () => {
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
         baseNote(localId, { requiresAdvance: true, advanceValue: 150 }),
-        [],
         [],
         { method: "efectivo", createdByEmployeeId: "1" },
       ),
@@ -366,7 +394,6 @@ describe("RepairNoteService: anticipo y entrega", () => {
     const note = await runWithTenant(tenantId, () =>
       repairNoteService.create(
         baseNote(localId, { requiresAdvance: true, advanceValue: 80 }),
-        [],
         [],
         { method: "efectivo", createdByEmployeeId: "1" },
       ),
@@ -478,8 +505,8 @@ describe("RepairNoteService: anticipo y entrega", () => {
       ),
     );
     expect(note.devices).toEqual([
-      { brand: "Samsung", model: "A52", reportedFailure: "Pantalla rota", deviceOff: false },
-      { brand: "Apple", model: "iPhone 12", reportedFailure: "No carga", deviceOff: true },
+      { brand: "Samsung", model: "A52", reportedFailure: "Pantalla rota", deviceOff: false, serviceTypeIds: [] },
+      { brand: "Apple", model: "iPhone 12", reportedFailure: "No carga", deviceOff: true, serviceTypeIds: [] },
     ]);
 
     await runWithTenant(tenantId, () =>

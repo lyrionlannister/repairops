@@ -5,9 +5,12 @@ export interface RepairNoteDeviceInput {
   model: string;
   reportedFailure: string;
   deviceOff?: boolean;
+  serviceTypeIds?: string[];
 }
 
-export type RepairNoteDeviceView = Pick<RepairNoteDevice, "brand" | "model" | "reportedFailure" | "deviceOff">;
+export type RepairNoteDeviceView = Pick<RepairNoteDevice, "brand" | "model" | "reportedFailure" | "deviceOff"> & {
+  serviceTypeIds: string[];
+};
 
 const MAX_DEVICES = 50;
 
@@ -23,16 +26,21 @@ export function normalizeDevices(devices: unknown): RepairNoteDeviceView[] {
     if (!model) throw new Error(`El modelo${label} es obligatorio`);
     if (!reportedFailure) throw new Error(`La falla reportada${label} es obligatoria`);
     if (brand.length > 255 || model.length > 255) throw new Error(`La marca y el modelo${label} admiten hasta 255 caracteres`);
-    return { brand, model, reportedFailure, deviceOff: raw?.deviceOff === true };
+    const serviceTypeIds = raw?.serviceTypeIds ?? [];
+    if (!Array.isArray(serviceTypeIds) || !serviceTypeIds.every((id) => typeof id === "string" && /^\d+$/.test(id))) {
+      throw new Error(`Los tipos de servicio${label} son inválidos`);
+    }
+    return { brand, model, reportedFailure, deviceOff: raw?.deviceOff === true, serviceTypeIds: [...new Set(serviceTypeIds)] };
   });
 }
 
-export function toDeviceView(device: RepairNoteDevice): RepairNoteDeviceView {
+export function toDeviceView(device: RepairNoteDevice, serviceTypeIds: string[] = []): RepairNoteDeviceView {
   return {
     brand: device.brand,
     model: device.model,
     reportedFailure: device.reportedFailure,
     deviceOff: device.deviceOff,
+    serviceTypeIds,
   };
 }
 
