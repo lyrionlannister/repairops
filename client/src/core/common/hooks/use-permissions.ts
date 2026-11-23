@@ -21,6 +21,6 @@ export const usePermissions = () => {
     can,
     canAny,
     roles: currentUser?.roles ?? [],
-    isOwner: currentUser?.roles.includes("owner") ?? false,
+    isOwner: currentUser?.roles?.includes("owner") ?? false,
   };
 };

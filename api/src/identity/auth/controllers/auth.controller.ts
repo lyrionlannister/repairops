@@ -37,7 +37,6 @@ export class AuthController {
       }
 
       const { owner, token } = await this.authService.register(dto);
-      const { password, ...userWithoutPassword } = owner;
 
       // Auto-login: el owner entra directo al onboarding de planes sin
       // pasar otra vez por /login (mismo mecanismo de cookie que login).
@@ -48,7 +47,7 @@ export class AuthController {
 
       res.status(201).json({
         message: AUTH_MESSAGES.REGISTER_SUCCESS,
-        user: userWithoutPassword,
+        user: owner,
       });
     } catch (error) {
       sendError(res, error, 400, AUTH_MESSAGES.REGISTER_ERROR);

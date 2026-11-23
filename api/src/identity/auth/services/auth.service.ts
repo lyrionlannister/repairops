@@ -65,9 +65,15 @@ export class AuthService {
   // onboarding de cards (ver BillingService.selectPlan) que recién ahí crea
   // la Checkout Session de Stripe. Sin plan elegido todavía, el resto de la
   // app sigue bloqueada (status 'incomplete' -- ver AuthService.login).
-  async register(data: RegisterUserDto): Promise<{ owner: User; token: string }> {
+  async register(data: RegisterUserDto): Promise<{ owner: SessionUser; token: string }> {
     const { owner, tenant } = await this.createTenantWithOwner(data, false);
-    return { owner, token: this.signToken(owner, tenant) };
+    const token = this.signToken(owner, tenant);
+    // Sin esto, sessionStorage queda con un User a secas (sin roles/permisos/
+    // subscriptionStatus) hasta que useAuthGuard lo refresque de forma
+    // asíncrona -- el primer render de /home (justo al volver del Checkout de
+    // Stripe) alcanza a pintar "Sin acceso" antes de que llegue ese refresh.
+    const sessionOwner = await runWithTenant(tenant.id, () => this.toSessionUser(owner));
+    return { owner: sessionOwner, token };
   }
 
   async registerPlatformAdmin(data: RegisterUserDto): Promise<User> {
