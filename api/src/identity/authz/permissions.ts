@@ -57,6 +57,7 @@ export const TENANT_PERMISSIONS = [
   "dashboard.money",
   "reports.read",
   "billing.read",
+  "billing.manage",
 ] as const;
 
 export const PLATFORM_PERMISSIONS = [

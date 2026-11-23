@@ -41,19 +41,30 @@ export class PlanLimitService {
   ) {}
 
   async usage(): Promise<PlanUsage> {
-    const [users, branches] = await Promise.all([this.userDao.countActive(), this.branchDao.countActive()]);
+    const [users, branches] = await Promise.all([
+      this.userDao.countActive(),
+      this.branchDao.countActive(),
+    ]);
     return { users, branches };
   }
 
   // fn corre en la misma transacción que bloquea la suscripción del taller: dos altas
   // simultáneas esperan una a la otra, y la segunda ya cuenta la fila de la primera.
-  async withCapacity<T>(resource: PlanResource, fn: () => Promise<T>): Promise<T> {
+  // Solo "users"/"branches": whatsapp_messages no es capacidad-al-crear, es una
+  // cuota por periodo -- ver WhatsappQuotaService.
+  async withCapacity<T>(
+    resource: Exclude<PlanResource, "whatsapp_messages">,
+    fn: () => Promise<T>,
+  ): Promise<T> {
     return runInTransaction(async () => {
       const subscription = await this.subscriptionDao.lockCurrent();
       if (!subscription) throw new MissingSubscriptionError();
       const limit = effectiveLimits(subscription)[resource];
       if (limit !== null) {
-        const used = resource === "users" ? await this.userDao.countActive() : await this.branchDao.countActive();
+        const used =
+          resource === "users"
+            ? await this.userDao.countActive()
+            : await this.branchDao.countActive();
         if (used >= limit) throw new PlanLimitReachedError(resource, limit, used);
       }
       return fn();

@@ -22,7 +22,16 @@ import {
 } from "../../branches/services/user-branch.service.js";
 import { BillingService } from "../../../app_platform/billing/services/billing.service.js";
 import { PlanLimitService } from "../../../app_platform/billing/services/plan-limit.service.js";
-import { effectivePermissions, roleCatalog, type Permission, type RoleCatalogEntry } from "../../authz/permissions.js";
+import { StripePriceDao } from "../../../app_platform/billing/daos/stripe-price.dao.js";
+import { SubscriptionDao } from "../../../app_platform/billing/daos/subscription.dao.js";
+import type { SubscriptionStatus } from "../../../app_platform/billing/entities/subscription.entity.js";
+import { createCustomer } from "../../../app_platform/billing/clients/stripe.client.js";
+import {
+  effectivePermissions,
+  roleCatalog,
+  type Permission,
+  type RoleCatalogEntry,
+} from "../../authz/permissions.js";
 import { toMoneyOrNull } from "../../../core/common/utils/money.js";
 
 const { sign } = jwt;
@@ -30,7 +39,10 @@ const { sign } = jwt;
 export class UserRoleRuleError extends Error {}
 
 export type PublicUser = Omit<User, "password"> & { roles: UserRole[] };
-export type SessionUser = PublicUser & { permissions: Permission[] };
+export type SessionUser = PublicUser & {
+  permissions: Permission[];
+  subscriptionStatus: SubscriptionStatus;
+};
 
 const withoutPassword = ({ password, ...rest }: User): Omit<User, "password"> => rest;
 
@@ -44,21 +56,29 @@ export class AuthService {
     private userBranchService: UserBranchService,
     private billingService: BillingService,
     private planLimitService: PlanLimitService,
+    private stripePriceDao: StripePriceDao,
+    private subscriptionDao: SubscriptionDao,
     private userRoleDao: UserRoleDao,
   ) {}
 
-  async register(data: RegisterUserDto): Promise<User> {
-    return this.createTenantWithOwner(data, false);
+  // Ya no pide plan en el registro: el owner entra directo (auto-login) a un
+  // onboarding de cards (ver BillingService.selectPlan) que recién ahí crea
+  // la Checkout Session de Stripe. Sin plan elegido todavía, el resto de la
+  // app sigue bloqueada (status 'incomplete' -- ver AuthService.login).
+  async register(data: RegisterUserDto): Promise<{ owner: User; token: string }> {
+    const { owner, tenant } = await this.createTenantWithOwner(data, false);
+    return { owner, token: this.signToken(owner, tenant) };
   }
 
   async registerPlatformAdmin(data: RegisterUserDto): Promise<User> {
-    return this.createTenantWithOwner(data, true);
+    const { owner } = await this.createTenantWithOwner(data, true);
+    return owner;
   }
 
   private async createTenantWithOwner(
     data: RegisterUserDto,
     isPlatformAdmin: boolean,
-  ): Promise<User> {
+  ): Promise<{ owner: User; tenant: Tenant }> {
     // Sin tenant en contexto todavia, igual que login: el email solo se
     // puede checar sin ambiguedad en scope de sistema. Si esto corriera
     // despues de crear el Tenant, el check siempre pasaria en falso -- un
@@ -80,10 +100,16 @@ export class AuthService {
     // problema de integridad de datos como el de numero_control). La
     // suscripcion va antes que el dueno para que nunca exista un dueno sin plan.
     return runWithTenant(tenant.id, async () => {
-      await this.billingService.startSubscription(
-        isPlatformAdmin ? "platform" : "basico",
-        isPlatformAdmin ? "active" : "trialing",
-      );
+      if (isPlatformAdmin) {
+        await this.billingService.startSubscription("platform", "active");
+      } else {
+        const stripeCustomer = await createCustomer({
+          email: data.email,
+          name: `${data.firstName} ${data.lastName}`,
+          tenantPublicId: tenant.publicId,
+        });
+        await this.billingService.startSubscriptionWithoutPlan(stripeCustomer.id);
+      }
 
       const hashedPassword = await hash(data.password, 10);
 
@@ -102,7 +128,7 @@ export class AuthService {
       await this.serviceTypeService.seed();
       await this.branchService.seed({});
 
-      return owner;
+      return { owner, tenant };
     });
   }
 
@@ -276,22 +302,34 @@ export class AuthService {
       // Solo identidad: roles, permisos y el flag de plataforma se leen de la base en
       // cada petición (tenantMiddleware), así un cambio aplica sin esperar a que expire.
       const tenant = await this.tenantRepository.findOneByOrFail({ id: user.tenantId });
-      const token = sign(
-        { id: user.publicId, email: user.email, tenantId: tenant.publicId },
-        requireJwtSecret(),
-        { expiresIn: "24h" },
-      );
 
-      return { user: await this.toSessionUser(user), token };
+      // Sin bloquear login por 'incomplete': el owner necesita una sesión
+      // real para llegar al onboarding de planes (o reanudar su Checkout
+      // seleccionando el mismo plan otra vez -- ver BillingService.selectPlan,
+      // que siempre genera una Checkout Session nueva). El client decide a
+      // dónde navegar según subscriptionStatus.
+      return { user: await this.toSessionUser(user), token: this.signToken(user, tenant) };
     });
   }
 
+  private signToken(user: User, tenant: Tenant): string {
+    return sign(
+      { id: user.publicId, email: user.email, tenantId: tenant.publicId },
+      requireJwtSecret(),
+      { expiresIn: "24h" },
+    );
+  }
+
   private async toSessionUser(user: User): Promise<SessionUser> {
-    const roles = await this.userRoleDao.findRolesOf(user.id);
+    const [roles, subscription] = await Promise.all([
+      this.userRoleDao.findRolesOf(user.id),
+      this.subscriptionDao.findCurrent(),
+    ]);
     return {
       ...withoutPassword(user),
       roles,
       permissions: [...effectivePermissions(roles, user.isPlatformAdmin)],
+      subscriptionStatus: subscription?.status ?? "active",
     };
   }
 

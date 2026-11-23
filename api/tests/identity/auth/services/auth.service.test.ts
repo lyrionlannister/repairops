@@ -11,6 +11,15 @@ import type { UserBranchService } from "../../../../src/identity/branches/servic
 import type { BillingService } from "../../../../src/app_platform/billing/services/billing.service.js";
 import type { PlanLimitService } from "../../../../src/app_platform/billing/services/plan-limit.service.js";
 import type { UserRoleDao } from "../../../../src/identity/auth/daos/user-role.dao.js";
+import type { StripePriceDao } from "../../../../src/app_platform/billing/daos/stripe-price.dao.js";
+import type { SubscriptionDao } from "../../../../src/app_platform/billing/daos/subscription.dao.js";
+
+vi.mock("../../../../src/app_platform/billing/clients/stripe.client.js", () => ({
+  createCustomer: vi.fn().mockResolvedValue({ id: "cus_test123" }),
+  createSubscriptionCheckoutSession: vi
+    .fn()
+    .mockResolvedValue({ url: "https://checkout.stripe.com/test" }),
+}));
 
 function makeUserRoleDao(rolesByUser: Record<string, string[]> = {}): UserRoleDao {
   return {
@@ -22,13 +31,28 @@ function makeUserRoleDao(rolesByUser: Record<string, string[]> = {}): UserRoleDa
 }
 
 function makeBillingService(): BillingService {
-  return { startSubscription: vi.fn().mockResolvedValue({}) } as unknown as BillingService;
+  return {
+    startSubscription: vi.fn().mockResolvedValue({}),
+    startSubscriptionWithoutPlan: vi.fn().mockResolvedValue({}),
+  } as unknown as BillingService;
 }
 
 function makePlanLimitService(): PlanLimitService {
   return {
     withCapacity: vi.fn((_resource: string, fn: () => Promise<unknown>) => fn()),
   } as unknown as PlanLimitService;
+}
+
+function makeStripePriceDao(
+  price: Partial<{ stripePriceId: string }> | null = null,
+): StripePriceDao {
+  return { findByKey: vi.fn().mockResolvedValue(price) } as unknown as StripePriceDao;
+}
+
+// findCurrent() -> null: ningún test de login ejercita el gate de 'incomplete'
+// a propósito, así se comporta igual que antes de agregarlo.
+function makeSubscriptionDao(): SubscriptionDao {
+  return { findCurrent: vi.fn().mockResolvedValue(null) } as unknown as SubscriptionDao;
 }
 
 function makeServiceTypeService(): ServiceTypeService {
@@ -66,7 +90,10 @@ function makeUser(overrides: Partial<User> = {}): User {
 function makeTenantRepository(): Repository<Tenant> {
   return {
     create: vi.fn((data: any) => data),
-    findOneByOrFail: vi.fn().mockResolvedValue({ id: "11111111-1111-1111-1111-111111111111", publicId: "01a205b6-0000-7000-8000-00000000aaaa" }),
+    findOneByOrFail: vi.fn().mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      publicId: "01a205b6-0000-7000-8000-00000000aaaa",
+    }),
     save: vi.fn((tenant: any) =>
       Promise.resolve({ id: "11111111-1111-1111-1111-111111111111", ...tenant }),
     ),
@@ -78,7 +105,18 @@ describe("AuthService.login", () => {
     const userDao = {
       findByEmailAcrossTenants: vi.fn().mockResolvedValue(null),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
     await expect(
       service.login({ email: "nobody@example.com", password: "whatever" }),
@@ -90,7 +128,18 @@ describe("AuthService.login", () => {
     const userDao = {
       findByEmailAcrossTenants: vi.fn().mockResolvedValue(makeUser({ password: hashed })),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
     await expect(
       service.login({ email: "admin@example.com", password: "wrong-password" }),
@@ -104,7 +153,18 @@ describe("AuthService.login", () => {
         .fn()
         .mockResolvedValue(makeUser({ password: hashed, isActive: false })),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
     await expect(
       service.login({ email: "admin@example.com", password: "correct-password" }),
@@ -116,7 +176,18 @@ describe("AuthService.login", () => {
     const userDao = {
       findByEmailAcrossTenants: vi.fn().mockResolvedValue(makeUser({ password: hashed })),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
     const result = await service.login({
       email: "admin@example.com",
@@ -134,11 +205,27 @@ describe("AuthService.login", () => {
   it("el JWT solo lleva identidad: ni roles ni flag de plataforma", async () => {
     const hashed = await hash("correct-password", 10);
     const userDao = {
-      findByEmailAcrossTenants: vi.fn().mockResolvedValue(makeUser({ password: hashed, isPlatformAdmin: true })),
+      findByEmailAcrossTenants: vi
+        .fn()
+        .mockResolvedValue(makeUser({ password: hashed, isPlatformAdmin: true })),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
-    const { token } = await service.login({ email: "admin@example.com", password: "correct-password" });
+    const { token } = await service.login({
+      email: "admin@example.com",
+      password: "correct-password",
+    });
     const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
 
     expect(Object.keys(payload).sort()).toEqual(["email", "exp", "iat", "id", "tenantId"]);
@@ -156,9 +243,20 @@ describe("AuthService.register", () => {
     } as unknown as UserDao;
     const tenantRepository = makeTenantRepository();
     const billingService = makeBillingService();
-    const service = new AuthService(userDao, tenantRepository, makeServiceTypeService(), makeBranchService(), makeUserBranchService(), billingService, makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      tenantRepository,
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      billingService,
+      makePlanLimitService(),
+      makeStripePriceDao({ stripePriceId: "price_test123" }),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
-    await service.register({
+    const result = await service.register({
       firstName: "New",
       lastName: "User",
       email: "new@example.com",
@@ -169,8 +267,9 @@ describe("AuthService.register", () => {
     const persisted = create.mock.calls[0][0];
     expect(persisted).not.toHaveProperty("role");
     expect(persisted.isPlatformAdmin).toBe(false);
-    expect(billingService.startSubscription).toHaveBeenCalledWith("basico", "trialing");
+    expect(billingService.startSubscriptionWithoutPlan).toHaveBeenCalledWith("cus_test123");
     expect(persisted.password).not.toBe("plain-text-password");
+    expect(result.token).toBeTruthy();
   });
 
   it("registerPlatformAdmin creates its own tenant with an owner flagged as platform admin", async () => {
@@ -181,7 +280,18 @@ describe("AuthService.register", () => {
     } as unknown as UserDao;
     const tenantRepository = makeTenantRepository();
     const billingService = makeBillingService();
-    const service = new AuthService(userDao, tenantRepository, makeServiceTypeService(), makeBranchService(), makeUserBranchService(), billingService, makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      tenantRepository,
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      billingService,
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
     await service.registerPlatformAdmin({
       firstName: "Admin",
@@ -201,7 +311,18 @@ describe("AuthService.register", () => {
       create: vi.fn(),
     } as unknown as UserDao;
     const tenantRepository = makeTenantRepository();
-    const service = new AuthService(userDao, tenantRepository, makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      tenantRepository,
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
     await expect(
       service.register({
@@ -223,7 +344,18 @@ describe("AuthService.createEmployee", () => {
       create,
     } as unknown as UserDao;
     const userRoleDao = makeUserRoleDao();
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), userRoleDao);
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      userRoleDao,
+    );
 
     await service.createEmployee({
       firstName: "Tech",
@@ -236,7 +368,10 @@ describe("AuthService.createEmployee", () => {
     });
 
     const persisted = create.mock.calls[0][0];
-    expect(userRoleDao.replaceForUser).toHaveBeenCalledWith(expect.anything(), ["employee", "cashier"]);
+    expect(userRoleDao.replaceForUser).toHaveBeenCalledWith(expect.anything(), [
+      "employee",
+      "cashier",
+    ]);
     expect(persisted.salaryAmount).toBe("4500.00");
     expect(persisted.payCycle).toBe("weekly");
     expect(persisted.password).not.toBe("plain-text-password");
@@ -247,7 +382,18 @@ describe("AuthService.createEmployee", () => {
       findByEmail: vi.fn().mockResolvedValue(makeUser()),
       create: vi.fn(),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
     await expect(
       service.createEmployee({
@@ -264,8 +410,22 @@ describe("AuthService.createEmployee", () => {
     [["owner", "cashier"], "El administrador no se combina con otros roles"],
     [[], "Elige al menos un rol"],
   ])("rechaza roles %j", async (roles, message) => {
-    const userDao = { findByEmail: vi.fn().mockResolvedValue(null), create: vi.fn() } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao());
+    const userDao = {
+      findByEmail: vi.fn().mockResolvedValue(null),
+      create: vi.fn(),
+    } as unknown as UserDao;
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao(),
+    );
 
     await expect(
       service.createEmployee({
@@ -283,18 +443,37 @@ describe("AuthService.createEmployee", () => {
 describe("AuthService.listEmployees", () => {
   it("only returns the fields a <Select> needs", async () => {
     const userDao = {
-      findAll: vi.fn().mockResolvedValue([
-        makeUser({ id: "1", publicId: "p-1" }),
-        makeUser({ id: "2", publicId: "p-2" }),
-      ]),
+      findAll: vi
+        .fn()
+        .mockResolvedValue([
+          makeUser({ id: "1", publicId: "p-1" }),
+          makeUser({ id: "2", publicId: "p-2" }),
+        ]),
     } as unknown as UserDao;
-    const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao({ "1": ["owner"], "2": ["employee", "cashier"] }));
+    const service = new AuthService(
+      userDao,
+      makeTenantRepository(),
+      makeServiceTypeService(),
+      makeBranchService(),
+      makeUserBranchService(),
+      makeBillingService(),
+      makePlanLimitService(),
+      makeStripePriceDao(),
+      makeSubscriptionDao(),
+      makeUserRoleDao({ "1": ["owner"], "2": ["employee", "cashier"] }),
+    );
 
     const employees = await service.listEmployees();
 
     expect(employees).toEqual([
       { id: "1", publicId: "p-1", firstName: "Admin", lastName: "User", roles: ["owner"] },
-      { id: "2", publicId: "p-2", firstName: "Admin", lastName: "User", roles: ["employee", "cashier"] },
+      {
+        id: "2",
+        publicId: "p-2",
+        firstName: "Admin",
+        lastName: "User",
+        roles: ["employee", "cashier"],
+      },
     ]);
   });
 });

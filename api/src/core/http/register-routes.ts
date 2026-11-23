@@ -8,7 +8,12 @@ import { AutomationAdminController } from "../../app_platform/automation/control
 import { createN8nIntegrationRouter } from "../../app_platform/integrations/routes/n8n-integration.routes.js";
 import { N8nIntegrationController } from "../../app_platform/integrations/controllers/n8n-integration.controller.js";
 import { BillingController } from "../../app_platform/billing/controllers/billing.controller.js";
-import { createBillingRouter, createPlatformBillingRouter } from "../../app_platform/billing/routes/billing.routes.js";
+import {
+  createBillingRouter,
+  createPlatformBillingRouter,
+} from "../../app_platform/billing/routes/billing.routes.js";
+import { BillingWebhookController } from "../../app_platform/billing/controllers/billing-webhook.controller.js";
+import { createBillingWebhookRouter } from "../../app_platform/billing/routes/billing-webhook.routes.js";
 import { ChatsController } from "../../messaging/chats/controllers/chats.controller.js";
 import { createChatsRouter } from "../../messaging/chats/routes/chats.routes.js";
 import { LocalController } from "../../app_platform/local/controllers/local.controller.js";
@@ -69,8 +74,20 @@ import { createLayawayRouter } from "../../commerce/customers/routes/layaway.rou
 // ya haya corrido (cada controller/dao se resuelve del contenedor aqui).
 export function registerRoutes(app: Express): void {
   app.use("/api/v1/auth", createAuthRouter(container.resolve(AuthController)));
-  app.use("/api/v1/automation", createAutomationAdminRouter(container.resolve(AutomationAdminController)));
-  app.use("/api/v1/integrations/n8n", createN8nIntegrationRouter(container.resolve(N8nIntegrationController)));
+  app.use(
+    "/api/v1/automation",
+    createAutomationAdminRouter(container.resolve(AutomationAdminController)),
+  );
+  app.use(
+    "/api/v1/integrations/n8n",
+    createN8nIntegrationRouter(container.resolve(N8nIntegrationController)),
+  );
+  // El router del webhook (publico, sin JWT) va ANTES que el protegido, mismo
+  // prefijo -- mismo motivo que el webhook de WhatsApp (ver comentario abajo).
+  app.use(
+    "/api/v1/billing",
+    createBillingWebhookRouter(container.resolve(BillingWebhookController)),
+  );
   app.use("/api/v1/billing", createBillingRouter(container.resolve(BillingController)));
   app.use("/api/v1/platform", createPlatformBillingRouter(container.resolve(BillingController)));
   app.use("/api/v1/chats", createChatsRouter(container.resolve(ChatsController)));
@@ -104,7 +121,10 @@ export function registerRoutes(app: Express): void {
     "/api/v1/import-staging",
     createImportStagingRouter(container.resolve(ImportStagingController)),
   );
-  app.use("/api/v1/notifications", createNotificationRouter(container.resolve(NotificationController)));
+  app.use(
+    "/api/v1/notifications",
+    createNotificationRouter(container.resolve(NotificationController)),
+  );
   // Montado ANTES de "/api/v1/inventory": ese router tiene "/:id" (GET), que
   // matchearía "transfers" como id si este fuera segundo -- mismo criterio
   // de orden que el webhook de WhatsApp vs su router protegido.
@@ -126,7 +146,10 @@ export function registerRoutes(app: Express): void {
   );
   app.use("/api/v1/dashboard", createDashboardRouter(container.resolve(DashboardController)));
   app.use("/api/v1/reports", createReportsRouter(container.resolve(ReportsController)));
-  app.use("/api/v1/service-types", createServiceTypeRouter(container.resolve(ServiceTypeController)));
+  app.use(
+    "/api/v1/service-types",
+    createServiceTypeRouter(container.resolve(ServiceTypeController)),
+  );
   app.use("/api/v1/branches", createBranchRouter(container.resolve(BranchController)));
   app.use("/api/v1/customers", createCustomerRouter(container.resolve(CustomerController)));
   app.use("/api/v1/returns", createReturnRouter(container.resolve(ReturnController)));

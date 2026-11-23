@@ -273,6 +273,9 @@ importers:
       sharp:
         specifier: ^0.35.5
         version: 0.35.5(@types/node@26.6.6)
+      stripe:
+        specifier: ^23.2.0
+        version: 23.2.0(@types/node@26.6.6)
       tsyringe:
         specifier: ^4.10.0
         version: 4.10.0
@@ -2869,6 +2872,15 @@ packages:
   strip-bom@3.0.0:
     resolution: {integrity: sha512-vavAMRXOgBVNF6nyEEmL3DBK19iRpDcoIwW+swQ+CbGiu7lju6t+JklA1MHweoWtadgt4ISVUsXLyDq34ddcwA==}
     engines: {node: '>=4'}
+
+  stripe@23.2.0:
+    resolution: {integrity: sha512-0W0J4yA9qFO2rnF61v8Y62OiO2SmAR+Cv04VJaFUMpCxiq8lG5bxEYbeSMSpMDR9ofFZGd+Z/iUIgSFbOolmUw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@types/node': '>=20'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   superagent@10.4.2:
     resolution: {integrity: sha512-u+PFV+VKiAKKzJqnCvveNya3N+pR/8jUZs/ek6jRfE41fpSCNdFY61L7NYmSgB6I9TTFM50ywoPXRKgw2k3wKw==}
@@ -5604,6 +5616,10 @@ snapshots:
       ansi-regex: 6.6.0
 
   strip-bom@3.0.0: {}
+
+  stripe@23.2.0(@types/node@26.6.6):
+    optionalDependencies:
+      '@types/node': 26.6.6
 
   superagent@10.4.2(supports-color@10.2.2):
     dependencies:

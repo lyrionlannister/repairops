@@ -16,6 +16,8 @@ import { UserBranchDao } from "../../../../src/identity/branches/daos/user-branc
 import { UserBranchService } from "../../../../src/identity/branches/services/user-branch.service.js";
 import { Subscription } from "../../../../src/app_platform/billing/entities/subscription.entity.js";
 import { SubscriptionDao } from "../../../../src/app_platform/billing/daos/subscription.dao.js";
+import { StripePrice } from "../../../../src/app_platform/billing/entities/stripe-price.entity.js";
+import { StripePriceDao } from "../../../../src/app_platform/billing/daos/stripe-price.dao.js";
 import { PlanLimitService } from "../../../../src/app_platform/billing/services/plan-limit.service.js";
 import type { BillingService } from "../../../../src/app_platform/billing/services/billing.service.js";
 import type { ServiceTypeService } from "../../../../src/commerce/service-types/services/service-type.service.js";
@@ -41,9 +43,7 @@ describe("reglas de roles de usuario", () => {
     ({ branchId } = staff);
     ownerId = staff.userIds["owner"];
     cashierId = staff.userIds["cashier"];
-    foreignOwnerId = (await setupStaff(AppDataSource, otherTenantId, ["owner"])).userIds[
-      "owner"
-    ];
+    foreignOwnerId = (await setupStaff(AppDataSource, otherTenantId, ["owner"])).userIds["owner"];
     await AppDataSource.query(
       `INSERT INTO subscriptions (tenant_id, plan_id) SELECT $1, id FROM plans WHERE key = 'platform'`,
       [tenantId],
@@ -51,6 +51,7 @@ describe("reglas de roles de usuario", () => {
 
     const userDao = new UserDao(AppDataSource.getRepository(User));
     const branchDao = new BranchDao(AppDataSource.getRepository(Branch));
+    const subscriptionDao = new SubscriptionDao(AppDataSource.getRepository(Subscription));
     service = new AuthService(
       userDao,
       AppDataSource.getRepository(Tenant),
@@ -58,11 +59,9 @@ describe("reglas de roles de usuario", () => {
       {} as BranchService,
       new UserBranchService(new UserBranchDao(AppDataSource.getRepository(UserBranch)), branchDao),
       {} as BillingService,
-      new PlanLimitService(
-        new SubscriptionDao(AppDataSource.getRepository(Subscription)),
-        userDao,
-        branchDao,
-      ),
+      new PlanLimitService(subscriptionDao, userDao, branchDao),
+      new StripePriceDao(AppDataSource.getRepository(StripePrice)),
+      subscriptionDao,
       roleDao,
     );
   });
