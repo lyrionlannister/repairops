@@ -11,7 +11,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: n8n
           POSTGRES_PASSWORD: n8n_password_dev
@@ -51,6 +51,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Crear extensiones de Postgres requeridas
+        run: PGPASSWORD=n8n_password_dev psql -h localhost -U n8n -d app_db -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
 
       - name: Type-check
         run: pnpm test
