@@ -9,12 +9,17 @@ export const PlanCard: FC<PlanCardProps> = ({ plan, interval, highlighted, loadi
 
   return (
     <div
-      className={`flex flex-col gap-5 rounded-2xl border p-6 ${
+      className={`relative flex flex-col gap-5 rounded-2xl border p-6 ${
         highlighted
-          ? "border-brand-500 ring-1 ring-brand-500 dark:border-brand-500"
-          : "border-gray-200 dark:border-gray-800"
-      } bg-white dark:bg-white/3`}
+          ? "border-brand-500 bg-brand-50/50 ring-1 ring-brand-500 dark:border-brand-500 dark:bg-brand-500/5"
+          : "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3"
+      }`}
     >
+      {highlighted && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white">
+          Recomendado
+        </span>
+      )}
       <div>
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">{plan.name}</h3>
         <p className="mt-2">

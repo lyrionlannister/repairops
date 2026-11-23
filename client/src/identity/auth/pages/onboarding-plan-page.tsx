@@ -1,5 +1,4 @@
 import { Smartphone } from "lucide-react";
-import { Toggle } from "@ui/toggle/toggle";
 import { Loader } from "@ui/loader/loader";
 import { PageMeta } from "../../../core/common/pages/page-meta";
 import { useOnboardingPlans } from "../hooks/use-onboarding-plans";
@@ -27,18 +26,31 @@ export const OnboardingPlanPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="mb-8 flex items-center justify-center gap-3">
-            <span
-              className={`text-sm ${interval === "month" ? "font-semibold text-gray-800 dark:text-white/90" : "text-gray-500 dark:text-gray-400"}`}
-            >
-              Mensual
-            </span>
-            <Toggle checked={interval === "year"} onChange={toggleInterval} />
-            <span
-              className={`text-sm ${interval === "year" ? "font-semibold text-gray-800 dark:text-white/90" : "text-gray-500 dark:text-gray-400"}`}
-            >
-              Anual (2 meses gratis)
-            </span>
+          <div className="mb-8 flex justify-center">
+            <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-800 dark:bg-white/3">
+              <button
+                type="button"
+                onClick={() => interval !== "month" && toggleInterval()}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  interval === "month"
+                    ? "bg-brand-500 text-white"
+                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white/90"
+                }`}
+              >
+                Mensual
+              </button>
+              <button
+                type="button"
+                onClick={() => interval !== "year" && toggleInterval()}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  interval === "year"
+                    ? "bg-brand-500 text-white"
+                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white/90"
+                }`}
+              >
+                Anual (2 meses gratis)
+              </button>
+            </div>
           </div>
 
           {error && <p className="mb-4 text-center text-sm text-error-500">{error}</p>}
