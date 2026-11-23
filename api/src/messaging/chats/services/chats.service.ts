@@ -34,7 +34,10 @@ export class ChatsService {
   ) {}
 
   async recordMessage(input: RecordMessageInput): Promise<void> {
-    await this.chatMessageDao.record({ ...input, contactPhone: normalizePhone(input.contactPhone) });
+    await this.chatMessageDao.record({
+      ...input,
+      contactPhone: normalizePhone(input.contactPhone),
+    });
   }
 
   async findMediaMessage(sessionId: string, publicId: string) {
@@ -44,18 +47,30 @@ export class ChatsService {
   // read: ver la conversación y sus medios; reply: responder o tomar el control.
   // Con el permiso completo, cualquiera; con el .own, solo las de sus notas asignadas.
   async canAccess(sessionId: string, action: "read" | "reply"): Promise<boolean> {
-    const [full, own] = action === "read" ? (["chats.read", "chats.read.own"] as const) : (["chats.reply", "chats.reply.own"] as const);
+    const [full, own] =
+      action === "read"
+        ? (["chats.read", "chats.read.own"] as const)
+        : (["chats.reply", "chats.reply.own"] as const);
     if (can(full)) return true;
     const userId = currentUserId();
     if (!can(own) || !userId) return false;
-    return (await this.chatMessageDao.findPhonesOfAssignedNotes(userId)).has(normalizePhone(sessionId));
+    return (await this.chatMessageDao.findPhonesOfAssignedNotes(userId)).has(
+      normalizePhone(sessionId),
+    );
   }
 
   async getConversations(): Promise<ConversationDto[]> {
     const userId = currentUserId();
-    const ownPhones = !can("chats.read") && userId ? await this.chatMessageDao.findPhonesOfAssignedNotes(userId) : null;
-    const rows = (await this.chatMessageDao.getConversations()).filter((row) => !ownPhones || ownPhones.has(row.sessionId));
-    const contactNames = await this.contactNameRepository.find({ where: { tenantId: getCurrentTenantId() } });
+    const ownPhones =
+      !can("chats.read") && userId
+        ? await this.chatMessageDao.findPhonesOfAssignedNotes(userId)
+        : null;
+    const rows = (await this.chatMessageDao.getConversations()).filter(
+      (row) => !ownPhones || ownPhones.has(row.sessionId),
+    );
+    const contactNames = await this.contactNameRepository.find({
+      where: { tenantId: getCurrentTenantId() },
+    });
     const nameMap = new Map(contactNames.map((cn) => [cn.phone, cn.name]));
 
     return rows.map((row) => toConversationDto(row, nameMap));
@@ -84,5 +99,11 @@ export class ChatsService {
 
   async getLastInboundAt(sessionId: string): Promise<Date | null> {
     return this.chatMessageDao.findLastInboundAt(normalizePhone(sessionId));
+  }
+
+  async getLastInboundForNote(
+    repairNoteId: string,
+  ): Promise<{ contactPhone: string; createdAt: Date } | null> {
+    return this.chatMessageDao.findLastInboundForNote(repairNoteId);
   }
 }

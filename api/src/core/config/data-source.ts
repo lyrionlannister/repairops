@@ -37,6 +37,7 @@ import { WhatsappAccount } from "../../messaging/whatsapp-official/entities/what
 import { WhatsappTemplateStatus } from "../../messaging/whatsapp-official/entities/whatsapp-template-status.entity.js";
 import { WhatsappOutboundMessage } from "../../messaging/whatsapp-official/entities/whatsapp-outbound-message.entity.js";
 import { WhatsappTemplateCatalogEntry } from "../../messaging/whatsapp-official/entities/whatsapp-template-catalog-entry.entity.js";
+import { WhatsappPendingNotification } from "../../messaging/whatsapp-official/entities/whatsapp-pending-notification.entity.js";
 import { Return } from "../../commerce/returns/entities/return.entity.js";
 import { ReturnItem } from "../../commerce/returns/entities/return-item.entity.js";
 import { InventoryTransfer } from "../../commerce/inventory/entities/inventory-transfer.entity.js";
@@ -103,6 +104,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     WhatsappTemplateStatus,
     WhatsappOutboundMessage,
     WhatsappTemplateCatalogEntry,
+    WhatsappPendingNotification,
     Return,
     ReturnItem,
     InventoryTransfer,

@@ -26,6 +26,7 @@ import { ServiceType } from "../../../../src/commerce/service-types/entities/ser
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteService } from "../../../../src/commerce/repair-notes/services/repair-note.service.js";
 import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
+import type { WhatsappNotificationQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-notification-queue.service.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
@@ -49,15 +50,22 @@ describe("QuoteService", () => {
     await ensureFixtureTenant(AppDataSource, tenantId);
     const quoteDao = new QuoteDao(AppDataSource.getRepository(Quote));
     const quoteItemDao = new QuoteItemDao(AppDataSource.getRepository(QuoteItem));
-    const quoteServiceTypeDao = new QuoteServiceTypeDao(AppDataSource.getRepository(QuoteServiceType));
+    const quoteServiceTypeDao = new QuoteServiceTypeDao(
+      AppDataSource.getRepository(QuoteServiceType),
+    );
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const serviceTypeDao = new ServiceTypeDao(AppDataSource.getRepository(ServiceType));
 
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
-    const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    const reservationDao = new InventoryReservationDao(
+      AppDataSource.getRepository(InventoryReservation),
+    );
     const inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
-    const inventoryReservationService = new InventoryReservationService(reservationDao, inventoryService);
+    const inventoryReservationService = new InventoryReservationService(
+      reservationDao,
+      inventoryService,
+    );
     const repairNoteService = new RepairNoteService(
       new RepairNoteDao(AppDataSource.getRepository(RepairNote)),
       localService,
@@ -69,9 +77,17 @@ describe("QuoteService", () => {
       inventoryReservationService,
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
       new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
+      { notifyStatusChange: async () => {} } as unknown as WhatsappNotificationQueueService,
     );
 
-    service = new QuoteService(quoteDao, quoteItemDao, quoteServiceTypeDao, localService, repairNoteService, serviceTypeDao);
+    service = new QuoteService(
+      quoteDao,
+      quoteItemDao,
+      quoteServiceTypeDao,
+      localService,
+      repairNoteService,
+      serviceTypeDao,
+    );
     repairNoteServiceRef = repairNoteService;
   });
 
@@ -81,9 +97,9 @@ describe("QuoteService", () => {
 
   it("rejects creating a quote with no items", async () => {
     const payload = { localId: "1", customerName: "Sin items" };
-    await expect(
-      runWithTenant(tenantId, () => service.create(payload, [])),
-    ).rejects.toThrow("al menos un item");
+    await expect(runWithTenant(tenantId, () => service.create(payload, []))).rejects.toThrow(
+      "al menos un item",
+    );
   });
 
   it("computes totalValue from the items, ignoring any client-sent value", async () => {
@@ -108,7 +124,9 @@ describe("QuoteService", () => {
   it("cada cotizacion recibe el siguiente folio consecutivo del taller", async () => {
     const create = () =>
       runWithTenant(tenantId, () =>
-        service.create({ localId: "1", customerName: "Folio" }, [{ description: "X", quantity: 1, unitPrice: 1 }]),
+        service.create({ localId: "1", customerName: "Folio" }, [
+          { description: "X", quantity: 1, unitPrice: 1 },
+        ]),
       );
     const first = await create();
     const second = await create();
@@ -175,27 +193,38 @@ describe("QuoteService", () => {
     expect(accepted?.status).toBe("accepted");
     expect(accepted?.repairNoteId).toBeTruthy();
 
-    const note = await runWithTenant(tenantId, () => repairNoteServiceRef.getById(accepted!.repairNoteId!));
+    const note = await runWithTenant(tenantId, () =>
+      repairNoteServiceRef.getById(accepted!.repairNoteId!),
+    );
     expect(note).toMatchObject({
       customerId: quote.customerId,
       customerName: "Cliente Cotizacion",
-      devices: [{ brand: "Samsung", model: "A14", reportedFailure: "No enciende", deviceOff: false }],
+      devices: [
+        { brand: "Samsung", model: "A14", reportedFailure: "No enciende", deviceOff: false },
+      ],
     });
     expect(Number(note?.totalValue)).toBe(200);
-    const serviceTypeIds = await runWithTenant(tenantId, () => repairNoteServiceRef.getServiceTypeIds(note!.id));
+    const serviceTypeIds = await runWithTenant(tenantId, () =>
+      repairNoteServiceRef.getServiceTypeIds(note!.id),
+    );
     expect(serviceTypeIds).toEqual([serviceType.id]);
 
-    const acceptedAgain = await runWithTenant(tenantId, () => service.setStatus(quote.id, "accepted"));
+    const acceptedAgain = await runWithTenant(tenantId, () =>
+      service.setStatus(quote.id, "accepted"),
+    );
     expect(acceptedAgain?.repairNoteId).toBe(accepted?.repairNoteId);
-    const notesCount = await AppDataSource.getRepository(RepairNote).count({ where: { customerId: quote.customerId } as never });
+    const notesCount = await AppDataSource.getRepository(RepairNote).count({
+      where: { customerId: quote.customerId } as never,
+    });
     expect(notesCount).toBe(1);
   });
 
   it("accepting a product quote only changes status and never creates a note", async () => {
     const quote = await runWithTenant(tenantId, () =>
-      service.create({ localId: "1", customerName: "Cliente Producto", contactNumber: "8330005555" }, [
-        { description: "Cable", quantity: 1, unitPrice: 50 },
-      ]),
+      service.create(
+        { localId: "1", customerName: "Cliente Producto", contactNumber: "8330005555" },
+        [{ description: "Cable", quantity: 1, unitPrice: 50 }],
+      ),
     );
 
     const accepted = await runWithTenant(tenantId, () => service.setStatus(quote.id, "accepted"));

@@ -24,6 +24,7 @@ import { ServiceType } from "../../../../src/commerce/service-types/entities/ser
 import { ServiceTypeDao } from "../../../../src/commerce/service-types/daos/service-type.dao.js";
 import { RepairNoteService } from "../../../../src/commerce/repair-notes/services/repair-note.service.js";
 import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
+import type { WhatsappNotificationQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-notification-queue.service.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
@@ -60,7 +61,11 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    ({ branchPublicId: branchId, tokens, userPublicIds: userIds } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
+    ({
+      branchPublicId: branchId,
+      tokens,
+      userPublicIds: userIds,
+    } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
     await ensureFixtureTenant(AppDataSource, tenantId);
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
@@ -84,6 +89,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       inventoryReservationService,
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
       new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
+      { notifyStatusChange: async () => {} } as unknown as WhatsappNotificationQueueService,
     );
     const authService = new AuthService(
       new UserDao(AppDataSource.getRepository(User)),
@@ -167,12 +173,21 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     expect(foreign.status).toBe(201);
     const foreignId = foreign.body.id;
 
-    const list = await request(app).get("/repair-notes").set("Authorization", `Bearer ${technicianToken}`);
+    const list = await request(app)
+      .get("/repair-notes")
+      .set("Authorization", `Bearer ${technicianToken}`);
     expect(list.status).toBe(200);
     expect(list.body.map((note: { id: string }) => note.id)).not.toContain(foreignId);
-    expect(list.body.every((note: { assignedEmployeeId: string }) => String(note.assignedEmployeeId) === userIds["technician"])).toBe(true);
+    expect(
+      list.body.every(
+        (note: { assignedEmployeeId: string }) =>
+          String(note.assignedEmployeeId) === userIds["technician"],
+      ),
+    ).toBe(true);
 
-    const byId = await request(app).get(`/repair-notes/${foreignId}`).set("Authorization", `Bearer ${technicianToken}`);
+    const byId = await request(app)
+      .get(`/repair-notes/${foreignId}`)
+      .set("Authorization", `Bearer ${technicianToken}`);
     expect(byId.status).toBe(404);
 
     const update = await request(app)
@@ -181,7 +196,9 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       .send({ technicianNotes: "No es mía" });
     expect(update.status).toBe(404);
 
-    const items = await request(app).get(`/repair-notes/${foreignId}/items`).set("Authorization", `Bearer ${technicianToken}`);
+    const items = await request(app)
+      .get(`/repair-notes/${foreignId}/items`)
+      .set("Authorization", `Bearer ${technicianToken}`);
     expect(items.body).toEqual([]);
 
     const deliver = await request(app)

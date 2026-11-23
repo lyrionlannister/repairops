@@ -147,6 +147,24 @@ export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
     return row?.lastAt ? new Date(row.lastAt) : null;
   }
 
+  // Mismo gate que findLastInboundAt, pero por nota en vez de por numero: a
+  // quien le escribio por ultimo sobre ESTA nota (el cliente puede escribir
+  // desde cualquier telefono, el suyo puede estar siendo reparado).
+  async findLastInboundForNote(
+    repairNoteId: string,
+  ): Promise<{ contactPhone: string; createdAt: Date } | null> {
+    const row = await this.scoped()
+      .select("entity.contactPhone", "contactPhone")
+      .addSelect("entity.createdAt", "createdAt")
+      .andWhere("entity.repairNoteId = :repairNoteId AND entity.direction = 'inbound'", {
+        repairNoteId,
+      })
+      .orderBy("entity.id", "DESC")
+      .limit(1)
+      .getRawOne<{ contactPhone: string; createdAt: Date }>();
+    return row ? { contactPhone: row.contactPhone, createdAt: new Date(row.createdAt) } : null;
+  }
+
   // Operacion de sistema (todos los tenants), la corre ChatRetentionService.
   async purgeBefore(cutoff: Date): Promise<number> {
     const result = await this.repository.delete({ createdAt: LessThan(cutoff) });

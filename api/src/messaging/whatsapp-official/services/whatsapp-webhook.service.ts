@@ -3,6 +3,7 @@ import { Repository } from "typeorm";
 import { WhatsappTenantResolver } from "./whatsapp-tenant-resolver.service.js";
 import { WhatsappSendService } from "./whatsapp-send.service.js";
 import { WhatsappAutomationQueueService } from "./whatsapp-automation-queue.service.js";
+import { WhatsappNotificationQueueService } from "./whatsapp-notification-queue.service.js";
 import { ChatsService } from "../../chats/services/chats.service.js";
 import { ChatMediaService } from "../../chats/services/chat-media.service.js";
 import type { ChatMessageType } from "../../chats/entities/chat-message.entity.js";
@@ -42,14 +43,21 @@ export class WhatsappWebhookService {
     private chatsService: ChatsService,
     private localService: LocalService,
     private chatMediaService: ChatMediaService,
-    @inject(repositoryToken(ExcludedPhone)) private excludedPhoneRepository: Repository<ExcludedPhone>,
-    @inject(repositoryToken(WhatsappSettings)) private whatsappSettingsRepository: Repository<WhatsappSettings>,
+    @inject(repositoryToken(ExcludedPhone))
+    private excludedPhoneRepository: Repository<ExcludedPhone>,
+    @inject(repositoryToken(WhatsappSettings))
+    private whatsappSettingsRepository: Repository<WhatsappSettings>,
     @inject(repositoryToken(ContactName)) private contactNameRepository: Repository<ContactName>,
     private whatsappAutomationQueueService: WhatsappAutomationQueueService,
+    private whatsappNotificationQueueService: WhatsappNotificationQueueService,
   ) {}
 
   async handleIncomingMessage(message: IncomingWhatsappMessage): Promise<void> {
-    const context = await this.tenantResolver.resolve(message.phoneNumberId, message.from, message.body);
+    const context = await this.tenantResolver.resolve(
+      message.phoneNumberId,
+      message.from,
+      message.body,
+    );
     if (!context) return;
     const { account, note } = context;
 
@@ -95,8 +103,26 @@ export class WhatsappWebhookService {
 
       if (message.contactName) {
         this.contactNameRepository
-          .save({ tenantId: account.tenantId, phone: normalizePhone(message.from), name: message.contactName })
+          .save({
+            tenantId: account.tenantId,
+            phone: normalizePhone(message.from),
+            name: message.contactName,
+          })
           .catch((err) => console.warn("Error guardando nombre de contacto:", err));
+      }
+
+      // Independiente de respuestas automaticas/modo humano: un aviso
+      // pendiente (ver WhatsappNotificationQueueService) se manda apenas la
+      // ventana se abre, sin esperar a que la IA o un agente responda. Se
+      // busca por la nota (el ref ya la resolvio el tenant resolver), nunca
+      // por numero_contacto: el cliente puede escribir desde otro telefono.
+      if (note) {
+        await this.whatsappNotificationQueueService.flushPending(
+          note.id,
+          message.from,
+          account.phoneNumberId,
+          account.accessToken,
+        );
       }
 
       if (!(await this.getAiRepliesEnabled(account.tenantId))) {
