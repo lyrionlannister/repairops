@@ -1,5 +1,6 @@
 import { Decimal } from "decimal.js";
-import { RepairNote } from "../../../commerce/repair-notes/entities/repair-note.entity.js";
+import type { RepairNote } from "../../../commerce/repair-notes/entities/repair-note.entity.js";
+import type { RepairNoteDeviceView } from "../../../commerce/repair-notes/utils/devices.js";
 import { Local } from "../../../app_platform/local/entities/local.entity.js";
 import type { BrandPalette } from "../../../app_platform/local/utils/brand-palette.js";
 import { moneyString } from "../format-money.js";
@@ -13,9 +14,7 @@ export interface RepairNotePdfData {
   qrUrl: string | null;
   customerName: string;
   contactNumber: string | null;
-  brand: string;
-  model: string;
-  reportedFailure: string;
+  devices: RepairNoteDeviceView[];
   additionalFindings: string | null;
   totalValue: string;
   requiresAdvance: boolean;
@@ -27,7 +26,6 @@ export interface RepairNotePdfData {
   assignedEmployeeName: string | null;
   technicianNotes: string | null;
   serviceTypeNames: string[];
-  deviceOff: boolean;
   hasWarranty: boolean;
   hasExtendedWarranty: boolean;
   extendedWarrantyDays: number | null;
@@ -36,7 +34,7 @@ export interface RepairNotePdfData {
 }
 
 export function toRepairNotePdfData(
-  note: RepairNote,
+  note: RepairNote & { devices: RepairNoteDeviceView[] },
   local: Local | null,
   options: { assignedEmployeeName?: string | null; serviceTypeNames?: string[]; qrUrl?: string | null } = {},
 ): RepairNotePdfData {
@@ -49,9 +47,7 @@ export function toRepairNotePdfData(
     qrUrl: options.qrUrl ?? null,
     customerName: note.customerName,
     contactNumber: note.contactNumber ?? null,
-    brand: note.brand,
-    model: note.model,
-    reportedFailure: note.reportedFailure,
+    devices: note.devices,
     additionalFindings: note.additionalFindings ?? null,
     totalValue: moneyString(total),
     requiresAdvance: note.requiresAdvance,
@@ -63,7 +59,6 @@ export function toRepairNotePdfData(
     assignedEmployeeName: options.assignedEmployeeName ?? null,
     technicianNotes: note.technicianNotes ?? null,
     serviceTypeNames: options.serviceTypeNames ?? [],
-    deviceOff: note.deviceOff,
     hasWarranty: note.hasWarranty,
     hasExtendedWarranty: note.hasExtendedWarranty,
     extendedWarrantyDays: note.extendedWarrantyDays ?? null,

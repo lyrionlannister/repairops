@@ -14,6 +14,8 @@ import { RepairNote } from "../../../../src/commerce/repair-notes/entities/repai
 import { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
 import { RepairNotePayment } from "../../../../src/commerce/repair-notes/entities/repair-note-payment.entity.js";
 import { RepairNotePaymentDao } from "../../../../src/commerce/repair-notes/daos/repair-note-payment.dao.js";
+import { RepairNoteDeviceDao } from "../../../../src/commerce/repair-notes/daos/repair-note-device.dao.js";
+import { RepairNoteDevice } from "../../../../src/commerce/repair-notes/entities/repair-note-device.entity.js";
 import { RepairNoteItem } from "../../../../src/commerce/repair-notes/entities/repair-note-item.entity.js";
 import { RepairNoteItemDao } from "../../../../src/commerce/repair-notes/daos/repair-note-item.dao.js";
 import { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
@@ -53,11 +55,12 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
   let branchId = "";
   let tokens: Record<string, string> = {};
   let userIds: Record<string, string> = {};
+  // Por la API solo viajan public_ids de usuario (JWT, body y respuestas).
   const tokenFor = (role: UserRole) => tokens[role];
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    ({ branchId, tokens, userIds } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
+    ({ branchPublicId: branchId, tokens, userPublicIds: userIds } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
     await ensureFixtureTenant(AppDataSource, tenantId);
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
@@ -80,6 +83,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       { getDisplayPhoneNumber: async () => null } as unknown as WhatsappAccountService,
       inventoryReservationService,
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
+      new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
     );
     const authService = new AuthService(
       new UserDao(AppDataSource.getRepository(User)),
@@ -106,9 +110,7 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
     localId: branchId,
     customerName: "Cliente de prueba",
     contactNumber: "5551234567",
-    brand: "Marca",
-    model: "Modelo",
-    reportedFailure: "Falla de prueba",
+    devices: [{ brand: "Marca", model: "Modelo", reportedFailure: "Falla de prueba" }],
     receivedAt: "2026-01-01",
   });
 

@@ -40,19 +40,28 @@ export const buildBusinessAreaOptions = (
 ): ApexOptions => ({
   colors: ["#12b76a", "#465fff"],
   chart: { fontFamily: "inherit", type: "area", height: 350, toolbar: { show: false } },
-  stroke: { curve: "smooth", width: 2 },
+  stroke: { curve: "monotoneCubic", width: 2 },
   fill: { type: "gradient", gradient: { opacityFrom: 0.4, opacityTo: 0 } },
   markers: { size: 0, hover: { size: 5 } },
   dataLabels: { enabled: false },
   grid: { xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
   xaxis: {
     categories: dailyBusinessCategories,
+    tickAmount: 6,
     axisBorder: { show: false },
     axisTicks: { show: false },
     labels: { rotate: 0, hideOverlappingLabels: true },
     tooltip: { enabled: false },
   },
-  yaxis: { labels: { style: { colors: ["#6B7280"] } }, title: { text: "" } },
+  yaxis: {
+    min: 0,
+    forceNiceScale: true,
+    labels: {
+      style: { colors: ["#6B7280"] },
+      formatter: (val: number) => currencyFormatter.format(val),
+    },
+    title: { text: "" },
+  },
   legend: { show: true, position: "top", horizontalAlign: "left" },
   tooltip: { enabled: true, y: { formatter: (val: number) => currencyFormatter.format(val) } },
 });
@@ -62,7 +71,13 @@ export const buildBusinessStackedBarOptions = (
   currencyFormatter: Intl.NumberFormat,
 ): ApexOptions => ({
   colors: ["#12b76a", "#465fff"],
-  chart: { fontFamily: "inherit", type: "bar", height: 350, stacked: true, toolbar: { show: false } },
+  chart: {
+    fontFamily: "inherit",
+    type: "bar",
+    height: 350,
+    stacked: true,
+    toolbar: { show: false },
+  },
   plotOptions: {
     bar: { horizontal: false, columnWidth: "55%", borderRadius: 4, borderRadiusApplication: "end" },
   },

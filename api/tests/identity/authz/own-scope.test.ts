@@ -56,9 +56,9 @@ describe("permisos .own del técnico", () => {
     assignedTo: string | null,
   ) {
     const [{ id }] = await AppDataSource.query(
-      `INSERT INTO repair_notes (tenant_id, local_id, numero_control, public_ref, nombre_cliente, marca, modelo,
-         falla_reportada, fecha_recepcion, hora_recepcion, customer_id, id_empleado_asignado)
-       VALUES ($1, $2, $3, $4, 'Cliente', 'Marca', 'Modelo', 'Falla', '2026-01-01', '10:00', $5, $6) RETURNING id::text AS id`,
+      `INSERT INTO repair_notes (tenant_id, local_id, numero_control, public_ref, nombre_cliente,
+         fecha_recepcion, hora_recepcion, customer_id, id_empleado_asignado)
+       VALUES ($1, $2, $3, $4, 'Cliente', '2026-01-01', '10:00', $5, $6) RETURNING id::text AS id`,
       [tid, branchId, control, generatePublicRef(), customerId, assignedTo],
     );
     return id as string;
@@ -74,7 +74,9 @@ describe("permisos .own del técnico", () => {
 
   async function insertQuote(tid: string, branchId: string, noteId: string | null) {
     const [{ id }] = await AppDataSource.query(
-      `INSERT INTO quotes (tenant_id, local_id, nombre_cliente, id_nota_reparacion) VALUES ($1, $2, 'Cliente', $3) RETURNING id::text AS id`,
+      `INSERT INTO quotes (tenant_id, local_id, nombre_cliente, id_nota_reparacion, numero_cotizacion)
+       VALUES ($1, $2, 'Cliente', $3, (SELECT COALESCE(MAX(numero_cotizacion), 0) + 1 FROM quotes WHERE tenant_id = $1))
+       RETURNING id::text AS id`,
       [tid, branchId, noteId],
     );
     return id as string;

@@ -15,6 +15,7 @@ import { Supplier } from "../../commerce/suppliers/entities/supplier.entity.js";
 import { Notification } from "../../messaging/notifications/entities/notification.entity.js";
 import { Tenant } from "../tenancy/entities/tenant.entity.js";
 import { RepairNoteItem } from "../../commerce/repair-notes/entities/repair-note-item.entity.js";
+import { RepairNoteDevice } from "../../commerce/repair-notes/entities/repair-note-device.entity.js";
 import { RepairNoteServiceType } from "../../commerce/repair-notes/entities/repair-note-service-type.entity.js";
 import { ServiceType } from "../../commerce/service-types/entities/service-type.entity.js";
 import { InventoryItem } from "../../commerce/inventory/entities/inventory-item.entity.js";
@@ -76,6 +77,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     Local,
     RepairNote,
     RepairNoteItem,
+    RepairNoteDevice,
     RepairNoteServiceType,
     ServiceType,
     MessageTemplate,

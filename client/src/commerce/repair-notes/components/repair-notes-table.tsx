@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { describeDevices } from "../utils/devices";
 import { useNavigate } from "react-router";
 import {
   Plus,
@@ -130,7 +131,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                 )}
               </td>
               <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
-                {note.brand} {note.model}
+                {describeDevices(note.devices)}
               </td>
               <td className="px-4 py-4">
                 <span

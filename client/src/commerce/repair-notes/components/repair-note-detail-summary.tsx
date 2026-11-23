@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from "react";
+import { describeDevices } from "../utils/devices";
 import { Check, X } from "lucide-react";
 import { STATUS_CONFIG } from "../hooks/use-repair-notes";
 import { formatCurrency, formatDate } from "../utils/format";
@@ -60,8 +61,8 @@ export const RepairNoteDetailSummary: FC<RepairNoteDetailSummaryProps> = ({
                 </span>
               )}
             </Row>
-            <Row label="Equipo">
-              {note.brand} {note.model}
+            <Row label={note.devices.length > 1 ? `Equipos (${note.devices.length})` : "Equipo"}>
+              {describeDevices(note.devices)}
             </Row>
             <Row label="Estado">
               <span
@@ -103,9 +104,21 @@ export const RepairNoteDetailSummary: FC<RepairNoteDetailSummaryProps> = ({
           <div className="space-y-5">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Servicio</h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {note.reportedFailure}
-              </p>
+              <ul className="mt-1 space-y-2">
+                {note.devices.map((device, index) => (
+                  <li key={index} className="text-sm text-gray-500 dark:text-gray-400">
+                    {note.devices.length > 1 && (
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        {device.brand} {device.model}:{" "}
+                      </span>
+                    )}
+                    {device.reportedFailure}
+                    {device.deviceOff && (
+                      <span className="ml-1 text-xs font-medium text-orange-600 dark:text-orange-400">(apagado)</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <ul className="space-y-3.5">
@@ -125,7 +138,6 @@ export const RepairNoteDetailSummary: FC<RepairNoteDetailSummaryProps> = ({
                   ? ` (${note.extendedWarrantyDays} días)`
                   : ""}
               </Check_>
-              <Check_ included={!note.deviceOff}>Equipo encendido al recibirlo</Check_>
             </ul>
 
             {note.technicianNotes && (

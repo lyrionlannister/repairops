@@ -1,5 +1,6 @@
 export interface QuoteRecord {
   id: string;
+  quoteNumber: number;
   localId: string;
   kind: QuoteKind;
   customerId: string | null;

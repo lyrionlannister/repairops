@@ -70,7 +70,7 @@ export const useCustomerDetail = () => {
 
   const startEditing = () => {
     if (!customer) return;
-    setProfileDraft({ name: customer.name, phone: customer.phone, email: customer.email ?? "" });
+    setProfileDraft({ name: customer.name, phone: customer.phone ?? "", email: customer.email ?? "" });
     setEditingProfile(true);
   };
 

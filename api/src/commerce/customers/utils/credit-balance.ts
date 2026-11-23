@@ -54,6 +54,7 @@ export interface CreditDebtRow {
   kind: "sale" | "repair_note";
   reference: number;
   date: string;
+  dueDate: string | null;
   amount: string;
 }
 
@@ -68,10 +69,11 @@ export async function listCreditDebts(
     .select("sale.saleNumber", "reference")
     .addSelect("sale.createdAt", "date")
     .addSelect("payment.amount", "amount")
+    .addSelect("TO_CHAR(payment.fecha_vencimiento, 'YYYY-MM-DD')", "dueDate")
     .where("payment.tenantId = :tenantId", { tenantId })
     .andWhere("payment.method = 'credito'")
     .andWhere("sale.customerId = :customerId", { customerId })
-    .getRawMany<{ reference: string; date: Date; amount: string }>();
+    .getRawMany<{ reference: string; date: Date; amount: string; dueDate: string | null }>();
 
   const notes = await manager
     .createQueryBuilder(RepairNotePayment, "payment")
@@ -81,22 +83,25 @@ export async function listCreditDebts(
     .select("note.controlNumber", "reference")
     .addSelect("payment.createdAt", "date")
     .addSelect("payment.amount", "amount")
+    .addSelect("TO_CHAR(payment.fecha_vencimiento, 'YYYY-MM-DD')", "dueDate")
     .where("payment.tenantId = :tenantId", { tenantId })
     .andWhere("payment.method = 'credito'")
     .andWhere("note.customerId = :customerId", { customerId })
-    .getRawMany<{ reference: string; date: Date; amount: string }>();
+    .getRawMany<{ reference: string; date: Date; amount: string; dueDate: string | null }>();
 
   const rows: CreditDebtRow[] = [
     ...sales.map((r) => ({
       kind: "sale" as const,
       reference: Number(r.reference),
       date: new Date(r.date).toISOString(),
+      dueDate: r.dueDate,
       amount: r.amount,
     })),
     ...notes.map((r) => ({
       kind: "repair_note" as const,
       reference: Number(r.reference),
       date: new Date(r.date).toISOString(),
+      dueDate: r.dueDate,
       amount: r.amount,
     })),
   ];

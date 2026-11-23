@@ -1,4 +1,4 @@
-import { Entity, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
+import { Entity, Column, CreateDateColumn, ManyToOne, JoinColumn, Index, Unique } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 import { Branch } from "../../../identity/branches/entities/branch.entity.js";
@@ -8,6 +8,7 @@ export type CashSessionStatus = "open" | "closed";
 @Entity("cash_sessions")
 @Index("IDX_cash_sessions_tenant", ["tenantId"])
 @Index("IDX_cash_sessions_local", ["localId"])
+@Unique("UQ_cash_sessions_tenant_numero_corte", ["tenantId", "cutNumber"])
 export class CashSession extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -54,6 +55,10 @@ export class CashSession extends BaseEntity {
 
   @Column({ type: "timestamp", nullable: true, name: "fecha_cierre" })
   closedAt?: Date | null;
+
+  // Folio del corte: se asigna al cerrar la sesion (una sesion abierta todavia no es corte).
+  @Column({ type: "int", nullable: true, name: "numero_corte" })
+  cutNumber?: number | null;
 
   @Column({ type: "bigint", nullable: true, name: "id_empleado_cierre" })
   closedByEmployeeId?: string | null;

@@ -46,6 +46,17 @@ export class Local extends BaseEntity {
   @Column({ type: "int", default: 1, name: "siguiente_numero_devolucion" })
   nextReturnNumber!: number;
 
+  // Folios de cotizacion, corte de caja y conteo de inventario: mismo mecanismo atomico
+  // (LocalDao.consume), consecutivo propio de cada documento por tenant.
+  @Column({ type: "int", default: 1, name: "siguiente_numero_cotizacion" })
+  nextQuoteNumber!: number;
+
+  @Column({ type: "int", default: 1, name: "siguiente_numero_corte" })
+  nextCutNumber!: number;
+
+  @Column({ type: "int", default: 1, name: "siguiente_numero_conteo" })
+  nextCountNumber!: number;
+
   // IVA por defecto 16% (MX, cap. 9/10 del plan). Configurable por tenant,
   // nunca quemado en el motor de calculo (ver commerce/pricing).
   @Column({ type: "decimal", precision: 5, scale: 2, default: 16, name: "tasa_impuesto" })

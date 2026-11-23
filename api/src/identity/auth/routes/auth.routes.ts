@@ -3,10 +3,14 @@ import { AuthController } from "../controllers/auth.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { authenticatedOnly, requirePermission } from "../../authz/require-permission.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
+import { publicIdResponses } from "../../../core/http/public-id/public-id-response.js";
+import { resolvePublicIdParam } from "../../../core/http/public-id/public-id-request.js";
 
 export const createAuthRouter = (authController: AuthController): Router => {
   const router = Router();
 
+  // login y registro no pasan por tenantMiddleware, que es quien traduce las respuestas.
+  router.use(publicIdResponses);
   router.post("/register", authController.register);
   router.post("/login", authController.login);
   router.post("/logout", authController.logout);
@@ -35,6 +39,7 @@ export const createAuthRouter = (authController: AuthController): Router => {
     "/users/:id/toggle-status",
     authMiddleware,
     tenantMiddleware,
+    resolvePublicIdParam("usuarios"),
     requirePermission("users.manage"),
     authController.toggleUserStatus,
   );
@@ -42,6 +47,7 @@ export const createAuthRouter = (authController: AuthController): Router => {
     "/users/:id",
     authMiddleware,
     tenantMiddleware,
+    resolvePublicIdParam("usuarios"),
     requirePermission("users.manage"),
     authController.updateEmployee,
   );

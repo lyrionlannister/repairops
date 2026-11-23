@@ -101,9 +101,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 1,
           customerName: "Cliente",
-          brand: "Samsung",
-          model: "A1",
-          reportedFailure: "Pantalla rota",
           totalValue: 500,
           receivedAt: today(),
           receivedTime: "12:00",
@@ -180,9 +177,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 1,
           customerName: "Dentro",
-          brand: "A",
-          model: "B",
-          reportedFailure: "x",
           totalValue: 200,
           receivedAt: "2026-01-10",
           receivedTime: "12:00",
@@ -195,9 +189,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 2,
           customerName: "Fuera",
-          brand: "A",
-          model: "B",
-          reportedFailure: "x",
           totalValue: 9999,
           receivedAt: "2026-02-15",
           receivedTime: "12:00",
@@ -311,9 +302,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 1,
           customerName: "A",
-          brand: "A",
-          model: "A",
-          reportedFailure: "x",
           totalValue: 200,
           receivedAt: today(),
           receivedTime: "12:00",
@@ -330,9 +318,6 @@ describe("ReportsService", () => {
         repairNoteDao.create({
           controlNumber: 2,
           customerName: "B",
-          brand: "A",
-          model: "A",
-          reportedFailure: "x",
           totalValue: 300,
           receivedAt: today(),
           receivedTime: "12:00",

@@ -25,7 +25,7 @@ export const CashCutDocument: React.FC<{ data: CashCutPdfData }> = ({ data }) =>
           styles={styles}
           local={data.local}
           folioLabel="CORTE DE CAJA"
-          folioValue={`Nº ${data.id}`}
+          folioValue={data.folio}
           folioDate={longDate(data.closedDate)}
         />
 

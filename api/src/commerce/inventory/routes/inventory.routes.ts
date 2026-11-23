@@ -4,9 +4,11 @@ import { InventoryController } from "../controllers/inventory.controller.js";
 import { authMiddleware } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { requirePermission } from "../../../identity/authz/require-permission.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
+import { publicIdParam } from "../../../core/http/public-id/public-id-request.js";
 
 export const createInventoryRouter = (controller: InventoryController): Router => {
   const router = Router();
+  router.param("id", publicIdParam("inventory_items"));
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", requirePermission("inventory.read", "inventory.lookup"), controller.getAll);
   router.post("/import", requirePermission("inventory.manage"), express.raw({ type: "*/*", limit: "10mb" }), controller.bulkImport);

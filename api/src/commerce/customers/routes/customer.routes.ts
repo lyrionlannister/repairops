@@ -3,10 +3,12 @@ import { CustomerController } from "../controllers/customer.controller.js";
 import { authMiddleware } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { requirePermission } from "../../../identity/authz/require-permission.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
+import { publicIdParam } from "../../../core/http/public-id/public-id-request.js";
 
 export const createCustomerRouter = (controller: CustomerController): Router => {
   const router = Router();
   router.use(authMiddleware, tenantMiddleware);
+  router.param("id", publicIdParam("customers"));
   router.get("/", requirePermission("customers.read", "customers.read.own"), controller.getAll);
   router.get("/:id", requirePermission("customers.read", "customers.read.own"), controller.getById);
   router.get("/:id/devices", requirePermission("customers.read", "customers.read.own"), controller.getDevices);

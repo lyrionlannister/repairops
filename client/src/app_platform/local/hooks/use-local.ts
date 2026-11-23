@@ -36,7 +36,13 @@ export const useLocal = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error("Error al guardar configuración");
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as {
+            error?: string | string[];
+          } | null;
+          const message = Array.isArray(body?.error) ? body.error.join(", ") : body?.error;
+          throw new Error(message || "Error al guardar configuración");
+        }
         const updated = (await response.json()) as LocalRecord;
         setLocal(updated);
         setSaveSuccess(true);

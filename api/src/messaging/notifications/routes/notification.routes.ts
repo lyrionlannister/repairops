@@ -3,9 +3,11 @@ import { NotificationController } from "../controllers/notification.controller.j
 import { authMiddleware } from "../../../identity/auth/middlewares/auth.middleware.js";
 import { requirePermission } from "../../../identity/authz/require-permission.middleware.js";
 import { tenantMiddleware } from "../../../core/tenancy/tenant.middleware.js";
+import { publicIdParam } from "../../../core/http/public-id/public-id-request.js";
 
 export const createNotificationRouter = (controller: NotificationController): Router => {
   const router = Router();
+  router.param("id", publicIdParam("notifications"));
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", requirePermission("notifications.own"), controller.getAll);
   router.patch("/read-all", requirePermission("notifications.own"), controller.markAllRead);

@@ -8,6 +8,7 @@ import { InventoryCountItemDao } from "../daos/inventory-count-item.dao.js";
 import { InventoryCount } from "../entities/inventory-count.entity.js";
 import { InventoryCountItem } from "../entities/inventory-count-item.entity.js";
 import { InventoryService } from "./inventory.service.js";
+import { LocalService } from "../../../app_platform/local/services/local.service.js";
 
 export class InventoryCountCloseBlockedError extends Error {
   constructor(public readonly missingReasonItemIds: string[]) {
@@ -24,6 +25,7 @@ export class InventoryCountService {
     private branchDao: BranchDao,
     private itemDao: InventoryItemDao,
     private inventoryService: InventoryService,
+    private localService: LocalService,
   ) {}
 
   async getById(id: string): Promise<InventoryCount | null> {
@@ -43,11 +45,13 @@ export class InventoryCountService {
 
     const tenantId = getCurrentTenantId();
     const items = await this.itemDao.findByLocalId(branchId);
+    const countNumber = await this.localService.consumeFolio("count");
 
     return AppDataSource.transaction(async (manager) => {
       const count = manager.create(InventoryCount, {
         tenantId,
         branchId,
+        countNumber,
         status: "open",
         openedByEmployeeId: openedByEmployeeId ?? null,
         closedByEmployeeId: null,

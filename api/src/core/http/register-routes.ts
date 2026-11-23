@@ -43,6 +43,7 @@ import { SaleController } from "../../commerce/inventory/controllers/sale.contro
 import { createSaleRouter } from "../../commerce/inventory/routes/sale.routes.js";
 import { createN8nPublicRouter } from "../../messaging/n8n/n8n-public.routes.js";
 import { RepairNoteDao } from "../../commerce/repair-notes/daos/repair-note.dao.js";
+import { RepairNoteDeviceDao } from "../../commerce/repair-notes/daos/repair-note-device.dao.js";
 import { ImportStagingController } from "../../app_platform/import-staging/controllers/import-staging.controller.js";
 import { createImportStagingRouter } from "../../app_platform/import-staging/routes/import-staging.routes.js";
 import { QuoteController } from "../../commerce/quotes/controllers/quote.controller.js";
@@ -136,6 +137,7 @@ export function registerRoutes(app: Express): void {
       container.resolve(MessageTemplateDao),
       container.resolve(PriceListDao),
       container.resolve(RepairNoteDao),
+      container.resolve(RepairNoteDeviceDao),
     ),
   );
 }

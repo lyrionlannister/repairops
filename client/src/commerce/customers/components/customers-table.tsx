@@ -94,7 +94,7 @@ export const CustomersTable: FC<CustomersTableProps> = ({
                 {customer.name}
               </button>
             </td>
-            <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{customer.phone}</td>
+            <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{customer.phone || "—"}</td>
             <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
               {customer.email || "—"}
             </td>

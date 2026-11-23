@@ -17,6 +17,7 @@ export type RepairNotePaymentMethod = "efectivo" | "tarjeta" | "transferencia" |
 @Check("CHK_repair_note_payments_tipo", `"tipo" IN ('advance', 'delivery')`)
 @Check("CHK_repair_note_payments_metodo", `"metodo" IN ('efectivo', 'tarjeta', 'transferencia', 'credito')`)
 @Check("CHK_repair_note_payments_monto", `"monto" > 0`)
+@Check("CHK_repair_note_payments_fecha_vencimiento", `"metodo" = 'credito' OR "fecha_vencimiento" IS NULL`)
 export class RepairNotePayment extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -40,6 +41,10 @@ export class RepairNotePayment extends BaseEntity {
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false, name: "monto" })
   amount!: string;
+
+  // Nullable solo por los creditos anteriores a la fecha limite: todo credito nuevo la exige (RepairNoteService.deliver).
+  @Column({ type: "date", nullable: true, name: "fecha_vencimiento" })
+  dueDate?: string | null;
 
   @Column({ type: "timestamp", nullable: false, default: () => "now()", name: "fecha_creacion" })
   createdAt!: Date;

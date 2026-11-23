@@ -8,7 +8,8 @@ function makeDao() {
   return {
     findOrCreate: vi.fn(),
     update: vi.fn(),
-    consumeControlNumber: vi.fn(),
+    consume: vi.fn(),
+    lastUsedFolios: vi.fn(),
   } as unknown as LocalDao;
 }
 
@@ -39,10 +40,42 @@ describe("LocalService.updateConfig name validation", () => {
 describe("LocalService.consumeControlNumber", () => {
   it("delegates straight to the dao", async () => {
     const dao = makeDao();
-    vi.mocked(dao.consumeControlNumber).mockResolvedValue(9);
+    vi.mocked(dao.consume).mockResolvedValue(9);
 
     const service = new LocalService(dao);
     await expect(service.consumeControlNumber()).resolves.toBe(9);
+    expect(dao.consume).toHaveBeenCalledWith("control");
+  });
+});
+
+describe("LocalService.updateConfig folios", () => {
+  const lastUsed = { control: 40, sale: 0, return: 0, quote: 7, cut: 0, count: 0 };
+
+  it("rechaza un folio igual o menor al ultimo asignado, sin tocar la base", async () => {
+    const dao = makeDao();
+    vi.mocked(dao.lastUsedFolios).mockResolvedValue(lastUsed);
+    const service = new LocalService(dao);
+
+    await expect(service.updateConfig({ nextControlNumber: 40 })).rejects.toThrow(
+      "El siguiente folio de notas debe ser mayor a 40, el último ya asignado",
+    );
+    await expect(service.updateConfig({ nextQuoteNumber: 3 })).rejects.toThrow("cotizaciones");
+    expect(dao.update).not.toHaveBeenCalled();
+  });
+
+  it("acepta un folio por encima del ultimo asignado y no consulta si no cambia ninguno", async () => {
+    const dao = makeDao();
+    vi.mocked(dao.lastUsedFolios).mockResolvedValue(lastUsed);
+    vi.mocked(dao.findOrCreate).mockResolvedValue(mockEntity<Local>({ id: "local-1" }));
+    vi.mocked(dao.update).mockResolvedValue(mockEntity<Local>({ id: "local-1", nextQuoteNumber: 100 }));
+    const service = new LocalService(dao);
+
+    await service.updateConfig({ nextQuoteNumber: 100, nextCutNumber: 1 });
+    expect(dao.update).toHaveBeenCalledWith("local-1", expect.objectContaining({ nextQuoteNumber: 100, nextCutNumber: 1 }));
+
+    vi.mocked(dao.lastUsedFolios).mockClear();
+    await service.updateConfig({ name: "Mi Taller" });
+    expect(dao.lastUsedFolios).not.toHaveBeenCalled();
   });
 });
 

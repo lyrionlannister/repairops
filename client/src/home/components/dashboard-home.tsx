@@ -37,9 +37,9 @@ export const DashboardHome: React.FC = () => {
       title="Panel inicial"
       description="Métricas operativas del negocio y la atención."
     >
-      <section className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
+      <section className="grid grid-cols-1 gap-4 md:gap-6 xl:grid-cols-3">
         {showMoney && (
-          <div className="flex flex-col gap-4 md:gap-6 lg:col-span-2">
+          <div className="flex min-w-0 flex-col gap-4 md:gap-6 xl:col-span-2">
             <DashboardRevenueCards
               monthlyRevenue={businessMetrics.monthlyRevenue}
               weeklyRevenue={businessMetrics.weeklyRevenue}
@@ -55,7 +55,7 @@ export const DashboardHome: React.FC = () => {
           </div>
         )}
         <div
-          className={`flex flex-col gap-4 md:gap-6 ${showMoney ? "" : "lg:col-span-3 lg:grid lg:grid-cols-2"}`}
+          className={`flex min-w-0 flex-col gap-4 md:gap-6 ${showMoney ? "md:grid md:grid-cols-2 xl:flex" : "md:grid md:grid-cols-2 xl:col-span-3"}`}
         >
           <DashboardSecondaryStats
             openRepairNotes={businessMetrics.openRepairNotes}

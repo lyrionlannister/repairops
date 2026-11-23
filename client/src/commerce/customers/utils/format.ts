@@ -1,7 +1,7 @@
 import type { LayawayMethod, LayawayRecord } from "../types/layaways";
 import type { Customer } from "../types/customers";
 
-export const labelFor = (c: Customer) => `${c.name} · ${c.phone}`;
+export const labelFor = (c: Customer) => (c.phone ? `${c.name} · ${c.phone}` : c.name);
 
 export const formatMoney = (v: number) => `$${v.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
@@ -22,6 +22,8 @@ export const STATUS_LABELS: Record<LayawayRecord["status"], string> = {
   cancelled: "Cancelado",
   expired: "Vencido",
 };
+
+export const isOverdue = (day: string): boolean => day < new Date().toLocaleDateString("en-CA");
 
 export const daysUntil = (dateStr: string) => {
   const diff = new Date(dateStr).getTime() - Date.now();

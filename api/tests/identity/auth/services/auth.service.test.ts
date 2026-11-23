@@ -49,7 +49,8 @@ function makeUserBranchService(): UserBranchService {
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: "00000000-0000-0000-0000-000000000001",
+    id: "1",
+    publicId: "01a205b6-ac88-71bd-9308-81a096468dfb",
     tenantId: "11111111-1111-1111-1111-111111111111",
     firstName: "Admin",
     lastName: "User",
@@ -65,6 +66,7 @@ function makeUser(overrides: Partial<User> = {}): User {
 function makeTenantRepository(): Repository<Tenant> {
   return {
     create: vi.fn((data: any) => data),
+    findOneByOrFail: vi.fn().mockResolvedValue({ id: "11111111-1111-1111-1111-111111111111", publicId: "01a205b6-0000-7000-8000-00000000aaaa" }),
     save: vi.fn((tenant: any) =>
       Promise.resolve({ id: "11111111-1111-1111-1111-111111111111", ...tenant }),
     ),
@@ -140,6 +142,8 @@ describe("AuthService.login", () => {
     const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
 
     expect(Object.keys(payload).sort()).toEqual(["email", "exp", "iat", "id", "tenantId"]);
+    expect(payload.id).toBe("01a205b6-ac88-71bd-9308-81a096468dfb");
+    expect(payload.tenantId).toBe("01a205b6-0000-7000-8000-00000000aaaa");
   });
 });
 
@@ -279,15 +283,18 @@ describe("AuthService.createEmployee", () => {
 describe("AuthService.listEmployees", () => {
   it("only returns the fields a <Select> needs", async () => {
     const userDao = {
-      findAll: vi.fn().mockResolvedValue([makeUser({ id: "1" }), makeUser({ id: "2" })]),
+      findAll: vi.fn().mockResolvedValue([
+        makeUser({ id: "1", publicId: "p-1" }),
+        makeUser({ id: "2", publicId: "p-2" }),
+      ]),
     } as unknown as UserDao;
     const service = new AuthService(userDao, makeTenantRepository(), makeServiceTypeService(), makeBranchService(), makeUserBranchService(), makeBillingService(), makePlanLimitService(), makeUserRoleDao({ "1": ["owner"], "2": ["employee", "cashier"] }));
 
     const employees = await service.listEmployees();
 
     expect(employees).toEqual([
-      { id: "1", firstName: "Admin", lastName: "User", roles: ["owner"] },
-      { id: "2", firstName: "Admin", lastName: "User", roles: ["employee", "cashier"] },
+      { id: "1", publicId: "p-1", firstName: "Admin", lastName: "User", roles: ["owner"] },
+      { id: "2", publicId: "p-2", firstName: "Admin", lastName: "User", roles: ["employee", "cashier"] },
     ]);
   });
 });

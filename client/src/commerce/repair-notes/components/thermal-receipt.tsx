@@ -1,4 +1,5 @@
 import type { CSSProperties, FC, ReactNode } from "react";
+import { describeDevices } from "../utils/devices";
 import Barcode from "react-barcode";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -34,7 +35,7 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
     ...(note.contactNumber
       ? ([["TELÉFONO", note.contactNumber, false]] as Array<[string, ReactNode, boolean]>)
       : []),
-    ["EQUIPO", `${note.brand} ${note.model}`, true],
+    [note.devices.length > 1 ? "EQUIPOS" : "EQUIPO", describeDevices(note.devices), true],
     ...(serviceTypeNames.length > 0
       ? ([["SERVICIO", serviceTypeNames.join(", "), false]] as Array<[string, ReactNode, boolean]>)
       : []),
@@ -78,7 +79,13 @@ export const ThermalReceipt: FC<ThermalReceiptProps> = ({
         }}
       >
         <div style={{ fontSize: s.falla, letterSpacing: 1, fontWeight: 500 }}>FALLA REPORTADA</div>
-        <div style={{ marginTop: 2 }}>{note.reportedFailure}</div>
+        {note.devices.map((device, index) => (
+          <div key={index} style={{ marginTop: 2 }}>
+            {note.devices.length > 1 && <strong>{`${index + 1}. ${device.brand} ${device.model}: `}</strong>}
+            {device.reportedFailure}
+            {device.deviceOff && " (apagado)"}
+          </div>
+        ))}
       </div>
 
       <TicketDashed margin={wide ? "10px 0 8px" : "9px 0 7px"} />

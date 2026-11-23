@@ -26,6 +26,7 @@ export interface UserRecord {
   branchIds: string[];
   primaryBranchId: string | null;
   isActive: boolean;
+  online?: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -58,6 +58,7 @@ export interface CashSummary {
 
 export interface CashCut {
   id: string;
+  cutNumber: number;
   localId: string;
   openedAt: string;
   closedAt: string | null;
@@ -107,4 +108,12 @@ export interface CashCutDetail {
   summary: CashSummary;
   movements: CashMovementRecord[];
   expectedCash: string;
+}
+
+export interface CashBranchStatus {
+  branchId: string;
+  branchName: string;
+  session: CashSessionRecord | null;
+  summary: CashSummary | null;
+  lastCut: CashCut | null;
 }

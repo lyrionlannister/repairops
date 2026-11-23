@@ -15,6 +15,11 @@ export interface LocalRecord {
   phone?: string;
   logo?: string;
   nextControlNumber: number;
+  nextSaleNumber: number;
+  nextReturnNumber: number;
+  nextQuoteNumber: number;
+  nextCutNumber: number;
+  nextCountNumber: number;
   cashRoundingUnit: number;
   currency: string;
   defaultTicketSize: TicketSize;
@@ -28,3 +33,16 @@ export interface LocalRecord {
 }
 
 export type TicketSize = "58mm" | "80mm" | "letter";
+
+export type FolioField =
+  | "nextControlNumber"
+  | "nextSaleNumber"
+  | "nextReturnNumber"
+  | "nextQuoteNumber"
+  | "nextCutNumber"
+  | "nextCountNumber";
+
+export interface FolioFieldConfig {
+  name: FolioField;
+  label: string;
+}

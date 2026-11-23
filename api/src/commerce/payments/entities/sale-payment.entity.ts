@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from "typeorm";
+import { Entity, Column, ManyToOne, JoinColumn, Index, Check } from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 import { Sale } from "../../inventory/entities/sale.entity.js";
@@ -13,6 +13,7 @@ export type SalePaymentMethod = "efectivo" | "tarjeta" | "transferencia" | "cred
 @Entity("sale_payments")
 @Index("IDX_sale_payments_tenant", ["tenantId"])
 @Index("IDX_sale_payments_id_venta", ["saleId"])
+@Check("CHK_sale_payments_fecha_vencimiento", `"metodo" = 'credito' OR "fecha_vencimiento" IS NULL`)
 export class SalePayment extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;
@@ -42,4 +43,8 @@ export class SalePayment extends BaseEntity {
 
   @Column({ type: "varchar", length: 100, nullable: true, name: "codigo_autorizacion_proveedor" })
   providerAuthorizationCode!: string | null;
+
+  // Nullable solo por los creditos anteriores a la fecha limite: todo credito nuevo la exige (SaleService).
+  @Column({ type: "date", nullable: true, name: "fecha_vencimiento" })
+  dueDate!: string | null;
 }

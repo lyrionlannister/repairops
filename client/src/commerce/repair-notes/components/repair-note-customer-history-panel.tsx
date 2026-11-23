@@ -13,7 +13,7 @@ export const RepairNoteCustomerHistoryPanel: React.FC<RepairNoteCustomerHistoryP
           <div key={n.id} className="flex items-center justify-between py-2.5 text-sm">
             <div>
               <p className="text-gray-700 dark:text-gray-300">
-                {n.brand} {n.model}
+                {n.devicesLabel}
               </p>
               <p className="text-xs text-gray-400">
                 {STATUS_CONFIG[n.status].label} · {formatDate(n.receivedAt)}

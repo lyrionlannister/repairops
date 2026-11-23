@@ -1,5 +1,5 @@
-import type { HistoryEntry } from "../types/repair-note-customer-history-panel";
+import type { RepairNoteHistoryEntry } from "../types/repair-note-customer-history";
 
 export interface RepairNoteCustomerHistoryPanelProps {
-  otherNotes: HistoryEntry[];
+  otherNotes: RepairNoteHistoryEntry[];
 }

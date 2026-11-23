@@ -9,6 +9,8 @@ import type { CashCutQuery, CashCutRow } from "../types/cash-report.types.js";
 
 interface RawCutRow {
   id: string;
+  publicId: string;
+  cutNumber: number;
   localId: string;
   openedAt: Date;
   closedAt: Date | null;
@@ -51,6 +53,8 @@ export class CashSessionDao extends TenantScopedDao<CashSession> {
       .leftJoin(User, "c", "c.id = s.closedByEmployeeId AND c.tenantId = s.tenantId")
       .andWhere("s.status = 'closed'")
       .select("s.id::text", "id")
+      .addSelect("s.public_id::text", "publicId")
+      .addSelect("s.numero_corte", "cutNumber")
       .addSelect("s.local_id::text", "localId")
       .addSelect("s.fecha_apertura", "openedAt")
       .addSelect("s.fecha_cierre", "closedAt")

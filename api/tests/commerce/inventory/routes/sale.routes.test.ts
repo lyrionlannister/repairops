@@ -50,12 +50,13 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
 
   // Sucursal real y un usuario por rol (el personal asignado a ella): ver tests/support/staff.ts.
   let branchId = "";
+  let branchPublicId = "";
   let tokens: Record<string, string> = {};
   const tokenFor = (role: UserRole) => tokens[role];
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    ({ branchId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
+    ({ branchId, branchPublicId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
@@ -98,7 +99,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
     const createRes = await request(app)
       .post("/sales")
       .set("Authorization", `Bearer ${technicianToken}`)
-      .send({ localId: branchId, cashSessionId: "1", payments: [{ method: "efectivo", amount: 1 }], items: [] });
+      .send({ localId: branchPublicId, payments: [{ method: "efectivo", amount: 1 }], items: [] });
     expect(createRes.status).toBe(403);
 
     const readRes = await request(app).get("/sales").set("Authorization", `Bearer ${technicianToken}`);
@@ -128,12 +129,12 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       .post("/sales")
       .set("Authorization", `Bearer ${cashierToken}`)
       .send({
-        localId: branchId,
-        cashSessionId: session.id,
+        localId: branchPublicId,
+        cashSessionId: session.publicId,
         applyTax: true,
         // 25 subtotal + 16% de impuesto por defecto del tenant = 29.
         payments: [{ method: "efectivo", amount: 29 }],
-        items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 25 }],
+        items: [{ lineType: "inventory_item", referenceId: item.publicId, quantity: 1, unitPrice: 25 }],
       });
     expect(res.status).toBe(201);
     expect(res.body.saleNumber).toBeGreaterThan(0);

@@ -7,6 +7,8 @@ import type { Local } from "../../../../src/app_platform/local/entities/local.en
 function makeQuote(overrides: Partial<Quote> = {}): Quote {
   return {
     id: "1",
+    publicId: "01a205b6-ac88-71bd-9308-81a096468dfb",
+    quoteNumber: 12,
     customerName: "Juan Pérez",
     contactNumber: "555",
     totalValue: "600.00",
@@ -25,6 +27,7 @@ describe("toQuotePdfData", () => {
   it("entrega el dinero como cadenas decimales y calcula subtotales exactos", () => {
     const data = toQuotePdfData(makeQuote(), [makeItem({ quantity: 3, unitPrice: "0.10" })], null);
 
+    expect(data.folio).toBe("Nº 12");
     expect(data.totalValue).toBe("600.00");
     expect(data.items).toEqual([{ description: "Pantalla", quantity: 3, unitPrice: "0.10", subtotal: "0.30" }]);
   });

@@ -35,7 +35,7 @@ export const QuoteDocument: React.FC<{ data: QuotePdfData }> = ({ data }) => {
           styles={styles}
           local={data.local}
           folioLabel="COTIZACIÓN"
-          folioValue={`Nº ${data.id}`}
+          folioValue={data.folio}
           folioDate={longDate(data.createdAt)}
         />
 

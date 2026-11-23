@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import type { Customer } from "@commerce/customers/types/customers";
 import type { InventoryItem } from "@commerce/inventory/types/inventory";
-import type { AdvancePaymentInput, RepairNoteFormData, RepairNoteRecord, RepairNoteStatus } from "../types/repair-notes";
+import type { AdvancePaymentInput, RepairNoteDevice, RepairNoteFormData, RepairNoteRecord, RepairNoteStatus } from "../types/repair-notes";
 import type { RepairNoteItemLine } from "../types/repair-note-item-lines";
 
 export interface RepairNoteFormProps {
@@ -18,11 +18,10 @@ export interface RepairNoteFormProps {
   onCustomerChange: (customerId: string, customer: Customer | null) => void;
   onCustomerNameChange: (value: string) => void;
   onContactNumberChange: (value: string) => void;
-  onBrandChange: (value: string) => void;
-  onModelChange: (value: string) => void;
-  onReportedFailureChange: (value: string) => void;
+  onDeviceChange: (index: number, patch: Partial<RepairNoteDevice>) => void;
+  onAddDevice: () => void;
+  onRemoveDevice: (index: number) => void;
   onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
-  onDeviceOffChange: (value: boolean) => void;
   onReceivedAtChange: (value: string) => void;
   onDeliveryDateChange: (value: string) => void;
   onAssignedEmployeeIdChange: (value: string) => void;

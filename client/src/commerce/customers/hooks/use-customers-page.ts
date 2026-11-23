@@ -27,7 +27,7 @@ export const useCustomersPage = ({
     return customers.filter(
       (c) =>
         c.name.toLowerCase().includes(term) ||
-        c.phone.toLowerCase().includes(term) ||
+        (c.phone ?? "").toLowerCase().includes(term) ||
         (c.email ?? "").toLowerCase().includes(term),
     );
   }, [search, customers]);

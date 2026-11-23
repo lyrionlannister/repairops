@@ -6,21 +6,32 @@ import { runWithTenant, type BranchScope } from "./tenant-context.js";
 import AppDataSource from "../config/data-source.js";
 import { container } from "tsyringe";
 import { PresenceService } from "../../identity/auth/services/presence.service.js";
+import { publicIdResponses } from "../http/public-id/public-id-response.js";
+import { PublicIdNotFoundError, resolveRequestPublicIds } from "../http/public-id/public-id-request.js";
+import { UUID } from "../http/public-id/public-id-metadata.js";
 
 // El JWT dura 24 h: si roles, flag de plataforma o estado activo se tomaran del token,
 // desactivar o cambiar los roles de alguien no surtiría efecto hasta que expirara.
-async function loadAccess(
-  tenantId: string,
-  userId: string,
-): Promise<{ roles: UserRole[]; isPlatformAdmin: boolean } | null> {
-  const rows: Array<{ roles: UserRole[]; isPlatformAdmin: boolean }> = await AppDataSource.query(
-    `SELECT u.es_platform_admin AS "isPlatformAdmin",
+interface Access {
+  id: string;
+  tenantId: string;
+  roles: UserRole[];
+  isPlatformAdmin: boolean;
+}
+
+// El JWT solo trae public_ids (usuario y tenant): aqui se resuelven a los ids internos,
+// y el usuario tiene que pertenecer a ese tenant.
+async function loadAccess(tenantPublicId: string, userPublicId: string): Promise<Access | null> {
+  if (!UUID.test(userPublicId) || !UUID.test(tenantPublicId)) return null;
+  const rows: Access[] = await AppDataSource.query(
+    `SELECT u.id::text AS "id", u.tenant_id::text AS "tenantId", u.es_platform_admin AS "isPlatformAdmin",
             COALESCE(array_agg(ur.role::text) FILTER (WHERE ur.role IS NOT NULL), '{}') AS "roles"
      FROM usuarios u
+     JOIN tenants t ON t.id = u.tenant_id
      LEFT JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
-     WHERE u.id = $1 AND u.tenant_id = $2 AND u.activo = true
+     WHERE u.public_id = $1 AND t.public_id = $2 AND u.activo = true
      GROUP BY u.id`,
-    [userId, tenantId],
+    [userPublicId, tenantPublicId],
   );
   return rows[0] ?? null;
 }
@@ -42,8 +53,8 @@ async function loadBranchScope(tenantId: string, userId: string): Promise<Branch
   };
 }
 
-// Va siempre despues de authMiddleware: ese ya puso req.user.tenantId desde
-// el JWT. Este middleware propaga ese tenant, sus permisos (y, si el usuario no es owner, su alcance
+// Va siempre despues de authMiddleware: ese ya puso los public_ids de usuario y tenant
+// desde el JWT. Este middleware propaga ese tenant, sus permisos (y, si el usuario no es owner, su alcance
 // de sucursales) al AsyncLocalStorage para que los TenantScopedDao de todo el resto de
 // la cadena lo vean. El owner accede a todas las sucursales y no lleva alcance.
 export const tenantMiddleware = async (
@@ -52,34 +63,45 @@ export const tenantMiddleware = async (
   next: NextFunction,
 ): Promise<void> => {
   const user = req.user;
-  const tenantId = user?.tenantId;
 
-  if (!user || !tenantId) {
+  if (!user?.tenantPublicId) {
     res.status(401).json({ error: "No autenticado" });
     return;
   }
 
   try {
-    const access = await loadAccess(tenantId, user.id);
+    const access = await loadAccess(user.tenantPublicId, user.publicId);
     if (!access) {
       res.status(401).json({ error: "No autenticado" });
       return;
     }
     const permissions = effectivePermissions(access.roles, access.isPlatformAdmin);
+    user.id = access.id;
+    user.tenantId = access.tenantId;
+    const tenantId = access.tenantId;
     user.roles = access.roles;
     user.isPlatformAdmin = access.isPlatformAdmin;
     user.permissions = permissions;
     const branch = access.roles.includes("owner") ? null : await loadBranchScope(tenantId, user.id);
-    runWithTenant(
+    await runWithTenant(
       tenantId,
-      () => {
+      async () => {
         container
           .resolve(PresenceService)
           .touch(user.id)
           .catch(() => {});
-        next();
+        try {
+          await resolveRequestPublicIds(req);
+        } catch (error) {
+          if (!(error instanceof PublicIdNotFoundError)) throw error;
+          res.status(404).json({ error: error.message });
+          return;
+        }
+        publicIdResponses(req, res, next);
       },
-      branch, { userId: user.id, roles: access.roles, permissions });
+      branch,
+      { userId: user.id, roles: access.roles, permissions },
+    );
   } catch (error) {
     next(error);
   }

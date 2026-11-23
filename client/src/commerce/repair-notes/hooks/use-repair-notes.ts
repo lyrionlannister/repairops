@@ -1,14 +1,13 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
+import { EMPTY_DEVICE } from "../utils/devices";
 import type { RepairNoteRecord, RepairNoteFormData, AdvancePaymentInput, RepairNoteItemInput, RepairNoteItemRecord, RepairNoteStatus } from "../types/repair-notes";
 
 export const INITIAL_FORM: RepairNoteFormData = {
   customerName: "",
   contactNumber: "",
-  brand: "",
-  model: "",
-  reportedFailure: "",
+  devices: [EMPTY_DEVICE],
   totalValue: "0",
   status: "received",
   requiresAdvance: false,
@@ -21,7 +20,6 @@ export const INITIAL_FORM: RepairNoteFormData = {
   localId: "",
   customerId: "",
   serviceTypeIds: [],
-  deviceOff: false,
   hasWarranty: false,
   hasExtendedWarranty: false,
   extendedWarrantyDays: "",
@@ -222,7 +220,7 @@ export const useRepairNotes = () => {
       try {
         const response = await apiClient(`/repair-notes/${id}/service-types`);
         if (!response.ok) return [];
-        return (await response.json()) as string[];
+        return ((await response.json()) as { serviceTypeIds: string[] }).serviceTypeIds;
       } catch {
         return [];
       }

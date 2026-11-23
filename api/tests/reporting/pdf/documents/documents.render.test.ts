@@ -17,9 +17,7 @@ const noteData = (overrides: Partial<RepairNotePdfData> = {}): RepairNotePdfData
   qrUrl: "https://wa.me/5215512345678?text=Hola%2C%20nota%20%231042",
   customerName: "Juan Pérez",
   contactNumber: "5551234567",
-  brand: "Samsung",
-  model: "A15",
-  reportedFailure: "Pantalla rota",
+  devices: [{ brand: "Samsung", model: "A15", reportedFailure: "Pantalla rota", deviceOff: false }],
   additionalFindings: null,
   totalValue: "1500.00",
   requiresAdvance: true,
@@ -31,7 +29,6 @@ const noteData = (overrides: Partial<RepairNotePdfData> = {}): RepairNotePdfData
   assignedEmployeeName: "Luis",
   technicianNotes: "Revisar touch",
   serviceTypeNames: ["Reparación", "Diagnóstico"],
-  deviceOff: false,
   hasWarranty: true,
   hasExtendedWarranty: true,
   extendedWarrantyDays: 30,
@@ -81,10 +78,26 @@ describe("documentos PDF", () => {
   it("la nota con textos muy largos fuerza salto de pagina sin error", async () => {
     const long = "texto muy largo ".repeat(900);
     const buffer = await renderer.render(RepairNoteDocument, {
-      data: noteData({ technicianNotes: long, reportedFailure: long }),
+      data: noteData({
+        technicianNotes: long,
+        devices: [{ brand: "Samsung", model: "A15", reportedFailure: long, deviceOff: false }],
+      }),
     });
     expect(isPdf(buffer)).toBe(true);
     expect(pageCount(buffer)).toBeGreaterThan(1);
+  });
+
+  it("la nota con varios equipos se genera con la falla de cada uno", async () => {
+    const buffer = await renderer.render(RepairNoteDocument, {
+      data: noteData({
+        devices: [
+          { brand: "Samsung", model: "A15", reportedFailure: "Pantalla rota", deviceOff: false },
+          { brand: "Apple", model: "iPhone 12", reportedFailure: "No carga", deviceOff: true },
+          { brand: "Xiaomi", model: "Redmi 9", reportedFailure: "Bateria", deviceOff: false },
+        ],
+      }),
+    });
+    expect(isPdf(buffer)).toBe(true);
   });
 
   it("la cotizacion se genera con muchos renglones y con el color por defecto", async () => {

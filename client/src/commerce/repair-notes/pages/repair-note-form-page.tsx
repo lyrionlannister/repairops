@@ -14,6 +14,7 @@ import { RepairNoteCustomerHistoryPanel } from "../components/repair-note-custom
 import { RepairNoteForm, REPAIR_NOTE_FORM_STEPS } from "../components/repair-note-form";
 import { useFormSteps } from "@common/hooks/use-form-steps";
 import { noteToForm } from "../utils/note-to-form";
+import { EMPTY_DEVICE, removeDeviceAt, updateDeviceAt } from "../utils/devices";
 import type { AdvancePaymentInput, RepairNoteFormData, RepairNoteStatus } from "../types/repair-notes";
 export const RepairNoteFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -147,18 +148,19 @@ export const RepairNoteFormPage: React.FC = () => {
               ...prev,
               customerId,
               customerName: customer ? customer.name : prev.customerName,
-              contactNumber: customer ? customer.phone : prev.contactNumber,
+              contactNumber: customer ? (customer.phone ?? "") : prev.contactNumber,
             }))
           }
           onCustomerNameChange={(value) => set("customerName", value)}
           onContactNumberChange={(value) => set("contactNumber", value)}
-          onBrandChange={(value) => set("brand", value)}
-          onModelChange={(value) => set("model", value)}
-          onReportedFailureChange={(value) => set("reportedFailure", value)}
+          onDeviceChange={(index, patch) =>
+            setForm((prev) => ({ ...prev, devices: updateDeviceAt(prev.devices, index, patch) }))
+          }
+          onAddDevice={() => setForm((prev) => ({ ...prev, devices: [...prev.devices, { ...EMPTY_DEVICE }] }))}
+          onRemoveDevice={(index) => setForm((prev) => ({ ...prev, devices: removeDeviceAt(prev.devices, index) }))}
           onServiceTypeIdsChange={(serviceTypeIds) =>
             setForm((prev) => ({ ...prev, serviceTypeIds }))
           }
-          onDeviceOffChange={(value) => set("deviceOff", value)}
           onReceivedAtChange={(value) => set("receivedAt", value)}
           onDeliveryDateChange={(value) => set("deliveryDate", value)}
           onAssignedEmployeeIdChange={(value) => set("assignedEmployeeId", value)}

@@ -1,4 +1,4 @@
-import { Column, Generated, PrimaryGeneratedColumn } from "typeorm";
+import { Column, PrimaryGeneratedColumn } from "typeorm";
 
 // `id` es la PK interna (bigint autoincremental), la que deben usar FKs y
 // joins -- comparar bigint es mas rapido que comparar uuid. `publicId` es el
@@ -8,7 +8,8 @@ export abstract class BaseEntity {
   @PrimaryGeneratedColumn({ type: "bigint", name: "id" })
   id!: string;
 
-  @Column({ type: "uuid", name: "public_id", unique: true })
-  @Generated("uuid")
+  // v7 (ordenable por tiempo) para que el indice unique crezca al final en vez de
+  // fragmentarse; requiere Postgres 18+. Las filas previas conservan su v4.
+  @Column({ type: "uuid", name: "public_id", unique: true, default: () => "uuidv7()" })
   publicId!: string;
 }

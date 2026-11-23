@@ -1,5 +1,9 @@
 import "reflect-metadata";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
+import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
+import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
+import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
@@ -36,7 +40,9 @@ describe("InventoryCountService", () => {
       branchDao,
       itemDao,
       inventoryService,
+      new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
     );
+    await ensureFixtureTenant(AppDataSource, tenantId);
   });
 
   afterAll(async () => {
@@ -53,6 +59,7 @@ describe("InventoryCountService", () => {
     );
 
     const count = await runWithTenant(tenantId, () => countService.open(branch.id));
+    expect(count.countNumber).toBeGreaterThan(0);
     const items = await runWithTenant(tenantId, () => countService.getItems(count.id));
     expect(items).toHaveLength(2);
     expect(items.every((i) => i.countedQuantity === null)).toBe(true);

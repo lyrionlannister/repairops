@@ -1,21 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import type { LocalRecord, TicketSize } from "../types/local";
-import type { LocalFormState, AttributionBasis } from "../types/local-page";
+import type { LocalFormState, AttributionBasis, LocalTabKey } from "../types/local-page";
+import { dirtyLocalTabs, toLocalTab } from "../utils/local-tabs";
+import { EMPTY_LOCAL_FORM, isSameForm, toLocalForm, toLocalUpdate } from "../utils/local-form";
 
 export type { TicketSize };
-const emptyForm: LocalFormState = {
-  name: "",
-  address: "",
-  phone: "",
-  nextControlNumber: "1",
-  cashRoundingUnit: "0",
-  logo: "",
-  currency: "MXN",
-  defaultTicketSize: "80mm",
-  warrantyClause: "",
-  brandColor: "",
-  timeZone: "America/Mexico_City",
-};
 
 export const useLocalPage = ({
   local,
@@ -36,7 +26,8 @@ export const useLocalPage = ({
   updateLocal: (data: Partial<LocalRecord>) => Promise<boolean>;
   apiClient: (input: string, init?: RequestInit) => Promise<Response>;
 }) => {
-  const [form, setForm] = useState<LocalFormState>(emptyForm);
+  const savedForm = useMemo(() => (local ? toLocalForm(local) : EMPTY_LOCAL_FORM), [local]);
+  const [form, setForm] = useState<LocalFormState>(savedForm);
   const [attributionBasis, setAttributionBasis] = useState<AttributionBasis>("total_value");
   const [attributionSaving, setAttributionSaving] = useState(false);
   const [attributionMessage, setAttributionMessage] = useState<string | null>(null);
@@ -61,22 +52,20 @@ export const useLocalPage = ({
   }, [fetchLocal, fetchAttributionBasis]);
 
   useEffect(() => {
-    if (local) {
-      setForm({
-        name: local.name ?? "",
-        address: local.address ?? "",
-        phone: local.phone ?? "",
-        nextControlNumber: String(local.nextControlNumber),
-        cashRoundingUnit: String(local.cashRoundingUnit ?? 0),
-        logo: local.logo ?? "",
-        currency: local.currency ?? "MXN",
-        defaultTicketSize: local.defaultTicketSize ?? "80mm",
-        warrantyClause: local.warrantyClause ?? "",
-        brandColor: local.brandColor ?? "",
-        timeZone: local.timeZone ?? "America/Mexico_City",
-      });
-    }
-  }, [local]);
+    setForm(savedForm);
+  }, [savedForm]);
+
+  const isDirty = !isSameForm(form, savedForm);
+  const dirtyTabs = useMemo(() => dirtyLocalTabs(form, savedForm), [form, savedForm]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = toLocalTab(searchParams.get("tab"));
+  const selectTab = (tab: LocalTabKey) => setSearchParams({ tab }, { replace: true });
+  const cashBranchId = searchParams.get("branch");
+  const viewCashBranch = (branchId: string | null) =>
+    setSearchParams(branchId ? { tab: "cash", branch: branchId } : { tab: "cash" });
+  const discardChanges = () => setForm(savedForm);
+  const setField = (name: keyof LocalFormState, value: string) =>
+    setForm((prev) => ({ ...prev, [name]: value }));
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -96,8 +85,7 @@ export const useLocalPage = ({
     reader.readAsDataURL(file);
   };
 
-  const handleAttributionBasisChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextBasis = event.target.value as AttributionBasis;
+  const handleAttributionBasisChange = async (nextBasis: AttributionBasis) => {
     setAttributionBasis(nextBasis);
     setAttributionMessage(null);
     setAttributionSaving(true);
@@ -128,19 +116,7 @@ export const useLocalPage = ({
 
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await updateLocal({
-      name: form.name || undefined,
-      address: form.address || undefined,
-      phone: form.phone || undefined,
-      nextControlNumber: Number.parseInt(form.nextControlNumber, 10) || 1,
-      cashRoundingUnit: Number.parseFloat(form.cashRoundingUnit) || 0,
-      logo: form.logo || undefined,
-      currency: form.currency || "MXN",
-      defaultTicketSize: form.defaultTicketSize,
-      warrantyClause: form.warrantyClause || undefined,
-      brandColor: form.brandColor || null,
-      timeZone: form.timeZone,
-    });
+    await updateLocal(toLocalUpdate(form, savedForm, local));
   };
 
   const setBrandColor = (brandColor: string) => setForm((prev) => ({ ...prev, brandColor }));
@@ -166,5 +142,13 @@ export const useLocalPage = ({
     handleSubmit,
     removeLogo,
     setBrandColor,
+    setField,
+    isDirty,
+    discardChanges,
+    dirtyTabs,
+    activeTab,
+    selectTab,
+    cashBranchId,
+    viewCashBranch,
   };
 };

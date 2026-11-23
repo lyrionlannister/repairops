@@ -81,6 +81,8 @@ export const useRepairNoteDelivery = (note: RepairNoteRecord | null, onDelivered
       return `Los pagos suman ${paymentsSum.toFixed(2)} y el saldo es ${balance.toFixed(2)}.`;
     if (creditAmount > 0 && !customerId)
       return "Para dejar a crédito la nota debe tener un cliente registrado.";
+    if (payments.some((p) => p.method === "credito" && !p.dueDate))
+      return "Indica la fecha límite en la que el cliente debe pagar el crédito.";
     if (creditAmount > 0 && credit && creditAmount > credit.available)
       return "El crédito supera el disponible del cliente.";
     if (hasCashPayment && !session) return "No hay una caja abierta en esta sucursal para cobrar.";
@@ -106,7 +108,11 @@ export const useRepairNoteDelivery = (note: RepairNoteRecord | null, onDelivered
           payments:
             balance === 0
               ? []
-              : payments.map((p) => ({ method: p.method, amount: Number(p.amount) })),
+              : payments.map((p) => ({
+                  method: p.method,
+                  amount: Number(p.amount),
+                  dueDate: p.method === "credito" ? p.dueDate : undefined,
+                })),
           createdByEmployeeId: employeeId || undefined,
         }),
       });

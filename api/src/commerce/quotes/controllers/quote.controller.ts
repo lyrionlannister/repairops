@@ -55,7 +55,8 @@ export class QuoteController {
 
   getServiceTypes = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getServiceTypeIds(req.params["id"] as string));
+      const serviceTypeIds = await this.service.getServiceTypeIds(req.params["id"] as string);
+      res.status(200).json({ serviceTypeIds });
     } catch (error) {
       sendError(res, error, 500);
     }
@@ -148,7 +149,7 @@ export class QuoteController {
       const buffer = await this.pdfRendererService.render(QuoteDocument, { data });
 
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="cotizacion-${quote.id}.pdf"`);
+      res.setHeader("Content-Disposition", `attachment; filename="cotizacion-${quote.quoteNumber}.pdf"`);
       res.status(200).send(buffer);
     } catch (error) {
       sendError(res, error, 500);

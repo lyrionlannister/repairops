@@ -1,9 +1,11 @@
 import type { FC } from "react";
+import { describeDevices } from "../utils/devices";
 import { Plus, Trash2 } from "lucide-react";
 import { Modal } from "@ui/modal/modal";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
+import { DatePicker } from "@ui/date-picker/date-picker";
 import { Button } from "@ui/button/button";
 import { EmployeeSelect } from "@common/components/employee-select";
 import { formatCurrency } from "../utils/format";
@@ -62,7 +64,7 @@ export const RepairNoteDeliveryModal: FC<RepairNoteDeliveryModalProps> = ({
       Entregar nota #{note?.controlNumber}
     </h3>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-      {note?.customerName} · {note?.brand} {note?.model}
+      {note?.customerName} · {describeDevices(note?.devices ?? [])}
     </p>
 
     <div className="mt-4 space-y-2 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
@@ -83,7 +85,8 @@ export const RepairNoteDeliveryModal: FC<RepairNoteDeliveryModalProps> = ({
       <div className="mt-4 space-y-3">
         <Label className="text-gray-500">Pago</Label>
         {payments.map((payment, index) => (
-          <div key={index} className="flex items-center gap-2">
+          <div key={index} className="space-y-2">
+          <div className="flex items-center gap-2">
             <div className="w-44 shrink-0">
               <Select
                 value={payment.method}
@@ -113,6 +116,17 @@ export const RepairNoteDeliveryModal: FC<RepairNoteDeliveryModalProps> = ({
                 <Trash2 className="size-4" />
               </button>
             )}
+          </div>
+          {payment.method === "credito" && (
+            <div>
+              <Label className="text-gray-500">Fecha límite de pago</Label>
+              <DatePicker
+                value={payment.dueDate ?? ""}
+                onChange={(dueDate) => onPaymentChange(index, { dueDate })}
+                disabled={saving}
+              />
+            </div>
+          )}
           </div>
         ))}
         <Button type="button" variant="outline" onClick={onAddPayment} disabled={saving}>

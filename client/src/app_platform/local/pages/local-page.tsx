@@ -11,13 +11,21 @@ export const LocalPage = () => {
   const {
     fileInputRef,
     form,
+    isDirty,
+    dirtyTabs,
+    activeTab,
+    selectTab,
+    cashBranchId,
+    viewCashBranch,
     attributionBasis,
     attributionSaving,
     attributionMessage,
     handleChange,
+    setField,
     handleLogoChange,
     handleAttributionBasisChange,
     handleSubmit,
+    discardChanges,
     removeLogo,
     setBrandColor,
   } = useLocalPage({
@@ -40,22 +48,27 @@ export const LocalPage = () => {
   }
 
   return (
-    <PageShell
-      title="Configuración del Local"
-      description="Datos que aparecerán en las notas de reparación impresas."
-    >
+    <PageShell title="Mi Local" description="Identidad, folios y reglas de operación de tu taller.">
       <LocalSettingsForm
         local={local}
         form={form}
         saving={saving}
+        isDirty={isDirty}
+        activeTab={activeTab}
+        dirtyTabs={dirtyTabs}
+        onSelectTab={selectTab}
+        cashBranchId={cashBranchId}
+        onViewCashBranch={viewCashBranch}
         fileInputRef={fileInputRef}
         attributionBasis={attributionBasis}
         attributionSaving={attributionSaving}
         attributionMessage={attributionMessage}
         onChange={handleChange}
+        onSetField={setField}
         onLogoChange={handleLogoChange}
         onAttributionBasisChange={handleAttributionBasisChange}
         onSubmit={handleSubmit}
+        onDiscard={discardChanges}
         onRemoveLogo={removeLogo}
         onSetBrandColor={setBrandColor}
       />

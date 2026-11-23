@@ -10,12 +10,15 @@ import { QuoteServiceTypeDao } from "../../../../src/commerce/quotes/daos/quote-
 import { QuoteService } from "../../../../src/commerce/quotes/services/quote.service.js";
 import { Local } from "../../../../src/app_platform/local/entities/local.entity.js";
 import { LocalDao } from "../../../../src/app_platform/local/daos/local.dao.js";
+import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
 import { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import { RepairNote } from "../../../../src/commerce/repair-notes/entities/repair-note.entity.js";
 import { RepairNoteItem } from "../../../../src/commerce/repair-notes/entities/repair-note-item.entity.js";
 import { RepairNoteDao } from "../../../../src/commerce/repair-notes/daos/repair-note.dao.js";
 import { RepairNotePayment } from "../../../../src/commerce/repair-notes/entities/repair-note-payment.entity.js";
 import { RepairNotePaymentDao } from "../../../../src/commerce/repair-notes/daos/repair-note-payment.dao.js";
+import { RepairNoteDeviceDao } from "../../../../src/commerce/repair-notes/daos/repair-note-device.dao.js";
+import { RepairNoteDevice } from "../../../../src/commerce/repair-notes/entities/repair-note-device.entity.js";
 import { RepairNoteItemDao } from "../../../../src/commerce/repair-notes/daos/repair-note-item.dao.js";
 import { RepairNoteServiceType } from "../../../../src/commerce/repair-notes/entities/repair-note-service-type.entity.js";
 import { RepairNoteServiceTypeDao } from "../../../../src/commerce/repair-notes/daos/repair-note-service-type.dao.js";
@@ -43,6 +46,7 @@ describe("QuoteService", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
+    await ensureFixtureTenant(AppDataSource, tenantId);
     const quoteDao = new QuoteDao(AppDataSource.getRepository(Quote));
     const quoteItemDao = new QuoteItemDao(AppDataSource.getRepository(QuoteItem));
     const quoteServiceTypeDao = new QuoteServiceTypeDao(AppDataSource.getRepository(QuoteServiceType));
@@ -64,6 +68,7 @@ describe("QuoteService", () => {
       { getDisplayPhoneNumber: async () => null } as unknown as WhatsappAccountService,
       inventoryReservationService,
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
+      new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
     );
 
     service = new QuoteService(quoteDao, quoteItemDao, quoteServiceTypeDao, localService, repairNoteService, serviceTypeDao);
@@ -98,6 +103,16 @@ describe("QuoteService", () => {
 
     const items = await runWithTenant(tenantId, () => service.getItems(quote.id));
     expect(items).toHaveLength(2);
+  });
+
+  it("cada cotizacion recibe el siguiente folio consecutivo del taller", async () => {
+    const create = () =>
+      runWithTenant(tenantId, () =>
+        service.create({ localId: "1", customerName: "Folio" }, [{ description: "X", quantity: 1, unitPrice: 1 }]),
+      );
+    const first = await create();
+    const second = await create();
+    expect(second.quoteNumber).toBe(first.quoteNumber + 1);
   });
 
   it("update replaces items and recalculates totalValue", async () => {
@@ -164,9 +179,7 @@ describe("QuoteService", () => {
     expect(note).toMatchObject({
       customerId: quote.customerId,
       customerName: "Cliente Cotizacion",
-      brand: "Samsung",
-      model: "A14",
-      reportedFailure: "No enciende",
+      devices: [{ brand: "Samsung", model: "A14", reportedFailure: "No enciende", deviceOff: false }],
     });
     expect(Number(note?.totalValue)).toBe(200);
     const serviceTypeIds = await runWithTenant(tenantId, () => repairNoteServiceRef.getServiceTypeIds(note!.id));

@@ -35,10 +35,9 @@ export const RepairNoteCustomerSection: FC<RepairNoteCustomerSectionProps> = ({
       </div>
       <div>
         <Label className="text-gray-500">
-          Teléfono {!customerId && <span className="text-red-500">*</span>}
+          Teléfono (opcional)
         </Label>
         <Input
-          required={!customerId}
           placeholder="Ej. 833 123 4567"
           value={contactNumber}
           onChange={(e) => onContactNumberChange(e.target.value)}

@@ -15,10 +15,12 @@ export const Button: FC<ButtonProps> = ({
   className = "",
   disabled = false,
   type = "button",
+  form,
 }) => {
   return (
     <button
       type={type}
+      form={form}
       className={`inline-flex items-center justify-center gap-2 rounded-lg transition ${className} ${
         sizeClasses[size]
       } ${variantClasses[variant]} ${

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router";
+import { describeDevices } from "../utils/devices";
 import { Ban, Pencil, Printer, Trash2 } from "lucide-react";
 import { Button } from "@ui/button/button";
 import { Alert } from "@ui/alert/alert";
@@ -43,7 +44,7 @@ export const RepairNoteDetailPage: React.FC = () => {
   return (
     <PageShell
       title={`Nota #${note.controlNumber}`}
-      description={`${note.brand} ${note.model} · ${note.customerName}`}
+      description={`${describeDevices(note.devices)} · ${note.customerName}`}
     >
       {saved && (
         <Alert

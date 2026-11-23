@@ -146,7 +146,7 @@ export class ReturnService {
 
         if (item.quantity > saleItem.quantity - alreadyReturned) {
           throw new Error(
-            `La cantidad a devolver excede lo disponible en la línea ${saleItem.id} (ya devuelto: ${alreadyReturned}/${saleItem.quantity})`,
+            `La cantidad a devolver excede lo disponible en una línea de la venta (ya devuelto: ${alreadyReturned}/${saleItem.quantity})`,
           );
         }
 

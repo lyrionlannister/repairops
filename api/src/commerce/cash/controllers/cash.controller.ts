@@ -191,9 +191,10 @@ export class CashController {
         return;
       }
       const local = await this.localService.getConfig();
-      const buffer = await this.pdfRendererService.render(CashCutDocument, { data: toCashCutPdfData(cut, local) });
+      const data = toCashCutPdfData(cut, local);
+      const buffer = await this.pdfRendererService.render(CashCutDocument, { data });
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="corte-${cut.cut.id}.pdf"`);
+      res.setHeader("Content-Disposition", `attachment; filename="corte-${cut.cut.cutNumber}.pdf"`);
       res.status(200).send(buffer);
     } catch (error) {
       sendError(res, error, 500);

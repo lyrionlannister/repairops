@@ -8,6 +8,7 @@ const emptyPayment = (amount: string): SalePaymentLine => ({
   amount,
   providerReference: "",
   providerAuthorizationCode: "",
+  dueDate: "",
 });
 
 // Redondeo a centavos para comparar -- evita que 0.1 + 0.2 nunca cuadre
@@ -64,6 +65,7 @@ export const useSaleCart = ({
   // Credito exige cliente registrado -- no se puede fiar a un cliente
   // anonimo de mostrador (ver SaleService.create, sexta precondicion).
   const hasCreditoWithoutCustomer = payments.some((p) => p.method === "credito") && !customerId;
+  const hasCreditoWithoutDueDate = payments.some((p) => p.method === "credito" && !p.dueDate);
 
   // Con un solo método (el caso común), el monto sigue al total automático
   // -- el cajero solo tiene que pensar en el split cuando de verdad divide
@@ -105,6 +107,7 @@ export const useSaleCart = ({
     paymentsSum,
     paymentsMatchTotal,
     hasCreditoWithoutCustomer,
+    hasCreditoWithoutDueDate,
     validLines,
     updateLine,
     handleItemChange,

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { CheckCircle2, HandCoins, Receipt, Wrench } from "lucide-react";
-import { formatDay, formatMoney } from "../utils/format";
+import { formatDay, formatMoney, isOverdue } from "../utils/format";
 import { Button } from "@ui/button/button";
 import type { CustomerDebtsCardProps } from "../props/customer-debts-card-props";
 
@@ -39,7 +39,14 @@ export const CustomerDebtsCard: FC<CustomerDebtsCardProps> = ({ debts, balance, 
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
                   {debt.kind === "sale" ? "Venta" : "Nota"} #{debt.reference}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{formatDay(debt.date)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {formatDay(debt.date)}
+                  {debt.dueDate && (
+                    <span className={isOverdue(debt.dueDate) ? "font-medium text-red-600 dark:text-red-400" : undefined}>
+                      {" "}· {isOverdue(debt.dueDate) ? "Venció" : "Vence"} {formatDay(debt.dueDate)}
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
             <span className="text-sm font-semibold text-gray-800 dark:text-white/90">{formatMoney(Number(debt.amount))}</span>

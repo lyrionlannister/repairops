@@ -5,6 +5,9 @@ import { RepairNoteDao } from "../daos/repair-note.dao.js";
 import { RepairNoteItemDao } from "../daos/repair-note-item.dao.js";
 import { RepairNoteServiceTypeDao } from "../daos/repair-note-service-type.dao.js";
 import { RepairNotePaymentDao } from "../daos/repair-note-payment.dao.js";
+import { RepairNoteDeviceDao } from "../daos/repair-note-device.dao.js";
+import { RepairNoteDevice } from "../entities/repair-note-device.entity.js";
+import { normalizeDevices, toDeviceView, type RepairNoteDeviceInput, type RepairNoteDeviceView } from "../utils/devices.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { InventoryService } from "../../inventory/services/inventory.service.js";
 import { InventoryReservationService } from "../../inventory/services/inventory-reservation.service.js";
@@ -24,27 +27,31 @@ import { CashMovement } from "../../cash/entities/cash-movement.entity.js";
 import { RepairNotePayment, type RepairNotePaymentMethod } from "../entities/repair-note-payment.entity.js";
 import { sumCreditBalance } from "../../customers/utils/credit-balance.js";
 import { resolveOrCreateCustomer } from "../../customers/utils/resolve-customer.js";
+import { resolveCreditDueDate } from "../../customers/utils/credit-due-date.js";
 import { toMoney } from "../../../core/common/utils/money.js";
 
 // tenantId/controlNumber los agrega create() desde el contexto/consecutivo
-// (nunca el caller); totalValue/status/requiresAdvance/deviceOff/
-// hasWarranty/hasExtendedWarranty tienen default en la BD, por eso son
-// opcionales aqui aunque la entidad los declare requeridos.
+// (nunca el caller); totalValue/status/requiresAdvance/hasWarranty/
+// hasExtendedWarranty tienen default en la BD, por eso son opcionales aqui
+// aunque la entidad los declare requeridos.
 type DefaultedOnCreate =
   | "totalValue"
   | "status"
   | "requiresAdvance"
-  | "deviceOff"
   | "hasWarranty"
   | "hasExtendedWarranty";
-type CreatePayload = Omit<
+type NoteCreateFields = Omit<
   RepairNote,
   "id" | "publicId" | "tenantId" | "controlNumber" | "publicRef" | "receivedTime" | "createdAt" | "updatedAt" | DefaultedOnCreate
 > &
   Partial<Pick<RepairNote, DefaultedOnCreate>>;
-type UpdatePayload = Partial<
+type NoteUpdateFields = Partial<
   Omit<RepairNote, "id" | "publicId" | "tenantId" | "controlNumber" | "publicRef" | "createdAt" | "updatedAt">
 >;
+type CreatePayload = NoteCreateFields & { devices: RepairNoteDeviceInput[] };
+type UpdatePayload = NoteUpdateFields & { devices?: RepairNoteDeviceInput[] };
+
+export type RepairNoteWithDevices = RepairNote & { devices: RepairNoteDeviceView[] };
 
 export interface RepairNoteItemInput {
   inventoryItemId: string;
@@ -61,6 +68,7 @@ export interface AdvancePaymentInput {
 export interface DeliveryPaymentInput {
   method: RepairNotePaymentMethod;
   amount: Decimal.Value;
+  dueDate?: string | null;
 }
 
 export interface DeliverInput {
@@ -91,18 +99,50 @@ export class RepairNoteService {
     private whatsappAccountService: WhatsappAccountService,
     private inventoryReservationService: InventoryReservationService,
     private repairNotePaymentDao: RepairNotePaymentDao,
+    private repairNoteDeviceDao: RepairNoteDeviceDao,
   ) {}
 
-  async getAll(branchId?: string | null): Promise<RepairNote[]> {
-    return this.repairNoteDao.findAllOrdered(branchId);
+  async getAll(branchId?: string | null): Promise<RepairNoteWithDevices[]> {
+    return this.withDevices(await this.repairNoteDao.findAllOrdered(branchId));
   }
 
-  async getById(id: string): Promise<RepairNote | null> {
-    return this.repairNoteDao.findById(id);
+  async getById(id: string): Promise<RepairNoteWithDevices | null> {
+    return this.withDevicesOne(await this.repairNoteDao.findById(id));
   }
 
-  async getByControlNumber(controlNumber: number): Promise<RepairNote | null> {
-    return this.repairNoteDao.findByControlNumber(controlNumber);
+  async getByControlNumber(controlNumber: number): Promise<RepairNoteWithDevices | null> {
+    return this.withDevicesOne(await this.repairNoteDao.findByControlNumber(controlNumber));
+  }
+
+  async withDevices(notes: RepairNote[]): Promise<RepairNoteWithDevices[]> {
+    const devices = await this.repairNoteDeviceDao.findByRepairNoteIds(notes.map((n) => n.id));
+    const byNote = new Map<string, RepairNoteDeviceView[]>();
+    for (const device of devices) {
+      const list = byNote.get(device.repairNoteId) ?? [];
+      list.push(toDeviceView(device));
+      byNote.set(device.repairNoteId, list);
+    }
+    return notes.map((note) => Object.assign(note, { devices: byNote.get(note.id) ?? [] }));
+  }
+
+  private async withDevicesOne(note: RepairNote | null): Promise<RepairNoteWithDevices | null> {
+    if (!note) return null;
+    const [withDevices] = await this.withDevices([note]);
+    return withDevices ?? null;
+  }
+
+  // Reemplaza los equipos de la nota dentro de la transaccion del caller; el orden
+  // del arreglo es la posicion impresa en los tickets.
+  private async replaceDevices(
+    manager: EntityManager,
+    repairNoteId: string,
+    tenantId: string,
+    devices: RepairNoteDeviceView[],
+  ): Promise<void> {
+    await manager.delete(RepairNoteDevice, { repairNoteId, tenantId });
+    await manager.save(
+      devices.map((device, position) => manager.create(RepairNoteDevice, { ...device, tenantId, repairNoteId, position })),
+    );
   }
 
   // Las sub-lecturas pasan por findById: una nota que el usuario no ve (otro taller,
@@ -136,12 +176,14 @@ export class RepairNoteService {
     items: RepairNoteItemInput[] = [],
     serviceTypeIds: string[] = [],
     advancePayment?: AdvancePaymentInput,
-  ): Promise<RepairNote> {
+  ): Promise<RepairNoteWithDevices> {
     if (!data.localId) throw new Error("La sucursal es obligatoria");
+    const { devices: rawDevices, ...noteData } = data;
+    const devices = normalizeDevices(rawDevices);
     // repair-notes.create.own: la nota queda asignada a quien la crea, mande lo que mande.
-    if (lacks("repair-notes.create")) data = { ...data, assignedEmployeeId: currentUserId() };
+    const fields: NoteCreateFields = lacks("repair-notes.create") ? { ...noteData, assignedEmployeeId: currentUserId() } : noteData;
     const tenantId = getCurrentTenantId();
-    await this.assertCanCollectAdvance(data, advancePayment, tenantId);
+    await this.assertCanCollectAdvance(fields, advancePayment, tenantId);
     const controlNumber = await this.localService.consumeControlNumber();
     const local = await this.localService.getConfig();
     const receivedTime = new Date().toLocaleTimeString("en-GB", {
@@ -154,7 +196,8 @@ export class RepairNoteService {
     // reintenta la transaccion completa con otra referencia.
     for (let attempt = 1; ; attempt++) {
       try {
-        return await this.createWithRef(data, items, serviceTypeIds, controlNumber, tenantId, advancePayment, receivedTime);
+        const note = await this.createWithRef(fields, devices, items, serviceTypeIds, controlNumber, tenantId, advancePayment, receivedTime);
+        return Object.assign(note, { devices });
       } catch (error) {
         const isRefCollision =
           (error as { code?: string; constraint?: string }).code === "23505" &&
@@ -165,7 +208,8 @@ export class RepairNoteService {
   }
 
   private async createWithRef(
-    data: CreatePayload,
+    data: NoteCreateFields,
+    devices: RepairNoteDeviceView[],
     items: RepairNoteItemInput[],
     serviceTypeIds: string[],
     controlNumber: number,
@@ -184,6 +228,7 @@ export class RepairNoteService {
         publicRef: generatePublicRef(),
       } as Partial<RepairNote>);
       const savedNote = await manager.save(note);
+      await this.replaceDevices(manager, savedNote.id, tenantId, devices);
       await this.registerAdvance(manager, savedNote, advancePayment, tenantId);
       const committed = isCommitted(savedNote.status);
 
@@ -230,7 +275,7 @@ export class RepairNoteService {
 
   // Reglas del anticipo que no dependen del folio: se revisan antes de consumirlo.
   private async assertCanCollectAdvance(
-    data: CreatePayload,
+    data: NoteCreateFields,
     input: AdvancePaymentInput | undefined,
     tenantId: string,
   ): Promise<void> {
@@ -305,6 +350,7 @@ export class RepairNoteService {
       if (!PAYMENT_METHODS.includes(payment.method)) throw new Error("Método de pago inválido");
       if (!new Decimal(payment.amount).gt(0)) throw new Error("Cada pago debe ser mayor a 0");
     }
+    const dueDates = payments.map((p) => resolveCreditDueDate(p.method, p.dueDate, today));
 
     return AppDataSource.transaction(async (manager) => {
       const note = await manager.findOneBy(RepairNote, { id, tenantId });
@@ -345,7 +391,7 @@ export class RepairNoteService {
         if (!session) throw new Error("Abre la caja de la sucursal para cobrar la entrega");
       }
 
-      for (const payment of payments) {
+      for (const [paymentIndex, payment] of payments.entries()) {
         await manager.save(
           manager.create(RepairNotePayment, {
             tenantId,
@@ -353,6 +399,7 @@ export class RepairNoteService {
             kind: "delivery",
             method: payment.method,
             amount: toMoney(payment.amount),
+            dueDate: dueDates[paymentIndex] ?? null,
           }),
         );
         if (payment.method !== "credito" && session) {
@@ -405,14 +452,17 @@ export class RepairNoteService {
     data: UpdatePayload,
     items?: RepairNoteItemInput[],
     serviceTypeIds?: string[],
-  ): Promise<RepairNote | null> {
+  ): Promise<RepairNoteWithDevices | null> {
     if ("localId" in data && !data.localId) throw new Error("La sucursal es obligatoria");
+    const { devices: rawDevices, ...noteFields } = data;
+    const devices = rawDevices === undefined ? undefined : normalizeDevices(rawDevices);
+    data = noteFields;
     const tenantId = getCurrentTenantId();
     // Las escrituras de abajo van directo al manager: este findById es el que aplica
     // sucursal y, para el técnico, que la nota sea suya.
     if (!(await this.repairNoteDao.findById(id))) return null;
     if (lacks("repair-notes.write")) {
-      const { assignedEmployeeId: _ignored, ...rest } = data as UpdatePayload & { assignedEmployeeId?: unknown };
+      const { assignedEmployeeId: _ignored, ...rest } = data;
       data = rest;
     }
 
@@ -435,6 +485,7 @@ export class RepairNoteService {
         previousStatus = note.status;
         Object.assign(note, data);
         const saved = await manager.save(note);
+        if (devices) await this.replaceDevices(manager, id, tenantId, devices);
 
         if (isCommitted(saved.status) && !isCommitted(previousStatus)) {
           await this.consumeActiveReservations(manager, id, tenantId);
@@ -442,7 +493,7 @@ export class RepairNoteService {
 
         return saved;
       });
-      return savedNote;
+      return this.withDevicesOne(savedNote);
     }
 
     let previousStatus: string | undefined;
@@ -473,6 +524,7 @@ export class RepairNoteService {
 
       Object.assign(note, data);
       const savedNote = await manager.save(note);
+      if (devices) await this.replaceDevices(manager, id, tenantId, devices);
       const willBeCommitted = isCommitted(savedNote.status);
 
       if (items !== undefined) {
@@ -518,7 +570,7 @@ export class RepairNoteService {
 
       return savedNote;
     });
-    return savedNote;
+    return this.withDevicesOne(savedNote);
   }
 
   // Consume todas las reservas activas de las lineas ACTUALES de la nota --

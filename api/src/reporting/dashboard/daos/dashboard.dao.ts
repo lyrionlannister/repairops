@@ -21,6 +21,7 @@ export interface OperationalCountsRow {
 
 export interface ActivityRow {
   id: string;
+  publicId: string;
   kind: "sale" | "repair" | "other";
   title: string;
   subtitle: string;
@@ -117,6 +118,7 @@ export class DashboardDao {
       `
       SELECT
         m.id::text AS id,
+        m.public_id::text AS "publicId",
         CASE WHEN m.tipo_entidad_relacionada IN ('sale', 'layaway', 'return') THEN 'sale'
              WHEN m.tipo_entidad_relacionada IN ('repair_note', 'quote') THEN 'repair'
              ELSE 'other' END AS kind,

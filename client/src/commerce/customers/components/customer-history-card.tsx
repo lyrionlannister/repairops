@@ -6,6 +6,7 @@ import {
   STATUS_CONFIG
 } from "@commerce/repair-notes/hooks/use-repair-notes";
 import { STATUS_LABELS, formatDay, formatMoney } from "../utils/format";
+import { describeDevices } from "@commerce/repair-notes/utils/devices";
 import type { CustomerHistoryCardProps } from "../props/customer-history-card-props";
 import type { Tab } from "../types/customer-history-card";
 
@@ -86,7 +87,7 @@ export const CustomerHistoryCard: FC<CustomerHistoryCardProps> = ({ notes, sales
           empty="Aún no tiene reparaciones."
           rows={notes.map((n) => [
             `#${n.controlNumber}`,
-            `${n.brand} ${n.model}`,
+            describeDevices(n.devices),
             <span
               key="s"
               className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CONFIG[n.status]?.className ?? ""}`}

@@ -5,6 +5,17 @@ import { repositoryToken } from "../../../core/di/repository-token.js";
 import { Local } from "../entities/local.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 
+export type FolioKind = "control" | "sale" | "return" | "quote" | "cut" | "count";
+
+export const FOLIOS: Readonly<Record<FolioKind, { counter: string; table: string; column: string }>> = {
+  control: { counter: "siguiente_numero_control", table: "repair_notes", column: "numero_control" },
+  sale: { counter: "siguiente_numero_venta", table: "sales", column: "numero_venta" },
+  return: { counter: "siguiente_numero_devolucion", table: "returns", column: "numero_devolucion" },
+  quote: { counter: "siguiente_numero_cotizacion", table: "quotes", column: "numero_cotizacion" },
+  cut: { counter: "siguiente_numero_corte", table: "cash_sessions", column: "numero_corte" },
+  count: { counter: "siguiente_numero_conteo", table: "inventory_counts", column: "numero_conteo" },
+};
+
 @singleton()
 export class LocalDao extends TenantScopedDao<Local> {
   constructor(@inject(repositoryToken(Local)) repository: Repository<Local>) {
@@ -51,6 +62,9 @@ export class LocalDao extends TenantScopedDao<Local> {
          "siguiente_numero_control" AS "nextControlNumber",
          "siguiente_numero_venta" AS "nextSaleNumber",
          "siguiente_numero_devolucion" AS "nextReturnNumber",
+         "siguiente_numero_cotizacion" AS "nextQuoteNumber",
+         "siguiente_numero_corte" AS "nextCutNumber",
+         "siguiente_numero_conteo" AS "nextCountNumber",
          "unidad_redondeo_caja" AS "cashRoundingUnit",
          "tope_diferencia_caja_sin_autorizar" AS "maxUnauthorizedCashVariance",
          "moneda" AS "currency",
@@ -66,44 +80,29 @@ export class LocalDao extends TenantScopedDao<Local> {
     return this.repository.create(rows[0]);
   }
 
-  async consumeControlNumber(): Promise<number> {
+  // UPDATE ... RETURNING atomico: dos consumos concurrentes nunca reciben el mismo folio.
+  async consume(folio: FolioKind): Promise<number> {
     const local = await this.findOrCreate();
+    const { counter } = FOLIOS[folio];
     const rows = await this.runQuery<{ number: number }>(
-      `UPDATE local_config
-       SET "siguiente_numero_control" = "siguiente_numero_control" + 1
+      `UPDATE local_config SET "${counter}" = "${counter}" + 1
        WHERE "id" = $1
-       RETURNING "siguiente_numero_control" - 1 AS number`,
+       RETURNING "${counter}" - 1 AS number`,
       [local.id],
     );
     return rows[0].number;
   }
 
-  // Mismo patron atomico que consumeControlNumber -- folio de venta del
-  // POS (cap. 3 del plan: "Venta -- se extiende la actual").
-  async consumeSaleNumber(): Promise<number> {
-    const local = await this.findOrCreate();
-    const rows = await this.runQuery<{ number: number }>(
-      `UPDATE local_config
-       SET "siguiente_numero_venta" = "siguiente_numero_venta" + 1
-       WHERE "id" = $1
-       RETURNING "siguiente_numero_venta" - 1 AS number`,
-      [local.id],
-    );
-    return rows[0].number;
-  }
-
-  // Mismo patron atomico que consumeSaleNumber -- folio de devolucion
-  // (Fase 5, Rama Devoluciones), consecutivo propio, nunca comparte
-  // contador con venta.
-  async consumeReturnNumber(): Promise<number> {
-    const local = await this.findOrCreate();
-    const rows = await this.runQuery<{ number: number }>(
-      `UPDATE local_config
-       SET "siguiente_numero_devolucion" = "siguiente_numero_devolucion" + 1
-       WHERE "id" = $1
-       RETURNING "siguiente_numero_devolucion" - 1 AS number`,
-      [local.id],
-    );
-    return rows[0].number;
+  // Ultimo folio asignado de cada documento: el siguiente configurable nunca puede ser
+  // menor o igual (chocaria con el UNIQUE(tenant_id, folio) del documento).
+  async lastUsedFolios(): Promise<Record<FolioKind, number>> {
+    const selects = (Object.keys(FOLIOS) as FolioKind[])
+      .map((kind) => {
+        const { table, column } = FOLIOS[kind];
+        return `(SELECT COALESCE(MAX("${column}"), 0) FROM "${table}" WHERE tenant_id = $1)::int AS "${kind}"`;
+      })
+      .join(", ");
+    const rows = await this.runQuery<Record<FolioKind, number>>(`SELECT ${selects}`, [this.currentTenantId()]);
+    return rows[0];
   }
 }

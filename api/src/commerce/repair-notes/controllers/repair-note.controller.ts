@@ -66,10 +66,6 @@ export class RepairNoteController {
   create = async (req: Request, res: Response): Promise<void> => {
     try {
       const { items, serviceTypeIds, advancePayment, ...data } = req.body as CreateRepairNoteBody;
-      if (!data.customerId && !String(data.contactNumber ?? "").trim()) {
-        res.status(400).json({ error: "El teléfono del cliente es obligatorio" });
-        return;
-      }
       data.localId = await this.branchAccess.resolveWriteBranch(data.localId);
       const note = await this.repairNoteService.create(data, items, serviceTypeIds, advancePayment);
       res.status(201).json(note);
@@ -135,7 +131,8 @@ export class RepairNoteController {
 
   getServiceTypes = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.repairNoteService.getServiceTypeIds(req.params["id"] as string));
+      const serviceTypeIds = await this.repairNoteService.getServiceTypeIds(req.params["id"] as string);
+      res.status(200).json({ serviceTypeIds });
     } catch (error) {
       sendError(res, error, 500);
     }

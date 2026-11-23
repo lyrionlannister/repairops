@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { describeDevices } from "../utils/devices";
+import { useSearchParams } from "react-router";
 
 import { NEXT_STATUS } from "./use-repair-notes";
 import { useRepairNoteDelivery } from "./use-repair-note-delivery";
-import type { RepairNoteRecord, RepairNoteStatus } from "../types/repair-notes";
+import type { RepairNoteRecord, RepairNoteStatus, RepairNoteStatusFilter } from "../types/repair-notes";
+import { STATUS_FILTERS, matchesStatusFilter } from "../utils/status-filter";
 export const useRepairNotesPage = ({
   notes,
   deleteNote,
@@ -17,7 +20,11 @@ export const useRepairNotesPage = ({
   refetch: () => void;
 }) => {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<RepairNoteStatus | "all">("all");
+  const [searchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<RepairNoteStatusFilter>(() => {
+    const fromUrl = searchParams.get("status");
+    return STATUS_FILTERS.find((f) => f === fromUrl) ?? "all";
+  });
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -43,10 +50,9 @@ export const useRepairNotesPage = ({
       const matchesSearch =
         note.customerName.toLowerCase().includes(search.toLowerCase()) ||
         String(note.controlNumber).includes(search) ||
-        note.brand.toLowerCase().includes(search.toLowerCase()) ||
-        note.model.toLowerCase().includes(search.toLowerCase());
+        describeDevices(note.devices).toLowerCase().includes(search.toLowerCase());
 
-      const matchesStatus = statusFilter === "all" || note.status === statusFilter;
+      const matchesStatus = matchesStatusFilter(note.status, statusFilter);
       return matchesSearch && matchesStatus;
     });
   }, [notes, search, statusFilter]);
