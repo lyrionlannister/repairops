@@ -1,22 +1,21 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Loader2 } from "lucide-react";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
 import { useImportStaging } from "../hooks/use-import-staging";
 import { useToast } from "@common/hooks/use-toast";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { ImportSelectStep } from "../components/import-select-step";
+import { ImportProcessingStep } from "../components/import-processing-step";
 import { ImportPreviewStep } from "../components/import-preview-step";
-import type { StagingRow } from "../types/import-staging";
+import type { StagingProgress, StagingRow } from "../types/import-staging";
 import type { Step } from "../types/import-price-list-page";
-
-const POLL_INTERVAL_MS = 2500;
 
 export const ImportPriceListPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { suppliers, loading: loadingSuppliers, fetchAll: fetchSuppliers } = useSuppliers();
-  const { uploading, saving, upload, fetchById, updateRows, commit, discard } = useImportStaging();
+  const { uploading, saving, upload, subscribeToImport, updateRows, commit, discard } =
+    useImportStaging();
 
   const [step, setStep] = useState<Step>("select");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -24,6 +23,7 @@ export const ImportPriceListPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [importId, setImportId] = useState<string | null>(null);
   const [rows, setRows] = useState<StagingRow[]>([]);
+  const [progress, setProgress] = useState<StagingProgress | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,19 +38,25 @@ export const ImportPriceListPage: React.FC = () => {
 
   useEffect(() => {
     if (step !== "processing" || !importId) return;
-    const interval = setInterval(async () => {
-      const record = await fetchById(importId);
-      if (!record) return;
-      if (record.status === "ready") {
-        setRows(record.rows);
+    const unsubscribe = subscribeToImport(importId, (event) => {
+      if (event.status === "ready") {
+        setRows(event.rows);
         setStep("preview");
-      } else if (record.status === "error") {
-        showToast({ title: "No se pudo procesar el archivo", message: record.error ?? "La IA no pudo procesar el archivo", variant: "error" });
+        unsubscribe();
+      } else if (event.status === "error") {
+        showToast({
+          title: "No se pudo procesar el archivo",
+          message: event.error ?? "La IA no pudo procesar el archivo",
+          variant: "error",
+        });
         setStep("select");
+        unsubscribe();
+      } else {
+        setProgress(event.progress);
       }
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [step, importId, fetchById, showToast]);
+    });
+    return unsubscribe;
+  }, [step, importId, subscribeToImport, showToast]);
 
   const handleFile = (file: File) => {
     setSelectedFile(file);
@@ -65,6 +71,7 @@ export const ImportPriceListPage: React.FC = () => {
 
   const handleUpload = async () => {
     if (!selectedFile || !supplierId) return;
+    setProgress(undefined);
     const newImportId = await upload(selectedFile, supplierId);
     if (!newImportId) return;
     setImportId(newImportId);
@@ -127,14 +134,7 @@ export const ImportPriceListPage: React.FC = () => {
         />
       )}
 
-      {step === "processing" && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-12 dark:border-gray-800 dark:bg-white/3 flex flex-col items-center gap-4">
-          <Loader2 className="size-8 text-brand-500 animate-spin" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            La IA está identificando marca, modelo y precio en el archivo...
-          </p>
-        </div>
-      )}
+      {step === "processing" && <ImportProcessingStep progress={progress} />}
 
       {step === "preview" && (
         <ImportPreviewStep
