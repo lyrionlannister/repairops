@@ -10,7 +10,6 @@ export interface CustomersTableProps {
   startIndex: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
-  onOpenHistory: (customer: Customer) => void;
   onRequestDelete: (id: string) => void;
   canEdit: boolean;
   canDelete: boolean;

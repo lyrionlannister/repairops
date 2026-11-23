@@ -4,6 +4,10 @@ import { DashboardDao, ActivityRow, OperationalCountsRow } from "../daos/dashboa
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { ChatsService } from "../../../messaging/chats/services/chats.service.js";
 import { PresenceService } from "../../../identity/auth/services/presence.service.js";
+import {
+  CustomerCreditService,
+  type CreditPortfolioSummary,
+} from "../../../commerce/customers/services/customer-credit.service.js";
 import { redisClient } from "../../../core/config/redis-client.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 
@@ -34,6 +38,7 @@ export interface DashboardSummary {
     salesToday: string;
     todayTrend: Trend | null;
     monthTrend: Trend | null;
+    credit: CreditPortfolioSummary;
   };
 }
 
@@ -62,6 +67,7 @@ export class DashboardService {
     private localService: LocalService,
     private chatsService: ChatsService,
     private presenceService: PresenceService,
+    private customerCreditService: CustomerCreditService,
   ) {}
 
   async getSummary(withMoney: boolean, branchId?: string): Promise<DashboardSummary> {
@@ -84,8 +90,9 @@ export class DashboardService {
     return this.cached(
       `summary:${branch ?? "all"}:${localDay(timeZone)}:${withMoney ? "m" : "o"}`,
       async () => {
-        const [income, counts, activity, daily, weekCount, lastAt] = await Promise.all([
+        const [income, credit, counts, activity, daily, weekCount, lastAt] = await Promise.all([
           withMoney ? this.dashboardDao.getIncomeSummary(timeZone, branch) : Promise.resolve(null),
+          withMoney ? this.customerCreditService.getPortfolioSummary() : Promise.resolve(null),
           this.dashboardDao.getOperationalCounts(branch),
           this.dashboardDao.getRecentActivity(branch),
           this.chatsService.getConversationCountsByDay(),
@@ -99,7 +106,7 @@ export class DashboardService {
           chat: { todayCount: daily[daily.length - 1]?.count ?? 0, weekCount, lastAt },
           activity: activity.map(({ amount, ...row }) => (withMoney ? { ...row, amount } : row)),
         };
-        if (income) {
+        if (income && credit) {
           summary.money = {
             today: income.today,
             week: income.week,
@@ -107,6 +114,7 @@ export class DashboardService {
             salesToday: income.salesToday,
             todayTrend: trendOf(income.today, income.yesterday),
             monthTrend: trendOf(income.month, income.previousMonth),
+            credit,
           };
         }
         return summary;

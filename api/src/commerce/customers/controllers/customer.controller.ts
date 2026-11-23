@@ -4,6 +4,7 @@ import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { CustomerService } from "../services/customer.service.js";
 import { CustomerDebtService } from "../services/customer-debt.service.js";
+import { CustomerCreditService } from "../services/customer-credit.service.js";
 import { CustomerPaymentService } from "../services/customer-payment.service.js";
 import { RegisterCustomerPaymentDto } from "../dtos/register-customer-payment.dto.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
@@ -15,13 +16,14 @@ export class CustomerController {
   constructor(
     private service: CustomerService,
     private debtService: CustomerDebtService,
+    private creditService: CustomerCreditService,
     private paymentService: CustomerPaymentService,
     private branchAccess: BranchAccessService,
   ) {}
 
   getAll = async (_req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getAll());
+      res.status(200).json(await this.creditService.listWithCredit());
     } catch (error) {
       sendError(res, error, 500);
     }

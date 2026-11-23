@@ -1,3 +1,5 @@
+import type { OverdueLevel } from "@commerce/customers/types/customers";
+
 export interface SummaryResponse {
   counts: { openRepairNotes: number; criticalStockItems: number; openCashSessions: number; onlineUsers: number };
   chat: { todayCount: number; weekCount: number; lastAt: string | null };
@@ -9,7 +11,16 @@ export interface SummaryResponse {
     salesToday: string;
     todayTrend: Trend | null;
     monthTrend: Trend | null;
+    credit: CreditPortfolio;
   };
+}
+
+export interface CreditPortfolio {
+  balance: string;
+  overdue: string;
+  overdueLevel: OverdueLevel;
+  customersWithDebt: number;
+  overdueCustomers: number;
 }
 
 export interface SeriesResponse {

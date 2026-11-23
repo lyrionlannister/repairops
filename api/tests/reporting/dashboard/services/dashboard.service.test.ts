@@ -3,6 +3,7 @@ import { DashboardService, DashboardValidationError } from "../../../../src/repo
 import type { DashboardDao } from "../../../../src/reporting/dashboard/daos/dashboard.dao.js";
 import type { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import type { ChatsService } from "../../../../src/messaging/chats/services/chats.service.js";
+import type { CustomerCreditService } from "../../../../src/commerce/customers/services/customer-credit.service.js";
 import type { PresenceService } from "../../../../src/identity/auth/services/presence.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { redisClient } from "../../../../src/core/config/redis-client.js";
@@ -36,7 +37,20 @@ function build() {
     getLastInteractionAt: vi.fn().mockResolvedValue(null),
   } as unknown as ChatsService;
   const presenceService = { countOnline: vi.fn().mockResolvedValue(2) } as unknown as PresenceService;
-  return { dao, service: new DashboardService(dao, localService, chatsService, presenceService) };
+  const creditService = {
+    getPortfolioSummary: vi.fn().mockResolvedValue({
+      balance: "300.00",
+      overdue: "120.00",
+      overdueLevel: "medium",
+      customersWithDebt: 2,
+      overdueCustomers: 1,
+    }),
+  } as unknown as CustomerCreditService;
+  return {
+    dao,
+    creditService,
+    service: new DashboardService(dao, localService, chatsService, presenceService, creditService),
+  };
 }
 
 // spyOn sobre la instancia real en vez de vi.mock del modulo: con el pool vmThreads el
@@ -56,10 +70,11 @@ describe("DashboardService permisos", () => {
     const summary = await runWithTenant("1", () => service.getSummary(true));
     expect(summary.money?.today).toBe("100.25");
     expect(summary.activity[0]?.amount).toBe("10.00");
+    expect(summary.money?.credit).toMatchObject({ balance: "300.00", overdueLevel: "medium" });
   });
 
   it("sin dashboard.money no recibe ningun importe en el JSON", async () => {
-    const { service, dao } = build();
+    const { service, dao, creditService } = build();
     const summary = await runWithTenant("1", () => service.getSummary(false));
     const series = await runWithTenant("1", () => service.getSeries(false, { granularity: "day" }));
 
@@ -69,6 +84,7 @@ describe("DashboardService permisos", () => {
     expect("business" in series).toBe(false);
     expect(series.chat).toHaveLength(1);
     expect(dao.getIncomeSummary).not.toHaveBeenCalled();
+    expect(creditService.getPortfolioSummary).not.toHaveBeenCalled();
     expect(JSON.stringify([summary, series])).not.toMatch(/100\.25|"sales"|"repairs"/);
   });
 });

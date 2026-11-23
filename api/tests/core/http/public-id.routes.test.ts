@@ -9,6 +9,11 @@ import { CustomerDao } from "../../../src/commerce/customers/daos/customer.dao.j
 import { CustomerPaymentDao } from "../../../src/commerce/customers/daos/customer-payment.dao.js";
 import { CustomerService } from "../../../src/commerce/customers/services/customer.service.js";
 import { CustomerDebtService } from "../../../src/commerce/customers/services/customer-debt.service.js";
+import { CustomerCreditService } from "../../../src/commerce/customers/services/customer-credit.service.js";
+import { CustomerCreditDao } from "../../../src/commerce/customers/daos/customer-credit.dao.js";
+import { LocalService } from "../../../src/app_platform/local/services/local.service.js";
+import { LocalDao } from "../../../src/app_platform/local/daos/local.dao.js";
+import { Local } from "../../../src/app_platform/local/entities/local.entity.js";
 import { CustomerPaymentService } from "../../../src/commerce/customers/services/customer-payment.service.js";
 import { CustomerController } from "../../../src/commerce/customers/controllers/customer.controller.js";
 import { createCustomerRouter } from "../../../src/commerce/customers/routes/customer.routes.js";
@@ -72,6 +77,11 @@ describe("public ids en la frontera HTTP (clientes)", () => {
         new SalePaymentDao(AppDataSource.getRepository(SalePayment)),
       ),
       new CustomerDebtService(customerDao),
+      new CustomerCreditService(
+        customerDao,
+        new CustomerCreditDao(AppDataSource.getRepository(Customer)),
+        new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
+      ),
       new CustomerPaymentService(
         new CustomerPaymentDao(AppDataSource.getRepository(CustomerPayment)),
       ),

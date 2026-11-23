@@ -1,3 +1,5 @@
+import { Link } from "react-router";
+import { Smartphone } from "lucide-react";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useCustomerDetail } from "../hooks/use-customer-detail";
 import { CustomerProfileCard } from "../components/customer-profile-card";
@@ -19,7 +21,20 @@ export const CustomerDetailPage: React.FC = () => {
   }
 
   return (
-    <PageShell scrollHeader title={customer.name} description="Datos, crédito, deudas e historial del cliente.">
+    <PageShell
+      scrollHeader
+      title={customer.name}
+      description="Datos, crédito, deudas e historial del cliente."
+      action={
+        <Link
+          to={`/commerce/customers/${customer.id}/devices`}
+          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/3"
+        >
+          <Smartphone className="size-4" />
+          Historial de equipos
+        </Link>
+      }
+    >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <CustomerProfileCard
           customer={customer}

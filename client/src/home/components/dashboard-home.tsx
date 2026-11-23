@@ -27,6 +27,7 @@ export const DashboardHome: React.FC = () => {
     todayDelta,
     monthDelta,
     recentActivity,
+    credit,
   } = useDashboardPage();
 
   const currencyFormatter = MXN_FORMATTER;
@@ -57,13 +58,16 @@ export const DashboardHome: React.FC = () => {
         <div
           className={`flex min-w-0 flex-col gap-4 md:gap-6 ${showMoney ? "md:grid md:grid-cols-2 xl:flex" : "md:grid md:grid-cols-2 xl:col-span-3"}`}
         >
-          <DashboardSecondaryStats
-            openRepairNotes={businessMetrics.openRepairNotes}
-            criticalStockItems={businessMetrics.criticalStockItems}
-            openCashSessions={businessMetrics.openCashSessions}
-            onlineUsers={businessMetrics.onlineUsers}
-          />
-          <div className="flex-1">
+          <div className="shrink-0">
+            <DashboardSecondaryStats
+              openRepairNotes={businessMetrics.openRepairNotes}
+              criticalStockItems={businessMetrics.criticalStockItems}
+              openCashSessions={businessMetrics.openCashSessions}
+              onlineUsers={businessMetrics.onlineUsers}
+              credit={credit}
+            />
+          </div>
+          <div className="min-h-0 flex-1">
             <DashboardRecentActivity recentActivity={recentActivity} />
           </div>
         </div>
