@@ -30,7 +30,9 @@ export interface CreateSubscriptionCheckoutSessionInput {
   stripeCustomerId: string;
   stripePriceId: string;
   tenantPublicId: string;
-  trialPeriodDays: number;
+  // undefined = sin trial -- Stripe cobra de inmediato. Nunca mandar 0: omitir
+  // el campo es la única forma correcta de no dar periodo de prueba.
+  trialPeriodDays?: number;
   successUrl: string;
   cancelUrl: string;
 }
@@ -43,7 +45,7 @@ export async function createSubscriptionCheckoutSession(
     customer: input.stripeCustomerId,
     line_items: [{ price: input.stripePriceId, quantity: 1 }],
     subscription_data: {
-      trial_period_days: input.trialPeriodDays,
+      ...(input.trialPeriodDays ? { trial_period_days: input.trialPeriodDays } : {}),
       metadata: { tenant_public_id: input.tenantPublicId },
     },
     metadata: { tenant_public_id: input.tenantPublicId },

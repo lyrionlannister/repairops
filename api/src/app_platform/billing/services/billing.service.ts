@@ -114,11 +114,17 @@ export class BillingService {
     }
 
     const { successUrl, cancelUrl } = signupCheckoutUrls();
+    // Un stripeSubscriptionId ya asignado significa que este taller ya tuvo un
+    // Checkout completado antes (trial consumido), sin importar si después se
+    // canceló o quedó con el pago rechazado -- un taller no recibe dos trials
+    // por reelegir plan. onSubscriptionDeleted nunca limpia este campo, queda
+    // como evidencia permanente de que sí hubo un trial.
+    const alreadyHadTrial = subscription.stripeSubscriptionId !== null;
     const session = await createSubscriptionCheckoutSession({
       stripeCustomerId: subscription.stripeCustomerId,
       stripePriceId: price.stripePriceId,
       tenantPublicId: subscription.tenant!.publicId,
-      trialPeriodDays: TRIAL_PERIOD_DAYS,
+      trialPeriodDays: alreadyHadTrial ? undefined : TRIAL_PERIOD_DAYS,
       successUrl,
       cancelUrl,
     });
