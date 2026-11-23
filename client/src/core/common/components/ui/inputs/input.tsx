@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import type { InputProps } from "../../../props/input-props";
+import { clearNativeValidity, handleNativeInvalid } from "../../../utils/native-validation";
 
 export const Input: FC<InputProps> = ({
   type = "text",
@@ -44,17 +45,15 @@ export const Input: FC<InputProps> = ({
         step={step}
         disabled={disabled}
         required={required}
+        onInvalid={handleNativeInvalid}
+        onInput={clearNativeValidity}
         className={inputClasses}
       />
 
       {hint && (
         <p
           className={`mt-1.5 text-xs ${
-            error
-              ? "text-error-500"
-              : success
-              ? "text-success-500"
-              : "text-gray-500"
+            error ? "text-error-500" : success ? "text-success-500" : "text-gray-500"
           }`}
         >
           {hint}
@@ -63,4 +62,3 @@ export const Input: FC<InputProps> = ({
     </div>
   );
 };
-
