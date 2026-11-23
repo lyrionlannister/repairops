@@ -36,12 +36,18 @@ export class AuthController {
         return;
       }
 
-      const user = await this.authService.register(dto);
-      const { password, ...userWithoutPassword } = user;
+      const { owner, token } = await this.authService.register(dto);
+
+      // Auto-login: el owner entra directo al onboarding de planes sin
+      // pasar otra vez por /login (mismo mecanismo de cookie que login).
+      res.cookie(ACCESS_TOKEN_COOKIE, token, {
+        ...ACCESS_TOKEN_COOKIE_OPTIONS,
+        maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+      });
 
       res.status(201).json({
         message: AUTH_MESSAGES.REGISTER_SUCCESS,
-        user: userWithoutPassword,
+        user: owner,
       });
     } catch (error) {
       sendError(res, error, 400, AUTH_MESSAGES.REGISTER_ERROR);
@@ -50,7 +56,10 @@ export class AuthController {
 
   getUsers = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const [users, online] = await Promise.all([this.authService.getAllUsers(), this.presenceService.listOnline()]);
+      const [users, online] = await Promise.all([
+        this.authService.getAllUsers(),
+        this.presenceService.listOnline(),
+      ]);
       res.status(200).json(users.map((user) => ({ ...user, online: online.has(String(user.id)) })));
     } catch (error) {
       sendError(res, error, 500, AUTH_MESSAGES.REGISTER_ERROR);

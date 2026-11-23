@@ -3,6 +3,7 @@ import { WhatsappOutboundMessageDao } from "../daos/whatsapp-outbound-message.da
 import { WhatsappTemplateStatusDao } from "../daos/whatsapp-template-status.dao.js";
 import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catalog-entry.dao.js";
 import { WhatsappAccountService } from "./whatsapp-account.service.js";
+import { WhatsappQuotaService } from "./whatsapp-quota.service.js";
 import { WhatsappOutboundMessage } from "../entities/whatsapp-outbound-message.entity.js";
 import { sendTemplateMessage, sendTextMessage } from "../clients/whatsapp-graph.client.js";
 import { redisClient } from "../../../core/config/redis-client.js";
@@ -35,6 +36,7 @@ export class WhatsappSendService {
     private whatsappTemplateStatusDao: WhatsappTemplateStatusDao,
     private whatsappTemplateCatalogEntryDao: WhatsappTemplateCatalogEntryDao,
     private whatsappAccountService: WhatsappAccountService,
+    private whatsappQuotaService: WhatsappQuotaService,
   ) {}
 
   // Idempotente por `idempotencyKey`: una causa que dispara el mismo envío
@@ -84,6 +86,8 @@ export class WhatsappSendService {
       });
     }
 
+    await this.whatsappQuotaService.assertCanSend();
+
     try {
       const result = await sendTemplateMessage(phoneNumberId, accessToken, to, entry, variables);
       return this.whatsappOutboundMessageDao.create({
@@ -125,6 +129,7 @@ export class WhatsappSendService {
     if (!lastInboundAt || Date.now() - lastInboundAt.getTime() > TWENTY_FOUR_HOURS_MS) {
       throw new WhatsappWindowClosedError();
     }
+    await this.whatsappQuotaService.assertCanSend();
     const result = await sendTextMessage(phoneNumberId, accessToken, to, body);
     return result.messages?.[0]?.id ?? null;
   }
@@ -146,14 +151,22 @@ export class WhatsappSendService {
     // "" = enviado, pero Meta no devolvio wamid.
     if (sent !== null) return sent || null;
 
-    const waMessageId = await this.sendFreeText(phoneNumberId, accessToken, to, body, lastInboundAt);
+    const waMessageId = await this.sendFreeText(
+      phoneNumberId,
+      accessToken,
+      to,
+      body,
+      lastInboundAt,
+    );
     await redisClient.set(markerKey, waMessageId ?? "", "EX", SENT_MARKER_TTL_SECONDS);
     return waMessageId;
   }
 
   // Sin número de contacto no hay a quién avisar -- no es un error, la nota
   // se guarda igual (ver RepairNoteService.update).
-  async notifyOrderReady(note: RepairNoteReadyNotification): Promise<WhatsappOutboundMessage | null> {
+  async notifyOrderReady(
+    note: RepairNoteReadyNotification,
+  ): Promise<WhatsappOutboundMessage | null> {
     if (!note.contactNumber) return null;
 
     const account = await this.whatsappAccountService.getOrCreateForTenant();

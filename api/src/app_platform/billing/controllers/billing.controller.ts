@@ -3,13 +3,24 @@ import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { BillingService } from "../services/billing.service.js";
+import {
+  BillingDashboardService,
+  DASHBOARD_PERIOD_DAYS,
+  type DashboardPeriodDays,
+} from "../services/billing-dashboard.service.js";
 import { AssignSubscriptionDto } from "../dtos/assign-subscription.dto.js";
+import { SelectPlanDto } from "../dtos/select-plan.dto.js";
 import { sendError } from "../../../core/http/error-response.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 
+const WHATSAPP_PACKAGE_SIZES = [500, 1000, 2500] as const;
+
 @singleton()
 export class BillingController {
-  constructor(private service: BillingService) {}
+  constructor(
+    private service: BillingService,
+    private dashboardService: BillingDashboardService,
+  ) {}
 
   getPlan = async (_req: Request, res: Response): Promise<void> => {
     try {
@@ -22,6 +33,14 @@ export class BillingController {
   listPlans = async (_req: Request, res: Response): Promise<void> => {
     try {
       res.status(200).json(await this.service.listPlans());
+    } catch (error) {
+      sendError(res, error, 500);
+    }
+  };
+
+  listPublicPlans = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.service.listPublicPlans());
     } catch (error) {
       sendError(res, error, 500);
     }
@@ -51,6 +70,49 @@ export class BillingController {
       res.status(200).json(summary);
     } catch (error) {
       sendError(res, error, 400);
+    }
+  };
+
+  selectPlan = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dto = plainToInstance(SelectPlanDto, req.body ?? {});
+      const errors = await validate(dto);
+      if (errors.length > 0) {
+        res.status(400).json({ error: flattenValidationErrors(errors) });
+        return;
+      }
+      const checkoutUrl = await this.service.selectPlan(dto.planKey, dto.billingInterval);
+      res.status(200).json({ checkoutUrl });
+    } catch (error) {
+      sendError(res, error, 400);
+    }
+  };
+
+  buyWhatsappPackage = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const size = Number(req.params["size"]);
+      if (!WHATSAPP_PACKAGE_SIZES.includes(size as (typeof WHATSAPP_PACKAGE_SIZES)[number])) {
+        res.status(400).json({ error: "Paquete de mensajes inválido" });
+        return;
+      }
+      const checkoutUrl = await this.service.createWhatsappPackageCheckout(
+        size as (typeof WHATSAPP_PACKAGE_SIZES)[number],
+      );
+      res.status(200).json({ checkoutUrl });
+    } catch (error) {
+      sendError(res, error, 400);
+    }
+  };
+
+  getOverview = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const requested = Number(req.query["days"]);
+      const days = (
+        DASHBOARD_PERIOD_DAYS.includes(requested as DashboardPeriodDays) ? requested : 30
+      ) as DashboardPeriodDays;
+      res.status(200).json(await this.dashboardService.getOverview(days));
+    } catch (error) {
+      sendError(res, error, 500);
     }
   };
 }

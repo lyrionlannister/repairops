@@ -18,5 +18,6 @@ export interface LoginResponse {
     email: string;
     createdAt: string;
     updatedAt: string;
+    subscriptionStatus: "incomplete" | "trialing" | "active" | "past_due" | "canceled";
   };
 }

@@ -51,6 +51,11 @@ import { Plan } from "../../app_platform/billing/entities/plan.entity.js";
 import { Subscription } from "../../app_platform/billing/entities/subscription.entity.js";
 import { UserRoleAssignment } from "../../identity/auth/entities/user-role.entity.js";
 import { BranchDiscountCap } from "../../identity/branches/entities/branch-discount-cap.entity.js";
+import { StripePrice } from "../../app_platform/billing/entities/stripe-price.entity.js";
+import { StripeInvoicePayment } from "../../app_platform/billing/entities/stripe-invoice-payment.entity.js";
+import { StripeWebhookEvent } from "../../app_platform/billing/entities/stripe-webhook-event.entity.js";
+import { WhatsappMessagePackage } from "../../messaging/whatsapp-official/entities/whatsapp-message-package.entity.js";
+import { WhatsappMetaPricing } from "../../messaging/whatsapp-official/entities/whatsapp-meta-pricing.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
@@ -118,6 +123,11 @@ export const appDataSourceOptions: DataSourceOptions = {
     Subscription,
     UserRoleAssignment,
     BranchDiscountCap,
+    StripePrice,
+    StripeInvoicePayment,
+    StripeWebhookEvent,
+    WhatsappMessagePackage,
+    WhatsappMetaPricing,
   ],
 };
 

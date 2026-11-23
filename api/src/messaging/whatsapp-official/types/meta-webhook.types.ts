@@ -28,10 +28,25 @@ export interface MetaWebhookContact {
   profile?: { name?: string };
 }
 
+// Meta solo manda `pricing` cuando el delivery es `billable: true` -- un
+// status sin este bloque (ej. "read") no tiene costo que registrar.
+export interface MetaWebhookStatusPricing {
+  billable?: boolean;
+  category?: string;
+  pricing_model?: string;
+}
+
+export interface MetaWebhookStatus {
+  id?: string;
+  status?: string;
+  pricing?: MetaWebhookStatusPricing;
+}
+
 export interface MetaWebhookValue {
   metadata?: { phone_number_id?: string };
   contacts?: MetaWebhookContact[];
   messages?: MetaWebhookMessage[];
+  statuses?: MetaWebhookStatus[];
 }
 
 export interface MetaWebhookPayload {

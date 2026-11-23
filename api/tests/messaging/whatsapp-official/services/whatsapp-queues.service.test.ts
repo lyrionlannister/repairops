@@ -2,6 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { WhatsappInboundQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-inbound-queue.service.js";
 import { WhatsappAutomationQueueService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-automation-queue.service.js";
 import type { WhatsappWebhookService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-webhook.service.js";
+import type { WhatsappMessageCostService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-message-cost.service.js";
 import type { WhatsappAutomationReplyService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-automation-reply.service.js";
 import { getCurrentTenantId } from "../../../../src/core/tenancy/tenant-context.js";
 
@@ -51,9 +52,13 @@ const payload = {
   ],
 };
 
+const noopCostService = {
+  recordStatusUpdate: vi.fn().mockResolvedValue(undefined),
+} as unknown as WhatsappMessageCostService;
+
 describe("WhatsappInboundQueueService", () => {
   it("encola cada mensaje con su wamid como jobId para descartar reenvios de Meta", async () => {
-    const service = new WhatsappInboundQueueService({} as WhatsappWebhookService);
+    const service = new WhatsappInboundQueueService({} as WhatsappWebhookService, noopCostService);
 
     await service.enqueuePayload(payload);
 
@@ -68,7 +73,7 @@ describe("WhatsappInboundQueueService", () => {
   });
 
   it("un payload sin mensajes (p. ej. estados de entrega) no encola nada", async () => {
-    const service = new WhatsappInboundQueueService({} as WhatsappWebhookService);
+    const service = new WhatsappInboundQueueService({} as WhatsappWebhookService, noopCostService);
 
     await service.enqueuePayload({ entry: [{ changes: [{ value: { statuses: [{}] } }] }] });
 
@@ -77,9 +82,10 @@ describe("WhatsappInboundQueueService", () => {
 
   it("el worker procesa de a uno para conservar el orden del inbox", async () => {
     const handleIncomingMessage = vi.fn().mockResolvedValue(undefined);
-    const service = new WhatsappInboundQueueService({
-      handleIncomingMessage,
-    } as unknown as WhatsappWebhookService);
+    const service = new WhatsappInboundQueueService(
+      { handleIncomingMessage } as unknown as WhatsappWebhookService,
+      noopCostService,
+    );
 
     service.start();
     await bull.processors.get("whatsapp-inbound")!({ data: { from: "52155", body: "hola" } });

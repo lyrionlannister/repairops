@@ -1,4 +1,10 @@
-export type PlanResource = "users" | "branches";
+export type PlanResource = "users" | "branches" | "whatsapp_messages";
+
+const MESSAGES: Record<PlanResource, (limit: number) => string> = {
+  users: (limit) => `Tu plan permite ${limit} usuarios activos`,
+  branches: (limit) => `Tu plan permite ${limit} sucursales activas`,
+  whatsapp_messages: (limit) => `Llegaste al límite de ${limit} mensajes de WhatsApp de este mes`,
+};
 
 export class PlanLimitReachedError extends Error {
   readonly code = "plan_limit_reached";
@@ -8,10 +14,6 @@ export class PlanLimitReachedError extends Error {
     readonly limit: number,
     readonly used: number,
   ) {
-    super(
-      resource === "users"
-        ? `Tu plan permite ${limit} usuarios activos`
-        : `Tu plan permite ${limit} sucursales activas`,
-    );
+    super(MESSAGES[resource](limit));
   }
 }

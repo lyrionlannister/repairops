@@ -31,6 +31,9 @@ jobs:
       DB_PASSWORD: n8n_password_dev
       DB_NAME: app_db
       NODE_ENV: test
+      # Solo para cifrar/descifrar en la base de prueba de CI -- no es la clave real,
+      # nunca se usa contra datos de un tenant de verdad.
+      ENCRYPTION_KEY: eb46b7daa0f0128f96ba064662350321a7992d5212e53901de56c22b756c3130
 
     defaults:
       run:

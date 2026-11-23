@@ -31,10 +31,12 @@ export const TenantsTable: FC<TenantsTableProps> = ({ tenants, onEdit }) => (
           <td className="px-4 py-4 text-sm font-medium text-gray-800 dark:text-white/90">
             {tenant.tenantName}
           </td>
-          <td className={TD}>{tenant.plan.name}</td>
+          <td className={TD}>{tenant.plan?.name ?? "Sin plan (onboarding)"}</td>
           <td className={TD}>{STATUS_LABELS[tenant.status]}</td>
-          <td className={TD}>{formatUsage(tenant.usage.users, tenant.limits.users)}</td>
-          <td className={TD}>{formatUsage(tenant.usage.branches, tenant.limits.branches)}</td>
+          <td className={TD}>{formatUsage(tenant.usage.users, tenant.limits?.users ?? null)}</td>
+          <td className={TD}>
+            {formatUsage(tenant.usage.branches, tenant.limits?.branches ?? null)}
+          </td>
           <td className="px-4 py-4 text-right">
             <button
               onClick={() => onEdit(tenant.tenantId)}

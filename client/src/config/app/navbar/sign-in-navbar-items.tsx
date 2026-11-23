@@ -14,8 +14,11 @@ import {
   Building2,
   Users2,
   BarChart3,
+  TrendingUp,
 } from "lucide-react";
 
+// Orden de grupos = orden de aparición aquí (ver aside-menu.tsx). Dentro de cada
+// grupo, el permiso de cada entrada decide quién la ve (ver visible-nav-items.ts).
 export const signInNavbarItems: NavItem[] = [
   {
     name: "Inicio",
@@ -50,14 +53,6 @@ export const signInNavbarItems: NavItem[] = [
     new: false,
   },
   {
-    name: "Mi Local",
-    icon: <Store className="w-5 h-5" />,
-    path: "/platform/local",
-    permissions: ["local.manage"],
-    group: "Operación",
-    new: false,
-  },
-  {
     name: "Ventas",
     icon: <ShoppingCart className="w-5 h-5" />,
     group: "Ventas y stock",
@@ -66,21 +61,22 @@ export const signInNavbarItems: NavItem[] = [
       {
         name: "Venta Rápida",
         path: "/commerce/sales/new",
-        permissions: ["sales.create"] },
+        permissions: ["sales.create"],
+      },
       {
         name: "Ventas",
         path: "/commerce/sales",
-        permissions: ["sales.read"]
+        permissions: ["sales.read"],
       },
       {
         name: "Apartados",
         path: "/commerce/layaways",
-        permissions: ["layaways.read"]
+        permissions: ["layaways.read"],
       },
       {
         name: "Devoluciones",
         path: "/commerce/returns",
-        permissions: ["sales.read"]
+        permissions: ["sales.read"],
       },
       {
         name: "Cotizaciones",
@@ -114,24 +110,26 @@ export const signInNavbarItems: NavItem[] = [
     ],
   },
   {
-    name: "Mensajería",
-    icon: <Megaphone className="w-5 h-5" />,
-    group: "Administración",
-    new: false,
-    subItems: [
-      {
-        name: "Templates",
-        path: "/messaging/message-templates",
-        permissions: ["message-templates.manage"],
-      },
-      { name: "WhatsApp", path: "/messaging/whatsapp", permissions: ["whatsapp.read"] },
-    ],
-  },
-  {
     name: "Proveedores",
     icon: <Truck className="w-5 h-5" />,
     path: "/commerce/suppliers",
     permissions: ["suppliers.read"],
+    group: "Ventas y stock",
+    new: false,
+  },
+  {
+    name: "Caja",
+    icon: <Wallet className="w-5 h-5" />,
+    path: "/commerce/cash",
+    permissions: ["cash.read"],
+    group: "Ventas y stock",
+    new: false,
+  },
+  {
+    name: "Mi Local",
+    icon: <Store className="w-5 h-5" />,
+    path: "/platform/local",
+    permissions: ["local.manage"],
     group: "Administración",
     new: false,
   },
@@ -152,12 +150,18 @@ export const signInNavbarItems: NavItem[] = [
     new: false,
   },
   {
-    name: "Caja",
-    icon: <Wallet className="w-5 h-5" />,
-    path: "/commerce/cash",
-    permissions: ["cash.read"],
+    name: "Mensajería",
+    icon: <Megaphone className="w-5 h-5" />,
     group: "Administración",
     new: false,
+    subItems: [
+      {
+        name: "Templates",
+        path: "/messaging/message-templates",
+        permissions: ["message-templates.manage"],
+      },
+      { name: "WhatsApp", path: "/messaging/whatsapp", permissions: ["whatsapp.read"] },
+    ],
   },
   {
     name: "Reportes",
@@ -165,6 +169,14 @@ export const signInNavbarItems: NavItem[] = [
     path: "/reporting/reports",
     permissions: ["reports.read"],
     group: "Administración",
+    new: false,
+  },
+  {
+    name: "Panel SaaS",
+    icon: <TrendingUp className="w-5 h-5" />,
+    path: "/platform/billing",
+    permissions: ["platform.tenants.read"],
+    group: "Plataforma",
     new: false,
   },
   {

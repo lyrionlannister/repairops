@@ -4,6 +4,7 @@ import type { WhatsappOutboundMessageDao } from "../../../../src/messaging/whats
 import type { WhatsappTemplateStatusDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-template-status.dao.js";
 import type { WhatsappTemplateCatalogEntryDao } from "../../../../src/messaging/whatsapp-official/daos/whatsapp-template-catalog-entry.dao.js";
 import type { WhatsappAccountService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-account.service.js";
+import type { WhatsappQuotaService } from "../../../../src/messaging/whatsapp-official/services/whatsapp-quota.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { redisClient } from "../../../../src/core/config/redis-client.js";
 
@@ -17,6 +18,7 @@ function build() {
     {} as WhatsappTemplateStatusDao,
     {} as WhatsappTemplateCatalogEntryDao,
     {} as WhatsappAccountService,
+    { assertCanSend: vi.fn().mockResolvedValue(undefined) } as unknown as WhatsappQuotaService,
   );
 }
 
@@ -40,7 +42,9 @@ function stubMeta(response: unknown = { messages: [{ id: "wamid.out-1" }] }) {
 
 beforeEach(() => {
   store.clear();
-  vi.spyOn(redisClient, "get").mockImplementation((async (key: string) => store.get(key) ?? null) as never);
+  vi.spyOn(redisClient, "get").mockImplementation(
+    (async (key: string) => store.get(key) ?? null) as never,
+  );
   vi.spyOn(redisClient, "set").mockImplementation((async (key: string, value: string) => {
     store.set(key, value);
     return "OK";
