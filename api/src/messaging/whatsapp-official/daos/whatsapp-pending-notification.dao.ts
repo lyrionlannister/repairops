@@ -33,7 +33,7 @@ export class WhatsappPendingNotificationDao extends TenantScopedDao<WhatsappPend
         eventKey,
         messageText,
         expiresAt,
-      } as Partial<WhatsappPendingNotification>))!;
+      }))!;
     }
     return this.create({
       repairNoteId,
@@ -41,7 +41,7 @@ export class WhatsappPendingNotificationDao extends TenantScopedDao<WhatsappPend
       eventKey,
       messageText,
       expiresAt,
-    } as Partial<WhatsappPendingNotification>);
+    });
   }
 
   async deleteForNote(repairNoteId: string): Promise<boolean> {

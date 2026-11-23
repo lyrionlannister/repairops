@@ -80,7 +80,7 @@ export class ImportStagingController {
   // Un solo flujo de eventos: manda el estado cada vez que cambia y cierra la
   // conexion en cuanto deja de estar "processing" (o por timeout/corte del
   // cliente). Reemplaza el polling que hacia el cliente antes.
-  events = async (req: Request, res: Response): Promise<void> => {
+  events = (req: Request, res: Response): void => {
     const importId = req.params["importId"] as string;
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
@@ -101,7 +101,7 @@ export class ImportStagingController {
     };
 
     const startedAt = Date.now();
-    const interval = setInterval(async () => {
+    const tick = async (): Promise<void> => {
       try {
         const record = await this.service.getById(importId);
         if (!record) {
@@ -135,7 +135,8 @@ export class ImportStagingController {
         clearInterval(interval);
         res.end();
       }
-    }, SSE_POLL_MS);
+    };
+    const interval = setInterval(() => void tick(), SSE_POLL_MS);
 
     req.on("close", () => clearInterval(interval));
   };
