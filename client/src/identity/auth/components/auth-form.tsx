@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useLogin } from "../../../core/common/hooks/use-login";
 import { Input } from "../../../core/common/components/ui/inputs/input";
 import { Label } from "../../../core/common/components/ui/inputs/label";
@@ -94,6 +94,18 @@ export const AuthForm: React.FC = () => {
                 </div>
               </div>
             </form>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
+              ¿No tienes cuenta?{" "}
+              <Link
+                to="/identity/sign-up"
+                className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              >
+                Regístrate aquí
+              </Link>
+            </p>
           </div>
         </div>
       </div>
