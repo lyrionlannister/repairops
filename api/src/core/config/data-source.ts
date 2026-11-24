@@ -59,6 +59,7 @@ import { WhatsappMetaPricing } from "../../messaging/whatsapp-official/entities/
 import { AuditLog } from "../../core/audit/entities/audit-log.entity.js";
 import { RefreshToken } from "../../identity/auth/entities/refresh-token.entity.js";
 import { TenantInvitation } from "../../identity/auth/entities/tenant-invitation.entity.js";
+import { EmailVerificationToken } from "../../identity/auth/entities/email-verification-token.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
 // Opciones compartidas por el DataSource de la app/tests (sin `migrations`, para que
@@ -134,6 +135,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     AuditLog,
     RefreshToken,
     TenantInvitation,
+    EmailVerificationToken,
   ],
 };
 

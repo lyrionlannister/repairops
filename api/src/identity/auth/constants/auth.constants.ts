@@ -31,3 +31,6 @@ export const REFRESH_TOKEN_COOKIE_OPTIONS = {
   path: "/api/v1/auth",
 } as const;
 export const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Enlace de verificación de correo: 24 horas, de un solo uso.
+export const EMAIL_VERIFICATION_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000;

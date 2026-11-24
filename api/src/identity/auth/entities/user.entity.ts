@@ -1,4 +1,12 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from "typeorm";
+import {
+  Entity,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from "typeorm";
 import { BaseEntity } from "../../../core/common/entities/base.entity.js";
 import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
@@ -44,6 +52,14 @@ export class User extends BaseEntity {
   // de alta todavia (se otorga a mano en DB, decision consciente).
   @Column({ type: "boolean", default: false, name: "es_platform_admin" })
   isPlatformAdmin!: boolean;
+
+  // null = correo sin verificar. Lo crea registerPlatformAdmin/createTenantByAdmin
+  // ya verificado (un admin humano vouches por ese alta); el registro público
+  // (AuthService.register) lo deja null hasta que el owner confirma el enlace
+  // que manda AuthService.issueEmailVerification -- ver tenant.middleware.ts,
+  // que bloquea el resto de la app mientras siga null.
+  @Column({ type: "timestamp", nullable: true, name: "email_verificado_en" })
+  emailVerifiedAt!: Date | null;
 
   @CreateDateColumn({
     name: "fecha_creacion",

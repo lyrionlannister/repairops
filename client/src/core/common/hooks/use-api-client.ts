@@ -159,6 +159,22 @@ export const useApiClient = () => {
           if ((body as { code?: string }).code === "subscription_blocked") {
             navigate("/identity/onboarding/plan", { replace: true });
           }
+        } else if (response.status === 403) {
+          const body = await response
+            .clone()
+            .json()
+            .catch(() => ({}));
+          // Correo sin verificar (ver tenant.middleware.ts): nada sirve hasta
+          // que confirme el enlace o pida uno nuevo, lo manda directo ahí.
+          if ((body as { code?: string }).code === "email_unverified") {
+            navigate("/identity/verify-email", { replace: true });
+          } else {
+            showToast({
+              title: "No se pudo completar la acción",
+              message: String((body as { error?: unknown }).error ?? `Error ${response.status}`),
+              variant: "error",
+            });
+          }
         } else if (response.status !== 401 || endpoint.startsWith("/auth/login")) {
           // 401 en otras rutas = sesion vencida (el guard redirige), no un mensaje.
           const body = await response

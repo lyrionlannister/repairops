@@ -45,3 +45,13 @@ export const refreshRateLimit = rateLimit({
   legacyHeaders: false,
   message: { error: TOO_MANY_REQUESTS },
 });
+
+// Reenvío de verificación: cada intento manda un correo real -- 3 por IP
+// cada hora, más agresivo que login/refresh.
+export const resendVerificationRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: optionalEnvNumber("RATE_LIMIT_RESEND_VERIFICATION_MAX", 3),
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: TOO_MANY_ATTEMPTS },
+});

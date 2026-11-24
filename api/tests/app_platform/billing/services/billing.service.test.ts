@@ -21,6 +21,10 @@ vi.mock(
   "../../../../src/app_platform/billing/clients/stripe.client.js",
   async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
 );
+vi.mock(
+  "../../../../src/identity/auth/clients/resend.client.js",
+  async () => (await import("../../../support/resend-client.mock.js")).resendClientMock,
+);
 
 // selectPlan/portal/paquetes no usan transacciones: no cargar AppDataSource
 // (data-source arrastra entidades de otros frentes en curso).

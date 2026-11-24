@@ -19,5 +19,6 @@ export interface LoginResponse {
     createdAt: string;
     updatedAt: string;
     subscriptionStatus: "incomplete" | "trialing" | "active" | "past_due" | "canceled";
+    emailVerifiedAt: string | null;
   };
 }

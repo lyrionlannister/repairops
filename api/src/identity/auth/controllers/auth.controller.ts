@@ -16,6 +16,7 @@ import { AuthService } from "../services/auth.service.js";
 import { PresenceService } from "../services/presence.service.js";
 import { RegisterUserDto } from "../dtos/register-user.dto.js";
 import { LoginUserDto } from "../dtos/login-user.dto.js";
+import { VerifyEmailDto } from "../dtos/verify-email.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
 import { UpdateEmployeeDto } from "../dtos/update-employee.dto.js";
 import type { AuthenticatedRequest } from "../middlewares/auth.middleware.js";
@@ -210,6 +211,30 @@ export class AuthController {
       res.status(200).json({ message: "Sesión renovada", user });
     } catch (error) {
       sendError(res, error, 401, "Sesión expirada");
+    }
+  };
+
+  verifyEmail = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dto = plainToInstance(VerifyEmailDto, req.body);
+      const errors = await validate(dto);
+      if (errors.length > 0) {
+        res.status(400).json({ error: getValidationMessages(errors) });
+        return;
+      }
+      const user = await this.authService.verifyEmail(dto.token);
+      res.status(200).json({ message: "Correo verificado", user });
+    } catch (error) {
+      sendError(res, error, 400, "No se pudo verificar el correo");
+    }
+  };
+
+  resendVerificationEmail = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      await this.authService.resendVerificationEmail(req.user!.id);
+      res.status(200).json({ message: "Correo de verificación reenviado" });
+    } catch (error) {
+      sendError(res, error, 400, "No se pudo reenviar el correo de verificación");
     }
   };
 

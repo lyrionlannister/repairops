@@ -10,6 +10,8 @@ export const AUDIT_ACTIONS = {
   AUTH_ROLE_CHANGED: "auth.role_changed",
   AUTH_USER_CREATED: "auth.user_created",
   AUTH_USER_STATUS_CHANGED: "auth.user_status_changed",
+  AUTH_EMAIL_VERIFIED: "auth.email_verified",
+  AUTH_EMAIL_VERIFICATION_RESENT: "auth.email_verification_resent",
   CASH_SESSION_OPENED: "cash.session_opened",
   CASH_SESSION_CLOSED: "cash.session_closed",
   CASH_VARIANCE_AUTHORIZED: "cash.variance_authorized",

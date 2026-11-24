@@ -53,6 +53,10 @@ vi.mock(
   "../../../../src/app_platform/billing/clients/stripe.client.js",
   async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
 );
+vi.mock(
+  "../../../../src/identity/auth/clients/resend.client.js",
+  async () => (await import("../../../support/resend-client.mock.js")).resendClientMock,
+);
 
 // Integration test contra Postgres real + el router real (no un controller
 // falso) -- prueba el criterio de aceptacion de la Fase 1: un cajero no

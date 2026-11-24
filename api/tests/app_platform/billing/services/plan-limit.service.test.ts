@@ -27,6 +27,10 @@ vi.mock(
   "../../../../src/app_platform/billing/clients/stripe.client.js",
   async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
 );
+vi.mock(
+  "../../../../src/identity/auth/clients/resend.client.js",
+  async () => (await import("../../../support/resend-client.mock.js")).resendClientMock,
+);
 
 // Integración contra Postgres real: el bloqueo de la suscripción solo se puede probar
 // con transacciones de verdad.

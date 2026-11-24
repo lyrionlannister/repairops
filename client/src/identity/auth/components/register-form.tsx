@@ -28,9 +28,10 @@ export const RegisterForm: React.FC = () => {
 
     const result = await register(formData);
     if (result) {
-      // Auto-login ya hecho (ver useRegister): directo al onboarding de
-      // planes, no de vuelta a sign-in.
-      navigate("/identity/onboarding", { replace: true });
+      // Auto-login ya hecho (ver useRegister), pero antes del onboarding de
+      // planes el owner tiene que confirmar el correo que le mandamos (ver
+      // AuthService.register / tenant.middleware.ts).
+      navigate("/identity/verify-email", { replace: true });
     }
   };
 

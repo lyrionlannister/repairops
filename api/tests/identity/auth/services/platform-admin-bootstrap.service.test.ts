@@ -13,6 +13,10 @@ vi.mock(
   "../../../../src/app_platform/billing/clients/stripe.client.js",
   async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
 );
+vi.mock(
+  "../../../../src/identity/auth/clients/resend.client.js",
+  async () => (await import("../../../support/resend-client.mock.js")).resendClientMock,
+);
 
 function makeUserDao(existing: User | null = null) {
   return { findByEmailAcrossTenants: vi.fn().mockResolvedValue(existing) } as unknown as UserDao;

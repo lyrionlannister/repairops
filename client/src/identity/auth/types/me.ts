@@ -13,4 +13,5 @@ export interface Me {
   salaryAmount: number | null;
   payCycle: "weekly" | "biweekly" | "monthly" | null;
   subscriptionStatus: "incomplete" | "trialing" | "active" | "past_due" | "canceled";
+  emailVerifiedAt: string | null;
 }

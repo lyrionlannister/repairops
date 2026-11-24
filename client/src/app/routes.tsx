@@ -1,6 +1,7 @@
 import { ChatsPage } from "../messaging/chats/pages/chats-page";
 import { AuthPage } from "../identity/auth/pages/auth-page";
 import { RegisterPage } from "../identity/auth/pages/register-page";
+import { VerifyEmailPage } from "../identity/auth/pages/verify-email-page";
 import { OnboardingBusinessPage } from "../identity/auth/pages/onboarding-business-page";
 import { OnboardingPlanPage } from "../identity/auth/pages/onboarding-plan-page";
 import { NotFound } from "../core/common/pages/not-found";
@@ -54,6 +55,10 @@ export const publicRoutes = [
   {
     path: "/identity/sign-up",
     element: <RegisterPage />,
+  },
+  {
+    path: "/identity/verify-email",
+    element: <VerifyEmailPage />,
   },
   {
     path: "/identity/onboarding",

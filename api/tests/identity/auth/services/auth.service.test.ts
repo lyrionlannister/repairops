@@ -15,6 +15,7 @@ import type { StripePriceDao } from "../../../../src/app_platform/billing/daos/s
 import type { SubscriptionDao } from "../../../../src/app_platform/billing/daos/subscription.dao.js";
 import type { RefreshTokenDao } from "../../../../src/identity/auth/daos/refresh-token.dao.js";
 import type { TenantInvitationDao } from "../../../../src/identity/auth/daos/tenant-invitation.dao.js";
+import type { EmailVerificationTokenDao } from "../../../../src/identity/auth/daos/email-verification-token.dao.js";
 import type { AuditLogService } from "../../../../src/core/audit/services/audit-log.service.js";
 
 // Mock compartido de Stripe (tests/support/stripe-client.mock.ts): con
@@ -26,6 +27,13 @@ vi.mock(
   "../../../../src/app_platform/billing/clients/stripe.client.js",
   async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
 );
+
+// Mismo motivo, para Resend (tests/support/resend-client.mock.ts).
+vi.mock(
+  "../../../../src/identity/auth/clients/resend.client.js",
+  async () => (await import("../../../support/resend-client.mock.js")).resendClientMock,
+);
+import { resendClientMock } from "../../../support/resend-client.mock.js";
 
 function makeUserRoleDao(rolesByUser: Record<string, string[]> = {}): UserRoleDao {
   return {
@@ -98,6 +106,17 @@ function makeTenantInvitationDao(): TenantInvitationDao {
   } as unknown as TenantInvitationDao;
 }
 
+function makeEmailVerificationTokenDao(): EmailVerificationTokenDao {
+  return {
+    findByTokenHash: vi.fn().mockResolvedValue(null),
+    consume: vi.fn().mockResolvedValue(true),
+    create: vi
+      .fn()
+      .mockImplementation((data: unknown) => Promise.resolve({ id: "1", ...(data as object) })),
+    invalidatePendingForUser: vi.fn().mockResolvedValue(undefined),
+  } as unknown as EmailVerificationTokenDao;
+}
+
 function makeAuditLogService(): AuditLogService {
   return {
     record: vi.fn().mockResolvedValue(undefined),
@@ -105,8 +124,9 @@ function makeAuditLogService(): AuditLogService {
   } as unknown as AuditLogService;
 }
 
-// Constructor completo: los 3 últimos son los DAOs/servicios nuevos
-// (refresh, invitaciones, bitácora). Los tests pasan solo lo que varían.
+// Constructor completo: los 4 últimos son los DAOs/servicios nuevos
+// (refresh, invitaciones, verificación de correo, bitácora). Los tests pasan
+// solo lo que varían.
 function makeAuthService(deps: {
   userDao: UserDao;
   tenantRepository?: Repository<Tenant>;
@@ -115,6 +135,7 @@ function makeAuthService(deps: {
   userRoleDao?: UserRoleDao;
   refreshTokenDao?: RefreshTokenDao;
   tenantInvitationDao?: TenantInvitationDao;
+  emailVerificationTokenDao?: EmailVerificationTokenDao;
   auditLogService?: AuditLogService;
 }): AuthService {
   return new AuthService(
@@ -130,6 +151,7 @@ function makeAuthService(deps: {
     deps.userRoleDao ?? makeUserRoleDao(),
     deps.refreshTokenDao ?? makeRefreshTokenDao(),
     deps.tenantInvitationDao ?? makeTenantInvitationDao(),
+    deps.emailVerificationTokenDao ?? makeEmailVerificationTokenDao(),
     deps.auditLogService ?? makeAuditLogService(),
   );
 }
@@ -267,10 +289,13 @@ describe("AuthService.register", () => {
     } as unknown as UserDao;
     const tenantRepository = makeTenantRepository();
     const billingService = makeBillingService();
+    const emailVerificationTokenDao = makeEmailVerificationTokenDao();
+    resendClientMock.sendVerificationEmail.mockClear();
     const service = makeAuthService({
       userDao: userDao,
       tenantRepository: tenantRepository,
       billingService: billingService,
+      emailVerificationTokenDao,
     });
 
     const result = await service.register({
@@ -284,9 +309,16 @@ describe("AuthService.register", () => {
     const persisted = create.mock.calls[0][0];
     expect(persisted).not.toHaveProperty("role");
     expect(persisted.isPlatformAdmin).toBe(false);
+    // El owner público nace sin verificar: solo lo levanta el enlace que
+    // manda issueEmailVerification (ver AuthService.register).
+    expect(persisted.emailVerifiedAt).toBeNull();
     expect(billingService.startSubscriptionWithoutPlan).toHaveBeenCalledWith("cus_test123");
     expect(persisted.password).not.toBe("plain-text-password");
     expect(result.token).toBeTruthy();
+    expect(emailVerificationTokenDao.create).toHaveBeenCalledOnce();
+    expect(resendClientMock.sendVerificationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "new@example.com" }),
+    );
   });
 
   it("registerPlatformAdmin creates its own tenant with an owner flagged as platform admin", async () => {
@@ -297,6 +329,7 @@ describe("AuthService.register", () => {
     } as unknown as UserDao;
     const tenantRepository = makeTenantRepository();
     const billingService = makeBillingService();
+    resendClientMock.sendVerificationEmail.mockClear();
     const service = makeAuthService({
       userDao: userDao,
       tenantRepository: tenantRepository,
@@ -312,7 +345,10 @@ describe("AuthService.register", () => {
 
     expect(tenantRepository.save).toHaveBeenCalledOnce();
     expect(create.mock.calls[0][0]).toMatchObject({ isPlatformAdmin: true });
+    // Un admin de plataforma no pasa por el gate: nace ya verificado.
+    expect(create.mock.calls[0][0].emailVerifiedAt).toEqual(expect.any(Date));
     expect(billingService.startSubscription).toHaveBeenCalledWith("platform", "active");
+    expect(resendClientMock.sendVerificationEmail).not.toHaveBeenCalled();
   });
 
   it("rejects a duplicate email without creating an orphan tenant", async () => {
@@ -534,6 +570,102 @@ describe("AuthService.register modes", () => {
     const result = await service.register({ ...basePayload, invitationToken: "tok123" });
     expect(result.refreshToken).toEqual(expect.any(String));
     expect(consume).toHaveBeenCalledOnce();
+  });
+});
+
+describe("AuthService.verifyEmail", () => {
+  const makeRow = (overrides: object = {}) =>
+    ({
+      id: "20",
+      userId: "1",
+      tenantId: "11111111-1111-1111-1111-111111111111",
+      tokenHash: "abc",
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 3_600_000),
+      ...overrides,
+    }) as unknown as import("../../../../src/identity/auth/entities/email-verification-token.entity.js").EmailVerificationToken;
+
+  it("marks the user verified and consumes the token", async () => {
+    const emailVerificationTokenDao = makeEmailVerificationTokenDao();
+    vi.mocked(emailVerificationTokenDao.findByTokenHash).mockResolvedValue(makeRow());
+    const update = vi.fn().mockResolvedValue(makeUser({ emailVerifiedAt: new Date() }));
+    const userDao = { update } as unknown as UserDao;
+    const service = makeAuthService({ userDao, emailVerificationTokenDao });
+
+    const result = await service.verifyEmail("plain-token");
+
+    expect(update).toHaveBeenCalledWith("1", { emailVerifiedAt: expect.any(Date) });
+    expect(emailVerificationTokenDao.consume).toHaveBeenCalledOnce();
+    expect(result.emailVerifiedAt).toEqual(expect.any(Date));
+  });
+
+  it("rejects a token that doesn't exist", async () => {
+    const emailVerificationTokenDao = makeEmailVerificationTokenDao();
+    vi.mocked(emailVerificationTokenDao.findByTokenHash).mockResolvedValue(null);
+    const service = makeAuthService({
+      userDao: {} as unknown as UserDao,
+      emailVerificationTokenDao,
+    });
+    await expect(service.verifyEmail("nope")).rejects.toThrow(
+      "El enlace de verificación es inválido o expiró",
+    );
+  });
+
+  it("rejects an expired token", async () => {
+    const emailVerificationTokenDao = makeEmailVerificationTokenDao();
+    vi.mocked(emailVerificationTokenDao.findByTokenHash).mockResolvedValue(
+      makeRow({ expiresAt: new Date(Date.now() - 1000) }),
+    );
+    const service = makeAuthService({
+      userDao: {} as unknown as UserDao,
+      emailVerificationTokenDao,
+    });
+    await expect(service.verifyEmail("old-token")).rejects.toThrow(
+      "El enlace de verificación es inválido o expiró",
+    );
+  });
+
+  it("rejects an already-used token", async () => {
+    const emailVerificationTokenDao = makeEmailVerificationTokenDao();
+    vi.mocked(emailVerificationTokenDao.findByTokenHash).mockResolvedValue(
+      makeRow({ consumedAt: new Date() }),
+    );
+    const service = makeAuthService({
+      userDao: {} as unknown as UserDao,
+      emailVerificationTokenDao,
+    });
+    await expect(service.verifyEmail("used-token")).rejects.toThrow(
+      "El enlace de verificación es inválido o expiró",
+    );
+  });
+});
+
+describe("AuthService.resendVerificationEmail", () => {
+  it("invalidates pending tokens and issues a new one", async () => {
+    const user = makeUser({ emailVerifiedAt: null });
+    const userDao = { findById: vi.fn().mockResolvedValue(user) } as unknown as UserDao;
+    const emailVerificationTokenDao = makeEmailVerificationTokenDao();
+    resendClientMock.sendVerificationEmail.mockClear();
+    const service = makeAuthService({ userDao, emailVerificationTokenDao });
+
+    await service.resendVerificationEmail("1");
+
+    expect(emailVerificationTokenDao.invalidatePendingForUser).toHaveBeenCalledWith(
+      user.id,
+      user.tenantId,
+    );
+    expect(emailVerificationTokenDao.create).toHaveBeenCalledOnce();
+    expect(resendClientMock.sendVerificationEmail).toHaveBeenCalledOnce();
+  });
+
+  it("rejects when the email is already verified", async () => {
+    const userDao = {
+      findById: vi.fn().mockResolvedValue(makeUser({ emailVerifiedAt: new Date() })),
+    } as unknown as UserDao;
+    const service = makeAuthService({ userDao });
+    await expect(service.resendVerificationEmail("1")).rejects.toThrow(
+      "Tu correo ya está verificado",
+    );
   });
 });
 

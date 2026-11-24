@@ -7,9 +7,11 @@ import { UserDao } from "../daos/user.dao.js";
 import { UserRoleDao } from "../daos/user-role.dao.js";
 import { RefreshTokenDao } from "../daos/refresh-token.dao.js";
 import { TenantInvitationDao } from "../daos/tenant-invitation.dao.js";
+import { EmailVerificationTokenDao } from "../daos/email-verification-token.dao.js";
+import { sendVerificationEmail } from "../clients/resend.client.js";
 import { AuditLogService, AUDIT_ACTIONS } from "../../../core/audit/services/audit-log.service.js";
 import { BusinessError } from "../../../core/http/business-error.js";
-import { registrationMode } from "../../../core/config/env.js";
+import { registrationMode, optionalEnv } from "../../../core/config/env.js";
 import { RegisterUserDto } from "../dtos/register-user.dto.js";
 import { LoginUserDto } from "../dtos/login-user.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
@@ -38,7 +40,10 @@ import {
   type RoleCatalogEntry,
 } from "../../authz/permissions.js";
 import { toMoneyOrNull } from "../../../core/common/utils/money.js";
-import { REFRESH_TOKEN_MAX_AGE_MS } from "../constants/auth.constants.js";
+import {
+  REFRESH_TOKEN_MAX_AGE_MS,
+  EMAIL_VERIFICATION_TOKEN_MAX_AGE_MS,
+} from "../constants/auth.constants.js";
 
 const { sign } = jwt;
 
@@ -71,6 +76,7 @@ export class AuthService {
     private userRoleDao: UserRoleDao,
     private refreshTokenDao: RefreshTokenDao,
     private tenantInvitationDao: TenantInvitationDao,
+    private emailVerificationTokenDao: EmailVerificationTokenDao,
     private auditLogService: AuditLogService,
   ) {}
 
@@ -112,7 +118,7 @@ export class AuthService {
         throw new BusinessError("Invitación inválida o expirada.", 403);
       }
     }
-    const { owner, tenant } = await this.createTenantWithOwner(data, false);
+    const { owner, tenant } = await this.createTenantWithOwner(data, false, false);
     if (mode === "invite") {
       // Consumo atómico: si otro registro usó el mismo token a la vez, el
       // tenant ya se creó pero la invitación no se puede reutilizar -- el
@@ -125,6 +131,14 @@ export class AuthService {
       }
     }
     const session = await this.issueSession(owner, tenant);
+    try {
+      await this.issueEmailVerification(owner);
+    } catch (error) {
+      // El registro ya terminó (tenant, owner y sesión existen); un fallo acá
+      // (DB de tokens caída, etc.) no debe tirar abajo la respuesta -- el
+      // owner puede pedir el correo de nuevo con POST /auth/resend-verification.
+      console.error("[auth] No se pudo emitir la verificación de correo:", error);
+    }
     // Sin esto, sessionStorage queda con un User a secas (sin roles/permisos/
     // subscriptionStatus) hasta que useAuthGuard lo refresque de forma
     // asíncrona -- el primer render de /home (justo al volver del Checkout de
@@ -135,9 +149,10 @@ export class AuthService {
 
   // Creación de tenant por el platform-admin (modo `closed`): mismo alta
   // que el registro público pero sin auto-login -- el owner entra con sus
-  // credenciales y sigue el onboarding de planes normal.
+  // credenciales y sigue el onboarding de planes normal. Correo verificado
+  // de entrada: un admin de la plataforma ya vouches por este alta.
   async createTenantByAdmin(data: RegisterUserDto): Promise<{ owner: PublicUser; tenant: Tenant }> {
-    const { owner, tenant } = await this.createTenantWithOwner(data, false);
+    const { owner, tenant } = await this.createTenantWithOwner(data, false, true);
     const publicOwner = await runWithTenant(tenant.id, async () => ({
       ...withoutPassword(owner),
       roles: await this.userRoleDao.findRolesOf(owner.id),
@@ -177,13 +192,14 @@ export class AuthService {
   }
 
   async registerPlatformAdmin(data: RegisterUserDto): Promise<User> {
-    const { owner } = await this.createTenantWithOwner(data, true);
+    const { owner } = await this.createTenantWithOwner(data, true, true);
     return owner;
   }
 
   private async createTenantWithOwner(
     data: RegisterUserDto,
     isPlatformAdmin: boolean,
+    autoVerifyEmail: boolean,
   ): Promise<{ owner: User; tenant: Tenant }> {
     // Sin tenant en contexto todavia, igual que login: el email solo se
     // puede checar sin ambiguedad en scope de sistema. Si esto corriera
@@ -225,6 +241,7 @@ export class AuthService {
         email: data.email,
         password: hashedPassword,
         isPlatformAdmin,
+        emailVerifiedAt: autoVerifyEmail ? new Date() : null,
       });
       await this.userRoleDao.replaceForUser(owner.id, ["owner"]);
 
@@ -519,6 +536,74 @@ export class AuthService {
     if (row && row.revokedAt === null) {
       await this.refreshTokenDao.update(row.id, { revokedAt: new Date() });
     }
+  }
+
+  // Consume el enlace de verificación (GET sin sesión necesaria: el usuario
+  // puede abrirlo desde otro dispositivo/navegador). Igual forma que
+  // refreshSession: se resuelve el tenant desde la fila del token, no del JWT.
+  async verifyEmail(token: string): Promise<SessionUser> {
+    const row = await this.emailVerificationTokenDao.findByTokenHash(hashToken(token));
+    if (!row || row.consumedAt !== null || row.expiresAt.getTime() <= Date.now()) {
+      throw new BusinessError("El enlace de verificación es inválido o expiró.");
+    }
+
+    return runWithTenant(row.tenantId, async () => {
+      const consumed = await this.emailVerificationTokenDao.consume(hashToken(token));
+      if (!consumed) {
+        throw new BusinessError("El enlace de verificación ya fue usado.");
+      }
+      const updated = await this.userDao.update(row.userId, { emailVerifiedAt: new Date() });
+      if (!updated) {
+        throw new BusinessError("Usuario no encontrado.");
+      }
+      await this.auditLogService.record({
+        tenantId: row.tenantId,
+        userId: row.userId,
+        actorEmail: updated.email,
+        action: AUDIT_ACTIONS.AUTH_EMAIL_VERIFIED,
+        entity: "user",
+        entityId: updated.publicId,
+      });
+      return this.toSessionUser(updated);
+    });
+  }
+
+  // A diferencia de issueEmailVerification en register() (best-effort), acá
+  // un fallo sí debe llegar al usuario: pidió el reenvío a propósito, así que
+  // si no se pudo mandar, el botón debe decir que falló, no fingir éxito.
+  async resendVerificationEmail(userId: string): Promise<void> {
+    const user = await this.userDao.findById(userId);
+    if (!user) {
+      throw new BusinessError("Usuario no encontrado.");
+    }
+    if (user.emailVerifiedAt) {
+      throw new BusinessError("Tu correo ya está verificado.");
+    }
+    await this.emailVerificationTokenDao.invalidatePendingForUser(user.id, user.tenantId);
+    await this.issueEmailVerification(user);
+    await this.auditLogService.recordForCurrentActor({
+      action: AUDIT_ACTIONS.AUTH_EMAIL_VERIFICATION_RESENT,
+      entity: "user",
+      entityId: user.publicId,
+      details: { email: user.email },
+    });
+  }
+
+  // Genera el token (hash en DB, claro solo en el link), lo guarda y manda el
+  // correo. sendVerificationEmail no lanza por un error del lado de Resend
+  // (ver resend.client.ts) -- solo una falla de DB al guardar el token
+  // propaga, y la decisión de qué hacer con eso es de quien llama.
+  private async issueEmailVerification(user: User): Promise<void> {
+    const token = randomBytes(32).toString("hex");
+    await this.emailVerificationTokenDao.create({
+      tenantId: user.tenantId,
+      userId: user.id,
+      tokenHash: hashToken(token),
+      expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_MAX_AGE_MS),
+      consumedAt: null,
+    });
+    const verifyUrl = `${optionalEnv("CLIENT_URL", "http://localhost:5173")}/identity/verify-email?token=${token}`;
+    await sendVerificationEmail({ to: user.email, firstName: user.firstName, verifyUrl });
   }
 
   // Emite un par access (15 min) + refresh (7 días). Si llega `previous`,

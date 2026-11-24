@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isSubscriptionBlocked,
   subscriptionBlockedMessage,
+  isEmailVerificationBlocked,
 } from "../../../src/core/tenancy/tenant.middleware.js";
 
 describe("isSubscriptionBlocked", () => {
@@ -30,5 +31,23 @@ describe("subscriptionBlockedMessage", () => {
   it("distingue el mensaje de cancelado del de pago rechazado", () => {
     expect(subscriptionBlockedMessage("canceled")).toMatch(/cancelada/);
     expect(subscriptionBlockedMessage("past_due")).toMatch(/pago/);
+  });
+});
+
+describe("isEmailVerificationBlocked", () => {
+  it("bloquea a un usuario sin correo verificado fuera de /auth", () => {
+    expect(isEmailVerificationBlocked(false, "/api/v1/repair-notes")).toBe(true);
+  });
+
+  it("no bloquea a un usuario con correo verificado", () => {
+    expect(isEmailVerificationBlocked(true, "/api/v1/repair-notes")).toBe(false);
+  });
+
+  it("deja pasar /api/v1/auth sin verificar (reenviar, verificar, logout)", () => {
+    expect(isEmailVerificationBlocked(false, "/api/v1/auth")).toBe(false);
+  });
+
+  it("a diferencia del bloqueo de suscripción, SÍ bloquea /api/v1/billing sin verificar", () => {
+    expect(isEmailVerificationBlocked(false, "/api/v1/billing")).toBe(true);
   });
 });
