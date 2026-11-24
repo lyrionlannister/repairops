@@ -21,14 +21,16 @@ export function optionalEnvNumber(name: string, fallback: number): number {
   return raw ? Number(raw) : fallback;
 }
 
-// Modo de registro de tenants nuevos. `closed` (default): POST /register
-// rechaza y solo el platform-admin crea tenants (o invitaciones).
-// `invite`: el registro exige un token de invitación de un solo uso.
-// `open`: registro público como antes (solo para desarrollo).
+// Modo de registro de tenants nuevos. `open` (default, autoservicio): cada
+// taller se registra solo; el abuso se controla con rate limiting en
+// POST /register, verificación de correo (Resend) y captcha.
+// `closed`: POST /register rechaza y solo el platform-admin crea tenants
+// (o invitaciones). `invite`: el registro exige un token de invitación
+// de un solo uso.
 export type RegistrationMode = "open" | "closed" | "invite";
 
 export function registrationMode(): RegistrationMode {
-  const raw = (env("REGISTRATION_MODE") ?? "closed").toLowerCase();
+  const raw = (env("REGISTRATION_MODE") ?? "open").toLowerCase();
   if (raw === "open" || raw === "closed" || raw === "invite") return raw;
   throw new Error(`REGISTRATION_MODE inválido: ${raw} (open|closed|invite)`);
 }

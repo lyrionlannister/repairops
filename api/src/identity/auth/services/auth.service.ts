@@ -80,7 +80,9 @@ export class AuthService {
   // app sigue bloqueada (status 'incomplete' -- ver AuthService.login).
   //
   // REGISTRATION_MODE (ver core/config/env.ts) decide quién puede registrar:
-  // - `closed` (default): POST /register rechaza; el tenant lo crea el
+  // - `open` (default, autoservicio): cualquiera se registra solo; el
+  //   abuso se controla con rate limiting, verificación de correo y captcha.
+  // - `closed`: POST /register rechaza; el tenant lo crea el
   //   platform-admin (createTenantByAdmin) o una invitación (invite).
   // - `invite`: exige un token de invitación de un solo uso en el body.
   // - `open`: registro público como antes (solo para desarrollo).

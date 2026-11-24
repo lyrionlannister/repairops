@@ -458,11 +458,30 @@ describe("AuthService.register modes", () => {
     password: "plain-text-password",
   };
 
-  it("rejects public registration when the mode is closed (default)", async () => {
+  it("rejects public registration when the mode is closed", async () => {
+    process.env.REGISTRATION_MODE = "closed";
     const service = makeAuthService({
       userDao: { findByEmailAcrossTenants: vi.fn() } as unknown as UserDao,
     });
     await expect(service.register(basePayload)).rejects.toThrow("El registro está cerrado");
+  });
+
+  it("allows public registration by default (open) with no env var set", async () => {
+    const create = vi
+      .fn()
+      .mockImplementation((data: unknown) => Promise.resolve(makeUser(data as object)));
+    const userDao = {
+      findByEmailAcrossTenants: vi.fn().mockResolvedValue(null),
+      create,
+    } as unknown as UserDao;
+    const service = makeAuthService({
+      userDao,
+      billingService: makeBillingService(),
+      stripePriceDao: makeStripePriceDao({ stripePriceId: "price_test123" }),
+    });
+    const result = await service.register(basePayload);
+    expect(result.refreshToken).toEqual(expect.any(String));
+    expect(create).toHaveBeenCalledOnce();
   });
 
   it("requires an invitation token in invite mode", async () => {
