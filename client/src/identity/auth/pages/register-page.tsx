@@ -23,7 +23,7 @@ export const RegisterPage: React.FC = () => {
     <>
       <PageMeta title="Crear cuenta" description="Regístrate para empezar a usar tu cuenta" />
       {loading ? (
-        <div className="flex items-center justify-center w-full h-screen">
+        <div className="flex items-center justify-center w-full h-dvh">
           <Loader />
         </div>
       ) : (
@@ -34,4 +34,3 @@ export const RegisterPage: React.FC = () => {
     </>
   );
 };
-
