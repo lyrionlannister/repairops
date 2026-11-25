@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { singleton } from "tsyringe";
+import { QueryFailedError } from "typeorm";
 import { WhatsappOutboundMessageDao } from "../daos/whatsapp-outbound-message.dao.js";
 import { WhatsappTemplateStatusDao } from "../daos/whatsapp-template-status.dao.js";
 import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catalog-entry.dao.js";
@@ -7,11 +8,8 @@ import { WhatsappAccountService } from "./whatsapp-account.service.js";
 import { WhatsappQuotaService } from "./whatsapp-quota.service.js";
 import { WhatsappOutboundMessage } from "../entities/whatsapp-outbound-message.entity.js";
 import { sendTemplateMessage, sendTextMessage } from "../clients/whatsapp-graph.client.js";
-import { redisClient } from "../../../core/config/redis-client.js";
-import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-const SENT_MARKER_TTL_SECONDS = 24 * 60 * 60;
 
 // El texto libre no tiene entrada en el catálogo de plantillas, pero la
 // entidad exige `catalogKey` (no nullable, sin migración que lo cambie):
@@ -179,10 +177,13 @@ export class WhatsappSendService {
     }
   }
 
-  // Para respuestas dentro de un job que se reintenta: la marca se guarda
-  // DESPUES de que Meta acepto el envio y se revisa ANTES, asi un reintento
-  // por una falla posterior (ej. al registrar el mensaje) no reenvia y recupera
-  // el wamid de salida. Solo queda abierto el lapso entre el envio y el SET.
+  // Para respuestas dentro de un job que se reintenta: a diferencia de
+  // sendFreeText (que genera una idempotencyKey nueva en cada llamada a
+  // propósito, para el envío manual), aquí el caller pasa la suya y la fila en
+  // `whatsapp_outbound_messages` es la marca de "ya se mandó" -- durable en
+  // Postgres, se revisa ANTES de llamar a Meta. Un reintento del job (ej. por
+  // una falla posterior al registrar el mensaje en chat_messages) encuentra la
+  // fila ya creada y nunca vuelve a mandar el texto real.
   async sendFreeTextOnce(
     idempotencyKey: string,
     phoneNumberId: string,
@@ -191,20 +192,58 @@ export class WhatsappSendService {
     body: string,
     lastInboundAt: Date | null,
   ): Promise<string | null> {
-    const markerKey = `wa_sent:${getCurrentTenantId()}:${idempotencyKey}`;
-    const sent = await redisClient.get(markerKey);
-    // "" = enviado, pero Meta no devolvio wamid.
-    if (sent !== null) return sent || null;
+    const existing = await this.whatsappOutboundMessageDao.findByIdempotencyKey(idempotencyKey);
+    if (existing) return existing.metaMessageId;
 
-    const waMessageId = await this.sendFreeText(
-      phoneNumberId,
-      accessToken,
-      to,
-      body,
-      lastInboundAt,
-    );
-    await redisClient.set(markerKey, waMessageId ?? "", "EX", SENT_MARKER_TTL_SECONDS);
-    return waMessageId;
+    if (!lastInboundAt || Date.now() - lastInboundAt.getTime() > TWENTY_FOUR_HOURS_MS) {
+      throw new WhatsappWindowClosedError();
+    }
+    await this.whatsappQuotaService.assertCanSend();
+    const account = await this.whatsappAccountService.getOrCreateForTenant();
+
+    try {
+      const result = await sendTextMessage(phoneNumberId, accessToken, to, body);
+      const created = await this.whatsappOutboundMessageDao.create({
+        accountId: account.id,
+        catalogKey: FREE_TEXT_CATALOG_KEY,
+        to,
+        variables: {},
+        idempotencyKey,
+        status: "sent",
+        metaMessageId: result.messages?.[0]?.id ?? null,
+        errorMessage: null,
+      });
+      return created.metaMessageId;
+    } catch (error) {
+      // Dos ejecuciones concurrentes del mismo job (muy raro con
+      // concurrency:1, pero no imposible con mas de un worker) alcanzaron a
+      // mandar el texto real antes de que ninguna guardara la fila: la que
+      // pierde la carrera al insertar no reenvia, solo recupera lo que la
+      // otra ya registró.
+      if (error instanceof QueryFailedError && (error as { code?: string }).code === "23505") {
+        const raced = await this.whatsappOutboundMessageDao.findByIdempotencyKey(idempotencyKey);
+        if (raced) return raced.metaMessageId;
+      }
+      // Nunca bajo `idempotencyKey`: esa es la llave que un reintento revisa
+      // para no reenviar. Una fila "failed" ahí dejaría un fallo transitorio
+      // (ej. Meta caído un instante) marcado como resuelto para siempre, y el
+      // reintento nunca volvería a mandar el texto real.
+      await this.whatsappOutboundMessageDao
+        .create({
+          accountId: account.id,
+          catalogKey: FREE_TEXT_CATALOG_KEY,
+          to,
+          variables: {},
+          idempotencyKey: `${idempotencyKey}:failed:${randomUUID()}`,
+          status: "failed",
+          metaMessageId: null,
+          errorMessage: error instanceof Error ? error.message : "Error desconocido al enviar",
+        })
+        .catch((recordError) => {
+          console.error("No se pudo registrar el envío fallido de texto libre:", recordError);
+        });
+      throw error;
+    }
   }
 
   // Sin número de contacto no hay a quién avisar -- no es un error, la nota
