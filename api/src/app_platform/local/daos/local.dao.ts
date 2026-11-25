@@ -1,5 +1,5 @@
 import { isRowsTuple } from "../../../core/database/rows-result.js";
-import { Repository } from "typeorm";
+import { EntityManager, Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { Local } from "../entities/local.entity.js";
@@ -7,7 +7,9 @@ import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 
 export type FolioKind = "control" | "sale" | "return" | "quote" | "cut" | "count";
 
-export const FOLIOS: Readonly<Record<FolioKind, { counter: string; table: string; column: string }>> = {
+export const FOLIOS: Readonly<
+  Record<FolioKind, { counter: string; table: string; column: string }>
+> = {
   control: { counter: "siguiente_numero_control", table: "repair_notes", column: "numero_control" },
   sale: { counter: "siguiente_numero_venta", table: "sales", column: "numero_venta" },
   return: { counter: "siguiente_numero_devolucion", table: "returns", column: "numero_devolucion" },
@@ -81,16 +83,28 @@ export class LocalDao extends TenantScopedDao<Local> {
   }
 
   // UPDATE ... RETURNING atomico: dos consumos concurrentes nunca reciben el mismo folio.
-  async consume(folio: FolioKind): Promise<number> {
+  // Con `manager`, el incremento vive en la transaccion del documento: si el
+  // documento hace rollback, el folio tambien, y la serie no queda con huecos.
+  async consume(folio: FolioKind, manager?: EntityManager): Promise<number> {
     const local = await this.findOrCreate();
     const { counter } = FOLIOS[folio];
-    const rows = await this.runQuery<{ number: number }>(
-      `UPDATE local_config SET "${counter}" = "${counter}" + 1
+    const sql = `UPDATE local_config SET "${counter}" = "${counter}" + 1
        WHERE "id" = $1
-       RETURNING "${counter}" - 1 AS number`,
-      [local.id],
-    );
+       RETURNING "${counter}" - 1 AS number`;
+    if (manager) {
+      const result = (await manager.query(sql, [local.id])) as
+        { number: number }[] | [{ number: number }[], number];
+      const rows = isRowsTuple(result) ? result[0] : result;
+      return rows[0].number;
+    }
+    const rows = await this.runQuery<{ number: number }>(sql, [local.id]);
     return rows[0].number;
+  }
+
+  // El nombre del local es el nombre comercial del taller: el panel de
+  // plataforma lista los tenants por ese nombre.
+  async syncTenantName(name: string): Promise<void> {
+    await this.runQuery(`UPDATE tenants SET nombre = $1 WHERE id = $2`, [name, this.currentTenantId()]);
   }
 
   // Ultimo folio asignado de cada documento: el siguiente configurable nunca puede ser
@@ -102,7 +116,9 @@ export class LocalDao extends TenantScopedDao<Local> {
         return `(SELECT COALESCE(MAX("${column}"), 0) FROM "${table}" WHERE tenant_id = $1)::int AS "${kind}"`;
       })
       .join(", ");
-    const rows = await this.runQuery<Record<FolioKind, number>>(`SELECT ${selects}`, [this.currentTenantId()]);
+    const rows = await this.runQuery<Record<FolioKind, number>>(`SELECT ${selects}`, [
+      this.currentTenantId(),
+    ]);
     return rows[0];
   }
 }

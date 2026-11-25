@@ -10,6 +10,7 @@ function makeDao() {
     update: vi.fn(),
     consume: vi.fn(),
     lastUsedFolios: vi.fn(),
+    syncTenantName: vi.fn(),
   } as unknown as LocalDao;
 }
 
@@ -44,7 +45,7 @@ describe("LocalService.consumeControlNumber", () => {
 
     const service = new LocalService(dao);
     await expect(service.consumeControlNumber()).resolves.toBe(9);
-    expect(dao.consume).toHaveBeenCalledWith("control");
+    expect(dao.consume).toHaveBeenCalledWith("control", undefined);
   });
 });
 

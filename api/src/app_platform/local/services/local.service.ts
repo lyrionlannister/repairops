@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import type { EntityManager } from "typeorm";
 import { LocalDao, type FolioKind } from "../daos/local.dao.js";
 import type { UpdateLocalDto } from "../dtos/update-local.dto.js";
 import { toMoney } from "../../../core/common/utils/money.js";
@@ -12,7 +13,11 @@ import {
 
 export class LocalValidationError extends Error {}
 
-const FOLIO_FIELDS: ReadonlyArray<{ field: keyof UpdateLocalDto & keyof Local; kind: FolioKind; label: string }> = [
+const FOLIO_FIELDS: ReadonlyArray<{
+  field: keyof UpdateLocalDto & keyof Local;
+  kind: FolioKind;
+  label: string;
+}> = [
   { field: "nextControlNumber", kind: "control", label: "notas" },
   { field: "nextSaleNumber", kind: "sale", label: "ventas" },
   { field: "nextReturnNumber", kind: "return", label: "devoluciones" },
@@ -56,6 +61,7 @@ export class LocalService {
 
     const local = await this.localDao.findOrCreate();
     const updated = (await this.localDao.update(local.id, payload)) as Local;
+    if (payload.name) await this.localDao.syncTenantName(String(payload.name).trim());
     return this.withPalette(updated);
   }
 
@@ -78,20 +84,20 @@ export class LocalService {
     }
   }
 
-  consumeFolio(kind: FolioKind): Promise<number> {
-    return this.localDao.consume(kind);
+  consumeFolio(kind: FolioKind, manager?: EntityManager): Promise<number> {
+    return this.localDao.consume(kind, manager);
   }
 
-  async consumeControlNumber(): Promise<number> {
-    return this.localDao.consume("control");
+  async consumeControlNumber(manager?: EntityManager): Promise<number> {
+    return this.localDao.consume("control", manager);
   }
 
-  async consumeSaleNumber(): Promise<number> {
-    return this.localDao.consume("sale");
+  async consumeSaleNumber(manager?: EntityManager): Promise<number> {
+    return this.localDao.consume("sale", manager);
   }
 
-  async consumeReturnNumber(): Promise<number> {
-    return this.localDao.consume("return");
+  async consumeReturnNumber(manager?: EntityManager): Promise<number> {
+    return this.localDao.consume("return", manager);
   }
 
   private validateTimeZone(value: unknown): string {

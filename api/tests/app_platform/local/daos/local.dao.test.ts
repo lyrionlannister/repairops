@@ -39,4 +39,17 @@ describe("LocalDao.consumeControlNumber", () => {
 
     expect(new Set(results).size).toBe(results.length);
   });
+
+  it("gives the folio back when the document's transaction rolls back", async () => {
+    await runWithTenant(tenantId, async () => {
+      const before = await dao.consume("sale");
+      await expect(
+        AppDataSource.transaction(async (manager) => {
+          await dao.consume("sale", manager);
+          throw new Error("venta fallida");
+        }),
+      ).rejects.toThrow("venta fallida");
+      expect(await dao.consume("sale")).toBe(before + 1);
+    });
+  });
 });
