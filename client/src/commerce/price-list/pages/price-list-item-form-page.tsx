@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { PageShell } from "@common/components/page-shell/page-shell";
 
 import { usePriceList } from "../hooks/use-price-list";
+import { useSupplierPriceItems } from "../hooks/use-supplier-price-items";
 import { useSuppliers } from "@commerce/suppliers/hooks/use-suppliers";
 import { PriceListSupplierPanel } from "../components/price-list-supplier-panel";
 import { PriceListItemForm } from "../components/price-list-item-form";
@@ -16,27 +17,26 @@ export const PriceListItemFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { items, loading, saving, fetchAll, create, update } = usePriceList();
+  const { loading, saving, fetchById, create, update } = usePriceList();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const [form, setForm] = useState<PriceListItemFormData>(emptyForm);
 
   useEffect(() => {
-    fetchAll();
     fetchSuppliers();
-  }, [fetchAll, fetchSuppliers]);
+  }, [fetchSuppliers]);
 
   useEffect(() => {
     if (!isEdit || !id) return;
-    const item = items.find((i) => i.id === id);
-    if (item) {
+    fetchById(id).then((item) => {
+      if (!item) return;
       setForm({
         brand: item.brand,
         model: item.model,
         price: String(item.price),
         supplierId: item.supplierId,
       });
-    }
-  }, [isEdit, id, items]);
+    });
+  }, [isEdit, id, fetchById]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -56,9 +56,7 @@ export const PriceListItemFormPage: React.FC = () => {
   };
 
   const selectedSupplier = suppliers.find((s) => s.id === form.supplierId);
-  const otherItems = form.supplierId
-    ? items.filter((item) => item.supplierId === form.supplierId && item.id !== id)
-    : [];
+  const { otherItems, otherCount } = useSupplierPriceItems(form.supplierId, id);
 
   return (
     <PageShell
@@ -84,7 +82,7 @@ export const PriceListItemFormPage: React.FC = () => {
         />
 
         {selectedSupplier && (
-          <PriceListSupplierPanel supplierName={selectedSupplier.name} otherItems={otherItems} />
+          <PriceListSupplierPanel supplierName={selectedSupplier.name} otherItems={otherItems} otherCount={otherCount} />
         )}
       </div>
     </PageShell>

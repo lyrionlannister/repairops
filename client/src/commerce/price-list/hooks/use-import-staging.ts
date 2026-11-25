@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient, API_BASE_URL } from "@common/hooks/use-api-client";
 import type { StagingRow, StagingRecord } from "../types/import-staging";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 type StagingEvent = StagingRecord | { status: "error"; error: string };
 
@@ -26,12 +27,12 @@ export const useImportStaging = () => {
         );
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al subir el archivo");
+          throw new Error(apiErrorText(body, "Error al subir el archivo"));
         }
         const data = (await res.json()) as { importId: string };
         return data.importId;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setUploading(false);
@@ -72,10 +73,10 @@ export const useImportStaging = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ rows }),
         });
-        if (!res.ok) throw new Error("Error al guardar los cambios");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al guardar los cambios"));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -95,12 +96,12 @@ export const useImportStaging = () => {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(
-            (body as { error?: string }).error ?? "Error al confirmar la importación",
+            apiErrorText(body, "Error al confirmar la importación"),
           );
         }
         return (await res.json()) as { imported: number };
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);

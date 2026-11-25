@@ -5,6 +5,10 @@ import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 @Entity("price_list_items")
 @Index("IDX_price_list_items_tenant", ["tenantId"])
+@Index("IDX_price_list_items_tenant_brand_model", ["tenantId", "brand", "model"])
+// Indices GIN trigram (pg_trgm, migracion 029): TypeORM no sabe declararlos, se ignoran en la sincronizacion.
+@Index("IDX_price_list_items_marca_trgm", { synchronize: false })
+@Index("IDX_price_list_items_modelo_trgm", { synchronize: false })
 export class PriceListItem extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

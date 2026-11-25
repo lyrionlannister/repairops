@@ -11,6 +11,8 @@ export const createPriceListRouter = (controller: PriceListController): Router =
   router.use(authMiddleware, tenantMiddleware);
 
   router.get("/", requirePermission("settings.manage"), controller.getAll);
+  router.get("/brands", requirePermission("settings.manage"), controller.getBrands);
+  router.get("/:id", requirePermission("settings.manage"), controller.getById);
   router.post("/", requirePermission("settings.manage"), controller.create);
   router.patch("/:id", requirePermission("settings.manage"), controller.update);
   router.delete("/:id", requirePermission("settings.manage"), controller.delete);

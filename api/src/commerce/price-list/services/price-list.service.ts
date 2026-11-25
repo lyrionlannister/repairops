@@ -1,4 +1,6 @@
 import { singleton } from "tsyringe";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { PriceListFilters } from "../types/price-list-page.types.js";
 import { PriceListDao } from "../daos/price-list.dao.js";
 import { PriceListItem } from "../entities/price-list-item.entity.js";
 import { SupplierDao } from "../../suppliers/daos/supplier.dao.js";
@@ -16,6 +18,18 @@ export class PriceListService {
 
   async getAll(): Promise<PriceListItem[]> {
     return this.dao.findAllOrdered();
+  }
+
+  async getPage(filters: PriceListFilters, request: PageRequest): Promise<Page<PriceListItem>> {
+    return this.dao.findPage(filters, request);
+  }
+
+  async getById(id: string): Promise<PriceListItem | null> {
+    return this.dao.findWithSupplier(id);
+  }
+
+  async getBrands(): Promise<string[]> {
+    return this.dao.distinctBrands();
   }
 
   async search(query: string): Promise<PriceListItem[]> {

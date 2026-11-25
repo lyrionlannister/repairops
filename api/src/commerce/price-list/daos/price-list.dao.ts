@@ -4,6 +4,9 @@ import { repositoryToken } from "../../../core/di/repository-token.js";
 import { PriceListItem } from "../entities/price-list-item.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 import type { PriceListItemInput } from "../types/price-list-item-input.types.js";
+import type { PriceListFilters } from "../types/price-list-page.types.js";
+import { containsPattern } from "../../../core/database/like-pattern.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
 
 @singleton()
 export class PriceListDao extends TenantScopedDao<PriceListItem> {
@@ -19,10 +22,38 @@ export class PriceListDao extends TenantScopedDao<PriceListItem> {
       .getMany();
   }
 
+  async findPage(filters: PriceListFilters, request: PageRequest): Promise<Page<PriceListItem>> {
+    const builder = this.scoped().leftJoinAndSelect("entity.supplier", "supplier");
+    if (filters.brand) builder.andWhere("entity.brand = :brand", { brand: filters.brand });
+    if (filters.supplierId) builder.andWhere("entity.supplierId = :supplierId", { supplierId: filters.supplierId });
+    if (filters.search) {
+      builder.andWhere("(entity.model ILIKE :like OR entity.brand ILIKE :like)", {
+        like: containsPattern(filters.search),
+      });
+    }
+    builder.orderBy("entity.brand", "ASC").addOrderBy("entity.model", "ASC").addOrderBy("entity.id", "ASC");
+    return this.paginate(builder, request);
+  }
+
+  async findWithSupplier(id: string): Promise<PriceListItem | null> {
+    return this.scoped()
+      .leftJoinAndSelect("entity.supplier", "supplier")
+      .andWhere("entity.id = :id", { id })
+      .getOne();
+  }
+
+  async distinctBrands(): Promise<string[]> {
+    const rows = await this.scoped()
+      .select("DISTINCT entity.brand", "brand")
+      .orderBy("entity.brand", "ASC")
+      .getRawMany<{ brand: string }>();
+    return rows.map((row) => row.brand);
+  }
+
   async searchByModel(query: string): Promise<PriceListItem[]> {
     return this.scoped()
       .leftJoinAndSelect("entity.supplier", "supplier")
-      .andWhere("entity.model ILIKE :query", { query: `%${query}%` })
+      .andWhere("entity.model ILIKE :query", { query: containsPattern(query) })
       .orderBy("entity.brand", "ASC")
       .addOrderBy("entity.model", "ASC")
       .take(20)

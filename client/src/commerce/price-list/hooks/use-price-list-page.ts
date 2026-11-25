@@ -1,38 +1,43 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useApiClient } from "@common/hooks/use-api-client";
+import { useServerList } from "@common/hooks/use-server-list";
 import type { PriceListItem } from "../types/price-list";
 
+export const ALL_OPTION = "";
+
 export const usePriceListPage = ({
-  items,
   remove,
   initialSuccessMessage,
 }: {
-  items: PriceListItem[];
   remove: (id: string) => Promise<boolean>;
   initialSuccessMessage?: string | null;
 }) => {
+  const { apiClient } = useApiClient();
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(initialSuccessMessage ?? null);
   const [search, setSearch] = useState("");
-  const [activeBrand, setActiveBrand] = useState<string>("Todos");
-  const [activeSupplier, setActiveSupplier] = useState<string>("Todos");
+  const [activeBrand, setActiveBrand] = useState(ALL_OPTION);
+  const [activeSupplierId, setActiveSupplierId] = useState(ALL_OPTION);
+  const [brands, setBrands] = useState<string[]>([]);
 
-  const brands = useMemo(() => {
-    const set = new Set(items.map((item) => item.brand));
-    return ["Todos", ...Array.from(set).sort()];
-  }, [items]);
+  const list = useServerList<PriceListItem>("/price-list", {
+    search,
+    filters: { brand: activeBrand || undefined, supplierId: activeSupplierId || undefined },
+    errorText: "No pudimos cargar la lista de precios.",
+  });
 
-  const filtered = useMemo(() => {
-    return items.filter((item) => {
-      const matchesBrand = activeBrand === "Todos" || item.brand === activeBrand;
-      const matchesSupplier = activeSupplier === "Todos" || item.supplier?.name === activeSupplier;
-      const matchesSearch =
-        !search ||
-        item.model.toLowerCase().includes(search.toLowerCase()) ||
-        item.brand.toLowerCase().includes(search.toLowerCase());
+  const fetchBrands = useCallback(async () => {
+    try {
+      const response = await apiClient("/price-list/brands");
+      if (response.ok) setBrands((await response.json()) as string[]);
+    } catch {
+      setBrands([]);
+    }
+  }, [apiClient]);
 
-      return matchesBrand && matchesSupplier && matchesSearch;
-    });
-  }, [items, activeBrand, activeSupplier, search]);
+  useEffect(() => {
+    void fetchBrands();
+  }, [fetchBrands]);
 
   const notify = (message: string) => {
     setSuccessMsg(message);
@@ -41,11 +46,15 @@ export const usePriceListPage = ({
 
   const handleDelete = async (id: string) => {
     const ok = await remove(id);
-    if (ok) notify("Item eliminado.");
     setDeleteConfirmId(null);
+    if (ok) {
+      notify("Producto eliminado.");
+      await Promise.all([list.refetch(), fetchBrands()]);
+    }
   };
 
   return {
+    list,
     deleteConfirmId,
     setDeleteConfirmId,
     successMsg,
@@ -53,10 +62,10 @@ export const usePriceListPage = ({
     setSearch,
     activeBrand,
     setActiveBrand,
-    activeSupplier,
-    setActiveSupplier,
+    activeSupplierId,
+    setActiveSupplierId,
     brands,
-    filtered,
+    hasFilters: list.hasSearch || Boolean(activeBrand) || Boolean(activeSupplierId),
     handleDelete,
   };
 };
