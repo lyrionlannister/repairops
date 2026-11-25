@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import { readPageQuery } from "../../../core/common/utils/page-query.js";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -146,7 +147,10 @@ export class CashController {
   getCuts = async (req: Request, res: Response): Promise<void> => {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
-      res.status(200).json(await this.service.getCuts(branchId));
+      const page = await readPageQuery(req.query);
+      res
+        .status(200)
+        .json(page ? await this.service.getCutsPage(branchId, page) : await this.service.getCuts(branchId));
     } catch (error) {
       sendError(res, error, 500);
     }

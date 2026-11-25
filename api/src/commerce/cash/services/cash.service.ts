@@ -1,4 +1,6 @@
 import { singleton } from "tsyringe";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import AppDataSource from "../../../core/config/data-source.js";
 import { Decimal } from "decimal.js";
 import { CashSessionDao } from "../daos/cash-session.dao.js";
 import { CashMovementDao } from "../daos/cash-movement.dao.js";
@@ -69,12 +71,19 @@ export class CashService {
     if (existing) {
       throw new BusinessError("Ya hay una sesión de caja abierta para este local");
     }
-    const session = await this.sessionDao.create({
-      localId,
-      openingBalance: toMoney(openingBalance),
-      openedByEmployeeId: currentUserId(),
-      status: "open",
-    });
+    const session = await this.sessionDao
+      .create({
+        localId,
+        openingBalance: toMoney(openingBalance),
+        openedByEmployeeId: currentUserId(),
+        status: "open",
+      })
+      .catch((error: unknown) => {
+        if ((error as { code?: string }).code === "23505") {
+          throw new BusinessError("Ya hay una sesión de caja abierta para este local");
+        }
+        throw error;
+      });
     await this.auditLogService.recordForCurrentActor({
       action: AUDIT_ACTIONS.CASH_SESSION_OPENED,
       entity: "cash-session",
@@ -130,18 +139,25 @@ export class CashService {
       }
     }
 
-    const cutNumber = await this.localService.consumeFolio("cut");
-    const updated = await this.sessionDao.update(id, {
-      status: "closed",
-      cutNumber,
-      closingBalance: toMoney(closingBalance),
-      closedAt: new Date(),
-      variance: toMoney(variance),
-      varianceReason: variance.isZero() ? null : (reason ?? null),
-      varianceAuthorizedByEmployeeId: authorizedByEmployeeId ?? null,
-      closedByEmployeeId: currentUserId(),
+    const { cutNumber, updated } = await AppDataSource.transaction(async (manager) => {
+      const cutNumber = await this.localService.consumeFolio("cut", manager);
+      const updated = await this.sessionDao.closeIfOpen(
+        id,
+        {
+          status: "closed",
+          cutNumber,
+          closingBalance: toMoney(closingBalance),
+          closedAt: new Date(),
+          variance: toMoney(variance),
+          varianceReason: variance.isZero() ? null : (reason ?? null),
+          varianceAuthorizedByEmployeeId: authorizedByEmployeeId ?? null,
+          closedByEmployeeId: currentUserId(),
+        },
+        manager,
+      );
+      if (!updated) throw new BusinessError("La sesión ya está cerrada");
+      return { cutNumber, updated };
     });
-    if (!updated) throw new BusinessError("Sesión de caja no encontrada");
     await this.auditLogService.recordForCurrentActor({
       action: AUDIT_ACTIONS.CASH_SESSION_CLOSED,
       entity: "cash-session",
@@ -222,6 +238,18 @@ export class CashService {
 
   async getCuts(branchId: string | null, limit = 50): Promise<CashCutRow[]> {
     return this.sessionDao.findClosedCuts({ branchId, limit });
+  }
+
+  async getCutsPage(branchId: string | null, request: PageRequest): Promise<Page<CashCutRow>> {
+    const [items, total] = await Promise.all([
+      this.sessionDao.findClosedCuts({
+        branchId,
+        limit: request.pageSize,
+        offset: (request.page - 1) * request.pageSize,
+      }),
+      this.sessionDao.countClosedCuts(branchId),
+    ]);
+    return { items, total, page: request.page, pageSize: request.pageSize };
   }
 
   async getLastCut(branchId: string | null): Promise<CashCutRow | null> {

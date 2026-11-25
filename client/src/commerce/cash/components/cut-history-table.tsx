@@ -8,9 +8,21 @@ import type { CutHistoryTableProps } from "../props/cut-history-table-props";
 const HEADER =
   "px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400";
 
-export const CutHistoryTable: FC<CutHistoryTableProps> = ({ cuts, onView }) => (
+export const CutHistoryTable: FC<CutHistoryTableProps> = ({
+  cuts,
+  loading,
+  error,
+  onRetry,
+  pagination,
+  onView,
+}) => (
   <DataTable
     containerClassName="shrink-0"
+    loading={loading}
+    loadingText="Cargando cortes..."
+    error={cuts.length === 0 ? error : null}
+    onRetry={onRetry}
+    pagination={pagination}
     isEmpty={cuts.length === 0}
     empty={{
       icon: <History />,
@@ -23,7 +35,7 @@ export const CutHistoryTable: FC<CutHistoryTableProps> = ({ cuts, onView }) => (
           Historial de cortes
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Últimos {cuts.length} cierres de esta sucursal
+          {pagination.totalItems} {pagination.totalItems === 1 ? "cierre" : "cierres"} de esta sucursal
         </p>
       </div>
     }

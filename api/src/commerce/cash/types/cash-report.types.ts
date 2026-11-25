@@ -67,4 +67,5 @@ export interface CashCutQuery {
   sessionId?: string;
   monthOf?: { timeZone: string };
   limit?: number;
+  offset?: number;
 }

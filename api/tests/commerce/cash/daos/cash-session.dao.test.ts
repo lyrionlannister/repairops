@@ -42,7 +42,7 @@ describe("CashSessionDao tenant isolation", () => {
 
   it("findById returns null for a row that belongs to another tenant", async () => {
     const created = await runWithTenant(tenantA, () =>
-      dao.create({ localId: "1", openingBalance: 10, status: "open" }),
+      dao.create({ localId: "1", openingBalance: 10, status: "closed" }),
     );
 
     const fromOtherTenant = await runWithTenant(tenantB, () => dao.findById(created.id));

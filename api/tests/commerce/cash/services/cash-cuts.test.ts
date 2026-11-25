@@ -15,7 +15,7 @@ import { effectivePermissions } from "../../../../src/identity/authz/permissions
 import type { UserRole } from "../../../../src/identity/auth/entities/user.entity.js";
 import { runWithTenant, type RequestActor } from "../../../../src/core/tenancy/tenant-context.js";
 import { setupStaff } from "../../../support/staff.js";
-import { makeUserRoleDao } from "../../../support/authz-deps.js";
+import { makeUserRoleDao, makeAuditLogStub } from "../../../support/authz-deps.js";
 
 // Integración contra Postgres real: arqueo ciego (montos ocultos al cajero con la caja abierta),
 // quién abre/cierra, y cortes (historial e indicadores) aislados por taller.
@@ -55,7 +55,7 @@ describe("CashService: cortes y arqueo ciego", () => {
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
       new UserDao(AppDataSource.getRepository(User)),
-      makeUserRoleDao(),
+      makeUserRoleDao(), makeAuditLogStub(),
     );
   });
 
