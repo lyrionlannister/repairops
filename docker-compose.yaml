@@ -4,6 +4,7 @@ services:
       context: ./infra/database
       dockerfile: Dockerfile
     container_name: repairops-postgres
+    restart: unless-stopped
     env_file:
       - ./infra/database/.env
     ports:
@@ -22,6 +23,7 @@ services:
     build:
       context: ./infra/redis
     container_name: repairops-redis
+    restart: unless-stopped
     env_file:
       - ./infra/redis/.env
     ports:
@@ -44,6 +46,7 @@ services:
       dockerfile: Dockerfile
     image: repairops-automation
     container_name: repairops-automation
+    restart: unless-stopped
     env_file:
       - ./automation/.env
     ports:
@@ -67,6 +70,7 @@ services:
       context: ./api
       dockerfile: Dockerfile
     container_name: repairops-api
+    restart: unless-stopped
     env_file:
       - ./api/.env
     environment:
@@ -93,6 +97,7 @@ services:
       dockerfile: Dockerfile
     image: repairops-client
     container_name: repairops-client
+    restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
@@ -106,6 +111,7 @@ services:
   nginx:
     image: docker.io/library/nginx:alpine
     container_name: repairops-nginx
+    restart: unless-stopped
     ports:
       - "${NGINX_HTTP_PORT:-8080}:80"
       - "${NGINX_HTTPS_PORT:-443}:443"
