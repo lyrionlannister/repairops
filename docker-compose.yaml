@@ -118,6 +118,7 @@ services:
     volumes:
       - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./infra/nginx/certs:/etc/nginx/certs:ro
+      - certbot_certs:/etc/letsencrypt:ro
     depends_on:
       api:
         condition: service_healthy
@@ -131,6 +132,17 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  certbot:
+    image: docker.io/certbot/dns-cloudflare:latest
+    container_name: repairops-certbot
+    restart: unless-stopped
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - ./infra/SSL/cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro
+    # DNS-01: no necesita puerto 80 abierto ni pasar por el tunel. Solo
+    # renueva: el alta inicial del cert se corre a mano (ver infra/SSL/README.md).
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done'
 
   cloudflared:
     image: docker.io/cloudflare/cloudflared:latest
@@ -151,4 +163,4 @@ volumes:
   postgres_prod_data:
   redis_data:
   automation_data:
-  
+  certbot_certs:

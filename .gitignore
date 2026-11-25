@@ -15,6 +15,9 @@ CLAUDE.md
 # Config de nginx y certs locales (mkcert): por entorno, nunca se commitean
 nginx/
 
+# Token de Cloudflare para el DNS-01 de certbot: secreto, por entorno
+infra/SSL/cloudflare.ini
+
 # Logs
 logs
 *.log

@@ -1,0 +1,6 @@
+# Copiar a infra/certbot/cloudflare.ini (gitignored) y poner el token real.
+# Token: dash.cloudflare.com -> perfil -> API Tokens -> Create Token ->
+# plantilla "Edit zone DNS", scope solo a la zona kaltrafix.mx.
+# chmod 600 el archivo final: certbot corre como root dentro del contenedor
+# pero igual es un secreto en disco del host.
+dns_cloudflare_api_token = TOKEN_AQUI
