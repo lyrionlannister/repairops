@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, Index } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { BaseEntity } from "../../common/entities/base.entity.js";
+import { Tenant } from "../../tenancy/entities/tenant.entity.js";
 
 // Bitácora de auditoría mínima: quién hizo qué, cuándo y sobre qué.
 // `tenantId`/`userId` son nulos en eventos sin tenant resuelto todavía
@@ -11,6 +12,12 @@ import { BaseEntity } from "../../common/entities/base.entity.js";
 export class AuditLog extends BaseEntity {
   @Column({ type: "bigint", nullable: true, name: "tenant_id" })
   tenantId!: string | null;
+
+  // Borrar un tenant borra su bitácora: es dato del cliente y no debe
+  // sobrevivir a la baja. Los eventos sin tenant (tenantId nulo) no se tocan.
+  @ManyToOne(() => Tenant, { onDelete: "CASCADE", nullable: true })
+  @JoinColumn({ name: "tenant_id", foreignKeyConstraintName: "FK_audit_logs_tenant" })
+  tenant?: Tenant | null;
 
   @Column({ type: "bigint", nullable: true, name: "user_id" })
   userId!: string | null;
