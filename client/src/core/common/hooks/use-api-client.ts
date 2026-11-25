@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useToast } from "./use-toast";
+import { apiErrorText } from "../utils/api-error";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -37,7 +38,21 @@ const tryRefreshSession = async (): Promise<boolean> => {
 // cualquier metodo). Excepciones: chats/notificaciones son alta frecuencia o
 // polling, y logout redirige solo, asi que unicamente avisa errores.
 const SILENT_PREFIXES = ["/chats", "/notifications"];
-const SILENT_SUCCESS_PREFIXES = ["/auth/logout"];
+const SILENT_SUCCESS_PREFIXES = ["/auth/logout", "/auth/forgot-password", "/auth/reset-password"];
+
+// Solo las rutas donde un 401 es un fallo real de credenciales. /auth/users/me
+// y /auth/employees si renuevan: antes todo /auth/* quedaba fuera, y al vencer
+// el access token (15 min) el guard veia 401 en /me y cerraba la sesion de un
+// usuario activo aunque su refresh token siguiera vigente.
+const NO_REFRESH_PREFIXES = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/logout",
+  "/auth/verify-email",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
 
 const SUCCESS_TITLE: Record<string, string> = {
   POST: "Creado correctamente",
@@ -122,7 +137,10 @@ export const useApiClient = () => {
       // una sola vez y reintentar la petición original. Si el refresh falla,
       // la respuesta 401 sigue su curso normal (el guard redirige al login).
       // Nunca en las rutas de auth: ahí un 401 es un fallo real de login.
-      if (response.status === 401 && !endpoint.startsWith("/auth/")) {
+      if (
+        response.status === 401 &&
+        !NO_REFRESH_PREFIXES.some((prefix) => endpoint.startsWith(prefix))
+      ) {
         const refreshed = await tryRefreshSession();
         if (refreshed) {
           try {
@@ -151,7 +169,7 @@ export const useApiClient = () => {
             .clone()
             .json()
             .catch(() => ({}));
-          const message = String((body as { error?: unknown }).error ?? `Error ${response.status}`);
+          const message = apiErrorText(body, "Algo salió mal. Intenta de nuevo.");
           showToast({ title: "No se pudo completar la acción", message, variant: "error" });
           // Suscripción vencida/cancelada: nada en la app sirve hasta que
           // elija plan de nuevo (ver tenant.middleware.ts), lo manda directo
@@ -171,7 +189,7 @@ export const useApiClient = () => {
           } else {
             showToast({
               title: "No se pudo completar la acción",
-              message: String((body as { error?: unknown }).error ?? `Error ${response.status}`),
+              message: apiErrorText(body, "Algo salió mal. Intenta de nuevo."),
               variant: "error",
             });
           }
@@ -183,7 +201,7 @@ export const useApiClient = () => {
             .catch(() => ({}));
           showToast({
             title: "No se pudo completar la acción",
-            message: String((body as { error?: unknown }).error ?? `Error ${response.status}`),
+            message: apiErrorText(body, "Algo salió mal. Intenta de nuevo."),
             variant: "error",
           });
         }
