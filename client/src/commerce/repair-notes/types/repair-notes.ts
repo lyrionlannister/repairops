@@ -67,6 +67,7 @@ export interface RepairNoteItemInput {
 
 export interface RepairNoteItemRecord extends RepairNoteItemInput {
   id: string;
+  itemName?: string | null;
 }
 
 export type RepairNoteStatus = "received" | "in_repair" | "done" | "delivered" | "cancelled";

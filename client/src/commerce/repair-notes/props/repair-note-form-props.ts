@@ -27,8 +27,8 @@ export interface RepairNoteFormProps {
   onTechnicianNotesChange: (value: string) => void;
   onAdditionalFindingsChange: (value: string) => void;
   itemLines: RepairNoteItemLine[];
-  inventoryItems: InventoryItem[];
-  onItemChange: (index: number, inventoryItemId: string) => void;
+  branchId: string | null;
+  onItemChange: (index: number, item: InventoryItem | null) => void;
   onLineChange: (index: number, patch: Partial<RepairNoteItemLine>) => void;
   onAddLine: () => void;
   onRemoveLine: (index: number) => void;

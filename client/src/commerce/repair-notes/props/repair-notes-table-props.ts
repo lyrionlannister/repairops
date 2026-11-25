@@ -3,8 +3,7 @@ import type { RepairNoteRecord } from "../types/repair-notes";
 export interface RepairNotesTableProps {
   loading: boolean;
   error: string | null;
-  notes: RepairNoteRecord[];
-  filteredNotes: RepairNoteRecord[];
+  hasFilters: boolean;
   pageItems: RepairNoteRecord[];
   canEditNotes: boolean;
   canCreateNotes: boolean;

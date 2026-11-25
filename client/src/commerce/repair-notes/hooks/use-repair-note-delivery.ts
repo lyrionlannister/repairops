@@ -6,6 +6,7 @@ import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useCustomers } from "@commerce/customers/hooks/use-customers";
 import type { RepairNoteRecord } from "../types/repair-notes";
 import type { DeliveryPaymentLine } from "../types/repair-note-delivery";
+import { apiErrorText } from "@common/utils/api-error";
 
 // Redondeo a centavos para comparar (0.1 + 0.2 nunca cuadra exacto en el navegador).
 const round2 = (value: number) => Math.round(value * 100) / 100;
@@ -118,12 +119,12 @@ export const useRepairNoteDelivery = (note: RepairNoteRecord | null, onDelivered
       });
       if (!response.ok) {
         const data = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error || "No se pudo entregar la nota");
+        throw new Error(apiErrorText(data, "No se pudo entregar la nota"));
       }
       setOpen(false);
       onDelivered();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setSaving(false);
     }

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
 import { useRepairNotes } from "../hooks/use-repair-notes";
@@ -6,7 +5,6 @@ import { useRepairNotesPage } from "../hooks/use-repair-notes-page";
 import { Button } from "@ui/button/button";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
-import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { usePermissions } from "@common/hooks/use-permissions";
 import { RepairNotesFilterBar } from "../components/repair-notes-filter-bar";
 import { RepairNotesTable } from "../components/repair-notes-table";
@@ -17,15 +15,15 @@ export const RepairNotesPage: React.FC = () => {
   const { can, canAny } = usePermissions();
   const canEditNotes = canAny("repair-notes.write", "repair-notes.write.own");
   const canCreateNotes = canAny("repair-notes.create", "repair-notes.create.own");
-  const { notes, loading, error, fetchNotes, deleteNote, cancelNote, changeStatus } = useRepairNotes();
+  const { deleteNote, cancelNote, changeStatus } = useRepairNotes();
   const {
+    list,
     search,
     setSearch,
     statusFilter,
     setStatusFilter,
     deletingId,
     cancellingId,
-    filteredNotes,
     confirmDeleteId,
     setConfirmDeleteId,
     confirmCancelId,
@@ -35,14 +33,7 @@ export const RepairNotesPage: React.FC = () => {
     advancingId,
     advanceStatus,
     deliveryModalProps,
-  } = useRepairNotesPage({ notes, deleteNote, cancelNote, changeStatus, refetch: fetchNotes });
-
-  const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
-    usePaginatedList(filteredNotes);
-
-  useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
+  } = useRepairNotesPage({ deleteNote, cancelNote, changeStatus });
 
   return (
     <PageShell
@@ -50,7 +41,11 @@ export const RepairNotesPage: React.FC = () => {
       description="Gestiona el taller de reparación de celulares."
       action={
         canCreateNotes ? (
-          <Button variant="primary" startIcon={<Plus className="size-4" />} onClick={() => navigate("/commerce/repair-notes/new")}>
+          <Button
+            variant="primary"
+            startIcon={<Plus className="size-4" />}
+            onClick={() => navigate("/commerce/repair-notes/new")}
+          >
             Nueva nota
           </Button>
         ) : undefined
@@ -58,37 +53,30 @@ export const RepairNotesPage: React.FC = () => {
     >
       <RepairNotesFilterBar
         search={search}
-        onSearchChange={(value) => {
-          setSearch(value);
-          setPage(1);
-        }}
+        onSearchChange={setSearch}
         statusFilter={statusFilter}
-        onStatusFilterChange={(value) => {
-          setStatusFilter(value);
-          setPage(1);
-        }}
+        onStatusFilterChange={setStatusFilter}
       />
 
       <RepairNotesTable
-        loading={loading}
-        error={error}
-        notes={notes}
-        filteredNotes={filteredNotes}
-        pageItems={pageItems}
+        loading={list.loading}
+        error={list.error}
+        hasFilters={list.hasFilters}
+        pageItems={list.items}
         canEditNotes={canEditNotes}
         canCreateNotes={canCreateNotes}
         canCancelNotes={can("repair-notes.write")}
         canDeleteNotes={can("repair-notes.delete")}
         cancellingId={cancellingId}
         deletingId={deletingId}
-        page={page}
-        pageSize={pageSize}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        startIndex={startIndex}
-        onRetry={fetchNotes}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
+        page={list.page}
+        pageSize={list.pageSize}
+        totalPages={list.totalPages}
+        totalItems={list.total}
+        startIndex={list.startIndex}
+        onRetry={() => void list.refetch()}
+        onPageChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
         onRequestCancel={setConfirmCancelId}
         onRequestDelete={setConfirmDeleteId}
         advancingId={advancingId}

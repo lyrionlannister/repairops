@@ -53,6 +53,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
   let repairNoteService: RepairNoteService;
   let inventoryService: InventoryService;
   let reservationDao: InventoryReservationDao;
+  let itemDao: InventoryItemDao;
   const tenantId = `${Date.now()}3`;
 
   const buildRepairNoteService = (whatsappAccountService: WhatsappAccountService) => {
@@ -79,7 +80,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
+    itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
     reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
     inventoryService = new InventoryService(itemDao, movementDao, reservationDao);

@@ -1,4 +1,6 @@
 import { singleton } from "tsyringe";
+import type { RepairNoteFilters, RepairNoteStats } from "../types/repair-note-page.types.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
 import { currentUserId, lacks } from "../../../identity/authz/access.js";
 import type { EntityManager } from "typeorm";
 import { BusinessError } from "../../../core/http/business-error.js";
@@ -32,6 +34,8 @@ import { buildNoteQrUrl } from "../../../messaging/whatsapp-official/utils/note-
 import { generatePublicRef } from "../utils/public-ref.js";
 import { Decimal } from "decimal.js";
 import { CashSession } from "../../cash/entities/cash-session.entity.js";
+import { User } from "../../../identity/auth/entities/user.entity.js";
+import { UserRoleAssignment } from "../../../identity/auth/entities/user-role.entity.js";
 import { CashMovement } from "../../cash/entities/cash-movement.entity.js";
 import {
   RepairNotePayment,
@@ -135,7 +139,7 @@ export class RepairNoteService {
   private async validateItemPrices(items: RepairNoteItemInput[]): Promise<void> {
     for (const item of items) {
       const inventoryItem = await this.itemDao.findById(item.inventoryItemId);
-      if (!inventoryItem) throw new BusinessError("Item de inventario no encontrado");
+      if (!inventoryItem) throw new BusinessError("No encontramos el producto en el inventario");
       const price = new Decimal(item.unitPrice);
       if (price.equals(new Decimal(inventoryItem.salePrice))) continue;
       if (inventoryItem.supplierId) {
@@ -145,12 +149,25 @@ export class RepairNoteService {
         );
         if (listItem && price.equals(new Decimal(listItem.price))) continue;
       }
-      throw new BusinessError("El precio unitario no coincide con el precio de venta del item");
+      throw new BusinessError("El precio no coincide con el precio de venta del producto. Recarga la página e intenta de nuevo.");
     }
   }
 
   async getAll(branchId?: string | null): Promise<RepairNoteWithDevices[]> {
     return this.withDevices(await this.repairNoteDao.findAllOrdered(branchId));
+  }
+
+  async getPage(filters: RepairNoteFilters, request: PageRequest): Promise<Page<RepairNoteWithDevices>> {
+    const page = await this.repairNoteDao.findPage(filters, request);
+    return { ...page, items: await this.withDevices(page.items) };
+  }
+
+  async getStats(filters: RepairNoteFilters): Promise<RepairNoteStats> {
+    return this.repairNoteDao.countStats(filters);
+  }
+
+  async getKnownBrands(): Promise<string[]> {
+    return this.repairNoteDeviceDao.distinctBrands();
   }
 
   async getById(id: string): Promise<RepairNoteWithDevices | null> {
@@ -218,9 +235,13 @@ export class RepairNoteService {
 
   // Las sub-lecturas pasan por findById: una nota que el usuario no ve (otro taller,
   // otra sucursal o, para el técnico, ajena) no deja ver sus items, tipos ni pagos.
-  async getItems(repairNoteId: string): Promise<RepairNoteItem[]> {
+  async getItems(repairNoteId: string): Promise<Array<RepairNoteItem & { itemName: string | null }>> {
     if (!(await this.repairNoteDao.findById(repairNoteId))) return [];
-    return this.repairNoteItemDao.findByRepairNoteId(repairNoteId);
+    const items = await this.repairNoteItemDao.findByRepairNoteId(repairNoteId);
+    const labels = await this.itemDao.findLabels(items.map((item) => item.inventoryItemId));
+    return items.map((item) =>
+      Object.assign(item, { itemName: labels.get(String(item.inventoryItemId))?.name ?? null }),
+    );
   }
 
   async getServiceTypeIds(repairNoteId: string): Promise<string[]> {
@@ -252,8 +273,8 @@ export class RepairNoteService {
       ? { ...noteData, assignedEmployeeId: currentUserId() }
       : noteData;
     const tenantId = getCurrentTenantId();
+    await this.assertAssignableTechnician(fields.assignedEmployeeId, tenantId);
     await this.assertCanCollectAdvance(fields, advancePayment, tenantId);
-    const controlNumber = await this.localService.consumeControlNumber();
     const local = await this.localService.getConfig();
     const receivedTime = new Date().toLocaleTimeString("en-GB", {
       timeZone: local.timeZone,
@@ -269,7 +290,6 @@ export class RepairNoteService {
           fields,
           devices,
           items,
-          controlNumber,
           tenantId,
           advancePayment,
           receivedTime,
@@ -289,12 +309,12 @@ export class RepairNoteService {
     data: NoteCreateFields,
     devices: RepairNoteDeviceView[],
     items: RepairNoteItemInput[],
-    controlNumber: number,
     tenantId: string,
     advancePayment: AdvancePaymentInput | undefined,
     receivedTime: string,
   ): Promise<RepairNote> {
     return AppDataSource.transaction(async (manager) => {
+      const controlNumber = await this.localService.consumeControlNumber(manager);
       const customerId = await resolveOrCreateCustomer(manager, tenantId, data);
       const note = manager.create(RepairNote, {
         ...data,
@@ -342,6 +362,26 @@ export class RepairNoteService {
   }
 
   // Reglas del anticipo que no dependen del folio: se revisan antes de consumirlo.
+  // La nota solo se asigna a quien repara: un usuario activo del tenant con
+  // rol de técnico o dueño (en talleres chicos el dueño también repara).
+  private async assertAssignableTechnician(
+    employeeId: string | null | undefined,
+    tenantId: string,
+  ): Promise<void> {
+    if (!employeeId) return;
+    const user = await AppDataSource.manager.findOne(User, {
+      where: { id: employeeId, tenantId, isActive: true },
+    });
+    const roles = user
+      ? await AppDataSource.manager.find(UserRoleAssignment, {
+          where: { userId: user.id, tenantId },
+        })
+      : [];
+    if (!roles.some((r) => r.role === "technician" || r.role === "owner")) {
+      throw new BusinessError("Asigna la nota a un técnico activo");
+    }
+  }
+
   private async assertCanCollectAdvance(
     data: NoteCreateFields,
     input: AdvancePaymentInput | undefined,
@@ -548,11 +588,24 @@ export class RepairNoteService {
     const tenantId = getCurrentTenantId();
     // Las escrituras de abajo van directo al manager: este findById es el que aplica
     // sucursal y, para el técnico, que la nota sea suya.
-    if (!(await this.repairNoteDao.findById(id))) return null;
+    const existing = await this.repairNoteDao.findById(id);
+    if (!existing) return null;
+    if (existing.status === "cancelled") {
+      throw new BusinessError("La nota está cancelada: ya no se puede editar");
+    }
+    if (existing.status === "delivered" && data.status !== undefined && data.status !== "delivered") {
+      throw new BusinessError("La nota ya fue entregada: no se puede cambiar su estado");
+    }
     if (items !== undefined) await this.validateItemPrices(items);
     if (lacks("repair-notes.write")) {
       const { assignedEmployeeId: _ignored, ...rest } = data;
       data = rest;
+    }
+    if (
+      data.assignedEmployeeId !== undefined &&
+      String(data.assignedEmployeeId ?? "") !== String(existing.assignedEmployeeId ?? "")
+    ) {
+      await this.assertAssignableTechnician(data.assignedEmployeeId, tenantId);
     }
 
     if ("advanceValue" in data || "requiresAdvance" in data) {
@@ -733,7 +786,28 @@ export class RepairNoteService {
     return cancelledNote;
   }
 
+  // Borrar arrastra en cascada pagos y renglones: una nota con dinero cobrado o
+  // stock ya descontado se cancela (deja rastro), nunca se borra.
   async delete(id: string): Promise<boolean> {
-    return this.repairNoteDao.delete(id);
+    const tenantId = getCurrentTenantId();
+    if (!(await this.repairNoteDao.findById(id))) return false;
+    return AppDataSource.transaction(async (manager) => {
+      const note = await manager.findOneBy(RepairNote, { id, tenantId });
+      if (!note) return false;
+      const payments = await manager.count(RepairNotePayment, { where: { repairNoteId: id, tenantId } });
+      if (payments > 0 || isCommitted(note.status)) {
+        throw new BusinessError(
+          "La nota tiene pagos o refacciones ya usadas: cancélala en lugar de eliminarla",
+        );
+      }
+      if (note.status !== "cancelled") {
+        const items = await manager.find(RepairNoteItem, { where: { repairNoteId: id, tenantId } });
+        for (const item of items) {
+          await this.inventoryReservationService.release(manager, "repair_note_item", item.id);
+        }
+      }
+      await manager.delete(RepairNote, { id, tenantId });
+      return true;
+    });
   }
 }

@@ -2,7 +2,10 @@ import { Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { RepairNote } from "../entities/repair-note.entity.js";
+import type { RepairNoteFilters, RepairNoteStats } from "../types/repair-note-page.types.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
+import { containsPattern } from "../../../core/database/like-pattern.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
 import { can, currentUserId } from "../../../identity/authz/access.js";
 
 // Quien solo tiene repair-notes.read.own (el técnico) ve únicamente las notas asignadas a
@@ -21,7 +24,8 @@ export class RepairNoteDao extends TenantScopedDao<RepairNote> {
   protected override scoped(alias = "entity") {
     const query = super.scoped(alias);
     const ownerId = ownNotesOnly();
-    if (ownerId) query.andWhere(`${alias}.assignedEmployeeId = :ownNotesUserId`, { ownNotesUserId: ownerId });
+    if (ownerId)
+      query.andWhere(`${alias}.assignedEmployeeId = :ownNotesUserId`, { ownNotesUserId: ownerId });
     return query;
   }
 
@@ -44,11 +48,53 @@ export class RepairNoteDao extends TenantScopedDao<RepairNote> {
   async findAllOrdered(branchId?: string | null): Promise<RepairNote[]> {
     return this.scoped()
       .andWhere(branchId ? "entity.localId = :branchId" : "1 = 1", { branchId })
-      .orderBy("entity.controlNumber", "DESC").getMany();
+      .orderBy("entity.controlNumber", "DESC")
+      .getMany();
+  }
+
+  async findPage(filters: RepairNoteFilters, request: PageRequest): Promise<Page<RepairNote>> {
+    const builder = this.filtered(filters);
+    if (filters.status === "open") {
+      builder.andWhere("entity.status NOT IN ('delivered', 'cancelled')");
+    } else if (filters.status) {
+      builder.andWhere("entity.status = :status", { status: filters.status });
+    }
+    if (filters.search) {
+      builder.andWhere(
+        `(entity.customerName ILIKE :like OR CAST(entity.controlNumber AS text) LIKE :like
+          OR EXISTS (SELECT 1 FROM repair_note_devices d
+            WHERE d.id_nota_reparacion = entity.id AND d.tenant_id = entity.tenant_id
+              AND (d.marca || ' ' || d.modelo) ILIKE :like))`,
+        { like: containsPattern(filters.search) },
+      );
+    }
+    return this.paginate(builder.orderBy("entity.controlNumber", "DESC"), request);
+  }
+
+  async countStats(filters: RepairNoteFilters): Promise<RepairNoteStats> {
+    const row = await this.filtered(filters)
+      .select("COUNT(*)::int", "total")
+      .addSelect("COUNT(*) FILTER (WHERE entity.status NOT IN ('delivered', 'cancelled'))::int", "open")
+      .getRawOne<RepairNoteStats>();
+    return { total: Number(row?.total ?? 0), open: Number(row?.open ?? 0) };
+  }
+
+  private filtered(filters: RepairNoteFilters) {
+    const builder = this.scoped();
+    if (filters.branchId) builder.andWhere("entity.localId = :branchId", { branchId: filters.branchId });
+    if (filters.customerId) builder.andWhere("entity.customerId = :customerId", { customerId: filters.customerId });
+    if (filters.assignedEmployeeId) {
+      builder.andWhere("entity.assignedEmployeeId = :assignedEmployeeId", {
+        assignedEmployeeId: filters.assignedEmployeeId,
+      });
+    }
+    return builder;
   }
 
   async findByControlNumber(controlNumber: number): Promise<RepairNote | null> {
-    return this.scoped().andWhere("entity.controlNumber = :controlNumber", { controlNumber }).getOne();
+    return this.scoped()
+      .andWhere("entity.controlNumber = :controlNumber", { controlNumber })
+      .getOne();
   }
 
   async findByCustomerId(customerId: string): Promise<RepairNote[]> {

@@ -1,8 +1,11 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 import { EMPTY_DEVICE } from "../utils/devices";
+import { localToday } from "@common/utils/local-date";
 import type { RepairNoteRecord, RepairNoteFormData, AdvancePaymentInput, RepairNoteItemInput, RepairNoteItemRecord, RepairNoteStatus } from "../types/repair-notes";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
+
+export const createInitialForm = (): RepairNoteFormData => ({ ...INITIAL_FORM, receivedAt: localToday() });
 
 export const INITIAL_FORM: RepairNoteFormData = {
   customerName: "",
@@ -12,7 +15,7 @@ export const INITIAL_FORM: RepairNoteFormData = {
   status: "received",
   requiresAdvance: false,
   advanceValue: "",
-  receivedAt: new Date().toISOString().split("T")[0],
+  receivedAt: "",
   deliveryDate: "",
   technicianNotes: "",
   additionalFindings: "",
@@ -79,22 +82,23 @@ export const useRepairNotes = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const branchQuery = useBranchQuery();
 
-  const fetchNotes = useCallback(async () => {
+  // Historial de un cliente, de todas las sucursales: es del cliente, no del local.
+  // El listado general vive en useRepairNotesList (paginado en el servidor).
+  const fetchNotes = useCallback(async (customerId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient(`/repair-notes${branchQuery}`);
-      if (!response.ok) throw new Error("Error al obtener notas");
+      const response = await apiClient(`/repair-notes?customerId=${encodeURIComponent(customerId)}`);
+      if (!response.ok) throw new Error(await readApiError(response, "Error al obtener notas"));
       const data = (await response.json()) as RepairNoteRecord[];
       setNotes(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
-  }, [apiClient, branchQuery]);
+  }, [apiClient]);
 
   const fetchNote = useCallback(
     async (id: string) => {
@@ -102,12 +106,12 @@ export const useRepairNotes = () => {
       setError(null);
       try {
         const response = await apiClient(`/repair-notes/${id}`);
-        if (!response.ok) throw new Error("Error al obtener nota");
+        if (!response.ok) throw new Error(await readApiError(response, "Error al obtener nota"));
         const data = (await response.json()) as RepairNoteRecord;
         setNote(data);
         return data;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setLoading(false);
@@ -132,11 +136,11 @@ export const useRepairNotes = () => {
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data?.error || "Error al crear nota");
+          throw new Error(apiErrorText(data, "Error al crear nota"));
         }
         return (await response.json()) as RepairNoteRecord;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);
@@ -161,11 +165,11 @@ export const useRepairNotes = () => {
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data?.error || "Error al actualizar nota");
+          throw new Error(apiErrorText(data, "Error al actualizar nota"));
         }
         return (await response.json()) as RepairNoteRecord;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);
@@ -187,14 +191,14 @@ export const useRepairNotes = () => {
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data?.error || "Error al cambiar el estado");
+          throw new Error(apiErrorText(data, "Error al cambiar el estado"));
         }
         const updated = (await response.json()) as RepairNoteRecord;
         setNote(updated);
         setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
         return updated;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       }
     },
@@ -223,13 +227,13 @@ export const useRepairNotes = () => {
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data?.error || "Error al cancelar nota");
+          throw new Error(apiErrorText(data, "Error al cancelar nota"));
         }
         const updated = (await response.json()) as RepairNoteRecord;
         setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
         return updated;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       }
     },
@@ -242,11 +246,11 @@ export const useRepairNotes = () => {
         const response = await apiClient(`/repair-notes/${id}`, {
           method: "DELETE",
         });
-        if (!response.ok) throw new Error("Error al eliminar nota");
+        if (!response.ok) throw new Error(await readApiError(response, "Error al eliminar nota"));
         setNotes((prev) => prev.filter((n) => n.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },

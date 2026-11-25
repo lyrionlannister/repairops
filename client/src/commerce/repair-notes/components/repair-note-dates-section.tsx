@@ -39,6 +39,7 @@ export const RepairNoteDatesSection: FC<RepairNoteDatesSectionProps> = ({
           value={assignedEmployeeId}
           onChange={onAssignedEmployeeIdChange}
           placeholder="Selecciona un técnico"
+          roles={["technician", "owner"]}
           disabled={saving}
         />
       </div>

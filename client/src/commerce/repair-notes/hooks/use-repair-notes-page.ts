@@ -1,23 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
-import { describeDevices } from "../utils/devices";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { NEXT_STATUS } from "./use-repair-notes";
 import { useRepairNoteDelivery } from "./use-repair-note-delivery";
 import type { RepairNoteRecord, RepairNoteStatus, RepairNoteStatusFilter } from "../types/repair-notes";
-import { STATUS_FILTERS, matchesStatusFilter } from "../utils/status-filter";
+import { STATUS_FILTERS } from "../utils/status-filter";
+import { useRepairNotesList } from "./use-repair-notes-list";
 export const useRepairNotesPage = ({
-  notes,
   deleteNote,
   cancelNote,
   changeStatus,
-  refetch,
 }: {
-  notes: RepairNoteRecord[];
   deleteNote: (id: string) => Promise<boolean>;
   cancelNote: (id: string) => Promise<RepairNoteRecord | null>;
   changeStatus: (id: string, status: RepairNoteStatus) => Promise<RepairNoteRecord | null>;
-  refetch: () => void;
 }) => {
   const [search, setSearch] = useState("");
   const [searchParams] = useSearchParams();
@@ -25,6 +21,8 @@ export const useRepairNotesPage = ({
     const fromUrl = searchParams.get("status");
     return STATUS_FILTERS.find((f) => f === fromUrl) ?? "all";
   });
+  const list = useRepairNotesList(search, statusFilter);
+  const refetch = () => void list.refetch();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -45,22 +43,10 @@ export const useRepairNotesPage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliveringNote]);
 
-  const filteredNotes = useMemo(() => {
-    return notes.filter((note) => {
-      const matchesSearch =
-        note.customerName.toLowerCase().includes(search.toLowerCase()) ||
-        String(note.controlNumber).includes(search) ||
-        describeDevices(note.devices).toLowerCase().includes(search.toLowerCase());
-
-      const matchesStatus = matchesStatusFilter(note.status, statusFilter);
-      return matchesSearch && matchesStatus;
-    });
-  }, [notes, search, statusFilter]);
-
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
     setDeletingId(confirmDeleteId);
-    await deleteNote(confirmDeleteId);
+    if (await deleteNote(confirmDeleteId)) refetch();
     setDeletingId(null);
     setConfirmDeleteId(null);
   };
@@ -68,7 +54,7 @@ export const useRepairNotesPage = ({
   const confirmCancel = async () => {
     if (!confirmCancelId) return;
     setCancellingId(confirmCancelId);
-    await cancelNote(confirmCancelId);
+    if (await cancelNote(confirmCancelId)) refetch();
     setCancellingId(null);
     setConfirmCancelId(null);
   };
@@ -83,18 +69,18 @@ export const useRepairNotesPage = ({
       return;
     }
     setAdvancingId(note.id);
-    await changeStatus(note.id, next.status);
+    if (await changeStatus(note.id, next.status)) refetch();
     setAdvancingId(null);
   };
 
   return {
+    list,
     search,
     setSearch,
     statusFilter,
     setStatusFilter,
     deletingId,
     cancellingId,
-    filteredNotes,
     confirmDeleteId,
     setConfirmDeleteId,
     confirmCancelId,

@@ -13,8 +13,8 @@ export function useRepairNoteCustomerHistory(customerId: string | null, excludeI
   const { notes, fetchNotes } = useRepairNotes();
 
   useEffect(() => {
-    if (notes.length === 0) fetchNotes();
-  }, [notes.length, fetchNotes]);
+    if (customerId) fetchNotes(customerId);
+  }, [customerId, fetchNotes]);
 
   const otherNotes = useMemo<RepairNoteHistoryEntry[]>(() => {
     if (!customerId) return [];
