@@ -222,7 +222,7 @@ export class AuthController {
         res.status(400).json({ error: getValidationMessages(errors) });
         return;
       }
-      const user = await this.authService.verifyEmail(dto.token);
+      const user = await this.authService.verifyEmail(dto.code);
       res.status(200).json({ message: "Correo verificado", user });
     } catch (error) {
       sendError(res, error, 400, "No se pudo verificar el correo");

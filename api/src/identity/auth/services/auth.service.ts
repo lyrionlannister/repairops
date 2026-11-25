@@ -1,5 +1,5 @@
 import { singleton, inject } from "tsyringe";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { hash, compare } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Repository } from "typeorm";
@@ -214,7 +214,7 @@ export class AuthService {
     }
 
     const tenant = await allowSystemScope(() =>
-      this.tenantRepository.save(this.tenantRepository.create({ name: data.email })),
+      this.tenantRepository.save(this.tenantRepository.create({ name: `${data.firstName} ${data.lastName}`.trim() || data.email })),
     );
 
     // No esta envuelto en una transaccion de DB: si el insert del usuario
@@ -368,17 +368,20 @@ export class AuthService {
 
   // Listado ligero para poblar los <Select> de empleado en otros modulos.
   async listEmployees(): Promise<
-    Array<Pick<User, "id" | "publicId" | "firstName" | "lastName"> & { roles: UserRole[] }>
+    Array<
+      Pick<User, "id" | "publicId" | "firstName" | "lastName" | "isActive"> & { roles: UserRole[] }
+    >
   > {
     const [users, roles] = await Promise.all([
       this.userDao.findAll(),
       this.userRoleDao.findAllOfTenant(),
     ]);
-    return users.map(({ id, publicId, firstName, lastName }) => ({
+    return users.map(({ id, publicId, firstName, lastName, isActive }) => ({
       id,
       publicId,
       firstName,
       lastName,
+      isActive,
       roles: roles.get(String(id)) ?? [],
     }));
   }
@@ -538,19 +541,20 @@ export class AuthService {
     }
   }
 
-  // Consume el enlace de verificación (GET sin sesión necesaria: el usuario
-  // puede abrirlo desde otro dispositivo/navegador). Igual forma que
-  // refreshSession: se resuelve el tenant desde la fila del token, no del JWT.
-  async verifyEmail(token: string): Promise<SessionUser> {
-    const row = await this.emailVerificationTokenDao.findByTokenHash(hashToken(token));
+  // Consume el código de verificación (sin sesión necesaria: el usuario
+  // puede tipearlo o pegar el link con ?code= desde otro dispositivo/
+  // navegador). Igual forma que refreshSession: se resuelve el tenant desde
+  // la fila del token, no del JWT.
+  async verifyEmail(code: string): Promise<SessionUser> {
+    const row = await this.emailVerificationTokenDao.findByTokenHash(hashToken(code));
     if (!row || row.consumedAt !== null || row.expiresAt.getTime() <= Date.now()) {
-      throw new BusinessError("El enlace de verificación es inválido o expiró.");
+      throw new BusinessError("El código de verificación es inválido o expiró.");
     }
 
     return runWithTenant(row.tenantId, async () => {
-      const consumed = await this.emailVerificationTokenDao.consume(hashToken(token));
+      const consumed = await this.emailVerificationTokenDao.consume(hashToken(code));
       if (!consumed) {
-        throw new BusinessError("El enlace de verificación ya fue usado.");
+        throw new BusinessError("El código de verificación ya fue usado.");
       }
       const updated = await this.userDao.update(row.userId, { emailVerifiedAt: new Date() });
       if (!updated) {
@@ -594,16 +598,21 @@ export class AuthService {
   // (ver resend.client.ts) -- solo una falla de DB al guardar el token
   // propaga, y la decisión de qué hacer con eso es de quien llama.
   private async issueEmailVerification(user: User): Promise<void> {
-    const token = randomBytes(32).toString("hex");
+    // Código numérico (no un link de 256 bits): el owner puede confirmar
+    // desde el botón del correo (precarga el código) o tipeándolo a mano
+    // si abre el correo en otro dispositivo/navegador sin la sesión del
+    // registro. Por la baja entropía (1 en un millón), verifyEmail() va
+    // detrás de un rate limit por IP (ver routes/auth.routes.ts).
+    const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
     await this.emailVerificationTokenDao.create({
       tenantId: user.tenantId,
       userId: user.id,
-      tokenHash: hashToken(token),
+      tokenHash: hashToken(code),
       expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_MAX_AGE_MS),
       consumedAt: null,
     });
-    const verifyUrl = `${optionalEnv("CLIENT_URL", "http://localhost:5173")}/identity/verify-email?token=${token}`;
-    await sendVerificationEmail({ to: user.email, firstName: user.firstName, verifyUrl });
+    const verifyUrl = `${optionalEnv("CLIENT_URL", "http://localhost:5173")}/identity/verify-email?code=${code}`;
+    await sendVerificationEmail({ to: user.email, firstName: user.firstName, code, verifyUrl });
   }
 
   // Emite un par access (15 min) + refresh (7 días). Si llega `previous`,

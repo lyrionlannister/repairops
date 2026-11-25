@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { Me } from "../types/me";
+import { readApiError } from "@common/utils/api-error";
 
 // Perfil del usuario autenticado, siempre fresco desde la fila real -- a
 // diferencia del user guardado en sessionStorage al hacer login, que se
@@ -16,10 +17,10 @@ export const useMe = () => {
     setError(null);
     try {
       const res = await apiClient("/auth/users/me");
-      if (!res.ok) throw new Error("Error al obtener el perfil");
+      if (!res.ok) throw new Error(await readApiError(res, "Error al obtener el perfil"));
       setMe(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }

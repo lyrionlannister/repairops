@@ -34,3 +34,6 @@ export const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Enlace de verificación de correo: 24 horas, de un solo uso.
 export const EMAIL_VERIFICATION_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+// Enlace para restablecer contraseña: 1 hora, de un solo uso.
+export const PASSWORD_RESET_TOKEN_MAX_AGE_MS = 60 * 60 * 1000;

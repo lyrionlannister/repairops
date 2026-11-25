@@ -4,7 +4,8 @@ import { PageMeta } from "../../../core/common/pages/page-meta";
 import { useEmailVerification } from "../hooks/use-email-verification";
 
 export const VerifyEmailPage: React.FC = () => {
-  const { status, error, resend, resending, resent } = useEmailVerification();
+  const { code, setCode, status, error, confirm, resend, resending, resent } =
+    useEmailVerification();
 
   return (
     <>
@@ -13,8 +14,11 @@ export const VerifyEmailPage: React.FC = () => {
         <div className="flex flex-col flex-1">
           <div className="flex flex-col items-center justify-center flex-1 w-full max-w-md mx-auto">
             <EmailVerificationStatus
+              code={code}
+              setCode={setCode}
               status={status}
               error={error}
+              confirm={confirm}
               resend={resend}
               resending={resending}
               resent={resent}

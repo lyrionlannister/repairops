@@ -59,6 +59,7 @@ import { WhatsappMetaPricing } from "../../messaging/whatsapp-official/entities/
 import { AuditLog } from "../../core/audit/entities/audit-log.entity.js";
 import { RefreshToken } from "../../identity/auth/entities/refresh-token.entity.js";
 import { TenantInvitation } from "../../identity/auth/entities/tenant-invitation.entity.js";
+import { PasswordResetToken } from "../../identity/auth/entities/password-reset-token.entity.js";
 import { EmailVerificationToken } from "../../identity/auth/entities/email-verification-token.entity.js";
 import { optionalEnv, optionalEnvNumber } from "./env.js";
 
@@ -136,6 +137,7 @@ export const appDataSourceOptions: DataSourceOptions = {
     RefreshToken,
     TenantInvitation,
     EmailVerificationToken,
+    PasswordResetToken,
   ],
 };
 

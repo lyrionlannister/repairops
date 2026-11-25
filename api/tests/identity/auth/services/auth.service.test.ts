@@ -470,12 +470,13 @@ describe("AuthService.listEmployees", () => {
     const employees = await service.listEmployees();
 
     expect(employees).toEqual([
-      { id: "1", publicId: "p-1", firstName: "Admin", lastName: "User", roles: ["owner"] },
+      { id: "1", publicId: "p-1", firstName: "Admin", lastName: "User", isActive: true, roles: ["owner"] },
       {
         id: "2",
         publicId: "p-2",
         firstName: "Admin",
         lastName: "User",
+        isActive: true,
         roles: ["employee", "cashier"],
       },
     ]);
@@ -607,7 +608,7 @@ describe("AuthService.verifyEmail", () => {
       emailVerificationTokenDao,
     });
     await expect(service.verifyEmail("nope")).rejects.toThrow(
-      "El enlace de verificación es inválido o expiró",
+      "El código de verificación es inválido o expiró",
     );
   });
 
@@ -621,7 +622,7 @@ describe("AuthService.verifyEmail", () => {
       emailVerificationTokenDao,
     });
     await expect(service.verifyEmail("old-token")).rejects.toThrow(
-      "El enlace de verificación es inválido o expiró",
+      "El código de verificación es inválido o expiró",
     );
   });
 
@@ -635,7 +636,7 @@ describe("AuthService.verifyEmail", () => {
       emailVerificationTokenDao,
     });
     await expect(service.verifyEmail("used-token")).rejects.toThrow(
-      "El enlace de verificación es inválido o expiró",
+      "El código de verificación es inválido o expiró",
     );
   });
 });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useLogin } from "../../../core/common/hooks/use-login";
 import { Input } from "../../../core/common/components/ui/inputs/input";
 import { Label } from "../../../core/common/components/ui/inputs/label";
@@ -81,8 +81,10 @@ export const AuthForm: React.FC = () => {
                       onChange={handleChange}
                       disabled={loading}
                     />
-                    <span
+                    <button
+                      type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                       className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
                     >
                       {showPassword ? (
@@ -90,7 +92,15 @@ export const AuthForm: React.FC = () => {
                       ) : (
                         <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
                       )}
-                    </span>
+                    </button>
+                  </div>
+                  <div className="mt-2 text-right">
+                    <Link
+                      to="/identity/forgot-password"
+                      className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </Link>
                   </div>
                 </div>
                 <div>
@@ -100,6 +110,18 @@ export const AuthForm: React.FC = () => {
                 </div>
               </div>
             </form>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
+              ¿No tienes cuenta?{" "}
+              <Link
+                to="/identity/sign-up"
+                className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              >
+                Regístrate aquí
+              </Link>
+            </p>
           </div>
         </div>
       </div>

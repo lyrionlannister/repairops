@@ -47,6 +47,9 @@ import { CustomerFormPage } from "../commerce/customers/pages/customer-form-page
 import { CustomerDetailPage } from "../commerce/customers/pages/customer-detail-page";
 import { CustomerDevicesPage } from "../commerce/customers/pages/customer-devices-page";
 
+import { ForgotPasswordPage } from "../identity/auth/pages/forgot-password-page";
+import { ResetPasswordPage } from "../identity/auth/pages/reset-password-page";
+
 export const publicRoutes = [
   {
     path: "/identity/sign-in",
@@ -55,6 +58,14 @@ export const publicRoutes = [
   {
     path: "/identity/sign-up",
     element: <RegisterPage />,
+  },
+  {
+    path: "/identity/forgot-password",
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: "/identity/reset-password",
+    element: <ResetPasswordPage />,
   },
   {
     path: "/identity/verify-email",

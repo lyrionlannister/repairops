@@ -55,3 +55,31 @@ export const resendVerificationRateLimit = rateLimit({
   legacyHeaders: false,
   message: { error: TOO_MANY_ATTEMPTS },
 });
+
+// Verificar correo: el código es de 6 dígitos (1 en un millón), mucho menos
+// entropía que un token opaco -- 10 intentos por IP cada 15 minutos para
+// que probar todo el espacio por fuerza bruta no sea viable.
+export const verifyEmailRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: optionalEnvNumber("RATE_LIMIT_VERIFY_EMAIL_MAX", 10),
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: TOO_MANY_ATTEMPTS },
+});
+
+// Recuperar contraseña: cada solicitud manda un correo real.
+export const passwordResetRequestRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: optionalEnvNumber("RATE_LIMIT_PASSWORD_RESET_MAX", 5),
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: TOO_MANY_ATTEMPTS },
+});
+
+export const passwordResetRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: optionalEnvNumber("RATE_LIMIT_RESET_PASSWORD_MAX", 10),
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: TOO_MANY_ATTEMPTS },
+});

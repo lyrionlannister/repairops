@@ -9,10 +9,20 @@ export const AppRouter = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/login" element={<Navigate to="/identity/sign-in" replace />} />
+        <Route path="/register" element={<Navigate to="/identity/sign-up" replace />} />
 
         {publicRoutes.map((route, index) => {
           const isAuthRoute =
-            route.path === "/identity/sign-in" || route.path === "/identity/sign-up";
+            route.path === "/identity/sign-in" ||
+            route.path === "/identity/sign-up" ||
+            route.path === "/identity/forgot-password";
+          // Se confirma con el código del correo, nunca con una sesión del
+          // navegador -- por diseño puede no haber ninguna (otro dispositivo
+          // sin login, ver AuthService.verifyEmail). Nunca detrás de
+          // ProtectedRoute/LoginOnlyWhenLoggedOut.
+          const isOpenRoute =
+            route.path === "/identity/verify-email" || route.path === "/identity/reset-password";
 
           return (
             <Route
@@ -21,7 +31,7 @@ export const AppRouter = () => {
               element={
                 isAuthRoute ? (
                   <LoginOnlyWhenLoggedOut>{route.element}</LoginOnlyWhenLoggedOut>
-                ) : route.path === "*" ? (
+                ) : isOpenRoute || route.path === "*" ? (
                   route.element
                 ) : (
                   <ProtectedRoute>{route.element}</ProtectedRoute>

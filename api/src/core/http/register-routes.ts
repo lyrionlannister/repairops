@@ -2,6 +2,7 @@ import { container } from "tsyringe";
 import type { Express } from "express";
 
 import { AuthController } from "../../identity/auth/controllers/auth.controller.js";
+import { PasswordResetController } from "../../identity/auth/controllers/password-reset.controller.js";
 import { createAuthRouter } from "../../identity/auth/routes/auth.routes.js";
 import { createAutomationAdminRouter } from "../../app_platform/automation/routes/automation-admin.routes.js";
 import { AutomationAdminController } from "../../app_platform/automation/controllers/automation-admin.controller.js";
@@ -75,7 +76,10 @@ import { createPlatformRouter } from "../../app_platform/platform/routes/platfor
 // Monta todas las rutas de /api/v1/* -- requiere que registerRepositories()
 // ya haya corrido (cada controller/dao se resuelve del contenedor aqui).
 export function registerRoutes(app: Express): void {
-  app.use("/api/v1/auth", createAuthRouter(container.resolve(AuthController)));
+  app.use("/api/v1/auth", createAuthRouter(
+      container.resolve(AuthController),
+      container.resolve(PasswordResetController),
+    ));
   app.use(
     "/api/v1/automation",
     createAutomationAdminRouter(container.resolve(AutomationAdminController)),
