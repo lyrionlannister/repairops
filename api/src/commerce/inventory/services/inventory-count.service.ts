@@ -1,4 +1,7 @@
 import { singleton } from "tsyringe";
+import { isUniqueViolation } from "../../../core/database/unique-violation.js";
+import { currentUserId } from "../../../identity/authz/access.js";
+import { InventoryItem } from "../entities/inventory-item.entity.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { BranchDao } from "../../../identity/branches/daos/branch.dao.js";
@@ -33,28 +36,37 @@ export class InventoryCountService {
     return this.countDao.findById(id);
   }
 
-  async getItems(countId: string): Promise<InventoryCountItem[]> {
-    return this.countItemDao.findByCountId(countId);
+  async getItems(
+    countId: string,
+  ): Promise<Array<InventoryCountItem & { itemName: string | null; itemSku: string | null }>> {
+    const items = await this.countItemDao.findByCountId(countId);
+    const labels = await this.itemDao.findLabels(items.map((item) => item.inventoryItemId));
+    return items.map((item) => {
+      const label = labels.get(String(item.inventoryItemId));
+      return Object.assign(item, { itemName: label?.name ?? null, itemSku: label?.sku ?? null });
+    });
   }
 
   // Siembra una InventoryCountItem por cada item ACTUAL de la sucursal, sin
   // "cantidad esperada" -- el esperado se lee en vivo al cerrar (arqueo
   // ciego, mismo criterio que CashService.closeSession).
-  async open(branchId: string, openedByEmployeeId?: string | null): Promise<InventoryCount> {
+  async open(branchId: string): Promise<InventoryCount> {
     const branch = await this.branchDao.findById(branchId);
     if (!branch) throw new BusinessError("Sucursal no encontrada");
+    if (await this.countDao.findOpenByBranch(branchId)) {
+      throw new BusinessError("Ya hay un conteo abierto en esta sucursal: ciérralo antes de abrir otro");
+    }
 
     const tenantId = getCurrentTenantId();
     const items = await this.itemDao.findByLocalId(branchId);
-    const countNumber = await this.localService.consumeFolio("count");
-
     return AppDataSource.transaction(async (manager) => {
+      const countNumber = await this.localService.consumeFolio("count", manager);
       const count = manager.create(InventoryCount, {
         tenantId,
         branchId,
         countNumber,
         status: "open",
-        openedByEmployeeId: openedByEmployeeId ?? null,
+        openedByEmployeeId: currentUserId(),
         closedByEmployeeId: null,
         closedAt: null,
       });
@@ -73,6 +85,11 @@ export class InventoryCountService {
       }
 
       return savedCount;
+    }).catch((error: unknown) => {
+      if (isUniqueViolation(error)) {
+        throw new BusinessError("Ya hay un conteo abierto en esta sucursal: ciérralo antes de abrir otro");
+      }
+      throw error;
     });
   }
 
@@ -100,33 +117,43 @@ export class InventoryCountService {
   // ReturnService.create): si CUALQUIER linea con diferencia no tiene reason,
   // nada se aplica y se reporta cuales faltan. Lineas sin diferencia o sin
   // contar no generan movimiento.
-  async close(countId: string, closedByEmployeeId?: string | null): Promise<InventoryCount> {
+  // El cierre se reclama con un UPDATE condicional dentro de la transacción:
+  // dos cierres simultáneos nunca aplican dos veces los ajustes. Las
+  // diferencias se calculan ahí mismo contra el stock vigente.
+  async close(countId: string): Promise<InventoryCount> {
     const count = await this.countDao.findById(countId);
     if (!count) throw new BusinessError("Conteo no encontrado");
     if (count.status !== "open") throw new BusinessError("El conteo ya está cerrado");
-
-    const items = await this.countItemDao.findByCountId(countId);
-    const toAdjust: Array<{ countItem: InventoryCountItem; delta: number }> = [];
-    const missingReason: string[] = [];
-
-    for (const countItem of items) {
-      if (countItem.countedQuantity === null) continue;
-      const item = await this.itemDao.findById(countItem.inventoryItemId);
-      if (!item) continue;
-      const delta = countItem.countedQuantity - item.quantityOnHand;
-      if (delta === 0) continue;
-      if (!countItem.reason) {
-        missingReason.push(countItem.id);
-        continue;
-      }
-      toAdjust.push({ countItem, delta });
-    }
-
-    if (missingReason.length > 0) {
-      throw new InventoryCountCloseBlockedError(missingReason);
-    }
+    const tenantId = getCurrentTenantId();
 
     return AppDataSource.transaction(async (manager) => {
+      const claimed = await manager
+        .createQueryBuilder()
+        .update(InventoryCount)
+        .set({ status: "closed", closedByEmployeeId: currentUserId(), closedAt: new Date() })
+        .where("id = :id AND tenant_id = :tenantId AND estado = 'open'", { id: count.id, tenantId })
+        .execute();
+      if (!claimed.affected) throw new BusinessError("El conteo ya está cerrado");
+
+      const items = await manager.find(InventoryCountItem, {
+        where: { countId: count.id, tenantId },
+      });
+      const toAdjust: Array<{ countItem: InventoryCountItem; delta: number }> = [];
+      const missingReason: string[] = [];
+      for (const countItem of items) {
+        if (countItem.countedQuantity === null) continue;
+        const item = await manager.findOneBy(InventoryItem, {
+          id: countItem.inventoryItemId,
+          tenantId,
+        });
+        if (!item) continue;
+        const delta = countItem.countedQuantity - item.quantityOnHand;
+        if (delta === 0) continue;
+        if (!countItem.reason) missingReason.push(countItem.id);
+        else toAdjust.push({ countItem, delta });
+      }
+      if (missingReason.length > 0) throw new InventoryCountCloseBlockedError(missingReason);
+
       for (const { countItem, delta } of toAdjust) {
         const movement = await this.inventoryService.applyMovement(manager, {
           inventoryItemId: countItem.inventoryItemId,
@@ -139,13 +166,7 @@ export class InventoryCountService {
         await manager.update(InventoryCountItem, countItem.id, { appliedMovementId: movement.id });
       }
 
-      await manager.update(InventoryCount, countId, {
-        status: "closed",
-        closedByEmployeeId: closedByEmployeeId ?? null,
-        closedAt: new Date(),
-      });
-
-      return (await manager.findOneBy(InventoryCount, { id: countId })) as InventoryCount;
+      return (await manager.findOneBy(InventoryCount, { id: count.id })) as InventoryCount;
     });
   }
 }

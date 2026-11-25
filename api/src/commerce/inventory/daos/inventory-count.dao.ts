@@ -10,6 +10,12 @@ export class InventoryCountDao extends TenantScopedDao<InventoryCount> {
     super(repository);
   }
 
+  async findOpenByBranch(branchId: string): Promise<InventoryCount | null> {
+    return this.scoped()
+      .andWhere("entity.branchId = :branchId AND entity.status = 'open'", { branchId })
+      .getOne();
+  }
+
   async findAllOrdered(): Promise<InventoryCount[]> {
     return this.scoped().orderBy("entity.openedAt", "DESC").getMany();
   }

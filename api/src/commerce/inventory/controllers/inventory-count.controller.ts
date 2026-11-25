@@ -35,7 +35,7 @@ export class InventoryCountController {
         res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
-      res.status(201).json(await this.service.open(dto.branchId, dto.openedByEmployeeId));
+      res.status(201).json(await this.service.open(dto.branchId));
     } catch (error) {
       sendError(res, error, 400);
     }
@@ -58,7 +58,7 @@ export class InventoryCountController {
 
   close = async (req: Request, res: Response): Promise<void> => {
     try {
-      const closed = await this.service.close(req.params["id"] as string, optionalString(bodyOf(req).closedByEmployeeId));
+      const closed = await this.service.close(req.params["id"] as string);
       res.status(200).json(closed);
     } catch (error) {
       if (error instanceof InventoryCountCloseBlockedError) {

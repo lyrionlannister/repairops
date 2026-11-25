@@ -65,6 +65,27 @@ describe("InventoryCountService", () => {
     expect(items.every((i) => i.countedQuantity === null)).toBe(true);
   });
 
+  it("allows a single open count per branch and applies a concurrent double close only once", async () => {
+    const branch = await runWithTenant(tenantId, () => branchDao.create({ name: "Sucursal conteo unico" }));
+    const item = await runWithTenant(tenantId, () =>
+      inventoryService.create({ localId: branch.id, name: "Item unico", sku: "CNT-ONE", kind: "accessory", costPrice: 5, salePrice: 10, minStock: 0 }),
+    );
+    await runWithTenant(tenantId, () => inventoryService.registerMovement({ inventoryItemId: item.id, type: "in", quantity: 10 }));
+
+    const count = await runWithTenant(tenantId, () => countService.open(branch.id));
+    await expect(runWithTenant(tenantId, () => countService.open(branch.id))).rejects.toThrow("Ya hay un conteo abierto");
+
+    const [countItem] = await runWithTenant(tenantId, () => countService.getItems(count.id));
+    await runWithTenant(tenantId, () => countService.setCounted(countItem.id, 8, "Merma"));
+    const results = await Promise.allSettled([
+      runWithTenant(tenantId, () => countService.close(count.id)),
+      runWithTenant(tenantId, () => countService.close(count.id)),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const stock = await runWithTenant(tenantId, () => inventoryService.getById(item.id));
+    expect(stock?.quantityOnHand).toBe(8);
+  });
+
   it("closes with no adjustments when counted matches quantityOnHand", async () => {
     const branch = await runWithTenant(tenantId, () => branchDao.create({ name: "Sucursal conteo 2" }));
     const item = await runWithTenant(tenantId, () =>
