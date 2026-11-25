@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { TenantPlan, PlanOption, SubscriptionFormData } from "../types/platform-tenants";
+import { readApiError } from "@common/utils/api-error";
 
 // Solo admin de plataforma (platform.tenants.read / platform.subscriptions.manage).
 export const usePlatformTenants = () => {
@@ -19,12 +20,12 @@ export const usePlatformTenants = () => {
         apiClient("/platform/tenants"),
         apiClient("/platform/plans"),
       ]);
-      if (!tenantsRes.ok) throw new Error("Error al cargar talleres");
-      if (!plansRes.ok) throw new Error("Error al cargar planes");
+      if (!tenantsRes.ok) throw new Error(await readApiError(tenantsRes, "Error al cargar talleres"));
+      if (!plansRes.ok) throw new Error(await readApiError(plansRes, "Error al cargar planes"));
       setTenants(await tenantsRes.json());
       setPlans(await plansRes.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }

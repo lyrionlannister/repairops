@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { BillingOverview, DashboardPeriodDays } from "../types/billing-overview";
+import { readApiError } from "@common/utils/api-error";
 
 // Solo admin de plataforma (platform.tenants.read, mismo permiso que /platform/tenants).
 export const useBillingOverview = () => {
@@ -16,11 +17,11 @@ export const useBillingOverview = () => {
       setError(null);
       try {
         const response = await apiClient(`/platform/billing/overview?days=${requestedDays}`);
-        if (!response.ok) throw new Error("Error al cargar el panel de ingresos");
+        if (!response.ok) throw new Error(await readApiError(response, "Error al cargar el panel de ingresos"));
         setOverview(await response.json());
         setDays(requestedDays);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
       } finally {
         setLoading(false);
       }
