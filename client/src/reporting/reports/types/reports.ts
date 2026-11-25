@@ -1,9 +1,12 @@
 export interface EmployeePerformanceRow {
   employeeId: string;
   employeeName: string;
+  isActive: boolean;
   attributedAmount: number;
-  salaryAmount: number;
-  coversSalary: boolean;
+  salaryAmount: number | null;
+  payCycle: "weekly" | "biweekly" | "monthly" | null;
+  missingPayCycle: boolean;
+  coversSalary: boolean | null;
   repairNotesCount: number;
   salesCount: number;
 }
@@ -13,6 +16,14 @@ export interface EmployeePerformanceReport {
   periodStart: string;
   periodEnd: string;
   employees: EmployeePerformanceRow[];
+}
+
+export interface ReportSummary {
+  notesCount: number;
+  notesRevenue: number;
+  salesCount: number;
+  salesRevenue: number;
+  averageTicket: number;
 }
 
 export interface AccessorySalesReport {

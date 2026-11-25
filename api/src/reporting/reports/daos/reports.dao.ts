@@ -12,6 +12,16 @@ export interface EmployeeTotalsRow {
   itemsSale: string;
 }
 
+export interface ReportEmployeeRow {
+  id: string;
+  publicId: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  salaryAmount: string | null;
+  payCycle: "weekly" | "biweekly" | "monthly" | null;
+}
+
 export interface AccessoryTotalsRow {
   salesCount: number;
   totalRevenue: string;
@@ -52,7 +62,44 @@ const SALE_DAY = `((s.fecha_creacion AT TIME ZONE 'UTC') AT TIME ZONE $4)::date`
 export class ReportsDao {
   constructor(@inject(repositoryToken(RepairNote)) private repository: Repository<RepairNote>) {}
 
-  notesByEmployee(start: string, end: string, branchId: string | null): Promise<EmployeeTotalsRow[]> {
+  // Con sucursal: quien esta asignado a ella, mas quien tuvo actividad ahi en el
+  // periodo (el owner no tiene user_branches y aun asi puede vender en cualquiera).
+  reportEmployees(
+    start: string,
+    end: string,
+    timeZone: string,
+    branchId: string | null,
+  ): Promise<ReportEmployeeRow[]> {
+    return this.repository.query(
+      `
+      SELECT u.id::text AS id, u.public_id::text AS "publicId", u.nombre AS "firstName", u.apellido AS "lastName",
+             u.activo AS "isActive", u.salario::text AS "salaryAmount", u.ciclo_pago AS "payCycle"
+      FROM usuarios u
+      WHERE u.tenant_id = $1
+        AND (
+          ($5::bigint IS NULL AND u.activo)
+          OR ($5::bigint IS NOT NULL AND u.activo AND EXISTS (
+            SELECT 1 FROM user_branches ub WHERE ub.user_id = u.id AND ub.tenant_id = $1 AND ub.branch_id = $5::bigint))
+          OR EXISTS (
+            SELECT 1 FROM repair_notes n
+            WHERE n.tenant_id = $1 AND n.id_empleado_asignado = u.id AND n.estado <> 'cancelled'
+              AND n.fecha_recepcion BETWEEN $2::date AND $3::date AND ($5::bigint IS NULL OR n.local_id = $5::bigint))
+          OR EXISTS (
+            SELECT 1 FROM sales s
+            WHERE s.tenant_id = $1 AND s.id_empleado_creador = u.id AND ${SALE_DAY} BETWEEN $2::date AND $3::date
+              AND ($5::bigint IS NULL OR s.local_id = $5::bigint))
+        )
+      ORDER BY u.nombre, u.apellido, u.id
+      `,
+      [getCurrentTenantId(), start, end, timeZone, branchId],
+    );
+  }
+
+  notesByEmployee(
+    start: string,
+    end: string,
+    branchId: string | null,
+  ): Promise<EmployeeTotalsRow[]> {
     return this.repository.query(
       `
       SELECT n.id_empleado_asignado::text AS "employeeId",
@@ -67,7 +114,8 @@ export class ReportsDao {
         LEFT JOIN inventory_items inv ON inv.id = ri.id_item_inventario AND inv.tenant_id = ri.tenant_id
         WHERE ri.id_nota_reparacion = n.id AND ri.tenant_id = n.tenant_id
       ) it ON true
-      WHERE n.tenant_id = $1 AND n.id_empleado_asignado IS NOT NULL AND n.fecha_recepcion BETWEEN $2::date AND $3::date
+      WHERE n.tenant_id = $1 AND n.id_empleado_asignado IS NOT NULL AND n.estado <> 'cancelled'
+        AND n.fecha_recepcion BETWEEN $2::date AND $3::date
         AND ($4::bigint IS NULL OR n.local_id = $4::bigint)
       GROUP BY n.id_empleado_asignado
       `,
@@ -77,7 +125,12 @@ export class ReportsDao {
 
   // Un renglon de servicio (tipo_linea 'service_type') no tiene costo de
   // inventario: el margen es el precio completo.
-  salesByEmployee(start: string, end: string, timeZone: string, branchId: string | null): Promise<EmployeeTotalsRow[]> {
+  salesByEmployee(
+    start: string,
+    end: string,
+    timeZone: string,
+    branchId: string | null,
+  ): Promise<EmployeeTotalsRow[]> {
     return this.repository.query(
       `
       SELECT s.id_empleado_creador::text AS "employeeId",
@@ -101,7 +154,12 @@ export class ReportsDao {
     );
   }
 
-  async accessoryTotals(start: string, end: string, timeZone: string, branchId: string | null): Promise<AccessoryTotalsRow> {
+  async accessoryTotals(
+    start: string,
+    end: string,
+    timeZone: string,
+    branchId: string | null,
+  ): Promise<AccessoryTotalsRow> {
     const rows = await this.repository.query<AccessoryTotalsRow[]>(
       `
       SELECT COUNT(*)::int AS "salesCount", COALESCE(SUM(s.valor_total), 0)::numeric(14,2)::text AS "totalRevenue"
@@ -114,11 +172,16 @@ export class ReportsDao {
     return rows[0];
   }
 
-  accessoryByItem(start: string, end: string, timeZone: string, branchId: string | null): Promise<AccessoryGroupRow[]> {
+  accessoryByItem(
+    start: string,
+    end: string,
+    timeZone: string,
+    branchId: string | null,
+  ): Promise<AccessoryGroupRow[]> {
     return this.repository.query(
       `
-      SELECT si.id_referencia::text AS key,
-             COALESCE(inv.nombre, 'Item eliminado') AS label,
+      SELECT COALESCE(inv.public_id::text, md5(si.id_referencia::text)) AS key,
+             COALESCE(inv.nombre, 'Producto eliminado') AS label,
              SUM(si.cantidad)::int AS quantity,
              SUM(si.cantidad * si.precio_unitario)::numeric(14,2)::text AS revenue
       FROM sale_items si
@@ -126,15 +189,24 @@ export class ReportsDao {
       LEFT JOIN inventory_items inv ON inv.id = si.id_referencia AND inv.tenant_id = si.tenant_id
       WHERE si.tenant_id = $1 AND si.tipo_linea = 'inventory_item' AND ${SALE_DAY} BETWEEN $2::date AND $3::date
         AND ($5::bigint IS NULL OR s.local_id = $5::bigint)
-      GROUP BY si.id_referencia, inv.nombre
+      GROUP BY si.id_referencia, inv.public_id, inv.nombre
       ORDER BY SUM(si.cantidad * si.precio_unitario) DESC
       `,
       [getCurrentTenantId(), start, end, timeZone, branchId],
     );
   }
 
-  accessoryByPeriod(start: string, end: string, timeZone: string, groupBy: "day" | "week", branchId: string | null): Promise<AccessoryGroupRow[]> {
-    const bucket = groupBy === "day" ? `TO_CHAR(${SALE_DAY}, 'YYYY-MM-DD')` : `TO_CHAR(${SALE_DAY}, 'IYYY-"W"IW')`;
+  accessoryByPeriod(
+    start: string,
+    end: string,
+    timeZone: string,
+    groupBy: "day" | "week",
+    branchId: string | null,
+  ): Promise<AccessoryGroupRow[]> {
+    const bucket =
+      groupBy === "day"
+        ? `TO_CHAR(${SALE_DAY}, 'YYYY-MM-DD')`
+        : `TO_CHAR(${SALE_DAY}, 'IYYY-"W"IW')`;
     return this.repository.query(
       `
       SELECT ${bucket} AS key, ${bucket} AS label,
@@ -157,7 +229,8 @@ export class ReportsDao {
   async notesTotals(start: string, end: string, branchId: string | null): Promise<NotesTotalsRow> {
     const rows = await this.repository.query<NotesTotalsRow[]>(
       `
-      SELECT COUNT(*)::int AS "totalNotes", COALESCE(SUM(valor_total), 0)::numeric(14,2)::text AS "totalRevenue"
+      SELECT (COUNT(*) FILTER (WHERE estado <> 'cancelled'))::int AS "totalNotes",
+             COALESCE(SUM(valor_total) FILTER (WHERE estado <> 'cancelled'), 0)::numeric(14,2)::text AS "totalRevenue"
       FROM repair_notes
       WHERE tenant_id = $1 AND fecha_recepcion BETWEEN $2::date AND $3::date
         AND ($4::bigint IS NULL OR local_id = $4::bigint)
@@ -170,17 +243,18 @@ export class ReportsDao {
   notesByType(start: string, end: string, branchId: string | null): Promise<NotesByTypeRow[]> {
     return this.repository.query(
       `
-      SELECT st.id::text AS type, st.nombre AS label,
+      SELECT st.public_id::text AS type, st.nombre AS label,
              COUNT(n.id)::int AS count,
              COALESCE(SUM(n.valor_total), 0)::numeric(14,2)::text AS "totalValue"
       FROM service_types st
-      LEFT JOIN (SELECT DISTINCT l.id_tipo_servicio, l.id_nota_reparacion FROM repair_note_service_types l WHERE l.tenant_id = $1) link
+      JOIN (SELECT DISTINCT l.id_tipo_servicio, l.id_nota_reparacion FROM repair_note_service_types l WHERE l.tenant_id = $1) link
         ON link.id_tipo_servicio = st.id
-      LEFT JOIN repair_notes n ON n.id = link.id_nota_reparacion AND n.tenant_id = $1 AND n.fecha_recepcion BETWEEN $2::date AND $3::date
+      JOIN repair_notes n ON n.id = link.id_nota_reparacion AND n.tenant_id = $1 AND n.estado <> 'cancelled'
+        AND n.fecha_recepcion BETWEEN $2::date AND $3::date
         AND ($4::bigint IS NULL OR n.local_id = $4::bigint)
       WHERE st.tenant_id = $1
-      GROUP BY st.id, st.nombre
-      ORDER BY st.nombre ASC, st.id
+      GROUP BY st.id, st.public_id, st.nombre
+      ORDER BY COUNT(n.id) DESC, st.nombre ASC
       `,
       [getCurrentTenantId(), start, end, branchId],
     );

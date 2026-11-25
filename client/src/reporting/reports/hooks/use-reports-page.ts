@@ -1,61 +1,52 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { useBranch } from "@common/hooks/use-branch";
 import { useLocal } from "@app-platform/local/hooks/use-local";
-import { useCash } from "@commerce/cash/hooks/use-cash";
 
 import { useReports } from "./use-reports";
+import type { ReportSummary } from "../types/reports";
 
-// Suma/resta en centavos enteros: nunca se acumulan flotantes de dinero.
-const toCents = (amount: number) => Math.round(amount * 100);
-
-// Lógica de la página de reportes. El período vacío significa "el que decide el API"
-// (mes en curso hasta hoy, en la zona horaria del taller): el cliente nunca usa su
-// propio reloj para saber qué día es.
+// El periodo vacio significa "el que decide el API" (mes en curso hasta hoy, en
+// la zona horaria del taller): el cliente nunca usa su propio reloj para saber
+// que dia es.
 export const useReportsPage = () => {
   const { local, fetchLocal } = useLocal();
-  const { workingBranchId } = useBranch();
-  const { session, summary, fetchOpenSession, fetchSummary } = useCash();
   const reports = useReports();
-  const { fetchReports, employeePerformance, accessorySales, repairNotesByType } = reports;
+  const { fetchReports, accessorySales, repairNotesByType } = reports;
 
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
+  const rangeError =
+    periodStart && periodEnd && periodStart > periodEnd
+      ? "La fecha “Desde” no puede ser posterior a “Hasta”."
+      : null;
 
   useEffect(() => {
     fetchLocal();
   }, [fetchLocal]);
 
   useEffect(() => {
-    fetchReports(periodStart, periodEnd);
-  }, [fetchReports, periodStart, periodEnd]);
+    if (!rangeError) fetchReports(periodStart, periodEnd);
+  }, [fetchReports, periodStart, periodEnd, rangeError]);
 
-  useEffect(() => {
-    if (workingBranchId) fetchOpenSession(workingBranchId);
-  }, [workingBranchId, fetchOpenSession]);
-
-  useEffect(() => {
-    if (session) fetchSummary(session.id);
-  }, [session, fetchSummary]);
-
-  const cashIncomeCents = toCents(Number(summary?.totalIncome ?? 0));
-  const expectedCents = toCents(repairNotesByType?.totalRevenue ?? 0) + toCents(accessorySales?.totalRevenue ?? 0);
-  const differenceCents = cashIncomeCents - expectedCents;
+  const summary = useMemo<ReportSummary>(
+    () => ({
+      notesCount: repairNotesByType?.totalNotes ?? 0,
+      notesRevenue: repairNotesByType?.totalRevenue ?? 0,
+      salesCount: accessorySales?.salesCount ?? 0,
+      salesRevenue: accessorySales?.totalRevenue ?? 0,
+      averageTicket: accessorySales?.averageTicket ?? 0,
+    }),
+    [repairNotesByType, accessorySales],
+  );
 
   return {
     ...reports,
-    employeePerformance,
-    session,
+    error: rangeError ?? reports.error,
+    summary,
     currency: local?.currency ?? "MXN",
     periodStart: periodStart || repairNotesByType?.periodStart || "",
     periodEnd: periodEnd || repairNotesByType?.periodEnd || "",
     setPeriodStart,
     setPeriodEnd,
-    cash: {
-      income: cashIncomeCents / 100,
-      expectedTotal: expectedCents / 100,
-      difference: differenceCents / 100,
-      matches: Math.abs(differenceCents) < 1,
-    },
   };
 };
