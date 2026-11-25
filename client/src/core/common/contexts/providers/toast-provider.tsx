@@ -1,21 +1,22 @@
 import { useCallback, useMemo, useState } from "react";
-import {
-  ToastContext
-} from "../toast-context";
+import { CheckCircle, AlertCircle, Info, X } from "lucide-react";
+import { ToastContext } from "../toast-context";
 import type { ToastInput, ToastVariant } from "../../types/toast-context";
 import type { ToastItem } from "../../types/toast-provider";
 
-const styleByVariant: Record<ToastVariant, string> = {
-  success:
-    "border-green-200 bg-green-50 text-green-900 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200",
-  error:
-    "border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200",
-  info: "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200",
+const iconByVariant: Record<ToastVariant, typeof CheckCircle> = {
+  success: CheckCircle,
+  error: AlertCircle,
+  info: Info,
 };
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+const iconToneByVariant: Record<ToastVariant, string> = {
+  success: "bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400",
+  error: "bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400",
+  info: "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400",
+};
+
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const removeToast = useCallback((id: number) => {
@@ -23,11 +24,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const showToast = useCallback(
-    ({ title, message, variant = "info", durationMs = 3200 }: ToastInput) => {
+    ({ title, message, variant = "info", durationMs }: ToastInput) => {
       const id = Date.now() + Math.floor(Math.random() * 1000);
 
       setToasts((prev) => [...prev, { id, title, message, variant }]);
-      window.setTimeout(() => removeToast(id), durationMs);
+      // Un error trae algo que corregir: se queda el doble para alcanzar a leerlo.
+      window.setTimeout(() => removeToast(id), durationMs ?? (variant === "error" ? 7000 : 3200));
     },
     [removeToast],
   );
@@ -38,32 +40,41 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
     <ToastContext.Provider value={value}>
       {children}
 
-      <div className="pointer-events-none fixed bottom-4 right-4 z-100000 flex w-[min(92vw,360px)] flex-col gap-3">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto rounded-xl border p-4 shadow-lg ${styleByVariant[toast.variant]}`}
-            role="status"
-            aria-live="polite"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold">{toast.title}</p>
+      <div className="pointer-events-none fixed inset-x-4 top-4 z-100000 flex flex-col gap-3 sm:inset-x-auto sm:top-20 sm:right-4 sm:w-[380px]">
+        {toasts.map((toast) => {
+          const Icon = iconByVariant[toast.variant];
+
+          return (
+            <div
+              key={toast.id}
+              role="status"
+              aria-live="polite"
+              className="toast-enter pointer-events-auto flex items-start gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
+            >
+              <span
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl [&>svg]:size-5 ${iconToneByVariant[toast.variant]}`}
+              >
+                <Icon />
+              </span>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <p className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                  {toast.title}
+                </p>
                 {toast.message ? (
-                  <p className="mt-1 text-sm opacity-90">{toast.message}</p>
+                  <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{toast.message}</p>
                 ) : null}
               </div>
               <button
                 type="button"
                 onClick={() => removeToast(toast.id)}
-                className="rounded-md px-2 py-1 text-xs font-medium opacity-75 transition hover:opacity-100"
-                aria-label="Cerrar notificacion"
+                className="shrink-0 rounded-md p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                aria-label="Cerrar notificación"
               >
-                X
+                <X className="size-4" />
               </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );

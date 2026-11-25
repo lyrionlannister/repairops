@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { Supplier, SupplierPayload } from "../types/suppliers";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const useSuppliers = () => {
   const { apiClient } = useApiClient();
@@ -14,10 +15,10 @@ export const useSuppliers = () => {
     setError(null);
     try {
       const res = await apiClient("/suppliers");
-      if (!res.ok) throw new Error("Error al cargar proveedores");
+      if (!res.ok) throw new Error(await readApiError(res, "Error al cargar proveedores"));
       setSuppliers(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -35,13 +36,13 @@ export const useSuppliers = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al crear proveedor");
+          throw new Error(apiErrorText(body, "Error al crear proveedor"));
         }
         const created: Supplier = await res.json();
         setSuppliers((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -62,13 +63,13 @@ export const useSuppliers = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al actualizar proveedor");
+          throw new Error(apiErrorText(body, "Error al actualizar proveedor"));
         }
         const updated: Supplier = await res.json();
         setSuppliers((prev) => prev.map((supplier) => (supplier.id === id ? updated : supplier)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -84,11 +85,11 @@ export const useSuppliers = () => {
         const res = await apiClient(`/suppliers/${id}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error("Error al eliminar proveedor");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al eliminar proveedor"));
         setSuppliers((prev) => prev.filter((supplier) => supplier.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },
@@ -103,12 +104,12 @@ export const useSuppliers = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isActive }),
         });
-        if (!res.ok) throw new Error("Error al cambiar el estado del proveedor");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al cambiar el estado del proveedor"));
         const updated: Supplier = await res.json();
         setSuppliers((prev) => prev.map((supplier) => (supplier.id === id ? updated : supplier)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },

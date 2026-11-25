@@ -5,7 +5,7 @@ import type { QuoteItemLine } from "../types/quote-item-lines";
 
 const emptyItemLine: QuoteItemLine = { inventoryItemId: "", description: "", quantity: "1", unitPrice: "" };
 
-export const useQuoteItemLines = (inventoryItems: InventoryItem[]) => {
+export const useQuoteItemLines = () => {
   const [itemLines, setItemLines] = useState<QuoteItemLine[]>([{ ...emptyItemLine }]);
 
   const loadFromRecords = (records: QuoteItemRecord[]) => {
@@ -22,10 +22,9 @@ export const useQuoteItemLines = (inventoryItems: InventoryItem[]) => {
   const updateItemLine = (index: number, patch: Partial<QuoteItemLine>) =>
     setItemLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
 
-  const handleInventoryItemChange = (index: number, inventoryItemId: string) => {
-    const item = inventoryItems.find((i) => i.id === inventoryItemId);
+  const handleInventoryItemChange = (index: number, item: InventoryItem | null) => {
     updateItemLine(index, {
-      inventoryItemId,
+      inventoryItemId: item?.id ?? "",
       description: item ? item.name : "",
       unitPrice: item ? String(item.salePrice) : "",
     });

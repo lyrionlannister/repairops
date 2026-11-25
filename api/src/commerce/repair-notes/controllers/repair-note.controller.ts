@@ -10,6 +10,8 @@ import { RepairNoteDocument } from "../../../reporting/pdf/documents/repair-note
 import { toRepairNotePdfData } from "../../../reporting/pdf/documents/repair-note.pdf-data.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
 import { sendError, queryString } from "../../../core/http/error-response.js";
+import { readPageQuery } from "../../../core/common/utils/page-query.js";
+import type { RepairNoteFilters } from "../types/repair-note-page.types.js";
 
 @singleton()
 export class RepairNoteController {
@@ -23,9 +25,44 @@ export class RepairNoteController {
 
   getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
-      const notes = await this.repairNoteService.getAll(branchId);
+      const filters = await this.filtersOf(req);
+      const page = await readPageQuery(req.query);
+      if (page) {
+        res.status(200).json(await this.repairNoteService.getPage({ ...filters, search: page.search }, page));
+        return;
+      }
+      if (filters.customerId) {
+        const history = await this.repairNoteService.getPage(filters, { page: 1, pageSize: 100 });
+        res.status(200).json(history.items);
+        return;
+      }
+      const notes = await this.repairNoteService.getAll(filters.branchId);
       res.status(200).json(notes);
+    } catch (error) {
+      sendError(res, error, 500);
+    }
+  };
+
+  getStats = async (req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.repairNoteService.getStats(await this.filtersOf(req)));
+    } catch (error) {
+      sendError(res, error, 500);
+    }
+  };
+
+  private async filtersOf(req: Request): Promise<RepairNoteFilters> {
+    return {
+      branchId: await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"])),
+      customerId: queryString(req.query["customerId"]) || undefined,
+      assignedEmployeeId: queryString(req.query["assignedEmployeeId"]) || undefined,
+      status: queryString(req.query["status"]) || undefined,
+    };
+  }
+
+  getKnownBrands = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.repairNoteService.getKnownBrands());
     } catch (error) {
       sendError(res, error, 500);
     }

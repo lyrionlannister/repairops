@@ -28,8 +28,7 @@ const NEXT_STATUS_ICON: Record<string, FC<{ className?: string }>> = {
 export const RepairNotesTable: FC<RepairNotesTableProps> = ({
   loading,
   error,
-  notes,
-  filteredNotes,
+  hasFilters,
   pageItems,
   canEditNotes,
   canCreateNotes,
@@ -58,16 +57,14 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
       loadingText="Cargando notas..."
       error={error}
       onRetry={onRetry}
-      isEmpty={filteredNotes.length === 0}
+      isEmpty={pageItems.length === 0}
       empty={{
         icon: <Wrench />,
-        title:
-          notes.length === 0 ? "No hay notas registradas." : "Sin resultados para la búsqueda.",
-        description:
-          notes.length === 0
-            ? "Crea la primera nota para comenzar."
-            : "Prueba con otro cliente, equipo o estado.",
-        action: canCreateNotes && (
+        title: !hasFilters ? "No hay notas registradas." : "Sin resultados para la búsqueda.",
+        description: !hasFilters
+          ? "Crea la primera nota para comenzar."
+          : "Prueba con otro cliente, equipo o estado.",
+        action: canCreateNotes && !hasFilters && (
           <Button
             variant="primary"
             startIcon={<Plus className="size-4" />}
@@ -123,12 +120,14 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                 #{note.controlNumber}
               </td>
               <td className="px-4 py-4">
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  {note.customerName}
-                </p>
-                {note.contactNumber && (
-                  <p className="text-xs text-gray-400">{note.contactNumber}</p>
-                )}
+                <div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {note.customerName}
+                  </p>
+                  {note.contactNumber && (
+                    <p className="text-xs text-gray-400">{note.contactNumber}</p>
+                  )}
+                </div>
               </td>
               <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
                 {describeDevices(note.devices)}
@@ -166,6 +165,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                     })()}
                   <button
                     title="Ver nota"
+                    aria-label="Ver nota"
                     onClick={() => navigate(`/commerce/repair-notes/${note.id}`)}
                     className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                   >
@@ -173,6 +173,7 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                   </button>
                   <button
                     title="Imprimir"
+                    aria-label="Imprimir"
                     onClick={() => navigate(`/commerce/repair-notes/${note.id}/print`)}
                     className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
                   >
@@ -180,18 +181,22 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                   </button>
                   {canEditNotes && (
                     <>
-                      <button
-                        title="Editar"
-                        onClick={() => navigate(`/commerce/repair-notes/${note.id}/edit`)}
-                        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-                      >
-                        <Pencil className="size-4" />
-                      </button>
+                      {note.status !== "cancelled" && (
+                        <button
+                          title="Editar"
+                          aria-label="Editar"
+                          onClick={() => navigate(`/commerce/repair-notes/${note.id}/edit`)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
+                        >
+                          <Pencil className="size-4" />
+                        </button>
+                      )}
                       {canCancelNotes &&
                         note.status !== "delivered" &&
                         note.status !== "cancelled" && (
                           <button
                             title="Cancelar"
+                            aria-label="Cancelar"
                             onClick={() => onRequestCancel(note.id)}
                             disabled={cancellingId === note.id}
                             className="rounded-lg p-1.5 text-gray-400 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20 dark:hover:text-orange-400 disabled:opacity-50"
@@ -199,9 +204,10 @@ export const RepairNotesTable: FC<RepairNotesTableProps> = ({
                             <Ban className="size-4" />
                           </button>
                         )}
-                      {canDeleteNotes && (
+                      {canDeleteNotes && note.status !== "done" && note.status !== "delivered" && (
                         <button
                           title="Eliminar"
+                          aria-label="Eliminar"
                           onClick={() => onRequestDelete(note.id)}
                           disabled={deletingId === note.id}
                           className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50"

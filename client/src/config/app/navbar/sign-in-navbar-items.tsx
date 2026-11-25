@@ -156,7 +156,7 @@ export const signInNavbarItems: NavItem[] = [
     new: false,
     subItems: [
       {
-        name: "Templates",
+        name: "Plantillas",
         path: "/messaging/message-templates",
         permissions: ["message-templates.manage"],
       },

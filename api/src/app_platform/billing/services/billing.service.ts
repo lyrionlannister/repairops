@@ -1,5 +1,6 @@
 import { singleton } from "tsyringe";
 import { runInTransaction } from "../../../core/database/transaction-context.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 import { allowSystemScope, runWithTenant } from "../../../core/tenancy/tenant-context.js";
 import { PlanDao } from "../daos/plan.dao.js";
 import { SubscriptionDao } from "../daos/subscription.dao.js";
@@ -8,6 +9,8 @@ import type { Plan, PlanKey } from "../entities/plan.entity.js";
 import type { Subscription, SubscriptionStatus } from "../entities/subscription.entity.js";
 import type { AssignSubscriptionDto } from "../dtos/assign-subscription.dto.js";
 import {
+  createBillingPortalSession,
+  createCustomer,
   createOneTimeCheckoutSession,
   createSubscriptionCheckoutSession,
   syncExtrasSubscription,
@@ -18,8 +21,16 @@ import {
   planPriceKey,
   whatsappPackPriceKey,
 } from "../utils/price-keys.js";
-import { signupCheckoutUrls, whatsappPackageCheckoutUrls } from "../utils/checkout-urls.js";
-import { TRIAL_PERIOD_DAYS } from "../constants.js";
+import {
+  portalReturnUrl,
+  signupCheckoutUrls,
+  whatsappPackageCheckoutUrls,
+} from "../utils/checkout-urls.js";
+import {
+  TRIAL_PERIOD_DAYS,
+  WHATSAPP_PACKAGE_SIZES,
+  type WhatsappPackageSize,
+} from "../constants.js";
 import {
   effectiveLimits,
   MissingSubscriptionError,
@@ -51,6 +62,13 @@ export interface PublicPlanOption {
   whatsappMonthlyQuota: number | null;
   monthlyPrice: string | null;
   yearlyPrice: string | null;
+}
+
+export interface WhatsappPackageOption {
+  size: WhatsappPackageSize;
+  // null = price de Stripe sin configurar todavía; el cliente lo muestra como
+  // no disponible y el checkout rechaza igual en servidor.
+  price: string | null;
 }
 
 export class PlanDowngradeError extends Error {}
@@ -85,6 +103,18 @@ export class BillingService {
     });
   }
 
+  // Registro público: crea el Customer de Stripe del taller. Único punto
+  // por el que AuthService toca Stripe al registrar (así los tests de auth
+  // mockean BillingService y nunca cargan el cliente real).
+  async createCustomerForTenant(input: {
+    email: string;
+    name: string;
+    tenantPublicId: string;
+  }): Promise<string> {
+    const customer = await createCustomer(input);
+    return customer.id;
+  }
+
   // Registro público: ya existe el Customer de Stripe, pero el owner todavía
   // no elige plan (eso pasa después, en el onboarding -- ver selectPlan).
   async startSubscriptionWithoutPlan(stripeCustomerId: string): Promise<Subscription> {
@@ -104,7 +134,7 @@ export class BillingService {
     const subscription = await this.subscriptionDao.findCurrent();
     if (!subscription) throw new MissingSubscriptionError();
     if (!subscription.stripeCustomerId) {
-      throw new Error("Falta el Customer de Stripe para este taller");
+      throw new BusinessError("Falta el Customer de Stripe para este taller");
     }
 
     const plan = await this.requirePlan(planKey);
@@ -170,13 +200,40 @@ export class BillingService {
     );
   }
 
-  // Compra de paquete extra de mensajes de WhatsApp -- one-time, no acumulable,
-  // el webhook (checkout.session.completed, mode=payment) la acredita al completarse.
-  async createWhatsappPackageCheckout(size: 500 | 1000 | 2500): Promise<string> {
+  // Portal del cliente de Stripe: cancelar, cambiar de plan o de método de
+  // pago. Sin Customer no hay nada que gestionar en Stripe.
+  async createCustomerPortalSession(): Promise<string> {
     const subscription = await this.subscriptionDao.findCurrent();
     if (!subscription) throw new MissingSubscriptionError();
     if (!subscription.stripeCustomerId) {
-      throw new Error("Este taller todavía no tiene método de pago registrado en Stripe");
+      throw new BusinessError("Este taller todavía no tiene una suscripción en Stripe");
+    }
+
+    const session = await createBillingPortalSession({
+      stripeCustomerId: subscription.stripeCustomerId,
+      returnUrl: portalReturnUrl(),
+    });
+    return session.url;
+  }
+
+  // Precios reales de Stripe (ya incluyen IVA) para las cards de paquetes --
+  // el cliente nunca hardcodea cifras, solo muestra lo que devuelve esto.
+  async listWhatsappPackages(): Promise<WhatsappPackageOption[]> {
+    return Promise.all(
+      WHATSAPP_PACKAGE_SIZES.map(async (size) => {
+        const price = await this.stripePriceDao.findByKey(whatsappPackPriceKey(size));
+        return { size, price: price?.amount ?? null };
+      }),
+    );
+  }
+
+  // Compra de paquete extra de mensajes de WhatsApp -- one-time, no acumulable,
+  // el webhook (checkout.session.completed, mode=payment) la acredita al completarse.
+  async createWhatsappPackageCheckout(size: WhatsappPackageSize): Promise<string> {
+    const subscription = await this.subscriptionDao.findCurrent();
+    if (!subscription) throw new MissingSubscriptionError();
+    if (!subscription.stripeCustomerId) {
+      throw new BusinessError("Este taller todavía no tiene método de pago registrado en Stripe");
     }
 
     const priceKey = whatsappPackPriceKey(size);

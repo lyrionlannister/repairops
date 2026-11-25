@@ -9,6 +9,8 @@ import { LocalService } from "../../../../src/app_platform/local/services/local.
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
+import { PriceListItem } from "../../../../src/commerce/price-list/entities/price-list-item.entity.js";
+import { PriceListDao } from "../../../../src/commerce/price-list/daos/price-list.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
 import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
@@ -38,7 +40,7 @@ import { BranchAccessService } from "../../../../src/identity/branches/services/
 import { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
 import { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
 import { setupStaff } from "../../../support/staff.js";
-import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
+import { makeDiscountCapService, makeUserRoleDao, makeAuditLogStub } from "../../../support/authz-deps.js";
 
 // Integration test contra Postgres real + el router real -- un técnico no
 // opera el POS, igual criterio de módulo que cash.routes.ts.
@@ -56,7 +58,11 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    ({ branchId, branchPublicId, tokens } = await setupStaff(AppDataSource, tenantId, ["owner", "cashier", "technician"]));
+    ({ branchId, branchPublicId, tokens } = await setupStaff(AppDataSource, tenantId, [
+      "owner",
+      "cashier",
+      "technician",
+    ]));
 
     const localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     const cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
@@ -64,7 +70,8 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       cashSessionDao,
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       localService,
-      new UserDao(AppDataSource.getRepository(User)), makeUserRoleDao(),
+      new UserDao(AppDataSource.getRepository(User)),
+      makeUserRoleDao(), makeAuditLogStub(),
     );
     inventoryService = new InventoryService(
       new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),
@@ -80,9 +87,15 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       localService,
       cashSessionDao,
       serviceTypeDao,
-      new CustomerDao(AppDataSource.getRepository(Customer)), makeDiscountCapService(),
+      new CustomerDao(AppDataSource.getRepository(Customer)),
+      makeDiscountCapService(),
+      new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
-    const controller = new SaleController(saleService, new BranchAccessService(new BranchDao(AppDataSource.getRepository(Branch))));
+    const controller = new SaleController(
+      saleService,
+      new BranchAccessService(new BranchDao(AppDataSource.getRepository(Branch))),
+    );
 
     app = express();
     app.use(express.json());
@@ -102,7 +115,9 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       .send({ localId: branchPublicId, payments: [{ method: "efectivo", amount: 1 }], items: [] });
     expect(createRes.status).toBe(403);
 
-    const readRes = await request(app).get("/sales").set("Authorization", `Bearer ${technicianToken}`);
+    const readRes = await request(app)
+      .get("/sales")
+      .set("Authorization", `Bearer ${technicianToken}`);
     expect(readRes.status).toBe(403);
   });
 
@@ -134,7 +149,9 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
         applyTax: true,
         // 25 subtotal + 16% de impuesto por defecto del tenant = 29.
         payments: [{ method: "efectivo", amount: 29 }],
-        items: [{ lineType: "inventory_item", referenceId: item.publicId, quantity: 1, unitPrice: 25 }],
+        items: [
+          { lineType: "inventory_item", referenceId: item.publicId, quantity: 1, unitPrice: 25 },
+        ],
       });
     expect(res.status).toBe(201);
     expect(res.body.saleNumber).toBeGreaterThan(0);

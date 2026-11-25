@@ -24,8 +24,8 @@ export interface QuoteFormProps {
   onReportedFailureChange: (value: string) => void;
   onServiceTypeIdsChange: (serviceTypeIds: string[]) => void;
   itemLines: QuoteItemLine[];
-  inventoryItems: InventoryItem[];
-  onInventoryItemChange: (index: number, inventoryItemId: string) => void;
+  branchId: string | null;
+  onInventoryItemChange: (index: number, item: InventoryItem | null) => void;
   onLineChange: (index: number, patch: Partial<QuoteItemLine>) => void;
   onAddLine: () => void;
   onRemoveLine: (index: number) => void;

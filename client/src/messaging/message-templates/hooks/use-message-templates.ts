@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { MessageTemplate } from "../types/message-templates";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const useMessageTemplates = () => {
   const { apiClient } = useApiClient();
@@ -14,10 +15,10 @@ export const useMessageTemplates = () => {
     setError(null);
     try {
       const res = await apiClient("/message-templates");
-      if (!res.ok) throw new Error("Error al cargar templates");
+      if (!res.ok) throw new Error(await readApiError(res, "Error al cargar templates"));
       setTemplates(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -35,13 +36,13 @@ export const useMessageTemplates = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al crear template");
+          throw new Error(apiErrorText(body, "No se pudo crear la plantilla"));
         }
         const created: MessageTemplate = await res.json();
         setTemplates((prev) => [...prev, created].sort((a, b) => a.key.localeCompare(b.key)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -60,12 +61,12 @@ export const useMessageTemplates = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!res.ok) throw new Error("Error al actualizar template");
+        if (!res.ok) throw new Error(await readApiError(res, "No se pudo actualizar la plantilla"));
         const updated: MessageTemplate = await res.json();
         setTemplates((prev) => prev.map((t) => (t.id === id ? updated : t)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -81,11 +82,11 @@ export const useMessageTemplates = () => {
         const res = await apiClient(`/message-templates/${id}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error("Error al eliminar template");
+        if (!res.ok) throw new Error(await readApiError(res, "No se pudo eliminar la plantilla"));
         setTemplates((prev) => prev.filter((t) => t.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },

@@ -14,7 +14,7 @@ export const KIND_LABELS: Record<"accessory" | "part", string> = {
 };
 
 export const formatMoney = (value: number) =>
-  `$${Number(value).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+  `$${Number(value).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const formatDate = (iso: string) =>
   new Date(iso).toLocaleString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });

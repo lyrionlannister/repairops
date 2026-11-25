@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { InventoryItem, InventoryMovement, CreateItemPayload } from "../types/inventory";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const useInventory = () => {
   const { apiClient } = useApiClient();
@@ -10,19 +11,6 @@ export const useInventory = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient("/inventory");
-      if (!res.ok) throw new Error("Error al cargar inventario");
-      setItems(await res.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient]);
 
   const create = useCallback(
     async (data: CreateItemPayload): Promise<boolean> => {
@@ -36,13 +24,13 @@ export const useInventory = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al crear item");
+          throw new Error(apiErrorText(body, "No se pudo crear el producto"));
         }
         const created: InventoryItem = await res.json();
         setItems((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -61,12 +49,12 @@ export const useInventory = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!res.ok) throw new Error("Error al actualizar item");
+        if (!res.ok) throw new Error(await readApiError(res, "No se pudo actualizar el producto"));
         const updated: InventoryItem = await res.json();
         setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -80,11 +68,11 @@ export const useInventory = () => {
       setError(null);
       try {
         const res = await apiClient(`/inventory/${id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Error al eliminar item");
+        if (!res.ok) throw new Error(await readApiError(res, "No se pudo eliminar el producto"));
         setItems((prev) => prev.filter((i) => i.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },
@@ -108,20 +96,18 @@ export const useInventory = () => {
           throw new Error(
             details?.length
               ? details.join("\n")
-              : ((body as { error?: string }).error ?? "Error al importar el archivo"),
+              : (apiErrorText(body, "Error al importar el archivo")),
           );
         }
-        const result = (await res.json()) as { imported: number };
-        await fetchAll();
-        return result;
+        return (await res.json()) as { imported: number };
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);
       }
     },
-    [apiClient, fetchAll],
+    [apiClient],
   );
 
   const fetchMovements = useCallback(
@@ -129,10 +115,10 @@ export const useInventory = () => {
       setError(null);
       try {
         const res = await apiClient(`/inventory/${inventoryItemId}/movements`);
-        if (!res.ok) throw new Error("Error al cargar movimientos");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al cargar movimientos"));
         setMovements(await res.json());
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
       }
     },
     [apiClient],
@@ -158,18 +144,37 @@ export const useInventory = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al registrar movimiento");
+          throw new Error(apiErrorText(body, "Error al registrar movimiento"));
         }
-        await fetchAll();
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
       }
     },
-    [apiClient, fetchAll],
+    [apiClient],
+  );
+
+  const fetchById = useCallback(
+    async (id: string): Promise<InventoryItem | null> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiClient(`/inventory/${encodeURIComponent(id)}`);
+        if (!res.ok) throw new Error(await readApiError(res, "No encontramos el producto"));
+        const item: InventoryItem = await res.json();
+        setItems([item]);
+        return item;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiClient],
   );
 
   return {
@@ -178,7 +183,7 @@ export const useInventory = () => {
     loading,
     saving,
     error,
-    fetchAll,
+    fetchById,
     create,
     update,
     remove,

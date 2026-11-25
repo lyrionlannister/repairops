@@ -10,6 +10,10 @@ export type InventoryCountStatus = "open" | "closed";
 // retrofitea aqui).
 @Entity("inventory_counts")
 @Index("IDX_inventory_counts_tenant", ["tenantId"])
+@Index("UQ_inventory_counts_one_open_per_branch", ["tenantId", "branchId"], {
+  unique: true,
+  where: "estado = 'open'",
+})
 @Unique("UQ_inventory_counts_tenant_numero", ["tenantId", "countNumber"])
 export class InventoryCount extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })

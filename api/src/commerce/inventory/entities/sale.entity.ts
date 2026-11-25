@@ -10,6 +10,9 @@ export type SaleOrigin = "counter" | "repair_note" | "quote";
 @Unique(["tenantId", "saleNumber"])
 @Unique(["tenantId", "idempotencyKey"])
 @Index("IDX_sales_local", ["localId"])
+@Index("IDX_sales_customer", ["customerId"])
+// Indices GIN trigram (pg_trgm, migracion 029): TypeORM no sabe declararlos, se ignoran en la sincronizacion.
+@Index("IDX_sales_nombre_cliente_trgm", { synchronize: false })
 export class Sale extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

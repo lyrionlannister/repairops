@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useToast } from "./use-toast";
+import { apiErrorText } from "../utils/api-error";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -8,11 +9,50 @@ const sendRequest = async (url: string, options: RequestInit = {}) => {
   return await fetch(url, options);
 };
 
+// Una sola renovación en vuelo: varias peticiones con 401 a la vez esperan
+// el mismo refresh. Sin esto, dos refresh concurrentes con el mismo token
+// harían saltar la detección de reutilización del servidor y revocarían
+// toda la familia de tokens (el usuario quedaría deslogueado).
+let refreshPromise: Promise<boolean> | null = null;
+
+const tryRefreshSession = async (): Promise<boolean> => {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+        });
+        return res.ok;
+      } catch {
+        return false;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+  return refreshPromise;
+};
+
 // Todo mensaje de la API se muestra como toast (exito en mutaciones, error en
 // cualquier metodo). Excepciones: chats/notificaciones son alta frecuencia o
 // polling, y logout redirige solo, asi que unicamente avisa errores.
 const SILENT_PREFIXES = ["/chats", "/notifications"];
-const SILENT_SUCCESS_PREFIXES = ["/auth/logout"];
+const SILENT_SUCCESS_PREFIXES = ["/auth/logout", "/auth/forgot-password", "/auth/reset-password"];
+
+// Solo las rutas donde un 401 es un fallo real de credenciales. /auth/users/me
+// y /auth/employees si renuevan: antes todo /auth/* quedaba fuera, y al vencer
+// el access token (15 min) el guard veia 401 en /me y cerraba la sesion de un
+// usuario activo aunque su refresh token siguiera vigente.
+const NO_REFRESH_PREFIXES = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/logout",
+  "/auth/verify-email",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
 
 const SUCCESS_TITLE: Record<string, string> = {
   POST: "Creado correctamente",
@@ -93,6 +133,30 @@ export const useApiClient = () => {
         throw error;
       }
 
+      // Access token de 15 min: ante un 401, se intenta renovar la sesión
+      // una sola vez y reintentar la petición original. Si el refresh falla,
+      // la respuesta 401 sigue su curso normal (el guard redirige al login).
+      // Nunca en las rutas de auth: ahí un 401 es un fallo real de login.
+      if (
+        response.status === 401 &&
+        !NO_REFRESH_PREFIXES.some((prefix) => endpoint.startsWith(prefix))
+      ) {
+        const refreshed = await tryRefreshSession();
+        if (refreshed) {
+          try {
+            response = await sendRequest(url, { ...options, credentials: "include" });
+          } catch (error) {
+            if (notify)
+              showToast({
+                title: "Sin conexión",
+                message: "No se pudo contactar al servidor.",
+                variant: "error",
+              });
+            throw error;
+          }
+        }
+      }
+
       if (notify) {
         if (response.ok) {
           if (notifySuccess)
@@ -105,13 +169,29 @@ export const useApiClient = () => {
             .clone()
             .json()
             .catch(() => ({}));
-          const message = String((body as { error?: unknown }).error ?? `Error ${response.status}`);
+          const message = apiErrorText(body, "Algo salió mal. Intenta de nuevo.");
           showToast({ title: "No se pudo completar la acción", message, variant: "error" });
           // Suscripción vencida/cancelada: nada en la app sirve hasta que
           // elija plan de nuevo (ver tenant.middleware.ts), lo manda directo
           // ahí en vez de dejarlo varado en la pantalla que falló.
           if ((body as { code?: string }).code === "subscription_blocked") {
             navigate("/identity/onboarding/plan", { replace: true });
+          }
+        } else if (response.status === 403) {
+          const body = await response
+            .clone()
+            .json()
+            .catch(() => ({}));
+          // Correo sin verificar (ver tenant.middleware.ts): nada sirve hasta
+          // que confirme el enlace o pida uno nuevo, lo manda directo ahí.
+          if ((body as { code?: string }).code === "email_unverified") {
+            navigate("/identity/verify-email", { replace: true });
+          } else {
+            showToast({
+              title: "No se pudo completar la acción",
+              message: apiErrorText(body, "Algo salió mal. Intenta de nuevo."),
+              variant: "error",
+            });
           }
         } else if (response.status !== 401 || endpoint.startsWith("/auth/login")) {
           // 401 en otras rutas = sesion vencida (el guard redirige), no un mensaje.
@@ -121,7 +201,7 @@ export const useApiClient = () => {
             .catch(() => ({}));
           showToast({
             title: "No se pudo completar la acción",
-            message: String((body as { error?: unknown }).error ?? `Error ${response.status}`),
+            message: apiErrorText(body, "Algo salió mal. Intenta de nuevo."),
             variant: "error",
           });
         }

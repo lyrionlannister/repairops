@@ -57,6 +57,7 @@ export type Permission =
   | "dashboard.money"
   | "reports.read"
   | "billing.read"
+  | "billing.manage"
   | "platform.templates.manage"
   | "platform.integrations.manage"
   | "platform.tenants.read"

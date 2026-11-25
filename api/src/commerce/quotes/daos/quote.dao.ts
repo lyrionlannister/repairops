@@ -4,6 +4,9 @@ import { repositoryToken } from "../../../core/di/repository-token.js";
 import { Quote } from "../entities/quote.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 import { can, currentUserId } from "../../../identity/authz/access.js";
+import { containsPattern } from "../../../core/database/like-pattern.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { QuoteFilters } from "../types/quote-page.types.js";
 
 // quotes.read.own (el técnico): solo cotizaciones ligadas a notas asignadas a él.
 function ownQuotesOnly(): string | null {
@@ -39,6 +42,21 @@ export class QuoteDao extends TenantScopedDao<Quote> {
   override async delete(id: string | number): Promise<boolean> {
     if (!(await this.findById(id))) return false;
     return super.delete(id);
+  }
+
+  async findPage(filters: QuoteFilters, request: PageRequest): Promise<Page<Quote>> {
+    const builder = this.scoped();
+    if (filters.branchId) builder.andWhere("entity.localId = :branchId", { branchId: filters.branchId });
+    if (filters.customerId) builder.andWhere("entity.customerId = :customerId", { customerId: filters.customerId });
+    if (filters.status) builder.andWhere("entity.status = :status", { status: filters.status });
+    if (filters.search) {
+      builder.andWhere(
+        `(entity.customerName ILIKE :like OR CAST(entity.quoteNumber AS text) LIKE :like
+          OR (COALESCE(entity.brand, '') || ' ' || COALESCE(entity.model, '')) ILIKE :like)`,
+        { like: containsPattern(filters.search) },
+      );
+    }
+    return this.paginate(builder.orderBy("entity.createdAt", "DESC").addOrderBy("entity.id", "DESC"), request);
   }
 
   async findAllOrdered(branchId?: string | null): Promise<Quote[]> {

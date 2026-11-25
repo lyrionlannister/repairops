@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useRepairNotes } from "../hooks/use-repair-notes";
-import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useBranch } from "@common/hooks/use-branch";
-import {
-  INITIAL_FORM
-} from "../hooks/use-repair-notes";
+import { createInitialForm } from "../hooks/use-repair-notes";
+import { localToday } from "@common/utils/local-date";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useRepairNoteCustomerHistory } from "../hooks/use-repair-note-customer-history";
 import { useRepairNoteItemLines } from "../hooks/use-repair-note-item-lines";
@@ -23,20 +21,18 @@ export const RepairNoteFormPage: React.FC = () => {
 
   const {
     note,
-    notes,
     loading,
     saving,
-    fetchNotes,
     fetchNote,
     fetchNoteItems,
     createNote,
     updateNote,
     clearError,
   } = useRepairNotes();
-  const knownBrands = useKnownBrands(notes);
+  const knownBrands = useKnownBrands();
   const { workingBranchId } = useBranch();
 
-  const [form, setForm] = useState<RepairNoteFormData>(INITIAL_FORM);
+  const [form, setForm] = useState<RepairNoteFormData>(createInitialForm);
   const [advanceMethod, setAdvanceMethod] = useState<AdvancePaymentInput["method"]>("efectivo");
   const [advanceEmployeeId, setAdvanceEmployeeId] = useState("");
 
@@ -44,7 +40,6 @@ export const RepairNoteFormPage: React.FC = () => {
   // la activa en el header al editar una nota de otra sucursal) -- las
   // refacciones a reservar deben salir del stock de esa misma sucursal.
   const noteLocalId = form.localId || workingBranchId;
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(noteLocalId);
 
   const {
     itemLines,
@@ -54,12 +49,7 @@ export const RepairNoteFormPage: React.FC = () => {
     addItemLine,
     removeItemLine,
     buildItemsPayload,
-  } = useRepairNoteItemLines(inventoryItems);
-
-  useEffect(() => {
-    fetchInventory();
-    fetchNotes();
-  }, [fetchInventory, fetchNotes]);
+  } = useRepairNoteItemLines();
 
   useEffect(() => {
     if (!isEdit && workingBranchId) {
@@ -161,7 +151,7 @@ export const RepairNoteFormPage: React.FC = () => {
           onTechnicianNotesChange={(value) => set("technicianNotes", value)}
           onAdditionalFindingsChange={(value) => set("additionalFindings", value)}
           itemLines={itemLines}
-          inventoryItems={inventoryItems}
+          branchId={noteLocalId}
           onItemChange={handleItemChange}
           onLineChange={updateItemLine}
           onAddLine={addItemLine}
@@ -184,7 +174,7 @@ export const RepairNoteFormPage: React.FC = () => {
               status: newStatus,
               deliveryDate:
                 newStatus === "delivered" && !prev.deliveryDate
-                  ? new Date().toISOString().split("T")[0]
+                  ? localToday()
                   : prev.deliveryDate,
             }))
           }

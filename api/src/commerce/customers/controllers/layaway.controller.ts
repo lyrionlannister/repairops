@@ -8,6 +8,7 @@ import { CompleteLayawayDto } from "../dtos/complete-layaway.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
 import { sendError, queryString } from "../../../core/http/error-response.js";
+import { readPageQuery } from "../../../core/common/utils/page-query.js";
 
 @singleton()
 export class LayawayController {
@@ -21,7 +22,14 @@ export class LayawayController {
       const branchId = await this.branchAccess.resolveReadBranch(
         queryString(req.query["branchId"]),
       );
-      res.status(200).json(await this.service.getAll(branchId));
+      const customerId = queryString(req.query["customerId"]) || undefined;
+      const page = await readPageQuery(req.query);
+      if (page) {
+        const status = queryString(req.query["status"]) || undefined;
+        res.status(200).json(await this.service.getPage({ branchId, customerId, status, search: page.search }, page));
+        return;
+      }
+      res.status(200).json(await this.service.getAll(branchId, customerId));
     } catch (error) {
       sendError(res, error, 500);
     }

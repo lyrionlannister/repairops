@@ -4,6 +4,11 @@ import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 
 @Entity("customers")
 @Index("IDX_customers_tenant", ["tenantId"])
+@Index("IDX_customers_tenant_name", ["tenantId", "name"])
+// Indices GIN trigram (pg_trgm, migracion 029): TypeORM no sabe declararlos, se ignoran en la sincronizacion.
+@Index("IDX_customers_nombre_trgm", { synchronize: false })
+@Index("IDX_customers_telefono_trgm", { synchronize: false })
+@Index("IDX_customers_email_trgm", { synchronize: false })
 export class Customer extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

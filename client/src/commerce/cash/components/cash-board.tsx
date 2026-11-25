@@ -113,7 +113,22 @@ export const CashBoard: FC<CashBoardProps> = ({ branchId }) => {
           {cuts.canAudit && (
             <div className="min-w-0 space-y-6 lg:col-span-2">
               {cuts.stats && <VarianceStatsRow stats={cuts.stats} />}
-              <CutHistoryTable cuts={cuts.cuts} onView={screen.openCut} />
+              <CutHistoryTable
+                cuts={cuts.history.items}
+                loading={cuts.history.loading}
+                error={cuts.history.error}
+                onRetry={() => void cuts.history.refetch()}
+                pagination={{
+                  page: cuts.history.page,
+                  pageSize: cuts.history.pageSize,
+                  totalPages: cuts.history.totalPages,
+                  totalItems: cuts.history.total,
+                  startIndex: cuts.history.startIndex,
+                  onPageChange: cuts.history.setPage,
+                  onPageSizeChange: cuts.history.setPageSize,
+                }}
+                onView={screen.openCut}
+              />
             </div>
           )}
         </div>

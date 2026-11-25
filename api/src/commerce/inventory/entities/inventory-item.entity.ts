@@ -9,6 +9,10 @@ export type InventoryItemKind = "accessory" | "part";
 @Entity("inventory_items")
 @Index("IDX_inventory_items_tenant", ["tenantId"])
 @Index("IDX_inventory_items_local", ["localId"])
+@Index("IDX_inventory_items_tenant_name", ["tenantId", "name"])
+// Indices GIN trigram (pg_trgm, migracion 029): TypeORM no sabe declararlos, se ignoran en la sincronizacion.
+@Index("IDX_inventory_items_nombre_trgm", { synchronize: false })
+@Index("IDX_inventory_items_sku_trgm", { synchronize: false })
 export class InventoryItem extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

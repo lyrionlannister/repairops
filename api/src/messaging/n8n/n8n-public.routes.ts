@@ -6,6 +6,8 @@ import { RepairNoteDeviceDao } from "../../commerce/repair-notes/daos/repair-not
 import { toDeviceView } from "../../commerce/repair-notes/utils/devices.js";
 import { runWithTenant } from "../../core/tenancy/tenant-context.js";
 import { env } from "../../core/config/env.js";
+import AppDataSource from "../../core/config/data-source.js";
+import { UUID } from "../../core/http/public-id/public-id-metadata.js";
 
 /**
  * Endpoints de consumo interno desde n8n, por tenant.
@@ -14,7 +16,23 @@ import { env } from "../../core/config/env.js";
  * compartido (X-Internal-Token) para no quedar abiertos a cualquiera que
  * adivine la ruta -- el comentario anterior ("solo accesibles dentro de la
  * red Docker") no estaba garantizado por nada a nivel de nginx/compose.
+ *
+ * El tenant NUNCA viaja en la URL: el `tenantId` interno (bigint
+ * secuencial, enumerable) que antes iba en el path se reemplazo por el
+ * public_id del tenant en el header `X-Tenant-Public-Id`, validado contra
+ * la base de datos. Sin tenant valido, 401.
+ *
+ * CAMBIO PARA LOS WORKFLOWS DE n8n (viven fuera de este repo, en la
+ * instancia de n8n): en cada llamada a /api/v1/n8n/*, quitar el
+ * `/:tenantId` del path y mandar el header `X-Tenant-Public-Id` con el
+ * public_id (uuid) del taller. El secreto `X-Internal-Token` se sigue
+ * mandando igual. Rutas nuevas:
+ * - GET /api/v1/n8n/message-templates/:key
+ * - GET /api/v1/n8n/products/search?model=...
+ * - GET /api/v1/n8n/repair-notes/:controlNumber
  */
+export const TENANT_PUBLIC_ID_HEADER = "x-tenant-public-id";
+
 export function requireInternalToken(req: Request, res: Response, next: NextFunction): void {
   const expected = env("N8N_INTERNAL_TOKEN");
   if (!expected) {
@@ -28,23 +46,58 @@ export function requireInternalToken(req: Request, res: Response, next: NextFunc
   next();
 }
 
+// Resuelve el public_id del header al id interno del tenant, o null si el
+// formato no es uuid o el tenant no existe. El secreto compartido es global
+// y no identifica tenant, así que esta es la única validación que ata la
+// llamada a un taller concreto.
+export async function resolveTenantInternalId(publicId: string): Promise<string | null> {
+  if (!UUID.test(publicId)) return null;
+  const rows: Array<{ id: string }> = await AppDataSource.query(
+    `SELECT id::text AS "id" FROM tenants WHERE public_id = $1`,
+    [publicId],
+  );
+  return rows[0]?.id ?? null;
+}
+
+// Despues de requireInternalToken: exige el header con el public_id del
+// tenant, lo valida contra la base y deja el tenant en contexto para toda
+// la cadena (los Dao ya filtran por el). Sin tenant valido, 401.
+export async function requireTenantFromHeader(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const header = req.headers[TENANT_PUBLIC_ID_HEADER];
+    const publicId = Array.isArray(header) ? header[0] : header;
+    const tenantId = publicId ? await resolveTenantInternalId(publicId) : null;
+    if (!tenantId) {
+      res.status(401).json({ error: "Tenant inválido o no especificado" });
+      return;
+    }
+    // next() se invoca dentro del contexto: los handlers que dispara corren
+    // con este tenant aunque sean async (mismo criterio que tenantMiddleware).
+    runWithTenant(tenantId, () => {
+      next();
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export const createN8nPublicRouter = (
   messageTemplateDao: MessageTemplateDao,
   priceListDao: PriceListDao,
   repairNoteDao: RepairNoteDao,
   repairNoteDeviceDao: RepairNoteDeviceDao,
 ): Router => {
-  const router = Router({ mergeParams: true });
+  const router = Router();
   router.use(requireInternalToken);
+  router.use(requireTenantFromHeader);
 
-  const withTenant = <T>(tenantId: string, fn: () => Promise<T>): Promise<T> =>
-    runWithTenant(tenantId, fn);
-
-  router.get("/:tenantId/message-templates/:key", async (req, res) => {
+  router.get("/message-templates/:key", async (req, res) => {
     try {
-      const template = await withTenant(req.params.tenantId, () =>
-        messageTemplateDao.findByKey(req.params.key),
-      );
+      const template = await messageTemplateDao.findByKey(req.params.key);
       if (!template) {
         res.status(404).json({ error: "Template no encontrado", key: req.params.key });
         return;
@@ -56,7 +109,7 @@ export const createN8nPublicRouter = (
     }
   });
 
-  router.get("/:tenantId/products/search", async (req, res) => {
+  router.get("/products/search", async (req, res) => {
     try {
       const model = (req.query.model as string | undefined)?.trim();
       const supplier = (req.query.supplier as string | undefined)?.toLowerCase().trim();
@@ -66,7 +119,7 @@ export const createN8nPublicRouter = (
         return;
       }
 
-      let items = await withTenant(req.params.tenantId, () => priceListDao.searchByModel(model));
+      let items = await priceListDao.searchByModel(model);
 
       if (supplier) {
         items = items.filter((item) => item.supplier.name.toLowerCase().includes(supplier));
@@ -86,7 +139,7 @@ export const createN8nPublicRouter = (
     }
   });
 
-  router.get("/:tenantId/repair-notes/:controlNumber", async (req, res) => {
+  router.get("/repair-notes/:controlNumber", async (req, res) => {
     try {
       const controlNumber = parseInt(req.params.controlNumber, 10);
       if (isNaN(controlNumber)) {
@@ -94,11 +147,11 @@ export const createN8nPublicRouter = (
         return;
       }
 
-      const note = await withTenant(req.params.tenantId, () =>
-        repairNoteDao.findByControlNumber(controlNumber),
-      );
+      const note = await repairNoteDao.findByControlNumber(controlNumber);
       const devices = note
-        ? (await withTenant(req.params.tenantId, () => repairNoteDeviceDao.findByRepairNoteIds([note.id]))).map((device) => toDeviceView(device))
+        ? (await repairNoteDeviceDao.findByRepairNoteIds([note.id])).map((device) =>
+            toDeviceView(device),
+          )
         : [];
 
       if (!note) {

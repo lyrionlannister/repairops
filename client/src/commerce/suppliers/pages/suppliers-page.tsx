@@ -14,7 +14,7 @@ import { useSuppliersPage } from "../hooks/use-suppliers-page";
 
 export const SuppliersPage = () => {
   const navigate = useNavigate();
-  const { suppliers, loading, saving, fetchAll, remove } = useSuppliers();
+  const { suppliers, loading, saving, error, fetchAll, remove } = useSuppliers();
   const { search, setSearch, filteredSuppliers } = useSuppliersPage(suppliers);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -59,6 +59,8 @@ export const SuppliersPage = () => {
 
       <DataTable
         loading={loading}
+        error={suppliers.length === 0 ? error : null}
+        onRetry={() => void fetchAll()}
         loadingText="Cargando proveedores..."
         isEmpty={pageItems.length === 0}
         empty={{

@@ -10,9 +10,12 @@ export const NotFound: React.FC = () => {
       <PageMeta title="Página no encontrada" description="La página que buscas no existe" />
       <div className="relative flex flex-col items-center justify-center min-h-screen p-6 overflow-hidden z-1">
         <div className="mx-auto w-full max-w-60.5 text-center sm:max-w-118">
-          <h1 className="mb-8 font-bold text-gray-800 text-title-md dark:text-white/90 xl:text-title-2xl">
+          <h1 className="mb-4 font-bold text-gray-800 text-title-md dark:text-white/90 xl:text-title-2xl">
             404
           </h1>
+          <p className="mb-8 text-base text-gray-700 dark:text-gray-400 sm:text-lg">
+            No encontramos la página que buscas. Puede que el enlace esté mal o que ya no exista.
+          </p>
           <div className="flex gap-6 items-center justify-center">
             <Link
               to="/"

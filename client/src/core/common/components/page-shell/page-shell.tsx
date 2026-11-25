@@ -15,7 +15,7 @@ export const PageShell = ({
   const showBack = pathname !== "/home";
 
   return (
-    <div className={`flex flex-col ${scrollHeader ? "" : "flex-1 min-h-0"}`}>
+    <div className={`flex flex-col ${scrollHeader ? "" : "xl:flex-1 xl:min-h-0"}`}>
       <PageMeta title={title} description={description} />
 
       <div className="flex shrink-0 flex-col gap-4 pb-6 sm:flex-row sm:items-center sm:justify-between">
@@ -33,7 +33,7 @@ export const PageShell = ({
       </div>
 
       <div
-        className={`flex flex-1 flex-col gap-6 ${scrollHeader ? "" : "custom-scrollbar min-h-0 overflow-x-hidden overflow-y-auto"}`}
+        className={`flex flex-1 flex-col gap-6 ${scrollHeader ? "" : "custom-scrollbar overflow-x-hidden xl:min-h-0 xl:overflow-y-auto"}`}
       >
         {children}
       </div>

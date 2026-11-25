@@ -22,6 +22,8 @@ import type { WhatsappNotificationQueueService } from "../../../../src/messaging
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
+import { PriceListItem } from "../../../../src/commerce/price-list/entities/price-list-item.entity.js";
+import { PriceListDao } from "../../../../src/commerce/price-list/daos/price-list.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryService } from "../../../../src/commerce/inventory/services/inventory.service.js";
 import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
@@ -51,6 +53,7 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
   let repairNoteService: RepairNoteService;
   let inventoryService: InventoryService;
   let reservationDao: InventoryReservationDao;
+  let itemDao: InventoryItemDao;
   const tenantId = `${Date.now()}3`;
 
   const buildRepairNoteService = (whatsappAccountService: WhatsappAccountService) => {
@@ -70,12 +73,14 @@ describe("RepairNoteService: reserva antes de 'done', consumo real al completar"
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
       new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
       notificationQueueStub,
+      itemDao,
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
   };
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
+    itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
     reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
     inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
@@ -521,6 +526,8 @@ describe("RepairNoteService: anticipo y entrega", () => {
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
       new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
       notificationQueueStub,
+      itemDao,
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
   };
 

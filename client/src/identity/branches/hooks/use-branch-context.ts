@@ -1,65 +1,30 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
-import { useInventory } from "../../../commerce/inventory/hooks/use-inventory";
-import { useSales } from "../../../commerce/inventory/hooks/use-sales";
-import { useRepairNotes } from "../../../commerce/repair-notes/hooks/use-repair-notes";
+import { useApiResource } from "@common/hooks/use-api-resource";
 import { useCash } from "../../../commerce/cash/hooks/use-cash";
+import type { InventoryStats, SaleStats } from "../../../commerce/inventory/types/inventory-stats";
+import type { RepairNoteStats } from "../../../commerce/repair-notes/types/repair-note-stats";
 
-const CLOSED_STATUSES = ["delivered", "cancelled"];
-
+// Cifras calculadas en el servidor sobre toda la sucursal, no sobre lo que alcance a
+// descargar la pantalla.
 export const useBranchContext = (branchId: string | null) => {
-  const { items, fetchAll: fetchInventory } = useInventory();
-  const { sales, fetchAll: fetchSales } = useSales();
-  const { notes, fetchNotes } = useRepairNotes();
   const { session, fetchOpenSession } = useCash();
+  const query = branchId ? `branchId=${encodeURIComponent(branchId)}` : null;
+  const inventory = useApiResource<InventoryStats>(query && `/inventory/stats?${query}`);
+  const sales = useApiResource<SaleStats>(query && `/sales/stats?${query}&period=month`);
+  const notes = useApiResource<RepairNoteStats>(query && `/repair-notes/stats?${query}`);
 
   useEffect(() => {
-    if (!branchId) return;
-    fetchInventory();
-    fetchSales();
-    fetchNotes();
-    fetchOpenSession(branchId);
-  }, [branchId, fetchInventory, fetchSales, fetchNotes, fetchOpenSession]);
+    if (branchId) fetchOpenSession(branchId);
+  }, [branchId, fetchOpenSession]);
 
-  return useMemo(() => {
-    if (!branchId) {
-      return {
-        skuCount: 0,
-        stockValue: 0,
-        criticalCount: 0,
-        monthlySalesTotal: 0,
-        monthlySalesCount: 0,
-        openRepairNotesCount: 0,
-        cashSessionOpen: false,
-      };
-    }
-
-    const branchItems = items.filter((i) => i.localId === branchId);
-    const skuCount = branchItems.length;
-    const stockValue = branchItems.reduce((sum, i) => sum + i.quantityOnHand * i.costPrice, 0);
-    const criticalCount = branchItems.filter((i) => i.quantityOnHand <= i.minStock).length;
-
-    const now = new Date();
-    const branchSales = sales.filter((s) => {
-      if (s.localId !== branchId) return false;
-      const createdAt = new Date(s.createdAt);
-      return createdAt.getFullYear() === now.getFullYear() && createdAt.getMonth() === now.getMonth();
-    });
-    const monthlySalesTotal = branchSales.reduce((sum, s) => sum + s.totalValue, 0);
-    const monthlySalesCount = branchSales.length;
-
-    const openRepairNotesCount = notes.filter(
-      (n) => n.localId === branchId && !CLOSED_STATUSES.includes(n.status),
-    ).length;
-
-    return {
-      skuCount,
-      stockValue,
-      criticalCount,
-      monthlySalesTotal,
-      monthlySalesCount,
-      openRepairNotesCount,
-      cashSessionOpen: Boolean(session),
-    };
-  }, [branchId, items, sales, notes, session]);
+  return {
+    skuCount: inventory.data?.skuCount ?? 0,
+    stockValue: Number(inventory.data?.stockValueAtCost ?? 0),
+    criticalCount: inventory.data?.criticalCount ?? 0,
+    monthlySalesTotal: Number(sales.data?.total ?? 0),
+    monthlySalesCount: sales.data?.count ?? 0,
+    openRepairNotesCount: notes.data?.open ?? 0,
+    cashSessionOpen: Boolean(branchId && session),
+  };
 };

@@ -5,7 +5,6 @@ import { useQuoteCustomerHistory } from "../hooks/use-quote-customer-history";
 import { useQuoteItemLines } from "../hooks/use-quote-item-lines";
 import { QuoteCustomerHistoryPanel } from "../components/quote-customer-history-panel";
 import { QuoteForm, QUOTE_FORM_STEPS } from "../components/quote-form";
-import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useBranch } from "@common/hooks/use-branch";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { useFormSteps } from "@common/hooks/use-form-steps";
@@ -48,8 +47,6 @@ export const QuoteFormPage: React.FC = () => {
   // La cotizacion pertenece a form.localId -- mismo criterio que RepairNote,
   // no mostrar items de una sucursal distinta a la que cotiza.
   const quoteLocalId = form.localId || workingBranchId;
-  const { items: inventoryItems, fetchAll: fetchInventory } =
-    useBranchScopedInventory(quoteLocalId);
 
   const {
     itemLines,
@@ -59,11 +56,7 @@ export const QuoteFormPage: React.FC = () => {
     addItemLine,
     removeItemLine,
     buildItemsPayload,
-  } = useQuoteItemLines(inventoryItems);
-
-  useEffect(() => {
-    fetchInventory();
-  }, [fetchInventory]);
+  } = useQuoteItemLines();
 
   useEffect(() => {
     if (isEdit && id) {
@@ -172,7 +165,7 @@ export const QuoteFormPage: React.FC = () => {
             setForm((prev) => ({ ...prev, serviceTypeIds }))
           }
           itemLines={itemLines}
-          inventoryItems={inventoryItems}
+          branchId={quoteLocalId}
           onInventoryItemChange={handleInventoryItemChange}
           onLineChange={updateItemLine}
           onAddLine={addItemLine}

@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, MinLength, IsArray, ArrayNotEmpty, ArrayUnique } from "class-validator";
+import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, MinLength, IsArray, ArrayNotEmpty, ArrayUnique, ValidateIf } from "class-validator";
 import { PayCycle, USER_ROLES, UserRole } from "../entities/user.entity.js";
 
 const PAY_CYCLES: PayCycle[] = ["weekly", "biweekly", "monthly"];
@@ -37,8 +37,9 @@ export class UpdateEmployeeDto {
   @Min(0, { message: "Salario no puede ser negativo" })
   salaryAmount?: number;
 
-  @IsOptional()
-  @IsIn(PAY_CYCLES, { message: "Ciclo de pago inválido" })
+  // Sin ciclo no se puede prorratear el sueldo en el reporte de productividad.
+  @ValidateIf((dto: { salaryAmount?: number; payCycle?: PayCycle }) => (dto.salaryAmount ?? 0) > 0 || dto.payCycle !== undefined)
+  @IsIn(PAY_CYCLES, { message: "Elige el ciclo de pago del salario" })
   payCycle?: PayCycle;
 
   // Sucursales del usuario (obligatorio para quien no es owner; el owner accede a todas).

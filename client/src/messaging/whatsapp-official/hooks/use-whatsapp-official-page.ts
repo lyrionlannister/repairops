@@ -4,6 +4,7 @@ import { useCurrentUser } from "@common/hooks/use-current-user";
 import { useWhatsappAccount } from "./use-whatsapp-account";
 import { useWhatsappTemplates } from "./use-whatsapp-templates";
 import { useTemplateStatusByEntry } from "./use-template-status-by-entry";
+import { useWhatsappPackages } from "../../../app_platform/billing/hooks/use-whatsapp-packages";
 import { EMPTY_CONNECT_FORM } from "../utils/format";
 
 export const useWhatsappOfficialPage = () => {
@@ -20,6 +21,7 @@ export const useWhatsappOfficialPage = () => {
   const [isConnectOpen, setIsConnectOpen] = useState(false);
   const [connectForm, setConnectForm] = useState(EMPTY_CONNECT_FORM);
   const statusByEntryId = useTemplateStatusByEntry(templates);
+  const whatsappPackages = useWhatsappPackages();
 
   useEffect(() => {
     fetchStatus();
@@ -46,6 +48,7 @@ export const useWhatsappOfficialPage = () => {
     templatesLoading,
     sync,
     statusByEntryId,
+    whatsappPackages,
     // Sin cuenta propia el taller solo ve las plantillas de sistema; al conectar la suya,
     // el backend le copia esas plantillas y ya puede administrarlas.
     catalogReadOnly: account?.ownedByPlatform !== false,

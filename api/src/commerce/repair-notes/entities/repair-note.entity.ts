@@ -9,6 +9,9 @@ import { Branch } from "../../../identity/branches/entities/branch.entity.js";
 @Index("IDX_repair_notes_tenant_status", ["tenantId", "status"])
 @Index("UQ_repair_notes_public_ref", ["publicRef"], { unique: true })
 @Index("IDX_repair_notes_local", ["localId"])
+@Index("IDX_repair_notes_customer", ["customerId"])
+// Indices GIN trigram (pg_trgm, migracion 029): TypeORM no sabe declararlos, se ignoran en la sincronizacion.
+@Index("IDX_repair_notes_nombre_cliente_trgm", { synchronize: false })
 export class RepairNote extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

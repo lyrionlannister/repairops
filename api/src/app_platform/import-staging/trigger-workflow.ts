@@ -13,12 +13,17 @@ const API_INTERNAL_URL = optionalEnv("API_INTERNAL_URL", "http://api:3000");
  */
 export async function triggerImportStagingWorkflow(params: {
   tenantId: string;
+  // public_id del tenant: el workflow lo manda como header
+  // X-Tenant-Public-Id en /callback y /progress (esas rutas ya no confían
+  // en el tenantId de la URL ni del body).
+  tenantPublicId: string;
   importId: string;
   fileName: string;
   fileBuffer: Buffer;
 }): Promise<void> {
   const form = new FormData();
   form.set("tenantId", params.tenantId);
+  form.set("tenantPublicId", params.tenantPublicId);
   form.set("importId", params.importId);
   form.set("callbackUrl", `${API_INTERNAL_URL}/api/v1/import-staging/callback`);
   form.set("progressUrl", `${API_INTERNAL_URL}/api/v1/import-staging/progress`);

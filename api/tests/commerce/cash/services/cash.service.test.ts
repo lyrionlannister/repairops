@@ -13,7 +13,7 @@ import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
-import { makeUserRoleDao } from "../../../support/authz-deps.js";
+import { makeUserRoleDao, makeAuditLogStub } from "../../../support/authz-deps.js";
 import { effectivePermissions } from "../../../../src/identity/authz/permissions.js";
 
 // Integration test against a real Postgres (same reasoning as
@@ -27,12 +27,12 @@ describe("CashService", () => {
 
   beforeAll(async () => {
     await AppDataSource.initialize();
-    await ensureFixtureTenant(AppDataSource, tenantId, `${tenantId}1`, `${tenantId}2`, `${tenantId}3`, `${tenantId}4`);
+    await ensureFixtureTenant(AppDataSource, tenantId, `${tenantId}1`, `${tenantId}2`, `${tenantId}3`, `${tenantId}4`, `${tenantId}5`, `${tenantId}6`, `${tenantId}7`, `${tenantId}8`, `${tenantId}91`, `${tenantId}92`);
     const sessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
     const movementDao = new CashMovementDao(AppDataSource.getRepository(CashMovement));
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     userDao = new UserDao(AppDataSource.getRepository(User));
-    service = new CashService(sessionDao, movementDao, localService, userDao, makeUserRoleDao());
+    service = new CashService(sessionDao, movementDao, localService, userDao, makeUserRoleDao(), makeAuditLogStub());
   });
 
   afterAll(async () => {
@@ -45,6 +45,32 @@ describe("CashService", () => {
     await expect(runWithTenant(tenantId, () => service.openSession("1", 50))).rejects.toThrow(
       "Ya hay una sesión de caja abierta",
     );
+  });
+
+  it("opens only one session when two openings race for the same local", async () => {
+    const raceTenant = `${tenantId}91`;
+    const results = await Promise.allSettled([
+      runWithTenant(raceTenant, () => service.openSession("1", 100)),
+      runWithTenant(raceTenant, () => service.openSession("1", 100)),
+    ]);
+
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const rejected = results.find((r) => r.status === "rejected") as PromiseRejectedResult;
+    expect(String(rejected.reason)).toContain("Ya hay una sesión de caja abierta");
+  });
+
+  it("closes a session once when two closings race, keeping the first cut", async () => {
+    const raceTenant = `${tenantId}92`;
+    const session = await runWithTenant(raceTenant, () => service.openSession("1", 0));
+    const results = await Promise.allSettled([
+      runWithTenant(raceTenant, () => service.closeSession(session.id, 0)),
+      runWithTenant(raceTenant, () => service.closeSession(session.id, 0)),
+    ]);
+
+    const closed = results.filter((r) => r.status === "fulfilled");
+    expect(closed).toHaveLength(1);
+    const stored = await runWithTenant(raceTenant, () => service.getSessionById(session.id));
+    expect(stored?.cutNumber).toBe((closed[0] as PromiseFulfilledResult<{ cutNumber: number }>).value.cutNumber);
   });
 
   it("rejects registering a movement on a closed session", async () => {

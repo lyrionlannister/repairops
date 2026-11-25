@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import { readPageQuery } from "../../../core/common/utils/page-query.js";
 import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -11,9 +12,10 @@ import { sendError } from "../../../core/http/error-response.js";
 export class InventoryTransferController {
   constructor(private service: InventoryTransferService) {}
 
-  getAll = async (_req: Request, res: Response): Promise<void> => {
+  getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getAll());
+      const page = await readPageQuery(req.query);
+      res.status(200).json(page ? await this.service.getPage(page) : await this.service.getAll());
     } catch (error) {
       sendError(res, error, 500);
     }

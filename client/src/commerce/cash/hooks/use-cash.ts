@@ -7,6 +7,7 @@ import type {
   CashMovementType,
   CashMovementMethod,
 } from "../types/cash";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const useCash = () => {
   const { apiClient } = useApiClient();
@@ -24,12 +25,12 @@ export const useCash = () => {
       setError(null);
       try {
         const res = await apiClient(`/cash/sessions/open?localId=${encodeURIComponent(localId)}`);
-        if (!res.ok) throw new Error("Error al consultar la sesión de caja");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al consultar la sesión de caja"));
         const data = (await res.json()) as CashSessionRecord | null;
         setSession(data);
         return data;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setLoading(false);
@@ -51,14 +52,14 @@ export const useCash = () => {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(
-            (body as { error?: string | string[] }).error?.toString() ?? "Error al abrir caja",
+            apiErrorText(body, "Error al abrir caja"),
           );
         }
         setSession((await res.json()) as CashSessionRecord);
         setClosedSession(null);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -85,7 +86,7 @@ export const useCash = () => {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(
-            (body as { error?: string | string[] }).error?.toString() ?? "Error al cerrar caja",
+            apiErrorText(body, "Error al cerrar caja"),
           );
         }
         const closed = (await res.json()) as CashSessionRecord;
@@ -95,7 +96,7 @@ export const useCash = () => {
         setClosedSession(closed);
         return closed;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);
@@ -153,14 +154,13 @@ export const useCash = () => {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(
-            (body as { error?: string | string[] }).error?.toString() ??
-              "Error al registrar movimiento",
+            apiErrorText(body, "Error al registrar movimiento"),
           );
         }
         await Promise.all([fetchMovements(sessionId), fetchSummary(sessionId)]);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);

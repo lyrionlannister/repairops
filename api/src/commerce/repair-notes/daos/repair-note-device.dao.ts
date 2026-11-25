@@ -18,4 +18,14 @@ export class RepairNoteDeviceDao extends TenantScopedDao<RepairNoteDevice> {
       .addOrderBy("entity.position", "ASC")
       .getMany();
   }
+
+  async distinctBrands(): Promise<string[]> {
+    const rows = await this.scoped()
+      .select("DISTINCT TRIM(entity.brand)", "brand")
+      .andWhere("TRIM(entity.brand) <> ''")
+      .orderBy("brand", "ASC")
+      .limit(500)
+      .getRawMany<{ brand: string }>();
+    return rows.map((row) => row.brand);
+  }
 }

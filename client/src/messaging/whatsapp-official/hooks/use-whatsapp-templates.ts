@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { WhatsappTemplateStatusRow } from "../types/whatsapp-templates";
+import { apiErrorText } from "@common/utils/api-error";
 
 // GET dispara la reconciliación on-demand en el backend (da de alta en Meta
 // las plantillas del catálogo que falten y refresca el status de las que ya
@@ -19,11 +20,11 @@ export const useWhatsappTemplates = () => {
       const res = await apiClient("/whatsapp-official/templates");
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error((body as { error?: string }).error ?? "Error al sincronizar plantillas con Meta");
+        throw new Error(apiErrorText(body, "Error al sincronizar plantillas con Meta"));
       }
       setTemplates(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }

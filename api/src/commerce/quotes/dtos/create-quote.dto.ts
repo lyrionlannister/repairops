@@ -70,7 +70,7 @@ export class CreateQuoteDto {
   createdByEmployeeId?: string;
 
   @IsArray({ message: "Renglones deben ser una lista" })
-  @ArrayMinSize(1, { message: "La cotización debe tener al menos un item" })
+  @ArrayMinSize(1, { message: "La cotización debe tener al menos un producto" })
   @ValidateNested({ each: true, message: "Renglones contienen un valor inválido" })
   @Type(() => QuoteItemInputDto)
   items!: QuoteItemInputDto[];

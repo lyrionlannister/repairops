@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardCheck, Lock } from "lucide-react";
-import { useInventory } from "../hooks/use-inventory";
 import { useInventoryCounts } from "../hooks/use-inventory-counts";
 import { useBranches } from "@identity/branches/hooks/use-branches";
 import { Button } from "@ui/button/button";
@@ -10,9 +9,9 @@ import { Select } from "@ui/select/select";
 import { useBranch } from "@common/hooks/use-branch";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import type { LineDraft } from "../types/inventory-count-page";
+import { countLineLabel } from "../utils/stock";
 
 export const InventoryCountPage: React.FC = () => {
-  const { items, fetchAll: fetchItems } = useInventory();
   const { branches, fetchAll: fetchBranches } = useBranches();
   const { count, saving, missingReasonItemIds, open, setCounted, close } = useInventoryCounts();
 
@@ -22,14 +21,9 @@ export const InventoryCountPage: React.FC = () => {
   const [drafts, setDrafts] = useState<Record<string, LineDraft>>({});
 
   useEffect(() => {
-    fetchItems();
     fetchBranches();
-  }, [fetchItems, fetchBranches]);
+  }, [fetchBranches]);
 
-  const itemName = (id: string) => {
-    const item = items.find((i) => i.id === id);
-    return item ? `${item.name}${item.sku ? ` (${item.sku})` : ""}` : `Item ${id}`;
-  };
 
   const handleOpen = async () => {
     if (!branchId) return;
@@ -95,7 +89,7 @@ export const InventoryCountPage: React.FC = () => {
               return (
                 <div key={item.id} className="flex flex-col gap-2 border-b border-gray-100 pb-3 sm:flex-row sm:items-end dark:border-gray-800">
                   <div className="flex-1 text-sm text-gray-600 dark:text-gray-300">
-                    {itemName(item.inventoryItemId)}
+                    {countLineLabel(item)}
                     {item.countedQuantity !== null && <span className="text-gray-400"> · capturado: {item.countedQuantity}</span>}
                   </div>
                   {isOpen ? (

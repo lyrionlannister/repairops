@@ -4,6 +4,9 @@ import { repositoryToken } from "../../../core/di/repository-token.js";
 import { Customer } from "../entities/customer.entity.js";
 import { TenantScopedDao } from "../../../core/daos/tenant-scoped.dao.js";
 import { can, currentUserId } from "../../../identity/authz/access.js";
+import { containsPattern } from "../../../core/database/like-pattern.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { CustomerPageFilters } from "../types/customer-page.types.js";
 
 // customers.read.own (el técnico): solo los clientes ligados a notas asignadas a él.
 function ownCustomersOnly(): string | null {
@@ -44,5 +47,26 @@ export class CustomerDao extends TenantScopedDao<Customer> {
 
   override async findAll(): Promise<Customer[]> {
     return this.scoped().orderBy("entity.name", "ASC").getMany();
+  }
+
+  async findPage(filters: CustomerPageFilters, request: PageRequest): Promise<Page<Customer>> {
+    const builder = this.searching(filters.search);
+    if (filters.ids) builder.andWhere("entity.id IN (:...ids)", { ids: filters.ids });
+    return this.paginate(builder.orderBy("entity.name", "ASC").addOrderBy("entity.id", "ASC"), request);
+  }
+
+  async lookup(search: string | undefined, limit: number): Promise<Customer[]> {
+    return this.searching(search).orderBy("entity.name", "ASC").addOrderBy("entity.id", "ASC").take(limit).getMany();
+  }
+
+  private searching(search: string | undefined) {
+    const builder = this.scoped();
+    if (search) {
+      builder.andWhere(
+        "(entity.name ILIKE :like OR entity.phone ILIKE :like OR entity.email ILIKE :like)",
+        { like: containsPattern(search) },
+      );
+    }
+    return builder;
   }
 }

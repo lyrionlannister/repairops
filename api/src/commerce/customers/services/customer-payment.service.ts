@@ -10,12 +10,16 @@ import { CashSession } from "../../cash/entities/cash-session.entity.js";
 import { CashMovement } from "../../cash/entities/cash-movement.entity.js";
 import type { CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
 import { toMoney } from "../../../core/common/utils/money.js";
+import { BusinessError } from "../../../core/http/business-error.js";
+import { currentUserId } from "../../../identity/authz/access.js";
 
 export interface RegisterCustomerPaymentInput {
   customerId: string;
   localId: string;
   amount: number;
   method: CashMovementMethod;
+  // Se ignora: createdByEmployeeId siempre es el usuario autenticado (ver
+  // register()), nunca lo que manda el cliente.
   createdByEmployeeId?: string | null;
 }
 
@@ -32,25 +36,31 @@ export class CustomerPaymentService {
   // anticipo de una nota (RepairNoteService.registerAdvance).
   async register(input: RegisterCustomerPaymentInput): Promise<CustomerPayment> {
     const amount = new Decimal(input.amount);
-    if (!amount.gt(0)) throw new Error("El monto del abono debe ser mayor a 0");
+    if (!amount.gt(0)) throw new BusinessError("El monto del abono debe ser mayor a 0");
     const tenantId = getCurrentTenantId();
+    // createdByEmployeeId es siempre el usuario autenticado: lo que manda el
+    // cliente en el body se ignora (un empleado no puede atribuir abonos a
+    // otro).
+    const createdByEmployeeId = currentUserId();
 
     return AppDataSource.transaction(async (manager) => {
       const customer = await manager.findOneBy(Customer, {
         id: input.customerId,
         tenantId,
       });
-      if (!customer) throw new Error("Cliente no encontrado");
+      if (!customer) throw new BusinessError("Cliente no encontrado");
 
       const balance = await sumCreditBalance(manager, tenantId, customer.id);
       if (amount.gt(balance)) {
-        throw new Error(`El abono no puede ser mayor a lo que debe el cliente (debe: ${new Decimal(balance).toFixed(2)})`);
+        throw new BusinessError(
+          `El abono no puede ser mayor a lo que debe el cliente (debe: ${new Decimal(balance).toFixed(2)})`,
+        );
       }
 
       const session = await manager.findOne(CashSession, {
         where: { tenantId, localId: input.localId, status: "open" },
       });
-      if (!session) throw new Error("Abre la caja de la sucursal para registrar el abono");
+      if (!session) throw new BusinessError("Abre la caja de la sucursal para registrar el abono");
 
       const payment = manager.create(CustomerPayment, {
         tenantId,
@@ -58,7 +68,7 @@ export class CustomerPaymentService {
         customerId: customer.id,
         amount: toMoney(amount),
         method: input.method,
-        createdByEmployeeId: input.createdByEmployeeId ?? null,
+        createdByEmployeeId,
       });
       const savedPayment = await manager.save(payment);
 
@@ -72,7 +82,7 @@ export class CustomerPaymentService {
           relatedEntityType: "customer_payment",
           relatedEntityId: savedPayment.id,
           note: `Abono cliente ${customer.name}`,
-          createdByEmployeeId: input.createdByEmployeeId ?? null,
+          createdByEmployeeId,
         }),
       );
 

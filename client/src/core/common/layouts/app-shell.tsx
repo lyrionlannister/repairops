@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 
 import { useSidebar } from "../hooks/use-sidebar";
 import { useAuthGuard } from "../hooks/use-auth-guard";
@@ -10,13 +10,22 @@ import { signInNavbarItems } from "../../../config/app/navbar/sign-in-navbar-ite
 import { Backdrop } from "../components/menu/backdrop";
 import { usePermissions } from "../hooks/use-permissions";
 import { useLayoutResizeNotifier } from "../hooks/use-layout-resize-notifier";
-import { visibleNavItems } from "../utils/visible-nav-items";
+import { requiredPermissionsFor, visibleNavItems } from "../utils/visible-nav-items";
+import { useCurrentUser } from "../hooks/use-current-user";
+import { AccessDenied } from "../components/access-denied";
 
 const LayoutContent: React.FC = () => {
   useAuthGuard("/identity/sign-in");
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const { canAny } = usePermissions();
   const navItems = visibleNavItems(signInNavbarItems, canAny);
+  const { pathname } = useLocation();
+  const currentUser = useCurrentUser();
+  const required = requiredPermissionsFor(pathname, signInNavbarItems);
+  // /home no se bloquea: sin dashboard.read redirige solo a la primera sección permitida.
+  const denied = Boolean(
+    currentUser && pathname !== "/home" && required && !canAny(...required),
+  );
   const notifyLayoutResize = useLayoutResizeNotifier();
 
   return (
@@ -33,7 +42,7 @@ const LayoutContent: React.FC = () => {
       >
         <NavbarMenu />
         <div className="custom-scrollbar flex w-full flex-1 flex-col overflow-y-auto p-4 md:p-6">
-          <Outlet />
+          {denied ? <AccessDenied /> : <Outlet />}
         </div>
       </div>
     </div>

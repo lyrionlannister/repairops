@@ -19,7 +19,14 @@ export function signupCheckoutUrls(): { successUrl: string; cancelUrl: string } 
 export function whatsappPackageCheckoutUrls(): { successUrl: string; cancelUrl: string } {
   const base = clientUrl();
   return {
-    successUrl: `${base}/messaging/whatsapp-official?paquete=comprado`,
-    cancelUrl: `${base}/messaging/whatsapp-official?paquete=cancelado`,
+    successUrl: `${base}/messaging/whatsapp?paquete=comprado`,
+    cancelUrl: `${base}/messaging/whatsapp?paquete=cancelado`,
   };
+}
+
+// Al salir del portal del cliente (cancelar plan, cambiar método de pago)
+// Stripe vuelve al inicio de la app, que ya resuelve sola a dónde ir según
+// subscriptionStatus (ver use-auth-guard.ts).
+export function portalReturnUrl(): string {
+  return `${clientUrl()}/home`;
 }

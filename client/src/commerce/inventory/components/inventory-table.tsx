@@ -7,7 +7,10 @@ import { KIND_LABELS, formatMoney } from "../utils/format";
 import type { InventoryTableProps } from "../props/inventory-table-props";
 
 export const InventoryTable: FC<InventoryTableProps> = ({
+  error,
+  onRetry,
   loading,
+  hasFilters,
   pageItems,
   supplierName,
   page,
@@ -27,14 +30,18 @@ export const InventoryTable: FC<InventoryTableProps> = ({
 
   return (
     <DataTable
+      error={error}
+      onRetry={onRetry}
       loading={loading}
       loadingText="Cargando inventario..."
       isEmpty={pageItems.length === 0}
       empty={{
         icon: <Boxes />,
-        title: "No hay productos registrados.",
-        description: "Agrega el primero o importa un CSV/Excel.",
-        action: canManage && (
+        title: hasFilters ? "Sin resultados para la búsqueda." : "No hay productos registrados.",
+        description: hasFilters
+          ? "Prueba con otro nombre, SKU o quita el filtro de stock crítico."
+          : "Agrega el primero o importa un CSV/Excel.",
+        action: canManage && !hasFilters && (
           <Button
             variant="primary"
             startIcon={<Plus className="size-4" />}

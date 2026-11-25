@@ -3,11 +3,11 @@ import { formatPrice } from "../utils/format";
 import type { PriceListSupplierPanelProps } from "../props/price-list-supplier-panel-props";
 
 // Contexto del proveedor elegido: sus otros productos ya cargados en la lista de
-// precios (misma data que trae la page, filtrada por supplierId) -- sirve tanto al
-// crear como al editar, apenas se elige un proveedor.
+// precios -- sirve tanto al crear como al editar, apenas se elige un proveedor.
 export const PriceListSupplierPanel: React.FC<PriceListSupplierPanelProps> = ({
   supplierName,
   otherItems,
+  otherCount,
 }) => (
   <div className="lg:col-span-1">
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
@@ -19,7 +19,7 @@ export const PriceListSupplierPanel: React.FC<PriceListSupplierPanelProps> = ({
           Otros productos de {supplierName}
         </span>
         <h4 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-          {otherItems.length}
+          {otherCount}
         </h4>
       </div>
       {otherItems.length > 0 && (

@@ -13,18 +13,22 @@ export const DataTable: FC<DataTableProps> = ({
   isEmpty,
   empty,
   pagination,
-  containerClassName = "flex-1 min-h-0",
+  containerClassName = "xl:flex-1 xl:min-h-0",
   toolbar,
   ...table
 }) => {
-  const showBody = !loading && !error && !isEmpty;
+  // Recargar con filas ya pintadas (tras guardar, cambiar de estado, etc.) no
+  // vuelve al spinner: la tabla se queda y solo se atenua, sin saltos de alto.
+  const initialLoading = loading && isEmpty;
+  const showBody = !initialLoading && !error && !isEmpty;
 
   return (
     <div
-      className={`flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/3 ${containerClassName}`}
+      aria-busy={loading}
+      className={`flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm transition-opacity dark:border-gray-800 dark:bg-white/3 ${loading && !initialLoading ? "opacity-70" : ""} ${containerClassName}`}
     >
       {toolbar}
-      {loading ? (
+      {initialLoading ? (
         <div className="flex flex-col items-center justify-center gap-4 p-10 text-center">
           <div className="size-10 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
           <p className="text-sm text-gray-500 dark:text-gray-400">{loadingText}</p>

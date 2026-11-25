@@ -7,6 +7,7 @@ import { RepairNoteDeviceDao } from "../../repair-notes/daos/repair-note-device.
 import { RepairNoteServiceTypeDao } from "../../repair-notes/daos/repair-note-service-type.dao.js";
 import { SalePaymentDao } from "../../payments/daos/sale-payment.dao.js";
 import { toMoney } from "../../../core/common/utils/money.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 export interface CustomerCreditBalance {
   creditLimit: number;
@@ -51,6 +52,10 @@ export class CustomerService {
     return this.dao.findAll();
   }
 
+  async lookup(search: string | undefined, limit: number): Promise<Customer[]> {
+    return this.dao.lookup(search, limit);
+  }
+
   async getById(id: string): Promise<Customer | null> {
     return this.dao.findById(id);
   }
@@ -58,7 +63,7 @@ export class CustomerService {
   async create(data: CreatePayload): Promise<Customer> {
     const name = data.name?.trim();
     const phone = data.phone?.trim() || null;
-    if (!name) throw new Error("El nombre del cliente es obligatorio");
+    if (!name) throw new BusinessError("El nombre del cliente es obligatorio");
 
     return this.dao.create({
       name,
@@ -73,7 +78,7 @@ export class CustomerService {
 
     if (data.name !== undefined) {
       const name = data.name.trim();
-      if (!name) throw new Error("El nombre del cliente es obligatorio");
+      if (!name) throw new BusinessError("El nombre del cliente es obligatorio");
       payload.name = name;
     }
     if (data.phone !== undefined) payload.phone = data.phone?.trim() || null;
@@ -115,7 +120,10 @@ export class CustomerService {
     const noteById = new Map(notes.map((n) => [n.id, n]));
     const typesByDevice = new Map<string, string[]>();
     for (const link of links) {
-      typesByDevice.set(link.repairNoteDeviceId, [...(typesByDevice.get(link.repairNoteDeviceId) ?? []), link.serviceTypeId]);
+      typesByDevice.set(link.repairNoteDeviceId, [
+        ...(typesByDevice.get(link.repairNoteDeviceId) ?? []),
+        link.serviceTypeId,
+      ]);
     }
     const byDevice = new Map<string, CustomerDeviceHistoryEntry>();
     const counted = new Set<string>();
@@ -156,7 +164,8 @@ export class CustomerService {
     }
 
     const entries = Array.from(byDevice.values());
-    for (const entry of entries) entry.visits.sort((a, b) => (a.receivedAt < b.receivedAt ? 1 : -1));
+    for (const entry of entries)
+      entry.visits.sort((a, b) => (a.receivedAt < b.receivedAt ? 1 : -1));
     return entries.sort((a, b) => (a.lastReceivedAt < b.lastReceivedAt ? 1 : -1));
   }
 }

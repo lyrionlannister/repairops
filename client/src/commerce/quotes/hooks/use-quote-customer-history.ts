@@ -1,22 +1,19 @@
-import { useEffect, useMemo } from "react";
-import { useQuotes } from "./use-quotes";
+import { useMemo } from "react";
+import { useApiResource } from "@common/hooks/use-api-resource";
+import type { QuoteListItem } from "../types/quotes-page";
 import type { QuoteHistoryEntry } from "../types/quote-customer-history";
 
 export const useQuoteCustomerHistory = (customerId: string | null, excludeId?: string) => {
-  const { quotes, fetchQuotes } = useQuotes();
-
-  useEffect(() => {
-    if (customerId) fetchQuotes();
-  }, [customerId, fetchQuotes]);
+  const { data } = useApiResource<QuoteListItem[]>(
+    customerId ? `/quotes?customerId=${encodeURIComponent(customerId)}` : null,
+  );
 
   const otherQuotes = useMemo<QuoteHistoryEntry[]>(
     () =>
-      customerId
-        ? quotes
-            .filter((q) => q.customerId === customerId && q.id !== excludeId)
-            .map((q) => ({ id: q.id, status: q.status, totalValue: Number(q.totalValue) }))
-        : [],
-    [quotes, customerId, excludeId],
+      (data ?? [])
+        .filter((q) => q.id !== excludeId)
+        .map((q) => ({ id: q.id, status: q.status, totalValue: Number(q.totalValue) })),
+    [data, excludeId],
   );
 
   return { otherQuotes };

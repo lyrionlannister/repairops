@@ -6,6 +6,8 @@ import { Customer } from "../entities/customer.entity.js";
 import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { toMoney } from "../../../core/common/utils/money.js";
 import { overdueLevel, type OverdueLevel } from "../utils/overdue-level.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { CustomerCreditFilter } from "../types/customer-page.types.js";
 
 export interface CustomerCreditStatus {
   creditBalance: string;
@@ -38,7 +40,28 @@ export class CustomerCreditService {
   ) {}
 
   async listWithCredit(): Promise<CustomerWithCredit[]> {
-    const customers = await this.customerDao.findAll();
+    return this.attachCredit(await this.customerDao.findAll());
+  }
+
+  // Los deudores son pocos frente al catalogo: el filtro de credito se resuelve con el
+  // aging de todo el taller y la pagina se corta despues sobre esos ids.
+  async listPage(
+    request: PageRequest,
+    credit: CustomerCreditFilter | undefined,
+  ): Promise<Page<CustomerWithCredit>> {
+    let ids: string[] | undefined;
+    if (credit) {
+      const aging = await this.creditDao.findAging(await this.today());
+      ids = aging
+        .filter((row) => credit === "pending" || new Decimal(row.overdue).greaterThan(0))
+        .map((row) => row.customerId);
+      if (ids.length === 0) return { items: [], total: 0, page: request.page, pageSize: request.pageSize };
+    }
+    const page = await this.customerDao.findPage({ search: request.search, ids }, request);
+    return { ...page, items: await this.attachCredit(page.items) };
+  }
+
+  private async attachCredit(customers: Customer[]): Promise<CustomerWithCredit[]> {
     const aging = await this.creditDao.findAging(
       await this.today(),
       customers.map((c) => c.id),

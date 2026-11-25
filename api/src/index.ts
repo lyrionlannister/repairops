@@ -1,20 +1,28 @@
 import "reflect-metadata";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import AppDataSource from "./core/config/data-source.js";
 import { optionalEnvNumber } from "./core/config/env.js";
 import { registerRepositories } from "./core/di/register-repositories.js";
 import { registerRoutes } from "./core/http/register-routes.js";
+import { globalRateLimit } from "./core/http/rate-limit.js";
 import { container } from "tsyringe";
 import { ChatRetentionService } from "./messaging/chats/services/chat-retention.service.js";
 import { WhatsappInboundQueueService } from "./messaging/whatsapp-official/services/whatsapp-inbound-queue.service.js";
 import { WhatsappAutomationQueueService } from "./messaging/whatsapp-official/services/whatsapp-automation-queue.service.js";
 import { PlatformAdminBootstrapService } from "./identity/auth/services/platform-admin-bootstrap.service.js";
+import { ChatRealtimeService } from "./messaging/chats/services/chat-realtime.service.js";
 
 const app = express();
 const port = optionalEnvNumber("PORT", 3000);
 const allowedOrigins = ["http://localhost:4300", "https://app.kaltra.local"];
 
+// Un solo nginx delante de la API en despliegue (ver docker-compose.yaml):
+// req.ip es la IP real del cliente y el rate limiting la usa como clave.
+app.set("trust proxy", 1);
+app.use(helmet());
+app.use(globalRateLimit);
 app.use(
   cors({
     origin: allowedOrigins,
@@ -24,13 +32,22 @@ app.use(
 // `verify` guarda el buffer crudo en req.rawBody -- lo necesita el webhook
 // de WhatsApp (X-Hub-Signature-256 firma los bytes exactos, no el JSON
 // re-serializado) sin montar un parser distinto solo para esa ruta.
+// Límite explícito de 100kb: sin él, un JSON enorme se acepta por defecto
+// (las subidas de archivos usan express.raw con su propio límite, no este).
 app.use(
   express.json({
+    limit: "100kb",
     verify: (req: express.Request, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
+
+// Desde Node 15 una promesa rechazada sin catch (p.ej. una notificacion lanzada
+// sin await) mata el proceso y con el a todos los tenants: se registra y se sigue.
+process.on("unhandledRejection", (reason) => {
+  console.error("Promesa rechazada sin manejar:", reason);
+});
 
 AppDataSource.initialize()
   .then(async () => {
@@ -38,14 +55,20 @@ AppDataSource.initialize()
 
     registerRepositories();
     const platformAdmin = await container.resolve(PlatformAdminBootstrapService).ensureFromEnv();
-    if (platformAdmin === "created") console.log("Admin de plataforma creado desde PLATFORM_ADMIN_EMAIL");
+    if (platformAdmin === "created")
+      console.log("Admin de plataforma creado desde PLATFORM_ADMIN_EMAIL");
     if (platformAdmin === "conflict") {
-      console.warn("PLATFORM_ADMIN_EMAIL ya pertenece a un usuario que no es admin de plataforma: no se promueve");
+      console.warn(
+        "PLATFORM_ADMIN_EMAIL ya pertenece a un usuario que no es admin de plataforma: no se promueve",
+      );
     }
     registerRoutes(app);
     container.resolve(ChatRetentionService).start();
 
-    const queues = [container.resolve(WhatsappInboundQueueService), container.resolve(WhatsappAutomationQueueService)];
+    const queues = [
+      container.resolve(WhatsappInboundQueueService),
+      container.resolve(WhatsappAutomationQueueService),
+    ];
     queues.forEach((queue) => queue.start());
     // worker.close() espera a que terminen los jobs en curso; sin esto un
     // deploy los corta y quedan "stalled" hasta que otro worker los retome.
@@ -70,11 +93,42 @@ AppDataSource.initialize()
       });
     });
 
-    app.listen(port, "0.0.0.0", () => {
-      console.log(
-        `Servidor escuchando en el puerto ${port}`,
-      );
+    app.use("/api", (_req, res) => {
+      res.status(404).json({ error: "No encontramos lo que buscas." });
     });
+
+    // Handler global de errores (Express 5 reenvía aquí los rechazos de
+    // handlers async): nunca devuelve el mensaje interno -- JSON inválido
+    // es 400, todo lo demás 500 genérico. Los controladores siguen usando
+    // sendError para los errores de negocio conocidos.
+    app.use(
+      (
+        error: Error & { type?: string },
+        _req: express.Request,
+        res: express.Response,
+        next: express.NextFunction,
+      ) => {
+        if (res.headersSent) {
+          next(error);
+          return;
+        }
+        if (error.type === "entity.parse.failed") {
+          res.status(400).json({ error: "Cuerpo JSON inválido" });
+          return;
+        }
+        if (error.type === "entity.too.large") {
+          res.status(413).json({ error: "La información enviada es demasiado grande." });
+          return;
+        }
+        console.error("Error no controlado:", error);
+        res.status(500).json({ error: "Ocurrió un error inesperado. Intenta de nuevo." });
+      },
+    );
+
+    const server = app.listen(port, "0.0.0.0", () => {
+      console.log(`Servidor escuchando en el puerto ${port}`);
+    });
+    container.resolve(ChatRealtimeService).attach(server, allowedOrigins);
   })
   .catch((error) => {
     console.error("Error al conectar la base de datos:", error);

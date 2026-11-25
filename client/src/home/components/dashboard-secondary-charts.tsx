@@ -31,7 +31,7 @@ export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6">
       <div className="mb-1">
         <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">Conversaciones por mes</h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total mensual del año {year}</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total cobrado por mes, {year}</p>
       </div>
       <div className="max-w-full overflow-x-auto">
         <Chart
@@ -46,7 +46,7 @@ export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
     {monthlyBusinessSeries && (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/3 sm:px-6 sm:pt-6">
       <div className="mb-1">
-        <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">Ventas vs. reparaciones (mes)</h3>
+        <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">Ventas vs. cobros de reparaciones (mes)</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Total mensual del año {year}</p>
       </div>
       <div className="max-w-full overflow-x-auto">
@@ -54,7 +54,7 @@ export const DashboardSecondaryCharts: FC<DashboardSecondaryChartsProps> = ({
           options={buildBusinessStackedBarOptions(monthLabels, currencyFormatter)}
           series={[
             { name: "Ventas", data: monthlyBusinessSeries.salesData },
-            { name: "Reparaciones", data: monthlyBusinessSeries.repairsData },
+            { name: "Cobros de reparaciones", data: monthlyBusinessSeries.repairsData },
           ]}
           type="bar"
           height={230}

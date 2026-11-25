@@ -28,7 +28,7 @@ export const useWhatsappTemplateCatalog = (scope: "tenant" | "system" = "tenant"
       if (!res.ok) throw new Error(await readError(res, "Error al cargar el catálogo"));
       setEntries(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ export const useWhatsappTemplateCatalog = (scope: "tenant" | "system" = "tenant"
         setEntries((prev) => [...prev, created]);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -73,7 +73,7 @@ export const useWhatsappTemplateCatalog = (scope: "tenant" | "system" = "tenant"
         setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -92,7 +92,7 @@ export const useWhatsappTemplateCatalog = (scope: "tenant" | "system" = "tenant"
         setEntries((prev) => prev.filter((e) => e.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);

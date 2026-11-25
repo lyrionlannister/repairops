@@ -1,6 +1,8 @@
 export interface InventoryCountItemRecord {
   id: string;
   inventoryItemId: string;
+  itemName?: string | null;
+  itemSku?: string | null;
   countedQuantity: number | null;
   reason: string | null;
   appliedMovementId: string | null;

@@ -1,60 +1,38 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router";
+import { useServerList } from "@common/hooks/use-server-list";
 import type { Customer, CustomerCreditFilter } from "../types/customers";
-import { matchesCreditFilter, parseCreditFilter } from "../utils/overdue";
+import { parseCreditFilter } from "../utils/overdue";
 
-export const useCustomersPage = ({
-  customers,
-  fetchAll,
-  remove,
-}: {
-  customers: Customer[];
-  fetchAll: () => Promise<void>;
-  remove: (id: string) => Promise<boolean>;
-}) => {
+export const useCustomersPage = ({ remove }: { remove: (id: string) => Promise<boolean> }) => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [searchParams] = useSearchParams();
   const [creditFilter, setCreditFilter] = useState<CustomerCreditFilter>(() =>
     parseCreditFilter(searchParams.get("credit")),
   );
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
-
-  const filteredCustomers = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return customers.filter(
-      (c) =>
-        matchesCreditFilter(c, creditFilter) &&
-        (!term ||
-          c.name.toLowerCase().includes(term) ||
-          (c.phone ?? "").toLowerCase().includes(term) ||
-          (c.email ?? "").toLowerCase().includes(term)),
-    );
-  }, [search, creditFilter, customers]);
+  const list = useServerList<Customer>("/customers", {
+    search,
+    filters: { credit: creditFilter === "all" ? undefined : creditFilter },
+    errorText: "No pudimos cargar los clientes.",
+  });
 
   const handleDelete = async (id: string) => {
     const ok = await remove(id);
-    if (ok) {
-      setSuccessMsg("Cliente eliminado.");
-      window.setTimeout(() => setSuccessMsg(null), 3000);
-    }
     setDeleteConfirmId(null);
+    if (ok) await list.refetch();
   };
-
 
   return {
     deleteConfirmId,
     setDeleteConfirmId,
-    successMsg,
     search,
     setSearch,
     creditFilter,
     setCreditFilter,
-    filteredCustomers,
+    list,
+    hasFilters: list.hasSearch || creditFilter !== "all",
     handleDelete,
   };
 };

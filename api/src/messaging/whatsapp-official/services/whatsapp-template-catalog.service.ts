@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import { BusinessError } from "../../../core/http/business-error.js";
 import { WhatsappTemplateCatalogEntryDao } from "../daos/whatsapp-template-catalog-entry.dao.js";
 import { WhatsappTemplateStatusDao } from "../daos/whatsapp-template-status.dao.js";
 import { WhatsappAccountService } from "./whatsapp-account.service.js";
@@ -10,14 +11,16 @@ import { updateTemplate, deleteTemplate } from "../clients/whatsapp-graph.client
 
 // Key/metaName duplicados dentro del mismo scope -- se detecta antes de
 // tocar la DB para responder 400 limpio, nunca el 500 crudo de la
-// constraint (ver plan Fase 4, Checkpoint 7, Tarea 7.2).
-export class WhatsappTemplateCatalogConflictError extends Error {}
+// constraint (ver plan Fase 4, Checkpoint 7, Tarea 7.2). BusinessError:
+// el mensaje lo escribe este servicio (sin datos internos) y sí llega al
+// usuario para que corrija la key.
+export class WhatsappTemplateCatalogConflictError extends BusinessError {}
 
 // Con la cuenta piloto compartida, las plantillas viven en el WABA de la
 // plataforma: un taller que las edite o borre afecta a todos los demas.
-export class WhatsappTemplateCatalogReadOnlyError extends Error {
+export class WhatsappTemplateCatalogReadOnlyError extends BusinessError {
   constructor() {
-    super("Conecta tu propia cuenta de WhatsApp para administrar plantillas");
+    super("Conecta tu propia cuenta de WhatsApp para administrar plantillas", 403);
   }
 }
 

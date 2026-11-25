@@ -1,5 +1,6 @@
 import type { EntityManager } from "typeorm";
 import { Customer } from "../entities/customer.entity.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 export interface ResolveCustomerInput {
   customerId?: string | null;
@@ -21,7 +22,7 @@ export async function resolveOrCreateCustomer(
       id: input.customerId,
       tenantId,
     });
-    if (!customer) throw new Error("Cliente no encontrado");
+    if (!customer) throw new BusinessError("Cliente no encontrado");
     return customer.id;
   }
   const name = input.customerName?.trim();
@@ -29,6 +30,8 @@ export async function resolveOrCreateCustomer(
   if (!name || !phone) return null;
   const existing = await manager.findOneBy(Customer, { tenantId, phone });
   if (existing && existing.name.trim().toLowerCase() === name.toLowerCase()) return existing.id;
-  const created = await manager.save(manager.create(Customer, { tenantId, name, phone, creditLimit: "0.00" }));
+  const created = await manager.save(
+    manager.create(Customer, { tenantId, name, phone, creditLimit: "0.00" }),
+  );
   return created.id;
 }

@@ -1,6 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 import type { MediaStorage, StoredMedia } from "./media-storage.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 export class FsMediaStorage implements MediaStorage {
   private readonly root: string;
@@ -39,7 +40,7 @@ export class FsMediaStorage implements MediaStorage {
   // Una clave nunca puede escapar de la raiz.
   private pathOf(key: string): string {
     const path = resolve(join(this.root, key));
-    if (!path.startsWith(this.root + sep)) throw new Error("Clave de archivo inválida");
+    if (!path.startsWith(this.root + sep)) throw new BusinessError("Clave de archivo inválida");
     return path;
   }
 }

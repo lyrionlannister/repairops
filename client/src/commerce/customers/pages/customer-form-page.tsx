@@ -16,13 +16,13 @@ export const CustomerFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
-  const { customers, loading, saving, fetchAll, create, update } = useCustomers();
+  const { customers, loading, saving, fetchByCustomer, create, update } = useCustomers();
   const [form, setForm] = useState<CustomerFormData>(emptyForm);
   const context = useCustomerContext(isEdit ? (id ?? null) : null);
 
   useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+    if (isEdit && id) fetchByCustomer(id);
+  }, [isEdit, id, fetchByCustomer]);
 
   useEffect(() => {
     if (!isEdit || !id) return;

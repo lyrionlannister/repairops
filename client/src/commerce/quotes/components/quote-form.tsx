@@ -7,7 +7,7 @@ import { QuoteKindDeviceSection } from "./quote-kind-device-section";
 import { QuoteItemLinesSection } from "./quote-item-lines-section";
 import type { QuoteFormProps } from "../props/quote-form-props";
 
-export const QUOTE_FORM_STEPS = ["Cliente", "Tipo y equipo", "Items"];
+export const QUOTE_FORM_STEPS = ["Cliente", "Tipo y equipo", "Productos"];
 export const QuoteForm: FC<QuoteFormProps> = ({
   formRef,
   step,
@@ -28,7 +28,7 @@ export const QuoteForm: FC<QuoteFormProps> = ({
   onReportedFailureChange,
   onServiceTypeIdsChange,
   itemLines,
-  inventoryItems,
+  branchId,
   onInventoryItemChange,
   onLineChange,
   onAddLine,
@@ -81,7 +81,7 @@ export const QuoteForm: FC<QuoteFormProps> = ({
     <Step index={2} current={step}>
       <QuoteItemLinesSection
         itemLines={itemLines}
-        inventoryItems={inventoryItems}
+        branchId={branchId}
         saving={saving}
         onInventoryItemChange={onInventoryItemChange}
         onLineChange={onLineChange}

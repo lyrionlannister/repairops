@@ -8,6 +8,8 @@ import type { AuthenticatedRequest } from "../../../identity/auth/middlewares/au
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
 import { sendError, queryString } from "../../../core/http/error-response.js";
+import { readPageQuery } from "../../../core/common/utils/page-query.js";
+import type { SaleFilters } from "../types/sale-page.types.js";
 
 @singleton()
 export class SaleController {
@@ -18,12 +20,34 @@ export class SaleController {
 
   getAll = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
-      res.status(200).json(await this.service.getAll(branchId));
+      const filters = await this.filtersOf(req);
+      const page = await readPageQuery(req.query);
+      if (page) {
+        res.status(200).json(await this.service.getPage({ ...filters, search: page.search }, page));
+        return;
+      }
+      res.status(200).json(await this.service.getAll(filters.branchId, filters.customerId));
     } catch (error) {
       sendError(res, error, 500);
     }
   };
+
+  getStats = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const currentMonthOnly = queryString(req.query["period"]) === "month";
+      res.status(200).json(await this.service.getStats(await this.filtersOf(req), currentMonthOnly));
+    } catch (error) {
+      sendError(res, error, 500);
+    }
+  };
+
+  private async filtersOf(req: AuthenticatedRequest): Promise<SaleFilters> {
+    return {
+      branchId: await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"])),
+      customerId: queryString(req.query["customerId"]) || undefined,
+      createdByEmployeeId: queryString(req.query["employeeId"]) || undefined,
+    };
+  }
 
   getById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {

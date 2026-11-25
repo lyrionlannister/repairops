@@ -5,7 +5,6 @@ export interface ReturnLinesFormProps {
   sale: SaleWithItems;
   lines: LineDraft[];
   alreadyReturned: Record<string, number>;
-  itemNames: Record<string, string>;
   refundMethod: RefundMethod;
   reason: string;
   totalRefunded: number;

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import express from "express";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
@@ -28,6 +28,8 @@ import type { WhatsappNotificationQueueService } from "../../../../src/messaging
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
+import { PriceListItem } from "../../../../src/commerce/price-list/entities/price-list-item.entity.js";
+import { PriceListDao } from "../../../../src/commerce/price-list/daos/price-list.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryService } from "../../../../src/commerce/inventory/services/inventory.service.js";
 import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
@@ -42,6 +44,19 @@ import { BranchAccessService } from "../../../../src/identity/branches/services/
 import { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
 import { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
 import { setupStaff } from "../../../support/staff.js";
+// Mock compartido de Stripe (tests/support/stripe-client.mock.ts): con
+// pool vmThreads el servicio queda ligado a la instancia del primer
+// archivo que lo importa; si cada archivo usa su propia factoría, los
+// demás afirman sobre otra instancia (0 llamadas) o sobre el cliente
+// real ("Falta STRIPE_PRIVATE_KEY") solo en la suite completa.
+vi.mock(
+  "../../../../src/app_platform/billing/clients/stripe.client.js",
+  async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
+);
+vi.mock(
+  "../../../../src/identity/auth/clients/resend.client.js",
+  async () => (await import("../../../support/resend-client.mock.js")).resendClientMock,
+);
 
 // Integration test contra Postgres real + el router real (no un controller
 // falso) -- prueba el criterio de aceptacion de la Fase 1: un cajero no
@@ -90,6 +105,8 @@ describe("repair-note routes: permisos por rol (modulo Taller)", () => {
       new RepairNotePaymentDao(AppDataSource.getRepository(RepairNotePayment)),
       new RepairNoteDeviceDao(AppDataSource.getRepository(RepairNoteDevice)),
       { notifyStatusChange: async () => {} } as unknown as WhatsappNotificationQueueService,
+      new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
     const authService = new AuthService(
       new UserDao(AppDataSource.getRepository(User)),

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { PriceListItem } from "../types/price-list";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const usePriceList = () => {
   const { apiClient } = useApiClient();
@@ -16,10 +17,28 @@ export const usePriceList = () => {
       try {
         const endpoint = query ? `/price-list?q=${encodeURIComponent(query)}` : "/price-list";
         const res = await apiClient(endpoint);
-        if (!res.ok) throw new Error("Error al cargar lista de precios");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al cargar lista de precios"));
         setItems(await res.json());
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiClient],
+  );
+
+  const fetchById = useCallback(
+    async (id: string): Promise<PriceListItem | null> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiClient(`/price-list/${encodeURIComponent(id)}`);
+        if (!res.ok) throw new Error(await readApiError(res, "No encontramos el producto"));
+        return (await res.json()) as PriceListItem;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
+        return null;
       } finally {
         setLoading(false);
       }
@@ -41,7 +60,7 @@ export const usePriceList = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al crear item");
+          throw new Error(apiErrorText(body, "No se pudo crear el producto"));
         }
         const created: PriceListItem = await res.json();
         setItems((prev) =>
@@ -51,7 +70,7 @@ export const usePriceList = () => {
         );
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -73,12 +92,12 @@ export const usePriceList = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!res.ok) throw new Error("Error al actualizar item");
+        if (!res.ok) throw new Error(await readApiError(res, "No se pudo actualizar el producto"));
         const updated: PriceListItem = await res.json();
         setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -94,16 +113,16 @@ export const usePriceList = () => {
         const res = await apiClient(`/price-list/${id}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error("Error al eliminar item");
+        if (!res.ok) throw new Error(await readApiError(res, "No se pudo eliminar el producto"));
         setItems((prev) => prev.filter((i) => i.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },
     [apiClient],
   );
 
-  return { items, loading, saving, error, fetchAll, create, update, remove };
+  return { items, loading, saving, error, fetchAll, fetchById, create, update, remove };
 };

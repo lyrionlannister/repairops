@@ -30,9 +30,10 @@ import { Local } from "../../../../src/app_platform/local/entities/local.entity.
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 
 const today = () => new Date().toISOString().split("T")[0];
-// Ventana amplia para no depender de que el reloj del host coincida con el
-// del contenedor de Postgres (default sin periodo usa "hoy" de cada uno).
-const WIDE_PERIOD = { periodStart: "2000-01-01", periodEnd: "2099-12-31" };
+const shiftDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().split("T")[0];
+// Ventana amplia (el API acepta hasta un año) para no depender de que el reloj
+// del host coincida con el del contenedor de Postgres.
+const WIDE_PERIOD = { periodStart: shiftDays(-180), periodEnd: shiftDays(180) };
 
 describe("ReportsService", () => {
   let reportsService: ReportsService;
@@ -62,7 +63,6 @@ describe("ReportsService", () => {
     repairNoteServiceTypeDao = new RepairNoteServiceTypeDao(AppDataSource.getRepository(RepairNoteServiceType));
     reportsService = new ReportsService(
       new ReportsDao(AppDataSource.getRepository(RepairNote)),
-      userDao,
       revenueAttributionService,
       new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
     );
@@ -142,7 +142,7 @@ describe("ReportsService", () => {
       const getFor = async (basis: "total_value" | "margin" | "labor_only") => {
         await runWithTenant(basisTenant, () => revenueAttributionService.setBasis(basis));
         const report = await runWithTenant(basisTenant, () =>
-          reportsService.getEmployeePerformance({ employeeId: employee.id, ...WIDE_PERIOD }),
+          reportsService.getEmployeePerformance({ employeeId: employee.publicId, ...WIDE_PERIOD }),
         );
         return report.employees[0];
       };
@@ -201,7 +201,7 @@ describe("ReportsService", () => {
 
       const report = await runWithTenant(periodTenant, () =>
         reportsService.getEmployeePerformance({
-          employeeId: employee.id,
+          employeeId: employee.publicId,
           periodStart: "2026-01-01",
           periodEnd: "2026-01-10",
         }),
@@ -209,8 +209,128 @@ describe("ReportsService", () => {
 
       expect(report.employees[0].attributedAmount).toBe(200);
       expect(report.employees[0].repairNotesCount).toBe(1);
-      // 10 dias de 30 => salario prorrateado, nunca el mes completo.
-      expect(report.employees[0].salaryAmount).toBe(1000);
+      // 10 de los 31 dias de enero: 3000 * 10 / 31.
+      expect(report.employees[0].salaryAmount).toBe(967.74);
+    });
+
+    it("charges exactly the agreed salary for a full calendar month and fortnight", async () => {
+      const cycleTenant = `${tenantId}7`;
+      const create = (suffix: string, payCycle: "monthly" | "biweekly" | "weekly", salaryAmount: number) =>
+        runWithTenant(cycleTenant, () =>
+          userDao.create({
+            firstName: "Ciclo",
+            lastName: suffix,
+            email: `ciclo.${suffix}.${cycleTenant}@test.local`,
+            password: "x",
+            role: "employee",
+            salaryAmount,
+            payCycle,
+          } as Partial<User>),
+        );
+      const monthly = await create("mensual", "monthly", 9000);
+      const biweekly = await create("quincenal", "biweekly", 4500);
+      const weekly = await create("semanal", "weekly", 2100);
+
+      const salaryOf = async (publicId: string, periodStart: string, periodEnd: string) => {
+        const report = await runWithTenant(cycleTenant, () =>
+          reportsService.getEmployeePerformance({ employeeId: publicId, periodStart, periodEnd }),
+        );
+        return report.employees[0]?.salaryAmount;
+      };
+
+      expect(await salaryOf(monthly.publicId, "2026-10-01", "2026-10-31")).toBe(9000);
+      expect(await salaryOf(monthly.publicId, "2026-02-01", "2026-02-28")).toBe(9000);
+      expect(await salaryOf(biweekly.publicId, "2026-10-16", "2026-10-31")).toBe(4500);
+      expect(await salaryOf(biweekly.publicId, "2026-10-01", "2026-10-31")).toBe(9000);
+      expect(await salaryOf(weekly.publicId, "2026-10-05", "2026-10-11")).toBe(2100);
+    });
+
+    it("flags a salary without pay cycle instead of reporting it as covered", async () => {
+      const missingTenant = `${tenantId}8`;
+      const employee = await runWithTenant(missingTenant, () =>
+        userDao.create({
+          firstName: "Sin",
+          lastName: "Ciclo",
+          email: `sin.ciclo.${missingTenant}@test.local`,
+          password: "x",
+          role: "employee",
+          salaryAmount: 4500,
+        } as Partial<User>),
+      );
+
+      const report = await runWithTenant(missingTenant, () =>
+        reportsService.getEmployeePerformance({ employeeId: employee.publicId, ...WIDE_PERIOD }),
+      );
+
+      expect(report.employees[0]).toEqual(
+        expect.objectContaining({ missingPayCycle: true, salaryAmount: null, coversSalary: null }),
+      );
+    });
+
+    it("never lists employees of another tenant nor exposes internal ids", async () => {
+      const tenantA = `${tenantId}9`;
+      const tenantB = `${tenantId}10`;
+      const create = (tenant: string) =>
+        runWithTenant(tenant, () =>
+          userDao.create({
+            firstName: "Aislado",
+            lastName: tenant,
+            email: `aislado.${tenant}@test.local`,
+            password: "x",
+            role: "employee",
+          } as Partial<User>),
+        );
+      const employeeA = await create(tenantA);
+      const employeeB = await create(tenantB);
+
+      const report = await runWithTenant(tenantA, () => reportsService.getEmployeePerformance(WIDE_PERIOD));
+      const ids = report.employees.map((e) => e.employeeId);
+
+      expect(ids).toContain(employeeA.publicId);
+      expect(ids).not.toContain(employeeB.publicId);
+      expect(ids).not.toContain(employeeA.id);
+    });
+
+    it("ignores cancelled notes in attribution and rejects an inverted period", async () => {
+      const cancelTenant = `${tenantId}11`;
+      const employee = await runWithTenant(cancelTenant, () =>
+        userDao.create({
+          firstName: "Tech",
+          lastName: "Cancel",
+          email: `tech.cancel.${cancelTenant}@test.local`,
+          password: "x",
+          role: "employee",
+        } as Partial<User>),
+      );
+      for (const [controlNumber, status, totalValue] of [
+        [1, "delivered", 400],
+        [2, "cancelled", 9000],
+      ] as const) {
+        await runWithTenant(cancelTenant, () =>
+          repairNoteDao.create({
+            controlNumber,
+            customerName: "Cliente",
+            totalValue,
+            status,
+            receivedAt: "2026-03-10",
+            receivedTime: "12:00",
+            assignedEmployeeId: employee.id,
+            localId: "1",
+            publicRef: generatePublicRef(),
+          } as Partial<RepairNote>),
+        );
+      }
+
+      const report = await runWithTenant(cancelTenant, () =>
+        reportsService.getEmployeePerformance({ employeeId: employee.publicId, periodStart: "2026-03-01", periodEnd: "2026-03-31" }),
+      );
+      expect(report.employees[0]).toEqual(expect.objectContaining({ attributedAmount: 400, repairNotesCount: 1 }));
+
+      await expect(
+        runWithTenant(cancelTenant, () =>
+          reportsService.getEmployeePerformance({ periodStart: "2026-03-31", periodEnd: "2026-03-01" }),
+        ),
+      ).rejects.toThrow("La fecha inicial no puede ser posterior a la final");
     });
   });
 
@@ -353,10 +473,10 @@ describe("ReportsService", () => {
 
       expect(report.totalNotes).toBe(2);
       expect(report.totalRevenue).toBe(500);
-      expect(report.byType.find((t) => t.type === repairType.id)).toEqual(
+      expect(report.byType.find((t) => t.type === repairType.publicId)).toEqual(
         expect.objectContaining({ label: "Reparación", count: 2, totalValue: 500 }),
       );
-      expect(report.byType.find((t) => t.type === maintenanceType.id)).toEqual(
+      expect(report.byType.find((t) => t.type === maintenanceType.publicId)).toEqual(
         expect.objectContaining({ label: "Mantenimiento", count: 1, totalValue: 300 }),
       );
       expect(report.byStatus).toEqual(

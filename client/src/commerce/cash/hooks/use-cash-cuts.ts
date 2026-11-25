@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { usePermissions } from "@common/hooks/use-permissions";
+import { useServerList } from "@common/hooks/use-server-list";
 import type { CashCut, CashVarianceStats } from "../types/cash";
 
 // El historial y los indicadores exigen cash.authorize-variance en la API; el último corte, solo cash.read.
@@ -9,7 +10,6 @@ export const useCashCuts = (branchId: string | null, refreshKey: unknown) => {
   const { can } = usePermissions();
   const canAudit = can("cash.authorize-variance");
   const [lastCut, setLastCut] = useState<CashCut | null>(null);
-  const [cuts, setCuts] = useState<CashCut[]>([]);
   const [stats, setStats] = useState<CashVarianceStats | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -25,9 +25,6 @@ export const useCashCuts = (branchId: string | null, refreshKey: unknown) => {
       ];
       if (canAudit) {
         requests.push(
-          apiClient(`/cash/cuts${query}`).then(async (res) => {
-            if (res.ok) setCuts((await res.json()) as CashCut[]);
-          }),
           apiClient(`/cash/cuts/variance-stats${query}`).then(async (res) => {
             if (res.ok) setStats((await res.json()) as CashVarianceStats);
           }),
@@ -39,9 +36,17 @@ export const useCashCuts = (branchId: string | null, refreshKey: unknown) => {
     }
   }, [apiClient, branchId, canAudit]);
 
+  const history = useServerList<CashCut>("/cash/cuts", {
+    filters: { branchId },
+    errorText: "No pudimos cargar el historial de cortes.",
+    enabled: canAudit && Boolean(branchId),
+  });
+  const refetchHistory = history.refetch;
+
   useEffect(() => {
     load();
-  }, [load, refreshKey]);
+    void refetchHistory();
+  }, [load, refetchHistory, refreshKey]);
 
-  return { lastCut, cuts, stats, loading, canAudit };
+  return { lastCut, history, stats, loading, canAudit };
 };

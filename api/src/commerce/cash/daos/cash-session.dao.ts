@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { EntityManager, Repository } from "typeorm";
 import { singleton, inject } from "tsyringe";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { CashSession } from "../entities/cash-session.entity.js";
@@ -38,11 +38,39 @@ export class CashSessionDao extends TenantScopedDao<CashSession> {
       .getOne();
   }
 
+  // UPDATE condicionado a 'open': con doble clic en "Cerrar", la segunda peticion
+  // no afecta filas y no pisa el corte (folio, saldo, hora) de la primera.
+  async closeIfOpen(
+    id: string,
+    data: Partial<CashSession>,
+    manager?: EntityManager,
+  ): Promise<CashSession | null> {
+    const existing = await this.findById(id);
+    if (!existing) return null;
+    const result = await (manager ?? this.repository.manager)
+      .createQueryBuilder()
+      .update(CashSession)
+      .set(data)
+      .where("id = :id AND tenant_id = :tenantId AND estado = 'open'", {
+        id: existing.id,
+        tenantId: existing.tenantId,
+      })
+      .execute();
+    if (!result.affected) return null;
+    return (manager ?? this.repository.manager).findOne(CashSession, { where: { id: existing.id } });
+  }
+
   async findAllOrdered(branchId?: string | null): Promise<CashSession[]> {
     return this.scoped()
       .andWhere(branchId ? "entity.localId = :branchId" : "1 = 1", { branchId })
       .orderBy("entity.openedAt", "DESC")
       .getMany();
+  }
+
+  async countClosedCuts(branchId: string | null): Promise<number> {
+    const builder = this.scoped("s").andWhere("s.status = 'closed'");
+    if (branchId) builder.andWhere("s.localId = :branchId", { branchId });
+    return builder.getCount();
   }
 
   // Los totales se suman en Postgres (numeric exacto) y llegan como texto: nunca pasan por float.
@@ -76,7 +104,8 @@ export class CashSessionDao extends TenantScopedDao<CashSession> {
       .groupBy("s.id")
       .addGroupBy("o.id")
       .addGroupBy("c.id")
-      .orderBy("s.closedAt", "DESC");
+      .orderBy("s.closedAt", "DESC")
+      .addOrderBy("s.id", "DESC");
 
     if (query.branchId) builder.andWhere("s.localId = :branchId", { branchId: query.branchId });
     if (query.sessionId) builder.andWhere("s.id = :sessionId", { sessionId: query.sessionId });
@@ -87,6 +116,7 @@ export class CashSessionDao extends TenantScopedDao<CashSession> {
       );
     }
     if (query.limit) builder.limit(query.limit);
+    if (query.offset) builder.offset(query.offset);
 
     const rows = await builder.getRawMany<RawCutRow>();
     return rows.map((row) => ({ ...row, movementCount: Number(row.movementCount) }));

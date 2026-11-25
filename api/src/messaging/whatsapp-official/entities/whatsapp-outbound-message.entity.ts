@@ -68,7 +68,9 @@ export class WhatsappOutboundMessage extends BaseEntity {
   @Column({ type: "varchar", length: 30, nullable: false, name: "status" })
   status!: WhatsappOutboundMessageStatus;
 
-  @Column({ type: "varchar", length: 50, nullable: true, name: "meta_message_id" })
+  // 128: un wamid real de Meta ronda 60-90 caracteres (ver migracion
+  // WidenWhatsappOutboundMessagesMetaMessageId), igual que chat_messages.wa_message_id.
+  @Column({ type: "varchar", length: 128, nullable: true, name: "meta_message_id" })
   metaMessageId!: string | null;
 
   @Column({ type: "text", nullable: true, name: "error_message" })

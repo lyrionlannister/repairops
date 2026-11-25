@@ -1,27 +1,12 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-import type { InventoryTransfer, CreateInventoryTransferPayload } from "../types/inventory-transfers";
+import type { CreateInventoryTransferPayload } from "../types/inventory-transfers";
+import { apiErrorText } from "@common/utils/api-error";
 
 export const useInventoryTransfers = () => {
   const { apiClient } = useApiClient();
-  const [transfers, setTransfers] = useState<InventoryTransfer[]>([]);
-  const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient("/inventory/transfers");
-      if (!res.ok) throw new Error("Error al cargar transferencias");
-      setTransfers(await res.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient]);
 
   const create = useCallback(
     async (data: CreateInventoryTransferPayload): Promise<boolean> => {
@@ -35,13 +20,11 @@ export const useInventoryTransfers = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string | string[] }).error?.toString() ?? "Error al transferir");
+          throw new Error(apiErrorText(body, "No se pudo hacer la transferencia"));
         }
-        const created: InventoryTransfer = await res.json();
-        setTransfers((prev) => [created, ...prev]);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setCreating(false);
@@ -50,5 +33,5 @@ export const useInventoryTransfers = () => {
     [apiClient],
   );
 
-  return { transfers, loading, creating, error, fetchAll, create };
+  return { creating, error, create };
 };

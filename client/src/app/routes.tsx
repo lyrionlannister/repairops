@@ -1,6 +1,7 @@
 import { ChatsPage } from "../messaging/chats/pages/chats-page";
 import { AuthPage } from "../identity/auth/pages/auth-page";
 import { RegisterPage } from "../identity/auth/pages/register-page";
+import { VerifyEmailPage } from "../identity/auth/pages/verify-email-page";
 import { OnboardingBusinessPage } from "../identity/auth/pages/onboarding-business-page";
 import { OnboardingPlanPage } from "../identity/auth/pages/onboarding-plan-page";
 import { NotFound } from "../core/common/pages/not-found";
@@ -46,6 +47,9 @@ import { CustomerFormPage } from "../commerce/customers/pages/customer-form-page
 import { CustomerDetailPage } from "../commerce/customers/pages/customer-detail-page";
 import { CustomerDevicesPage } from "../commerce/customers/pages/customer-devices-page";
 
+import { ForgotPasswordPage } from "../identity/auth/pages/forgot-password-page";
+import { ResetPasswordPage } from "../identity/auth/pages/reset-password-page";
+
 export const publicRoutes = [
   {
     path: "/identity/sign-in",
@@ -54,6 +58,18 @@ export const publicRoutes = [
   {
     path: "/identity/sign-up",
     element: <RegisterPage />,
+  },
+  {
+    path: "/identity/forgot-password",
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: "/identity/reset-password",
+    element: <ResetPasswordPage />,
+  },
+  {
+    path: "/identity/verify-email",
+    element: <VerifyEmailPage />,
   },
   {
     path: "/identity/onboarding",

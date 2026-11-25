@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { ServiceTypeOption } from "../types/service-types";
+import { readApiError } from "@common/utils/api-error";
 
 // Tipos de servicio: configurables por tenant (regla transversal #1 — se
 // seleccionan por id, nunca texto libre). Sembrados con defaults al crear
@@ -16,10 +17,10 @@ export const useServiceTypes = () => {
     setError(null);
     try {
       const res = await apiClient("/service-types");
-      if (!res.ok) throw new Error("Error al cargar tipos de servicio");
+      if (!res.ok) throw new Error(await readApiError(res, "Error al cargar tipos de servicio"));
       setServiceTypes(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -41,7 +42,7 @@ export const useServiceTypes = () => {
         setServiceTypes((prev) => (prev.some((t) => t.id === created.id) ? prev : [...prev, created]));
         return created;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       }
     },

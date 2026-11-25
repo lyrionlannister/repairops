@@ -1,10 +1,6 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Plus, PackageCheck, Ban } from "lucide-react";
-import { useLayaways } from "../hooks/use-layaways";
-import { useCustomers } from "../hooks/use-customers";
-import { useBranch } from "@common/hooks/use-branch";
-import { useCash } from "@commerce/cash/hooks/use-cash";
+import { Plus, PackageCheck, Ban, Search } from "lucide-react";
+import { useLayawaysPage } from "../hooks/use-layaways-page";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
@@ -14,61 +10,41 @@ import { Modal } from "@ui/modal/modal";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { DataTable } from "@ui/table/data-table";
 import { PageShell } from "@common/components/page-shell/page-shell";
-import { usePaginatedList } from "@common/hooks/use-paginated-list";
-import { METHOD_LABELS, STATUS_LABELS, formatMoney, daysUntil } from "../utils/format";
-import type { LayawayMethod, LayawayRecord } from "../types/layaways";
+import {
+  METHOD_LABELS,
+  STATUS_COLORS,
+  STATUS_LABELS,
+  daysUntil,
+  expiryHint,
+  formatDate,
+  formatMoney,
+  LAYAWAY_STATUS_FILTER_OPTIONS,
+} from "../utils/format";
+import { Badge } from "@ui/badge/badge";
+import type { LayawayMethod, LayawayStatusFilter } from "../types/layaways";
 export const LayawaysPage: React.FC = () => {
   const navigate = useNavigate();
-  const { layaways, saving, fetchAll, complete, cancel } = useLayaways();
-  const { customers, fetchAll: fetchCustomers } = useCustomers();
-  const { workingBranchId } = useBranch();
-  const { session: cashSession, fetchOpenSession } = useCash();
-
-  const [completingId, setCompletingId] = useState<string | null>(null);
-  const [completeAmount, setCompleteAmount] = useState("");
-  const [completeMethod, setCompleteMethod] = useState<LayawayMethod>("efectivo");
-  const [noCashError, setNoCashError] = useState(false);
-  const [cancelId, setCancelId] = useState<string | null>(null);
-
-  const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
-    usePaginatedList(layaways);
-
-  useEffect(() => {
-    fetchAll();
-    fetchCustomers();
-  }, [fetchAll, fetchCustomers]);
-
-  useEffect(() => {
-    if (workingBranchId) fetchOpenSession(workingBranchId);
-  }, [workingBranchId, fetchOpenSession]);
-
-  const customerName = (id: string) => customers.find((c) => c.id === id)?.name ?? `Cliente ${id}`;
-
-  const openCompleteModal = (layaway: LayawayRecord) => {
-    setCompletingId(layaway.id);
-    setCompleteAmount((layaway.totalValue - layaway.depositAmount).toFixed(2));
-    setCompleteMethod("efectivo");
-  };
-
-  const handleComplete = async () => {
-    if (!completingId) return;
-    if (!cashSession) {
-      setCompletingId(null);
-      setNoCashError(true);
-      return;
-    }
-    setNoCashError(false);
-    await complete(completingId, cashSession.id, [
-      { method: completeMethod, amount: Number(completeAmount) || 0 },
-    ]);
-    setCompletingId(null);
-  };
-
-  const handleCancel = async () => {
-    if (!cancelId) return;
-    await cancel(cancelId);
-    setCancelId(null);
-  };
+  const {
+    list,
+    saving,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    hasFilters,
+    completingId,
+    setCompletingId,
+    completeAmount,
+    setCompleteAmount,
+    completeMethod,
+    setCompleteMethod,
+    noCashError,
+    cancelId,
+    setCancelId,
+    openCompleteModal,
+    handleComplete,
+    handleCancel,
+  } = useLayawaysPage();
 
   return (
     <PageShell
@@ -91,13 +67,40 @@ export const LayawaysPage: React.FC = () => {
           message="Abre una sesión de caja en Caja antes de completar un apartado."
         />
       )}
+      <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              name="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por cliente"
+              className="pl-9"
+            />
+          </div>
+          <Select
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(value as LayawayStatusFilter)}
+            options={LAYAWAY_STATUS_FILTER_OPTIONS}
+            className="w-full sm:w-56"
+          />
+        </div>
+      </div>
+
       <DataTable
-        isEmpty={layaways.length === 0}
+        loading={list.loading}
+        loadingText="Cargando apartados..."
+        error={list.items.length === 0 ? list.error : null}
+        onRetry={() => void list.refetch()}
+        isEmpty={list.items.length === 0}
         empty={{
           icon: <PackageCheck />,
-          title: "No hay apartados registrados.",
-          description: "Crea un apartado para reservar productos con anticipo.",
-          action: (
+          title: hasFilters ? "Sin resultados para la búsqueda." : "No hay apartados registrados.",
+          description: hasFilters
+            ? "Prueba con otro cliente o estado."
+            : "Crea un apartado para reservar productos con anticipo.",
+          action: !hasFilters && (
             <Button
               variant="primary"
               startIcon={<Plus className="size-4" />}
@@ -108,13 +111,13 @@ export const LayawaysPage: React.FC = () => {
           ),
         }}
         pagination={{
-          page,
-          pageSize,
-          totalPages,
-          totalItems,
-          startIndex,
-          onPageChange: setPage,
-          onPageSizeChange: setPageSize,
+          page: list.page,
+          pageSize: list.pageSize,
+          totalPages: list.totalPages,
+          totalItems: list.total,
+          startIndex: list.startIndex,
+          onPageChange: list.setPage,
+          onPageSizeChange: list.setPageSize,
         }}
         className="min-w-160"
         colgroup={
@@ -147,19 +150,24 @@ export const LayawaysPage: React.FC = () => {
         }
       >
         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-          {pageItems.map((l) => (
+          {list.items.map((l) => (
             <tr key={l.id}>
               <td className="px-5 py-4 text-gray-800 dark:text-gray-200">
-                {customerName(l.customerId)}
+                {l.customerName ?? "Cliente sin nombre"}
               </td>
               <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
                 {formatMoney(l.totalValue)}
               </td>
               <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
-                {l.expiresAt} {l.status === "open" && `(${daysUntil(l.expiresAt)}d)`}
+                {formatDate(l.expiresAt)}
+                {l.status === "open" && (
+                  <span className="ml-1 text-xs text-gray-400">({expiryHint(daysUntil(l.expiresAt))})</span>
+                )}
               </td>
               <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
-                {STATUS_LABELS[l.status]}
+                <Badge size="sm" color={STATUS_COLORS[l.status]}>
+                  {STATUS_LABELS[l.status]}
+                </Badge>
               </td>
               <td className="px-5 py-4 text-right">
                 {l.status === "open" && (
@@ -168,6 +176,7 @@ export const LayawaysPage: React.FC = () => {
                       onClick={() => openCompleteModal(l)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-brand-50 hover:text-brand-600"
                       title="Completar"
+                      aria-label="Completar"
                     >
                       <PackageCheck className="size-4" />
                     </button>
@@ -175,6 +184,7 @@ export const LayawaysPage: React.FC = () => {
                       onClick={() => setCancelId(l.id)}
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500"
                       title="Cancelar"
+                      aria-label="Cancelar"
                     >
                       <Ban className="size-4" />
                     </button>

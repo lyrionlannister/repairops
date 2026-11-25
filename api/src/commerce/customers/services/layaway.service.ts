@@ -1,11 +1,17 @@
 import { singleton } from "tsyringe";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { LayawayFilters, LayawayListRow } from "../types/layaway-page.types.js";
+import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { Decimal } from "decimal.js";
 import AppDataSource from "../../../core/config/data-source.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
+import { currentUserId } from "../../../identity/authz/access.js";
 import { CustomerDao } from "../daos/customer.dao.js";
 import { CashSessionDao } from "../../cash/daos/cash-session.dao.js";
 import { CashMovement, CashMovementMethod } from "../../cash/entities/cash-movement.entity.js";
 import { InventoryItemDao } from "../../inventory/daos/inventory-item.dao.js";
+import { PriceListDao } from "../../price-list/daos/price-list.dao.js";
 import { InventoryReservationService } from "../../inventory/services/inventory-reservation.service.js";
 import { LayawayDao } from "../daos/layaway.dao.js";
 import { LayawayItemDao } from "../daos/layaway-item.dao.js";
@@ -25,6 +31,8 @@ export interface OpenLayawayPayload {
   depositAmount: number;
   depositMethod: CashMovementMethod;
   expiresAt: string;
+  // Se ignora: createdByEmployeeId siempre es el usuario autenticado (ver
+  // open()), nunca lo que manda el cliente.
   createdByEmployeeId?: string | null;
   items: LayawayItemInput[];
 }
@@ -34,7 +42,6 @@ export interface CompletePaymentInput {
   amount: number;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
 
 @singleton()
 export class LayawayService {
@@ -45,10 +52,48 @@ export class LayawayService {
     private cashSessionDao: CashSessionDao,
     private itemDao: InventoryItemDao,
     private reservationService: InventoryReservationService,
+    private priceListDao: PriceListDao,
+    private localService: LocalService,
   ) {}
 
-  async getAll(branchId?: string | null): Promise<Layaway[]> {
-    return this.layawayDao.findAllOrdered(branchId);
+  // Precio de inventario: debe ser igual a precio_venta del item o al precio
+  // de la lista de precios aplicable del tenant (proveedor + modelo). Si no
+  // coincide con ninguno, el cliente está intentando fijar el precio.
+  private async validateItemPrices(items: LayawayItemInput[]): Promise<void> {
+    for (const item of items) {
+      const inventoryItem = await this.itemDao.findById(item.inventoryItemId);
+      if (!inventoryItem) throw new BusinessError("No encontramos el producto en el inventario");
+      const price = new Decimal(item.unitPrice);
+      if (price.equals(new Decimal(inventoryItem.salePrice))) continue;
+      if (inventoryItem.supplierId) {
+        const listItem = await this.priceListDao.findBySupplierAndModel(
+          inventoryItem.supplierId,
+          inventoryItem.name,
+        );
+        if (listItem && price.equals(new Decimal(listItem.price))) continue;
+      }
+      throw new BusinessError("El precio no coincide con el precio de venta del producto. Recarga la página e intenta de nuevo.");
+    }
+  }
+
+  // El vencimiento se aplica al leer: la lista también debe mostrarlo y liberar
+  // el stock, no solo el detalle.
+  async getAll(branchId?: string | null, customerId?: string): Promise<Layaway[]> {
+    await this.expireAllDue();
+    return this.layawayDao.findAllOrdered(branchId, customerId);
+  }
+
+  async getPage(filters: LayawayFilters, request: PageRequest): Promise<Page<LayawayListRow>> {
+    await this.expireAllDue();
+    return this.layawayDao.findPage(filters, request);
+  }
+
+  // Sin cron, los vencidos se expiran antes de cualquier lectura que dependa de ellos
+  // (lista de apartados, disponible del inventario). Normalmente no hay ninguno.
+  async expireAllDue(): Promise<void> {
+    const { timeZone } = await this.localService.getConfig();
+    const due = await this.layawayDao.findOpenDue(new Date().toLocaleDateString("en-CA", { timeZone }));
+    for (const layaway of due) await this.expireIfDue(layaway);
   }
 
   async getItems(layawayId: string): Promise<LayawayItem[]> {
@@ -67,7 +112,11 @@ export class LayawayService {
   }
 
   private async expireIfDue(layaway: Layaway): Promise<Layaway> {
-    if (layaway.status !== "open" || layaway.expiresAt >= today()) return layaway;
+    if (layaway.status !== "open") return layaway;
+    // "Hoy" del taller, no de UTC: con toISOString un apartado vencia a las 18:00
+    // de Mexico de su ultimo dia y liberaba el stock reservado antes de tiempo.
+    const { timeZone } = await this.localService.getConfig();
+    if (layaway.expiresAt >= new Date().toLocaleDateString("en-CA", { timeZone })) return layaway;
 
     const tenantId = getCurrentTenantId();
     return AppDataSource.transaction(async (manager) => {
@@ -85,23 +134,29 @@ export class LayawayService {
   // Todo-o-nada: reserva cada linea (nunca toca quantityOnHand) + registra
   // el anticipo como CashMovement "income" real -- mismo gate de sesion
   // abierta que Sale/Return.
+  // createdByEmployeeId es siempre el usuario autenticado: lo que manda el
+  // cliente en el body se ignora.
   async open(data: OpenLayawayPayload): Promise<Layaway> {
     if (data.items.length === 0) {
-      throw new Error("El apartado debe tener al menos un item");
+      throw new BusinessError("El apartado debe tener al menos un producto");
     }
     const customer = await this.customerDao.findById(data.customerId);
-    if (!customer) throw new Error("Cliente no encontrado");
+    if (!customer) throw new BusinessError("Cliente no encontrado");
 
     const session = await this.cashSessionDao.findById(data.cashSessionId);
-    if (!session) throw new Error("Sesión de caja no encontrada");
+    if (!session) throw new BusinessError("Sesión de caja no encontrada");
     if (session.status !== "open") {
-      throw new Error("No se puede abrir el apartado: la sesión de caja está cerrada");
+      throw new BusinessError("No se puede abrir el apartado: la sesión de caja está cerrada");
     }
 
-    for (const item of data.items) {
-      const inventoryItem = await this.itemDao.findById(item.inventoryItemId);
-      if (!inventoryItem) throw new Error("Item de inventario no encontrado");
+    const { timeZone } = await this.localService.getConfig();
+    const today = new Date().toLocaleDateString("en-CA", { timeZone });
+    if (String(data.expiresAt).slice(0, 10) < today) {
+      throw new BusinessError("La fecha límite del apartado no puede ser anterior a hoy");
     }
+
+    await this.validateItemPrices(data.items);
+    const createdByEmployeeId = currentUserId();
 
     const totalValue = data.items.reduce(
       (sum, item) => sum.plus(new Decimal(item.unitPrice).times(item.quantity)),
@@ -109,10 +164,10 @@ export class LayawayService {
     );
     const depositAmount = new Decimal(data.depositAmount);
     if (depositAmount.lessThanOrEqualTo(0)) {
-      throw new Error("El anticipo debe ser mayor a 0");
+      throw new BusinessError("El anticipo debe ser mayor a 0");
     }
     if (depositAmount.greaterThan(totalValue)) {
-      throw new Error("El anticipo no puede ser mayor al valor total del apartado");
+      throw new BusinessError("El anticipo no puede ser mayor al valor total del apartado");
     }
 
     const tenantId = getCurrentTenantId();
@@ -127,7 +182,7 @@ export class LayawayService {
         depositAmount: toMoney(depositAmount),
         depositMethod: data.depositMethod,
         expiresAt: data.expiresAt,
-        createdByEmployeeId: data.createdByEmployeeId ?? null,
+        createdByEmployeeId,
         completedAt: null,
         cancelledAt: null,
         expiredAt: null,
@@ -160,7 +215,7 @@ export class LayawayService {
         relatedEntityType: "layaway",
         relatedEntityId: savedLayaway.id,
         note: "Anticipo de apartado",
-        createdByEmployeeId: data.createdByEmployeeId ?? null,
+        createdByEmployeeId,
       });
       await manager.save(depositMovement);
 
@@ -177,22 +232,24 @@ export class LayawayService {
     cashSessionId: string,
   ): Promise<Layaway> {
     const layaway = await this.getById(layawayId);
-    if (!layaway) throw new Error("Apartado no encontrado");
-    if (layaway.status === "expired") throw new Error("El apartado ya venció");
-    if (layaway.status === "cancelled") throw new Error("El apartado ya está cancelado");
-    if (layaway.status === "completed") throw new Error("El apartado ya está completado");
-    if (payments.length === 0) throw new Error("Se requiere al menos un pago");
+    if (!layaway) throw new BusinessError("Apartado no encontrado");
+    if (layaway.status === "expired") throw new BusinessError("El apartado ya venció");
+    if (layaway.status === "cancelled") throw new BusinessError("El apartado ya está cancelado");
+    if (layaway.status === "completed") throw new BusinessError("El apartado ya está completado");
+    if (payments.length === 0) throw new BusinessError("Se requiere al menos un pago");
 
     const session = await this.cashSessionDao.findById(cashSessionId);
-    if (!session) throw new Error("Sesión de caja no encontrada");
+    if (!session) throw new BusinessError("Sesión de caja no encontrada");
     if (session.status !== "open") {
-      throw new Error("No se puede completar el apartado: la sesión de caja está cerrada");
+      throw new BusinessError("No se puede completar el apartado: la sesión de caja está cerrada");
     }
 
     const remaining = new Decimal(layaway.totalValue).minus(layaway.depositAmount);
     const paymentsSum = payments.reduce((sum, p) => sum.plus(p.amount), new Decimal(0));
     if (!paymentsSum.equals(remaining)) {
-      throw new Error("La suma de los pagos no coincide con el saldo restante del apartado");
+      throw new BusinessError(
+        "La suma de los pagos no coincide con el saldo restante del apartado",
+      );
     }
 
     const tenantId = getCurrentTenantId();
@@ -228,11 +285,11 @@ export class LayawayService {
   // una Return manual, no un efecto automatico de cancelar.
   async cancel(layawayId: string): Promise<Layaway> {
     const layaway = await this.getById(layawayId);
-    if (!layaway) throw new Error("Apartado no encontrado");
+    if (!layaway) throw new BusinessError("Apartado no encontrado");
     if (layaway.status === "completed")
-      throw new Error("No se puede cancelar un apartado ya completado");
-    if (layaway.status === "cancelled") throw new Error("El apartado ya está cancelado");
-    if (layaway.status === "expired") throw new Error("El apartado ya venció");
+      throw new BusinessError("No se puede cancelar un apartado ya completado");
+    if (layaway.status === "cancelled") throw new BusinessError("El apartado ya está cancelado");
+    if (layaway.status === "expired") throw new BusinessError("El apartado ya venció");
 
     const tenantId = getCurrentTenantId();
     const items = await this.layawayItemDao.findByLayawayId(layawayId);

@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { SaleWithItems, SaleListItem, CreateReturnPayload, ReturnRecord } from "../types/returns";
+import { readApiError } from "@common/utils/api-error";
 
 // Metodos de reembolso = CashMovementMethod del backend (ReturnService), no
 // SalePaymentMethod -- "credito" existe para vender, nunca para reembolsar.
@@ -20,7 +21,7 @@ export const useReturns = () => {
   const fetchSaleDetail = useCallback(
     async (saleId: string): Promise<SaleWithItems | null> => {
       const detailRes = await apiClient(`/sales/${saleId}`);
-      if (!detailRes.ok) throw new Error("Error al cargar la venta");
+      if (!detailRes.ok) throw new Error(await readApiError(detailRes, "Error al cargar la venta"));
       return await detailRes.json();
     },
     [apiClient],
@@ -35,7 +36,7 @@ export const useReturns = () => {
       setSearchError(null);
       try {
         const listRes = await apiClient("/sales");
-        if (!listRes.ok) throw new Error("Error al buscar la venta");
+        if (!listRes.ok) throw new Error(await readApiError(listRes, "Error al buscar la venta"));
         const sales: Array<{ id: string; saleNumber: number }> = await listRes.json();
         const match = sales.find((s) => s.saleNumber === saleNumber);
         if (!match) {
@@ -44,7 +45,7 @@ export const useReturns = () => {
         }
         return await fetchSaleDetail(match.id);
       } catch (err) {
-        setSearchError(err instanceof Error ? err.message : "Error desconocido");
+        setSearchError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSearching(false);
@@ -74,7 +75,7 @@ export const useReturns = () => {
       try {
         return await fetchSaleDetail(saleId);
       } catch (err) {
-        setSearchError(err instanceof Error ? err.message : "Error desconocido");
+        setSearchError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSearching(false);
@@ -119,7 +120,7 @@ export const useReturns = () => {
         if (!res.ok) throw new Error(await readError(res, "Error al registrar la devolución"));
         return await res.json();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);

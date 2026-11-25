@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 
-import { useBranch } from "@common/hooks/use-branch";
 import { useServiceTypes } from "@common/hooks/use-service-types";
 import { usePermissions } from "@common/hooks/use-permissions";
 import { useCurrentUser } from "@common/hooks/use-current-user";
 import { useEmployees } from "@identity/users/hooks/use-employees";
-import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { NEXT_STATUS, useRepairNotes } from "./use-repair-notes";
 import { useRepairNoteDelivery } from "./use-repair-note-delivery";
 import { deviceServiceTypeNames } from "../utils/devices";
@@ -19,7 +17,6 @@ export const useRepairNoteDetail = () => {
   const location = useLocation();
   const { can, canAny } = usePermissions();
   const currentUser = useCurrentUser();
-  const { workingBranchId } = useBranch();
   const {
     note,
     loading,
@@ -32,9 +29,6 @@ export const useRepairNoteDetail = () => {
   } = useRepairNotes();
   const { employees, fetchAll: fetchEmployees } = useEmployees();
   const { serviceTypes, fetchAll: fetchServiceTypes } = useServiceTypes();
-  const { items: inventoryItems, fetchAll: fetchInventory } = useBranchScopedInventory(
-    note?.localId || workingBranchId,
-  );
 
   const [itemRecords, setItemRecords] = useState<RepairNoteItemRecord[]>([]);
   const [confirm, setConfirm] = useState<"cancel" | "delete" | null>(null);
@@ -53,14 +47,12 @@ export const useRepairNoteDetail = () => {
     fetchNoteItems(id).then(setItemRecords);
     fetchEmployees();
     fetchServiceTypes();
-    fetchInventory();
   }, [
     id,
     fetchNote,
     fetchNoteItems,
     fetchEmployees,
     fetchServiceTypes,
-    fetchInventory,
   ]);
 
   const technicianName = useMemo(() => {
@@ -82,11 +74,11 @@ export const useRepairNoteDetail = () => {
     () =>
       itemRecords.map((r) => ({
         id: r.id,
-        name: inventoryItems.find((i) => i.id === r.inventoryItemId)?.name ?? "Producto",
+        name: r.itemName ?? "Producto",
         quantity: r.quantity,
         unitPrice: r.unitPrice,
       })),
-    [itemRecords, inventoryItems],
+    [itemRecords],
   );
 
   const confirmAction = useCallback(async () => {
@@ -128,9 +120,11 @@ export const useRepairNoteDetail = () => {
     technicianName,
     serviceTypeNames,
     itemLines,
-    canEdit: canAny("repair-notes.write", "repair-notes.write.own"),
+    canEdit:
+      note?.status !== "cancelled" && canAny("repair-notes.write", "repair-notes.write.own"),
     canCancel: !isClosed && can("repair-notes.write"),
-    canDelete: can("repair-notes.delete"),
+    canDelete:
+      note?.status !== "done" && note?.status !== "delivered" && can("repair-notes.delete"),
     confirm,
     setConfirm,
     busy,

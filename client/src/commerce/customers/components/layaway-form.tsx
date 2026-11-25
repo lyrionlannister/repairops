@@ -6,6 +6,8 @@ import { Input } from "@ui/inputs/input";
 import { DatePicker } from "@ui/date-picker/date-picker";
 import { Label } from "@ui/inputs/label";
 import { Select } from "@ui/select/select";
+import { InventoryItemSelect } from "@commerce/inventory/components/inventory-item-select";
+import { CustomerSelect } from "@common/components/customer-select";
 import { METHOD_LABELS, formatMoney } from "../utils/format";
 import type { LayawayMethod } from "../types/layaways";
 import type { LayawayFormProps } from "../props/layaway-form-props";
@@ -14,12 +16,11 @@ const FORM_CARD_CLASS =
   "space-y-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3";
 export const LayawayForm: FC<LayawayFormProps> = ({
   hasContext,
-  customers,
   customerId,
   onCustomerIdChange,
   expiresAt,
   onExpiresAtChange,
-  inventoryItems,
+  branchId,
   lines,
   onUpdateLine,
   onItemChange,
@@ -41,11 +42,10 @@ export const LayawayForm: FC<LayawayFormProps> = ({
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div>
         <Label className="text-gray-500">Cliente</Label>
-        <Select
+        <CustomerSelect
           value={customerId}
-          onChange={onCustomerIdChange}
-          placeholder="Selecciona un cliente"
-          options={customers.map((c) => ({ value: c.id, label: c.name }))}
+          onChange={(id) => onCustomerIdChange(id)}
+          placeholder="Busca un cliente por nombre o teléfono"
         />
       </div>
       <div>
@@ -55,18 +55,15 @@ export const LayawayForm: FC<LayawayFormProps> = ({
     </div>
 
     <div className="space-y-3">
-      <Label className="text-gray-500">Items</Label>
+      <Label className="text-gray-500">Productos</Label>
       {lines.map((line, index) => (
         <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <Select
+            <InventoryItemSelect
               value={line.inventoryItemId}
-              onChange={(value) => onItemChange(index, value)}
-              placeholder="Selecciona un producto"
-              options={inventoryItems.map((i) => ({
-                value: i.id,
-                label: `${i.name} (disponible: ${i.available})`,
-              }))}
+              onSelect={(item) => onItemChange(index, item)}
+              branchId={branchId}
+              blockOutOfStock
             />
           </div>
           <div className="w-full sm:w-24">

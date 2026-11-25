@@ -10,6 +10,7 @@ export const createCustomerRouter = (controller: CustomerController): Router => 
   router.use(authMiddleware, tenantMiddleware);
   router.param("id", publicIdParam("customers"));
   router.get("/", requirePermission("customers.read", "customers.read.own"), controller.getAll);
+  router.get("/lookup", requirePermission("customers.read", "customers.read.own"), controller.lookup);
   router.get("/:id", requirePermission("customers.read", "customers.read.own"), controller.getById);
   router.get("/:id/devices", requirePermission("customers.read", "customers.read.own"), controller.getDevices);
   router.get("/:id/credit-balance", requirePermission("customers.read", "customers.read.own"), controller.getCreditBalance);

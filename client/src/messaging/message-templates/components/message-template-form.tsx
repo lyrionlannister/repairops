@@ -66,7 +66,7 @@ export const MessageTemplateForm: FC<MessageTemplateFormProps> = ({
         Cancelar
       </Button>
       <Button type="submit" variant="primary" disabled={saving}>
-        {isEdit ? "Guardar cambios" : "Crear template"}
+        {isEdit ? "Guardar cambios" : "Crear plantilla"}
       </Button>
     </div>
   </form>

@@ -9,7 +9,12 @@ import { CustomerPaymentService } from "../services/customer-payment.service.js"
 import { RegisterCustomerPaymentDto } from "../dtos/register-customer-payment.dto.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
-import { sendError } from "../../../core/http/error-response.js";
+import { sendError, queryString } from "../../../core/http/error-response.js";
+import { readLookupQuery, readPageQuery } from "../../../core/common/utils/page-query.js";
+import type { CustomerCreditFilter } from "../types/customer-page.types.js";
+
+const creditFilterOf = (value: string | undefined): CustomerCreditFilter | undefined =>
+  value === "pending" || value === "overdue" ? value : undefined;
 
 @singleton()
 export class CustomerController {
@@ -21,9 +26,24 @@ export class CustomerController {
     private branchAccess: BranchAccessService,
   ) {}
 
-  getAll = async (_req: Request, res: Response): Promise<void> => {
+  getAll = async (req: Request, res: Response): Promise<void> => {
     try {
+      const page = await readPageQuery(req.query);
+      if (page) {
+        const credit = creditFilterOf(queryString(req.query["credit"]));
+        res.status(200).json(await this.creditService.listPage(page, credit));
+        return;
+      }
       res.status(200).json(await this.creditService.listWithCredit());
+    } catch (error) {
+      sendError(res, error, 500);
+    }
+  };
+
+  lookup = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { search, limit } = await readLookupQuery(req.query);
+      res.status(200).json(await this.service.lookup(search, limit));
     } catch (error) {
       sendError(res, error, 500);
     }
@@ -103,7 +123,6 @@ export class CustomerController {
         localId,
         amount: dto.amount,
         method: dto.method,
-        createdByEmployeeId: dto.createdByEmployeeId,
       });
       res.status(201).json(payment);
     } catch (error) {

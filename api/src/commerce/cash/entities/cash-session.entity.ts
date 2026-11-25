@@ -8,7 +8,12 @@ export type CashSessionStatus = "open" | "closed";
 @Entity("cash_sessions")
 @Index("IDX_cash_sessions_tenant", ["tenantId"])
 @Index("IDX_cash_sessions_local", ["localId"])
+@Index("IDX_cash_sessions_tenant_closed", ["tenantId", "closedAt"])
 @Unique("UQ_cash_sessions_tenant_numero_corte", ["tenantId", "cutNumber"])
+@Index("UQ_cash_sessions_one_open_per_local", ["tenantId", "localId"], {
+  unique: true,
+  where: "estado = 'open'",
+})
 export class CashSession extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

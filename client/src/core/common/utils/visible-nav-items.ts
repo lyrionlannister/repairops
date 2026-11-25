@@ -18,3 +18,19 @@ export const firstNavPath = (items: NavItem[]): string | null => {
   }
   return null;
 };
+
+// Permisos que pide la entrada de menú más específica que cubre la ruta: así
+// una URL escrita a mano no abre una pantalla que la API va a rechazar.
+export const requiredPermissionsFor = (pathname: string, items: NavItem[]): Permission[] | null => {
+  const entries = items.flatMap((item) => [
+    ...(item.path ? [{ path: item.path, permissions: item.permissions }] : []),
+    ...(item.subItems ?? []).map((sub) => ({
+      path: sub.path,
+      permissions: sub.permissions ?? item.permissions,
+    })),
+  ]);
+  const match = entries
+    .filter((entry) => pathname === entry.path || pathname.startsWith(`${entry.path}/`))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+  return match?.permissions ?? null;
+};

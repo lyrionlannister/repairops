@@ -1,6 +1,7 @@
 import { ObjectLiteral, Repository, SelectQueryBuilder } from "typeorm";
 import { BaseDao } from "./base.dao.js";
 import { BranchAccessError, getBranchScope, getCurrentTenantId } from "../tenancy/tenant-context.js";
+import type { Page, PageRequest } from "../common/types/page.types.js";
 
 type TenantOwned = { tenantId: string };
 
@@ -37,6 +38,15 @@ export abstract class TenantScopedDao<
       else query.andWhere(`${alias}.localId IN (:...readBranchIds)`, { readBranchIds: branch.readIds });
     }
     return query;
+  }
+
+  // Recibe un builder que ya parte de `scoped()`: este helper solo agrega el corte de pagina.
+  protected async paginate(query: SelectQueryBuilder<T>, request: PageRequest): Promise<Page<T>> {
+    const [items, total] = await query
+      .skip((request.page - 1) * request.pageSize)
+      .take(request.pageSize)
+      .getManyAndCount();
+    return { items, total, page: request.page, pageSize: request.pageSize };
   }
 
   protected currentTenantId(): string {

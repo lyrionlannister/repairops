@@ -4,17 +4,17 @@ import { formatMoney, formatRelativeTime } from "../utils/format";
 import type { DashboardRecentActivityProps } from "../props/dashboard-recent-activity-props";
 
 export const DashboardRecentActivity: FC<DashboardRecentActivityProps> = ({ recentActivity }) => (
-  <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/3 sm:p-6">
+  <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/3 sm:p-6">
     <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Actividad reciente</h3>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Últimos movimientos de caja</p>
     {recentActivity.length === 0 ? (
-      <div className="mt-4 flex min-h-64 flex-1 items-center justify-center">
+      <div className="mt-4 flex h-64 items-center justify-center">
         <p className="text-sm text-gray-400 dark:text-gray-500">
           Sin actividad registrada todavía.
         </p>
       </div>
     ) : (
-      <div className="custom-scrollbar mt-4 min-h-64 flex-1 divide-y divide-gray-100 overflow-y-auto pr-1 dark:divide-gray-800">
+      <div className="custom-scrollbar mt-4 h-64 divide-y divide-gray-100 overflow-y-auto pr-1 dark:divide-gray-800">
         {recentActivity.map((item) => (
           <div
             key={`${item.kind}-${item.id}`}

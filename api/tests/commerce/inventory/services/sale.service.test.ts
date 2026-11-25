@@ -7,6 +7,8 @@ import { InventoryMovement } from "../../../../src/commerce/inventory/entities/i
 import { Sale } from "../../../../src/commerce/inventory/entities/sale.entity.js";
 import { SaleItem } from "../../../../src/commerce/inventory/entities/sale-item.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
+import { PriceListItem } from "../../../../src/commerce/price-list/entities/price-list-item.entity.js";
+import { PriceListDao } from "../../../../src/commerce/price-list/daos/price-list.dao.js";
 import { InventoryMovementDao } from "../../../../src/commerce/inventory/daos/inventory-movement.dao.js";
 import { InventoryReservation } from "../../../../src/commerce/inventory/entities/inventory-reservation.entity.js";
 import { InventoryReservationDao } from "../../../../src/commerce/inventory/daos/inventory-reservation.dao.js";
@@ -33,7 +35,7 @@ import { Customer } from "../../../../src/commerce/customers/entities/customer.e
 import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
-import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
+import { makeDiscountCapService, makeUserRoleDao, makeAuditLogStub } from "../../../support/authz-deps.js";
 
 describe("SaleService.create", () => {
   let inventoryService: InventoryService;
@@ -50,7 +52,9 @@ describe("SaleService.create", () => {
     await ensureFixtureTenant(AppDataSource, tenantId);
     const itemDao = new InventoryItemDao(AppDataSource.getRepository(InventoryItem));
     const movementDao = new InventoryMovementDao(AppDataSource.getRepository(InventoryMovement));
-    const reservationDao = new InventoryReservationDao(AppDataSource.getRepository(InventoryReservation));
+    const reservationDao = new InventoryReservationDao(
+      AppDataSource.getRepository(InventoryReservation),
+    );
     inventoryService = new InventoryService(itemDao, movementDao, reservationDao);
     localService = new LocalService(new LocalDao(AppDataSource.getRepository(Local)));
     cashSessionDao = new CashSessionDao(AppDataSource.getRepository(CashSession));
@@ -58,7 +62,8 @@ describe("SaleService.create", () => {
       cashSessionDao,
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       localService,
-      new UserDao(AppDataSource.getRepository(User)), makeUserRoleDao(),
+      new UserDao(AppDataSource.getRepository(User)),
+      makeUserRoleDao(), makeAuditLogStub(),
     );
     serviceTypeDao = new ServiceTypeDao(AppDataSource.getRepository(ServiceType));
     salePaymentDao = new SalePaymentDao(AppDataSource.getRepository(SalePayment));
@@ -70,7 +75,10 @@ describe("SaleService.create", () => {
       localService,
       cashSessionDao,
       serviceTypeDao,
-      new CustomerDao(AppDataSource.getRepository(Customer)), makeDiscountCapService(),
+      new CustomerDao(AppDataSource.getRepository(Customer)),
+      makeDiscountCapService(),
+      new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),
+      new PriceListDao(AppDataSource.getRepository(PriceListItem)),
     );
 
     // Tasa de impuesto en 0 para que estas pruebas se centren en atomicidad
@@ -91,14 +99,20 @@ describe("SaleService.create", () => {
   // tenant, mismo local, por simplicidad de la configuración de impuesto/
   // descuento compartida en beforeAll).
   const openSession = () => runWithTenant(tenantId, () => cashService.openSession("1", 0));
-  const owner = { userId: "1", roles: ["owner"], permissions: effectivePermissions(["owner"], false) };
+  const owner = {
+    userId: "1",
+    roles: ["owner"],
+    permissions: effectivePermissions(["owner"], false),
+  };
   const closeSession = (id: string) =>
     runWithTenant(
       tenantId,
       async () => {
         const session = await cashSessionDao.findById(id);
         const cash = (await cashService.getSummary(id))!.byMethod.efectivo!;
-        const expectedCashBalance = new Decimal(session!.openingBalance).plus(cash.income).minus(cash.expense);
+        const expectedCashBalance = new Decimal(session!.openingBalance)
+          .plus(cash.income)
+          .minus(cash.expense);
         return cashService.closeSession(id, expectedCashBalance.toNumber());
       },
       null,
@@ -119,7 +133,11 @@ describe("SaleService.create", () => {
       }),
     );
     await runWithTenant(tenantId, () =>
-      inventoryService.registerMovement({ inventoryItemId: itemWithStock.id, type: "in", quantity: 5 }),
+      inventoryService.registerMovement({
+        inventoryItemId: itemWithStock.id,
+        type: "in",
+        quantity: 5,
+      }),
     );
 
     const itemOutOfStock = await runWithTenant(tenantId, () =>
@@ -143,8 +161,18 @@ describe("SaleService.create", () => {
             cashSessionId: session.id,
             payments: [{ method: "efectivo", amount: 180 }],
             items: [
-              { lineType: "inventory_item", referenceId: itemWithStock.id, quantity: 2, unitPrice: 50 },
-              { lineType: "inventory_item", referenceId: itemOutOfStock.id, quantity: 1, unitPrice: 80 },
+              {
+                lineType: "inventory_item",
+                referenceId: itemWithStock.id,
+                quantity: 2,
+                unitPrice: 50,
+              },
+              {
+                lineType: "inventory_item",
+                referenceId: itemOutOfStock.id,
+                quantity: 1,
+                unitPrice: 80,
+              },
             ],
           },
           ["owner"],
@@ -152,7 +180,9 @@ describe("SaleService.create", () => {
       ),
     ).rejects.toThrow();
 
-    const stockAfterFailure = await runWithTenant(tenantId, () => inventoryService.getById(itemWithStock.id));
+    const stockAfterFailure = await runWithTenant(tenantId, () =>
+      inventoryService.getById(itemWithStock.id),
+    );
     expect(stockAfterFailure?.quantityOnHand).toBe(5);
     await closeSession(session.id);
   });
@@ -269,7 +299,9 @@ describe("SaleService.create", () => {
               { method: "efectivo", amount: 30 },
               { method: "tarjeta", amount: 29 },
             ],
-            items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 60 }],
+            items: [
+              { lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 60 },
+            ],
           },
           ["owner"],
         ),
@@ -304,7 +336,12 @@ describe("SaleService.create", () => {
           localId: "1",
           cashSessionId: session.id,
           payments: [
-            { method: "tarjeta", amount: 40, providerReference: "TERM-REF-001", providerAuthorizationCode: "AUTH123" },
+            {
+              method: "tarjeta",
+              amount: 40,
+              providerReference: "TERM-REF-001",
+              providerAuthorizationCode: "AUTH123",
+            },
           ],
           items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 40 }],
         },
@@ -334,7 +371,9 @@ describe("SaleService.create", () => {
     await runWithTenant(tenantId, () =>
       inventoryService.registerMovement({ inventoryItemId: part.id, type: "in", quantity: 2 }),
     );
-    const serviceType = await runWithTenant(tenantId, () => serviceTypeDao.create({ name: "Instalación" }));
+    const serviceType = await runWithTenant(tenantId, () =>
+      serviceTypeDao.create({ name: "Instalación" }),
+    );
 
     const sale = await runWithTenant(tenantId, () =>
       saleService.create(
@@ -369,7 +408,9 @@ describe("SaleService.create", () => {
             localId: "1",
             cashSessionId: session.id,
             payments: [{ method: "efectivo", amount: 10 }],
-            items: [{ lineType: "service_type", referenceId: "999999", quantity: 1, unitPrice: 10 }],
+            items: [
+              { lineType: "service_type", referenceId: "999999", quantity: 1, unitPrice: 10 },
+            ],
           },
           ["owner"],
         ),
@@ -417,7 +458,9 @@ describe("SaleService.create", () => {
       cashSessionId: session.id,
       payments: [{ method: "efectivo" as const, amount: 15 }],
       idempotencyKey: "double-click-key-1",
-      items: [{ lineType: "inventory_item" as const, referenceId: item.id, quantity: 1, unitPrice: 15 }],
+      items: [
+        { lineType: "inventory_item" as const, referenceId: item.id, quantity: 1, unitPrice: 15 },
+      ],
     };
 
     const first = await runWithTenant(tenantId, () => saleService.create(payload, ["owner"]));
@@ -456,7 +499,15 @@ describe("SaleService.create", () => {
             localId: "1",
             cashSessionId: session.id,
             payments: [{ method: "efectivo", amount: 25 }],
-            items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 50, discountPercent: 50 }],
+            items: [
+              {
+                lineType: "inventory_item",
+                referenceId: item.id,
+                quantity: 1,
+                unitPrice: 50,
+                discountPercent: 50,
+              },
+            ],
           },
           ["cashier"],
         ),
@@ -470,7 +521,15 @@ describe("SaleService.create", () => {
           localId: "1",
           cashSessionId: session.id,
           payments: [{ method: "efectivo", amount: 25 }],
-          items: [{ lineType: "inventory_item", referenceId: item.id, quantity: 1, unitPrice: 50, discountPercent: 50 }],
+          items: [
+            {
+              lineType: "inventory_item",
+              referenceId: item.id,
+              quantity: 1,
+              unitPrice: 50,
+              discountPercent: 50,
+            },
+          ],
         },
         ["owner"],
       ),

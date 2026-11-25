@@ -8,3 +8,9 @@ export const useBranchQuery = (): string => {
   const { activeBranchId } = useBranch();
   return activeBranchId && activeBranchId !== ALL_BRANCHES ? `?branchId=${encodeURIComponent(activeBranchId)}` : "";
 };
+
+// Mismo criterio que useBranchQuery, como valor de filtro para useServerList.
+export const useBranchFilter = (): string | undefined => {
+  const { activeBranchId } = useBranch();
+  return activeBranchId && activeBranchId !== ALL_BRANCHES ? activeBranchId : undefined;
+};

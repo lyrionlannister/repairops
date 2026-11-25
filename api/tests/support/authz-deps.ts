@@ -1,4 +1,5 @@
 import AppDataSource from "../../src/core/config/data-source.js";
+import type { AuditLogService } from "../../src/core/audit/services/audit-log.service.js";
 import { UserRoleAssignment } from "../../src/identity/auth/entities/user-role.entity.js";
 import { UserRoleDao } from "../../src/identity/auth/daos/user-role.dao.js";
 import { Branch } from "../../src/identity/branches/entities/branch.entity.js";
@@ -16,3 +17,7 @@ export const makeDiscountCapService = (): BranchDiscountCapService =>
     new BranchDiscountCapDao(AppDataSource.getRepository(BranchDiscountCap)),
     new BranchDao(AppDataSource.getRepository(Branch)),
   );
+
+// La bitacora no es lo que prueban los tests de caja/venta: se descarta.
+export const makeAuditLogStub = (): AuditLogService =>
+  ({ record: async () => {}, recordForCurrentActor: async () => {} }) as unknown as AuditLogService;

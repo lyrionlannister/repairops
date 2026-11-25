@@ -1,13 +1,14 @@
 import type { InventoryItem } from "../types/inventory";
 
 export interface InventoryTransferFormProps {
-  items: InventoryItem[];
   itemLabel: (item: InventoryItem) => string;
-  fromItemId: string;
-  onFromItemIdChange: (value: string) => void;
-  toItemId: string;
-  onToItemIdChange: (value: string) => void;
+  fromItem: InventoryItem | null;
+  onFromItemChange: (item: InventoryItem | null) => void;
+  toItem: InventoryItem | null;
+  onToItemChange: (item: InventoryItem | null) => void;
+  sameItem: boolean;
   sameBranch: boolean;
+  exceedsStock: boolean;
   quantity: string;
   onQuantityChange: (value: string) => void;
   reason: string;

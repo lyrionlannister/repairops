@@ -17,7 +17,7 @@ export const TenantsPage: React.FC = () => {
 
   return (
     <PageShell title="Talleres" description="Plan, extras y uso de cada taller de la plataforma.">
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex flex-col overflow-hidden rounded-2xl xl:min-h-0 xl:flex-1 border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
         {loading ? (
           <p className="p-10 text-center text-sm text-gray-500 dark:text-gray-400">
             Cargando talleres...

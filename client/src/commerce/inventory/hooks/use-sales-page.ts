@@ -1,18 +1,15 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useServerList } from "@common/hooks/use-server-list";
+import { useBranchFilter } from "@common/hooks/use-branch-query";
 import type { Sale } from "../types/sales";
 
-export const useSalesPage = (sales: Sale[]) => {
+export const useSalesPage = () => {
   const [search, setSearch] = useState("");
-
-  const filteredSales = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return sales;
-    return sales.filter(
-      (sale) =>
-        (sale.customerName ?? "").toLowerCase().includes(term) ||
-        String(sale.saleNumber).includes(term),
-    );
-  }, [search, sales]);
-
-  return { search, setSearch, filteredSales };
+  const branchId = useBranchFilter();
+  const list = useServerList<Sale>("/sales", {
+    search,
+    filters: { branchId },
+    errorText: "No pudimos cargar las ventas.",
+  });
+  return { search, setSearch, list };
 };

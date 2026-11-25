@@ -37,7 +37,7 @@ export const RepairNoteForm: FC<RepairNoteFormProps> = ({
   onTechnicianNotesChange,
   onAdditionalFindingsChange,
   itemLines,
-  inventoryItems,
+  branchId,
   onItemChange,
   onLineChange,
   onAddLine,
@@ -106,7 +106,7 @@ export const RepairNoteForm: FC<RepairNoteFormProps> = ({
 
       <RepairNoteItemLinesSection
         itemLines={itemLines}
-        inventoryItems={inventoryItems}
+        branchId={branchId}
         saving={saving}
         onItemChange={onItemChange}
         onLineChange={onLineChange}

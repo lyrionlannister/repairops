@@ -5,6 +5,7 @@ import { Input } from "./ui/inputs/input";
 import { usePermissions } from "../hooks/use-permissions";
 import { useCurrentUser } from "../hooks/use-current-user";
 import type { EmployeeSelectProps } from "../props/employee-select-props";
+import { selectableEmployees } from "../utils/selectable-employees";
 
 // Reusable en cualquier modulo que necesite asignar un empleado por id
 // (inventory, quotes, caja, dashboards) -- regla transversal: el valor
@@ -15,6 +16,7 @@ export const EmployeeSelect: FC<EmployeeSelectProps> = ({
   placeholder = "Selecciona un empleado",
   disabled = false,
   className,
+  roles,
 }) => {
   const { employees, loading, fetchAll } = useEmployees();
   const { can } = usePermissions();
@@ -43,9 +45,9 @@ export const EmployeeSelect: FC<EmployeeSelectProps> = ({
       disabled={disabled || loading}
       placeholder={placeholder}
       className={className}
-      options={employees.map((e) => ({
+      options={selectableEmployees(employees, value, roles).map((e) => ({
         value: e.id,
-        label: `${e.firstName} ${e.lastName}`,
+        label: `${e.firstName} ${e.lastName}${e.isActive ? "" : " (inactivo)"}`,
       }))}
     />
   );

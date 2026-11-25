@@ -27,7 +27,7 @@ export class ServiceTypeController {
         res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
-      res.status(201).json(await this.service.create(dto.name));
+      res.status(201).json(await this.service.create(dto.name, dto.basePrice ?? null));
     } catch (error) {
       sendError(res, error, 400);
     }

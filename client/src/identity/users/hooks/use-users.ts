@@ -4,6 +4,7 @@ import { formToPayload } from "../utils/user-to-form";
 
 import type { UserRole } from "@common/types/auth/permission";
 import type { UserFormData, UserRecord, CreateUserPayload, UpdateUserPayload, PayCycle } from "../types/users";
+import { apiErrorText } from "@common/utils/api-error";
 
 export type { UserRole };
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -38,12 +39,12 @@ export const useUsers = () => {
       const response = await apiClient("/auth/users");
       if (!response.ok) {
         const data = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data?.error || "Error al obtener usuarios");
+        throw new Error(apiErrorText(data, "Error al obtener usuarios"));
       }
       const data = (await response.json()) as UserRecord[];
       setUsers(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -66,13 +67,13 @@ export const useUsers = () => {
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data?.error || "Error al crear usuario");
+          throw new Error(apiErrorText(data, "Error al crear usuario"));
         }
         const data = (await response.json()) as { user: UserRecord };
         setCreateSuccess(true);
         return data.user;
       } catch (err) {
-        setCreateError(err instanceof Error ? err.message : "Error desconocido");
+        setCreateError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setCreating(false);
@@ -98,12 +99,12 @@ export const useUsers = () => {
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data?.error || "Error al actualizar usuario");
+          throw new Error(apiErrorText(data, "Error al actualizar usuario"));
         }
         const data = (await response.json()) as UserRecord;
         return data;
       } catch (err) {
-        setUpdateError(err instanceof Error ? err.message : "Error desconocido");
+        setUpdateError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setUpdating(false);
@@ -121,7 +122,7 @@ export const useUsers = () => {
         });
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data?.error || "Error al cambiar estado del usuario");
+          throw new Error(apiErrorText(data, "Error al cambiar estado del usuario"));
         }
         const updated = (await response.json()) as UserRecord;
         setUsers((prev) =>

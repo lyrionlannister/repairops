@@ -10,8 +10,10 @@ import type { ScrollTableProps } from "../../../props/scroll-table-props";
 // mueva header y body a la vez; el div del body lleva el mismo min-w para no
 // crear una segunda barra horizontal. Solo se activa cuando el caller pasa
 // `className` (siempre un min-w-*).
-// En < md (ver .stack-table en index.css) las filas se muestran como tarjetas:
-// el efecto copia cada <th> al data-label de la celda de su misma columna.
+// En < xl (ver .stack-table en index.css) las filas se muestran como tarjetas:
+// el efecto copia cada <th> al data-label de la celda de su misma columna. Ahí
+// no hay scroll interno: con filtros arriba, el área de la lista quedaba de
+// tarjeta y media en un celular; scrollea la página completa.
 export const ScrollTable: FC<ScrollTableProps> = ({ colgroup, header, children, className = "" }) => {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -27,7 +29,7 @@ export const ScrollTable: FC<ScrollTableProps> = ({ colgroup, header, children, 
   return (
     <div
       ref={ref}
-      className={`stack-table custom-scrollbar flex flex-1 min-h-0 flex-col ${className ? "overflow-x-auto" : "overflow-hidden"}`}
+      className={`stack-table custom-scrollbar flex flex-col xl:flex-1 xl:min-h-0 ${className ? "overflow-x-auto" : "overflow-hidden"}`}
     >
       <table className={`w-full table-fixed text-sm ${className}`}>
         {colgroup}
@@ -35,7 +37,7 @@ export const ScrollTable: FC<ScrollTableProps> = ({ colgroup, header, children, 
           {header}
         </thead>
       </table>
-      <div className={`custom-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${className}`}>
+      <div className={`custom-scrollbar overflow-x-hidden xl:min-h-0 xl:flex-1 xl:overflow-y-auto ${className}`}>
         <table className={`w-full table-fixed text-sm ${className}`}>
           {colgroup}
           {children}

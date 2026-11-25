@@ -1,7 +1,10 @@
 import { singleton } from "tsyringe";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { PriceListFilters } from "../types/price-list-page.types.js";
 import { PriceListDao } from "../daos/price-list.dao.js";
 import { PriceListItem } from "../entities/price-list-item.entity.js";
 import { SupplierDao } from "../../suppliers/daos/supplier.dao.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 type CreatePayload = Omit<PriceListItem, "id" | "createdAt" | "updatedAt" | "supplier">;
 type UpdatePayload = Partial<CreatePayload>;
@@ -17,6 +20,18 @@ export class PriceListService {
     return this.dao.findAllOrdered();
   }
 
+  async getPage(filters: PriceListFilters, request: PageRequest): Promise<Page<PriceListItem>> {
+    return this.dao.findPage(filters, request);
+  }
+
+  async getById(id: string): Promise<PriceListItem | null> {
+    return this.dao.findWithSupplier(id);
+  }
+
+  async getBrands(): Promise<string[]> {
+    return this.dao.distinctBrands();
+  }
+
   async search(query: string): Promise<PriceListItem[]> {
     return this.dao.searchByModel(query);
   }
@@ -28,7 +43,7 @@ export class PriceListService {
   async create(data: CreatePayload): Promise<PriceListItem> {
     if (data.supplierId) {
       const supplier = await this.supplierDao.findById(data.supplierId);
-      if (!supplier) throw new Error("Proveedor no encontrado");
+      if (!supplier) throw new BusinessError("Proveedor no encontrado");
     }
     return this.dao.create(data);
   }
@@ -36,7 +51,7 @@ export class PriceListService {
   async update(id: string, data: UpdatePayload): Promise<PriceListItem | null> {
     if (data.supplierId) {
       const supplier = await this.supplierDao.findById(data.supplierId);
-      if (!supplier) throw new Error("Proveedor no encontrado");
+      if (!supplier) throw new BusinessError("Proveedor no encontrado");
     }
     return this.dao.update(id, data);
   }
@@ -44,5 +59,4 @@ export class PriceListService {
   async delete(id: string): Promise<boolean> {
     return this.dao.delete(id);
   }
-
 }

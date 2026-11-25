@@ -1,16 +1,16 @@
 import type { InventoryItem } from "../types/inventory";
+import type { InventoryTransferItemRef } from "../types/inventory-transfers";
 import type { Branch } from "@identity/branches/types/branches";
 
-export const useInventoryTransferLabels = (items: InventoryItem[], branches: Branch[]) => {
-  const branchName = (branchId: string) => branches.find((b) => b.id === branchId)?.name ?? `Sucursal ${branchId}`;
+export const useInventoryTransferLabels = (branches: Branch[]) => {
+  const branchName = (branchId: string) =>
+    branches.find((b) => b.id === branchId)?.name ?? "Sucursal sin nombre";
 
   const itemLabel = (item: InventoryItem) =>
-    `${item.name} (${branchName(item.localId)}, stock: ${item.quantityOnHand})`;
+    `${item.name} (${branchName(item.localId)}, existencia: ${item.quantityOnHand})`;
 
-  const itemNameById = (itemId: string) => {
-    const item = items.find((i) => i.id === itemId);
-    return item ? `${item.name} (${branchName(item.localId)})` : `Item ${itemId}`;
-  };
+  const refLabel = (ref: InventoryTransferItemRef | null | undefined) =>
+    ref ? `${ref.name} (${branchName(ref.localId)})` : "Producto eliminado";
 
-  return { branchName, itemLabel, itemNameById };
+  return { branchName, itemLabel, refLabel };
 };

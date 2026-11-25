@@ -1,19 +1,17 @@
-import type { Customer } from "../types/customers";
 import type { LayawayItemLine } from "../types/layaway-item-lines";
 import type { LayawayMethod } from "../types/layaways";
 import type { InventoryItem } from "@commerce/inventory/types/inventory";
 
 export interface LayawayFormProps {
   hasContext: boolean;
-  customers: Customer[];
   customerId: string;
   onCustomerIdChange: (value: string) => void;
   expiresAt: string;
   onExpiresAtChange: (value: string) => void;
-  inventoryItems: InventoryItem[];
+  branchId: string | null;
   lines: LayawayItemLine[];
   onUpdateLine: (index: number, patch: Partial<LayawayItemLine>) => void;
-  onItemChange: (index: number, value: string) => void;
+  onItemChange: (index: number, item: InventoryItem | null) => void;
   onAddLine: () => void;
   depositAmount: string;
   onDepositAmountChange: (value: string) => void;

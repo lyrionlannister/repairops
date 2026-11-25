@@ -5,7 +5,7 @@ import type { RepairNoteItemLine } from "../types/repair-note-item-lines";
 
 const emptyItemLine: RepairNoteItemLine = { inventoryItemId: "", quantity: "1", unitPrice: "" };
 
-export const useRepairNoteItemLines = (inventoryItems: InventoryItem[]) => {
+export const useRepairNoteItemLines = () => {
   const [itemLines, setItemLines] = useState<RepairNoteItemLine[]>([]);
 
   const loadFromRecords = (records: RepairNoteItemRecord[]) => {
@@ -21,9 +21,8 @@ export const useRepairNoteItemLines = (inventoryItems: InventoryItem[]) => {
   const updateItemLine = (index: number, patch: Partial<RepairNoteItemLine>) =>
     setItemLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
 
-  const handleItemChange = (index: number, inventoryItemId: string) => {
-    const item = inventoryItems.find((i) => i.id === inventoryItemId);
-    updateItemLine(index, { inventoryItemId, unitPrice: item ? String(item.salePrice) : "" });
+  const handleItemChange = (index: number, item: InventoryItem | null) => {
+    updateItemLine(index, { inventoryItemId: item?.id ?? "", unitPrice: item ? String(item.salePrice) : "" });
   };
 
   const addItemLine = () => setItemLines((prev) => [...prev, { ...emptyItemLine }]);

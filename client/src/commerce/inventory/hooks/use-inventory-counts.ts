@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { InventoryCountRecord } from "../types/inventory-counts";
+import { readApiError } from "@common/utils/api-error";
 
 async function readError(res: Response, fallback: string): Promise<{ message: string; missingReasonItemIds?: string[] }> {
   const body = await res.json().catch(() => ({}));
@@ -23,10 +24,10 @@ export const useInventoryCounts = () => {
       setLoading(true);
       try {
         const res = await apiClient(`/inventory/counts/${countId}`);
-        if (!res.ok) throw new Error("Error al cargar el conteo");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al cargar el conteo"));
         setCount(await res.json());
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
       } finally {
         setLoading(false);
       }
@@ -50,7 +51,7 @@ export const useInventoryCounts = () => {
         await fetchById(created.id);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -74,7 +75,7 @@ export const useInventoryCounts = () => {
         await fetchById(count.id);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -99,7 +100,7 @@ export const useInventoryCounts = () => {
       await fetchById(count.id);
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
       return false;
     } finally {
       setSaving(false);

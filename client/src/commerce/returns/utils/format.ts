@@ -6,7 +6,8 @@ export const PAYMENT_LABELS: Record<RefundMethod, string> = {
   transferencia: "Transferencia",
 };
 
-export const formatMoney = (v: number) => `$${v.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+export const formatMoney = (v: number | string) =>
+  `$${Number(v).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const round2 = (v: number) => Math.round(v * 100) / 100;
 

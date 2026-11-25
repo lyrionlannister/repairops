@@ -1,6 +1,6 @@
 import { isRowsTuple } from "../../../core/database/rows-result.js";
 import { singleton } from "tsyringe";
-import { lacks } from "../../../identity/authz/access.js";
+import { currentUserId, lacks } from "../../../identity/authz/access.js";
 import { EntityManager } from "typeorm";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
@@ -9,10 +9,17 @@ import { InventoryMovementDao } from "../daos/inventory-movement.dao.js";
 import { InventoryReservationDao } from "../daos/inventory-reservation.dao.js";
 import { SupplierDao } from "../../suppliers/daos/supplier.dao.js";
 import { InventoryItem } from "../entities/inventory-item.entity.js";
-import { InventoryMovement, MovementType, RelatedEntityType } from "../entities/inventory-movement.entity.js";
+import {
+  InventoryMovement,
+  MovementType,
+  RelatedEntityType,
+} from "../entities/inventory-movement.entity.js";
 import type { InventoryImportRow } from "../utils/inventory-import-parser.js";
 import type { Decimal } from "decimal.js";
 import { toMoney } from "../../../core/common/utils/money.js";
+import { BusinessError } from "../../../core/http/business-error.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { InventoryFilters, InventoryStats } from "../types/inventory-page.types.js";
 
 export interface RegisterMovementInput {
   inventoryItemId: string;
@@ -21,6 +28,8 @@ export interface RegisterMovementInput {
   reason?: string | null;
   relatedEntityType?: RelatedEntityType;
   relatedEntityId?: string | null;
+  // Se ignora: createdByEmployeeId siempre es el usuario autenticado (ver
+  // applyMovement), nunca lo que manda el cliente.
   createdByEmployeeId?: string | null;
 }
 
@@ -43,7 +52,12 @@ type UpdateItemPayload = Partial<CreateItemPayload>;
 // inventory.lookup (el técnico): busca refacciones para sus notas sin ver costo ni proveedor.
 function hideCostsUnlessAllowed<T extends InventoryItem>(item: T): T {
   if (!lacks("inventory.read")) return item;
-  const { costPrice: _cost, supplierId: _supplier, supplier: _supplierRow, ...rest } = item as T & { supplier?: unknown };
+  const {
+    costPrice: _cost,
+    supplierId: _supplier,
+    supplier: _supplierRow,
+    ...rest
+  } = item as T & { supplier?: unknown };
   return rest as T;
 }
 
@@ -61,7 +75,7 @@ export class InventoryService {
   // nunca se confia en que exista solo porque el tenant actual es valido.
   private async assertSupplierBelongsToTenant(supplierId: string): Promise<void> {
     const supplier = await this.supplierDao.findById(supplierId);
-    if (!supplier) throw new Error("Proveedor no encontrado");
+    if (!supplier) throw new BusinessError("Proveedor no encontrado");
   }
 
   async getAll(branchId?: string | null): Promise<InventoryItem[]> {
@@ -71,13 +85,45 @@ export class InventoryService {
   // "Disponible" por item, calculado en una sola consulta agrupada (ver
   // InventoryReservationDao.sumActiveQuantityByItemForTenant) -- nunca
   // cacheado en la entidad.
-  async getAllWithAvailability(branchId?: string | null): Promise<Array<InventoryItem & { available: number }>> {
+  async getAllWithAvailability(
+    branchId?: string | null,
+  ): Promise<Array<InventoryItem & { available: number }>> {
     const [items, reservedByItem] = await Promise.all([
       this.itemDao.findAllOrdered(branchId),
       this.reservationDao.sumActiveQuantityByItemForTenant(),
     ]);
     return items.map((item) =>
-      hideCostsUnlessAllowed({ ...item, available: item.quantityOnHand - (reservedByItem.get(item.id) ?? 0) }),
+      hideCostsUnlessAllowed({
+        ...item,
+        available: item.quantityOnHand - (reservedByItem.get(item.id) ?? 0),
+      }),
+    );
+  }
+
+  async getPage(
+    filters: InventoryFilters,
+    request: PageRequest,
+  ): Promise<Page<InventoryItem & { available: number }>> {
+    const page = await this.itemDao.findPage(filters, request);
+    return { ...page, items: await this.withAvailability(page.items) };
+  }
+
+  async lookup(filters: InventoryFilters, limit: number): Promise<Array<InventoryItem & { available: number }>> {
+    return this.withAvailability(await this.itemDao.lookup(filters, limit));
+  }
+
+  async getStats(filters: InventoryFilters): Promise<InventoryStats> {
+    return this.itemDao.stats(filters);
+  }
+
+  async getMovementsPage(inventoryItemId: string, request: PageRequest): Promise<Page<InventoryMovement>> {
+    return this.movementDao.findPageByItem(inventoryItemId, request);
+  }
+
+  private async withAvailability(items: InventoryItem[]): Promise<Array<InventoryItem & { available: number }>> {
+    const reserved = await this.reservationDao.sumActiveQuantityByItem(items.map((item) => String(item.id)));
+    return items.map((item) =>
+      hideCostsUnlessAllowed({ ...item, available: item.quantityOnHand - (reserved.get(String(item.id)) ?? 0) }),
     );
   }
 
@@ -91,7 +137,7 @@ export class InventoryService {
   // activas calculado en cada lectura.
   async getAvailableQuantity(inventoryItemId: string): Promise<number> {
     const item = await this.itemDao.findById(inventoryItemId);
-    if (!item) throw new Error("Item no encontrado");
+    if (!item) throw new BusinessError("Producto no encontrado");
     const reserved = await this.reservationDao.sumActiveQuantityForItem(inventoryItemId);
     return item.quantityOnHand - reserved;
   }
@@ -135,7 +181,7 @@ export class InventoryService {
   // registrado en el ledger como cualquier otro movimiento.
   async bulkImport(localId: string, rows: InventoryImportRow[]): Promise<{ imported: number }> {
     if (rows.length === 0) {
-      throw new Error("No hay filas para importar");
+      throw new BusinessError("No hay filas para importar");
     }
     const tenantId = getCurrentTenantId();
 
@@ -176,6 +222,40 @@ export class InventoryService {
     return AppDataSource.transaction((manager) => this.applyMovement(manager, input));
   }
 
+  // Lo apartado (apartados, refacciones de notas abiertas) ya no se puede
+  // prometer a nadie más. El FOR UPDATE serializa a quien aparta o vende el
+  // mismo producto: sin él, dos apartados simultáneos verían el mismo libre.
+  async assertUnreservedStock(
+    manager: EntityManager,
+    inventoryItemId: string,
+    quantity: number,
+  ): Promise<void> {
+    const tenantId = getCurrentTenantId();
+    const result = await manager.query<
+      Array<{ name: string; free: number }> | [Array<{ name: string; free: number }>, number]
+    >(
+      `SELECT i.nombre AS name,
+              i.cantidad_disponible - COALESCE((
+                SELECT SUM(r.cantidad) FROM inventory_reservations r
+                WHERE r.id_item_inventario = i.id AND r.tenant_id = i.tenant_id AND r.estado = 'active'
+              ), 0) AS free
+       FROM inventory_items i
+       WHERE i.id = $1 AND i.tenant_id = $2
+       FOR UPDATE OF i`,
+      [inventoryItemId, tenantId],
+    );
+    const [row] = isRowsTuple(result) ? result[0] : result;
+    if (!row) throw new BusinessError("No encontramos el producto en el inventario");
+    const free = Math.max(0, Number(row.free));
+    if (free < quantity) {
+      throw new BusinessError(
+        free === 0
+          ? `No hay piezas libres de "${row.name}": las que quedan ya están apartadas.`
+          : `Solo hay ${free} pieza${free === 1 ? "" : "s"} libre${free === 1 ? "" : "s"} de "${row.name}".`,
+      );
+    }
+  }
+
   // Reusable dentro de una transaccion mas grande que ya esta en curso
   // (crear una Sale o guardar los items de una RepairNote): el caller pasa
   // su propio EntityManager para que el decremento de stock, el insert del
@@ -186,10 +266,17 @@ export class InventoryService {
   // read-then-write, asi que dos llamadas concurrentes sobre el mismo item
   // nunca pueden dejar el stock negativo ni perder un decremento (mismo
   // patron que consumeControlNumber en local.dao.ts).
-  async applyMovement(manager: EntityManager, input: RegisterMovementInput): Promise<InventoryMovement> {
+  async applyMovement(
+    manager: EntityManager,
+    input: RegisterMovementInput,
+  ): Promise<InventoryMovement> {
     const tenantId = getCurrentTenantId();
     const delta =
-      input.type === "out" ? -Math.abs(input.quantity) : input.type === "in" ? Math.abs(input.quantity) : input.quantity;
+      input.type === "out"
+        ? -Math.abs(input.quantity)
+        : input.type === "in"
+          ? Math.abs(input.quantity)
+          : input.quantity;
 
     const result = await manager.query<Array<{ id: string }> | [Array<{ id: string }>, number]>(
       `UPDATE inventory_items
@@ -200,7 +287,9 @@ export class InventoryService {
     );
     const rows = isRowsTuple(result) ? result[0] : result;
     if (rows.length === 0) {
-      throw new Error("No se pudo registrar el movimiento: item inexistente o stock insuficiente");
+      throw new BusinessError(
+        "No hay suficiente stock de uno de los productos. Revisa las existencias e intenta de nuevo.",
+      );
     }
 
     const movement = manager.create(InventoryMovement, {
@@ -211,7 +300,11 @@ export class InventoryService {
       reason: input.reason ?? null,
       relatedEntityType: input.relatedEntityType ?? "manual",
       relatedEntityId: input.relatedEntityId ?? null,
-      createdByEmployeeId: input.createdByEmployeeId ?? null,
+      // createdByEmployeeId es siempre el usuario autenticado: lo que manda
+      // el cliente se ignora (un empleado no puede atribuir movimientos a
+      // otro). Este es el embudo de todos los movimientos (venta, traspaso,
+      // conteo, reserva, nota, importación), así que con forzarlo aquí basta.
+      createdByEmployeeId: currentUserId(),
     });
     return manager.save(movement);
   }

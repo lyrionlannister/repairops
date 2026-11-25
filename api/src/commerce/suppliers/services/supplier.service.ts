@@ -1,6 +1,7 @@
 import { singleton } from "tsyringe";
 import { SupplierDao } from "../daos/supplier.dao.js";
 import { Supplier } from "../entities/supplier.entity.js";
+import { BusinessError } from "../../../core/http/business-error.js";
 
 type CreatePayload = Pick<Supplier, "name" | "phone" | "email" | "address" | "contactName">;
 type UpdatePayload = Partial<CreatePayload>;
@@ -22,7 +23,7 @@ export class SupplierService {
     const phone = data.phone?.trim() ?? "";
 
     if (!name) {
-      throw new Error("El nombre del proveedor es obligatorio");
+      throw new BusinessError("El nombre del proveedor es obligatorio");
     }
 
     return this.dao.create({
@@ -41,7 +42,7 @@ export class SupplierService {
     if (data.name !== undefined) {
       const name = data.name.trim();
       if (!name) {
-        throw new Error("El nombre del proveedor es obligatorio");
+        throw new BusinessError("El nombre del proveedor es obligatorio");
       }
       payload.name = name;
     }

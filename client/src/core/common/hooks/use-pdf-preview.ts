@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "./use-api-client";
+import { readApiError } from "@common/utils/api-error";
 
 // Pide el PDF al API (el unico definidor de los documentos en carta) y entrega una
 // URL de objeto para mostrarlo, descargarlo o abrirlo en otra pestaña.
@@ -17,14 +18,14 @@ export const usePdfPreview = (endpoint: string | null) => {
     setError(null);
     apiClient(endpoint)
       .then(async (response) => {
-        if (!response.ok) throw new Error("No se pudo generar el PDF");
+        if (!response.ok) throw new Error(await readApiError(response, "No se pudo generar el PDF"));
         const blob = await response.blob();
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setUrl(objectUrl);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Error desconocido");
+        if (!cancelled) setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

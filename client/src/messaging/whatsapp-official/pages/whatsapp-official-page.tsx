@@ -7,6 +7,7 @@ import { useWhatsappOfficialPage } from "../hooks/use-whatsapp-official-page";
 import { TemplateCatalogSection } from "../components/template-catalog-section";
 import { ConnectAccountModal } from "../components/connect-account-modal";
 import { AccountStatusCard } from "../components/account-status-card";
+import { WhatsappPackagesSection } from "../../../app_platform/billing/components/whatsapp-packages-section";
 
 export const WhatsappOfficialPage = () => {
   const page = useWhatsappOfficialPage();
@@ -28,6 +29,19 @@ export const WhatsappOfficialPage = () => {
         canConnect={page.canConnect}
         onConnect={page.openConnect}
       />
+
+      {page.whatsappPackages.visible && (
+        <WhatsappPackagesSection
+          packages={page.whatsappPackages.packages}
+          loading={page.whatsappPackages.loading}
+          buyingSize={page.whatsappPackages.buyingSize}
+          portalLoading={page.whatsappPackages.portalLoading}
+          error={page.whatsappPackages.error}
+          canManage={page.whatsappPackages.canManage}
+          onBuy={page.whatsappPackages.buyPackage}
+          onOpenPortal={page.whatsappPackages.openPortal}
+        />
+      )}
 
       <ConnectAccountModal
         isOpen={page.isConnectOpen}

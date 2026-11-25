@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import express from "express";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { User } from "../../../../src/identity/auth/entities/user.entity.js";
 import { UserDao } from "../../../../src/identity/auth/daos/user.dao.js";
@@ -22,6 +22,20 @@ import {
   createPlatformBillingRouter,
 } from "../../../../src/app_platform/billing/routes/billing.routes.js";
 import { setupStaff } from "../../../support/staff.js";
+
+// Mock compartido de Stripe (tests/support/stripe-client.mock.ts): con
+// pool vmThreads el servicio queda ligado a la instancia del primer
+// archivo que lo importa; si cada archivo usa su propia factoría, los
+// demás afirman sobre otra instancia (0 llamadas) o sobre el cliente
+// real ("Falta STRIPE_PRIVATE_KEY") solo en la suite completa.
+vi.mock(
+  "../../../../src/app_platform/billing/clients/stripe.client.js",
+  async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
+);
+vi.mock(
+  "../../../../src/identity/auth/clients/resend.client.js",
+  async () => (await import("../../../support/resend-client.mock.js")).resendClientMock,
+);
 
 describe("billing routes", () => {
   let app: express.Express;

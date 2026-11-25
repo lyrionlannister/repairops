@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { WhatsappAccountStatus, ConnectWhatsappAccountInput } from "../types/whatsapp-account";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const useWhatsappAccount = () => {
   const { apiClient } = useApiClient();
@@ -15,10 +16,10 @@ export const useWhatsappAccount = () => {
     setError(null);
     try {
       const res = await apiClient("/whatsapp-official/status");
-      if (!res.ok) throw new Error("Error al obtener el estado de WhatsApp");
+      if (!res.ok) throw new Error(await readApiError(res, "Error al obtener el estado de WhatsApp"));
       setAccount(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -40,13 +41,13 @@ export const useWhatsappAccount = () => {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(
-            (body as { error?: string | string[] }).error?.toString() ?? "Error al conectar la cuenta",
+            apiErrorText(body, "Error al conectar la cuenta"),
           );
         }
         setAccount(await res.json());
         return true;
       } catch (err) {
-        setConnectError(err instanceof Error ? err.message : "Error desconocido");
+        setConnectError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setConnecting(false);

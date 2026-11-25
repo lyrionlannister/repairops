@@ -29,7 +29,7 @@ export const InventoryItemFormPage: React.FC = () => {
   const isEdit = Boolean(id);
   const { workingBranchId } = useBranch();
 
-  const { items, loading, saving, fetchAll, create, update } = useInventory();
+  const { items, loading, saving, fetchById, create, update } = useInventory();
   const { suppliers, fetchAll: fetchSuppliers } = useSuppliers();
   const { movements, marginPercent } = useInventoryItemContext(isEdit ? (id ?? null) : null);
 
@@ -39,9 +39,12 @@ export const InventoryItemFormPage: React.FC = () => {
   );
 
   useEffect(() => {
-    fetchAll();
     fetchSuppliers();
-  }, [fetchAll, fetchSuppliers]);
+  }, [fetchSuppliers]);
+
+  useEffect(() => {
+    if (isEdit && id) fetchById(id);
+  }, [isEdit, id, fetchById]);
 
   useEffect(() => {
     if (!isEdit || !id) return;
@@ -66,10 +69,12 @@ export const InventoryItemFormPage: React.FC = () => {
 
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!workingBranchId) return;
+    // Al editar, el producto se queda en su sucursal aunque el header muestre otra.
+    const localId = isEdit ? items.find((i) => i.id === id)?.localId : workingBranchId;
+    if (!localId) return;
 
     const payload = {
-      localId: workingBranchId,
+      localId,
       name: form.name,
       sku: form.sku || null,
       kind: form.kind,

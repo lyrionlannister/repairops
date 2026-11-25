@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
 
 export class RegisterUserDto {
   @IsNotEmpty({ message: "Nombre requerido" })
@@ -17,4 +17,9 @@ export class RegisterUserDto {
   @IsString({ message: "Contraseña debe ser texto" })
   @MinLength(8, { message: "Contraseña debe tener al menos 8 caracteres" })
   password!: string;
+
+  // Solo en modo `invite`: token de invitación de un solo uso.
+  @IsOptional()
+  @IsString({ message: "Token de invitación debe ser texto" })
+  invitationToken?: string;
 }

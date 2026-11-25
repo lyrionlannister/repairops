@@ -4,12 +4,13 @@ services:
       context: ./infra/database
       dockerfile: Dockerfile
     container_name: repairops-postgres
+    restart: unless-stopped
     env_file:
       - ./infra/database/.env
     ports:
       - "${POSTGRES_PORT:?POSTGRES_PORT is required}:5432"
     volumes:
-      - postgres18_data:/var/lib/postgresql
+      - postgres_prod_data:/var/lib/postgresql
       - ./infra/database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -22,6 +23,7 @@ services:
     build:
       context: ./infra/redis
     container_name: repairops-redis
+    restart: unless-stopped
     env_file:
       - ./infra/redis/.env
     ports:
@@ -44,6 +46,7 @@ services:
       dockerfile: Dockerfile
     image: repairops-automation
     container_name: repairops-automation
+    restart: unless-stopped
     env_file:
       - ./automation/.env
     ports:
@@ -67,6 +70,7 @@ services:
       context: ./api
       dockerfile: Dockerfile
     container_name: repairops-api
+    restart: unless-stopped
     env_file:
       - ./api/.env
     environment:
@@ -93,6 +97,7 @@ services:
       dockerfile: Dockerfile
     image: repairops-client
     container_name: repairops-client
+    restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
@@ -106,12 +111,14 @@ services:
   nginx:
     image: docker.io/library/nginx:alpine
     container_name: repairops-nginx
+    restart: unless-stopped
     ports:
       - "${NGINX_HTTP_PORT:-8080}:80"
       - "${NGINX_HTTPS_PORT:-443}:443"
     volumes:
       - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./infra/nginx/certs:/etc/nginx/certs:ro
+      - certbot_certs:/etc/letsencrypt:ro
     depends_on:
       api:
         condition: service_healthy
@@ -125,6 +132,17 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  certbot:
+    image: docker.io/certbot/dns-cloudflare:latest
+    container_name: repairops-certbot
+    restart: unless-stopped
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - ./infra/SSL/cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro
+    # DNS-01: no necesita puerto 80 abierto ni pasar por el tunel. Solo
+    # renueva: el alta inicial del cert se corre a mano (ver infra/SSL/README.md).
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done'
 
   cloudflared:
     image: docker.io/cloudflare/cloudflared:latest
@@ -142,6 +160,7 @@ services:
 volumes:
   postgres_data:
   postgres18_data:
+  postgres_prod_data:
   redis_data:
   automation_data:
-  
+  certbot_certs:

@@ -4,6 +4,19 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { container } from "tsyringe";
 import { registerRoutes } from "../../../src/core/http/register-routes.js";
 import { authMiddleware } from "../../../src/identity/auth/middlewares/auth.middleware.js";
+// Mock compartido de Stripe (tests/support/stripe-client.mock.ts): con
+// pool vmThreads el servicio queda ligado a la instancia del primer
+// archivo que lo importa; si cada archivo usa su propia factoría, los
+// demás afirman sobre otra instancia (0 llamadas) o sobre el cliente
+// real ("Falta STRIPE_PRIVATE_KEY") solo en la suite completa.
+vi.mock(
+  "../../../../src/app_platform/billing/clients/stripe.client.js",
+  async () => (await import("../../../support/stripe-client.mock.js")).stripeClientMock,
+);
+vi.mock(
+  "../../../../src/identity/auth/clients/resend.client.js",
+  async () => (await import("../../../support/resend-client.mock.js")).resendClientMock,
+);
 
 type Handler = ((...args: unknown[]) => unknown) & { permissions?: readonly string[] };
 interface Layer {

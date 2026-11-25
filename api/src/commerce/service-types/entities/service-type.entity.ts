@@ -18,6 +18,13 @@ export class ServiceType extends BaseEntity {
   @Column({ type: "varchar", length: 100, nullable: false, name: "nombre" })
   name!: string;
 
+  // Precio base del servicio, configurable por tenant. Null = sin precio
+  // configurado: el precio lo fija un humano en cada venta y queda en
+  // bitácora (ver SaleService). Nunca se confía en el precio que manda el
+  // cliente cuando hay un base_price configurado.
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true, name: "precio_base" })
+  basePrice!: string | null;
+
   @CreateDateColumn({ name: "fecha_creacion", default: () => "CURRENT_TIMESTAMP" })
   createdAt!: Date;
 }

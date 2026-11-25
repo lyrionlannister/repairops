@@ -13,6 +13,12 @@ export const createBillingRouter = (controller: BillingController): Router => {
   router.get("/plan", requirePermission("billing.read"), controller.getPlan);
   router.get("/public-plans", requirePermission("billing.read"), controller.listPublicPlans);
   router.post("/select-plan", requirePermission("billing.manage"), controller.selectPlan);
+  router.post("/portal", requirePermission("billing.manage"), controller.createPortalSession);
+  router.get(
+    "/whatsapp-packages",
+    requirePermission("billing.read"),
+    controller.listWhatsappPackages,
+  );
   router.post(
     "/whatsapp-packages/:size/checkout",
     requirePermission("billing.manage"),

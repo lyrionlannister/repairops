@@ -27,9 +27,15 @@ export const AuthForm: React.FC = () => {
 
     const result = await login(formData);
     if (result) {
-      // Onboarding sin terminar (sin plan o Checkout sin completar): de
-      // vuelta a elegir/reanudar plan, nunca al home.
-      const target = result.user.subscriptionStatus === "incomplete" ? "/identity/onboarding" : "/";
+      // Correo sin verificar primero (gate más temprano, ver
+      // tenant.middleware.ts); recién después el de onboarding sin terminar
+      // (sin plan o Checkout sin completar) vuelve a elegir/reanudar plan,
+      // nunca al home.
+      const target = !result.user.emailVerifiedAt
+        ? "/identity/verify-email"
+        : result.user.subscriptionStatus === "incomplete"
+          ? "/identity/onboarding"
+          : "/";
       setTimeout(() => {
         navigate(target, { replace: true });
       }, AUTH_REDIRECT_DELAY_MS);
@@ -75,8 +81,10 @@ export const AuthForm: React.FC = () => {
                       onChange={handleChange}
                       disabled={loading}
                     />
-                    <span
+                    <button
+                      type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                       className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
                     >
                       {showPassword ? (
@@ -84,7 +92,15 @@ export const AuthForm: React.FC = () => {
                       ) : (
                         <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
                       )}
-                    </span>
+                    </button>
+                  </div>
+                  <div className="mt-2 text-right">
+                    <Link
+                      to="/identity/forgot-password"
+                      className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </Link>
                   </div>
                 </div>
                 <div>

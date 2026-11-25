@@ -8,11 +8,12 @@ import { STATUS_CONFIG, formatDate, formatCurrency } from "../utils/format";
 import type { QuotesTableProps } from "../props/quotes-table-props";
 
 export const QuotesTable: FC<QuotesTableProps> = ({
+  error,
+  onRetry,
   canEdit,
   canDelete,
   loading,
-  quotes,
-  filteredQuotes,
+  hasFilters,
   pageItems,
   deletingId,
   page,
@@ -29,20 +30,18 @@ export const QuotesTable: FC<QuotesTableProps> = ({
 
   return (
     <DataTable
+      error={error}
+      onRetry={onRetry}
       loading={loading}
       loadingText="Cargando cotizaciones..."
-      isEmpty={filteredQuotes.length === 0}
+      isEmpty={pageItems.length === 0}
       empty={{
         icon: <FileText />,
-        title:
-          quotes.length === 0
-            ? "No hay cotizaciones registradas."
-            : "Sin resultados para la búsqueda.",
-        description:
-          quotes.length === 0
-            ? "Crea la primera cotización para comenzar."
-            : "Prueba con otro término.",
-        action: canEdit && (
+        title: hasFilters ? "Sin resultados para la búsqueda." : "No hay cotizaciones registradas.",
+        description: hasFilters
+          ? "Prueba con otro cliente, folio, equipo o estado."
+          : "Crea la primera cotización para comenzar.",
+        action: canEdit && !hasFilters && (
           <Button
             variant="primary"
             startIcon={<Plus className="size-4" />}

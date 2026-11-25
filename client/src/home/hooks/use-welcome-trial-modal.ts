@@ -1,24 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
-import { useToast } from "@common/hooks/use-toast";
 
 // Stripe vuelve del Checkout a /home?trial=started -- se muestra una sola vez
-// (firedRef) y se limpia el query param, así un refresh no repite el toast.
-export const useTrialStartedToast = () => {
+// (firedRef) y se limpia el query param, así un refresh no repite el modal.
+export const useWelcomeTrialModal = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { showToast } = useToast();
   const fired = useRef(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (fired.current || searchParams.get("trial") !== "started") return;
     fired.current = true;
-
-    showToast({
-      title: "¡Bienvenido a RepairOps!",
-      message: "Tu prueba de 14 días ya comenzó. No se cobra nada hasta que termine.",
-      variant: "success",
-      durationMs: 8000,
-    });
+    setIsOpen(true);
 
     setSearchParams(
       (prev) => {
@@ -28,5 +21,7 @@ export const useTrialStartedToast = () => {
       },
       { replace: true },
     );
-  }, [searchParams, setSearchParams, showToast]);
+  }, [searchParams, setSearchParams]);
+
+  return { isOpen, onClose: () => setIsOpen(false) };
 };

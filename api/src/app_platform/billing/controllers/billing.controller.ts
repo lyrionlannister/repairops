@@ -10,10 +10,9 @@ import {
 } from "../services/billing-dashboard.service.js";
 import { AssignSubscriptionDto } from "../dtos/assign-subscription.dto.js";
 import { SelectPlanDto } from "../dtos/select-plan.dto.js";
+import { WHATSAPP_PACKAGE_SIZES, type WhatsappPackageSize } from "../constants.js";
 import { sendError } from "../../../core/http/error-response.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
-
-const WHATSAPP_PACKAGE_SIZES = [500, 1000, 2500] as const;
 
 @singleton()
 export class BillingController {
@@ -91,14 +90,31 @@ export class BillingController {
   buyWhatsappPackage = async (req: Request, res: Response): Promise<void> => {
     try {
       const size = Number(req.params["size"]);
-      if (!WHATSAPP_PACKAGE_SIZES.includes(size as (typeof WHATSAPP_PACKAGE_SIZES)[number])) {
+      if (!WHATSAPP_PACKAGE_SIZES.includes(size as WhatsappPackageSize)) {
         res.status(400).json({ error: "Paquete de mensajes inválido" });
         return;
       }
       const checkoutUrl = await this.service.createWhatsappPackageCheckout(
-        size as (typeof WHATSAPP_PACKAGE_SIZES)[number],
+        size as WhatsappPackageSize,
       );
       res.status(200).json({ checkoutUrl });
+    } catch (error) {
+      sendError(res, error, 400);
+    }
+  };
+
+  listWhatsappPackages = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.service.listWhatsappPackages());
+    } catch (error) {
+      sendError(res, error, 500);
+    }
+  };
+
+  createPortalSession = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const url = await this.service.createCustomerPortalSession();
+      res.status(200).json({ url });
     } catch (error) {
       sendError(res, error, 400);
     }

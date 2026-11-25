@@ -7,16 +7,39 @@ import {
   ACCESS_TOKEN_COOKIE,
   ACCESS_TOKEN_COOKIE_OPTIONS,
   ACCESS_TOKEN_MAX_AGE_MS,
+  REFRESH_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
+  REFRESH_TOKEN_MAX_AGE_MS,
 } from "../constants/auth.constants.js";
 import { getValidationMessages } from "../helpers/auth.helpers.js";
 import { AuthService } from "../services/auth.service.js";
 import { PresenceService } from "../services/presence.service.js";
 import { RegisterUserDto } from "../dtos/register-user.dto.js";
 import { LoginUserDto } from "../dtos/login-user.dto.js";
+import { VerifyEmailDto } from "../dtos/verify-email.dto.js";
 import { CreateEmployeeDto } from "../dtos/create-employee.dto.js";
 import { UpdateEmployeeDto } from "../dtos/update-employee.dto.js";
 import type { AuthenticatedRequest } from "../middlewares/auth.middleware.js";
+import { readCookie } from "../middlewares/auth.middleware.js";
 import { sendError } from "../../../core/http/error-response.js";
+
+// Escribe el par de sesión: access de 15 min + refresh de 7 días (ambos
+// httpOnly). El cliente renueva solo con POST /auth/refresh.
+const setSessionCookies = (res: Response, token: string, refreshToken: string): void => {
+  res.cookie(ACCESS_TOKEN_COOKIE, token, {
+    ...ACCESS_TOKEN_COOKIE_OPTIONS,
+    maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+  });
+  res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
+    ...REFRESH_TOKEN_COOKIE_OPTIONS,
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+  });
+};
+
+const clearSessionCookies = (res: Response): void => {
+  res.clearCookie(ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE_OPTIONS);
+  res.clearCookie(REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE_OPTIONS);
+};
 
 @singleton()
 export class AuthController {
@@ -36,14 +59,11 @@ export class AuthController {
         return;
       }
 
-      const { owner, token } = await this.authService.register(dto);
+      const { owner, token, refreshToken } = await this.authService.register(dto);
 
       // Auto-login: el owner entra directo al onboarding de planes sin
       // pasar otra vez por /login (mismo mecanismo de cookie que login).
-      res.cookie(ACCESS_TOKEN_COOKIE, token, {
-        ...ACCESS_TOKEN_COOKIE_OPTIONS,
-        maxAge: ACCESS_TOKEN_MAX_AGE_MS,
-      });
+      setSessionCookies(res, token, refreshToken);
 
       res.status(201).json({
         message: AUTH_MESSAGES.REGISTER_SUCCESS,
@@ -158,14 +178,11 @@ export class AuthController {
         return;
       }
 
-      const { user, token } = await this.authService.login(dto);
+      const { user, token, refreshToken } = await this.authService.login(dto);
 
       // httpOnly: el token nunca llega al JSON ni es legible por JS (OWASP
       // Session Management Cheat Sheet) -- viaja solo por Set-Cookie.
-      res.cookie(ACCESS_TOKEN_COOKIE, token, {
-        ...ACCESS_TOKEN_COOKIE_OPTIONS,
-        maxAge: ACCESS_TOKEN_MAX_AGE_MS,
-      });
+      setSessionCookies(res, token, refreshToken);
 
       res.status(200).json({
         message: AUTH_MESSAGES.LOGIN_SUCCESS,
@@ -176,8 +193,56 @@ export class AuthController {
     }
   };
 
-  logout = (_req: Request, res: Response): void => {
-    res.clearCookie(ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_COOKIE_OPTIONS);
+  // Renueva la sesión con el refresh token (rotación): si el refresh no
+  // es válido, 401 y el cliente redirige al login.
+  refresh = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const refreshToken = readCookie(req, REFRESH_TOKEN_COOKIE);
+      if (!refreshToken) {
+        res.status(401).json({ error: "Sesión expirada" });
+        return;
+      }
+      const {
+        user,
+        token,
+        refreshToken: nextRefreshToken,
+      } = await this.authService.refreshSession(refreshToken);
+      setSessionCookies(res, token, nextRefreshToken);
+      res.status(200).json({ message: "Sesión renovada", user });
+    } catch (error) {
+      sendError(res, error, 401, "Sesión expirada");
+    }
+  };
+
+  verifyEmail = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const dto = plainToInstance(VerifyEmailDto, req.body);
+      const errors = await validate(dto);
+      if (errors.length > 0) {
+        res.status(400).json({ error: getValidationMessages(errors) });
+        return;
+      }
+      const user = await this.authService.verifyEmail(dto.code);
+      res.status(200).json({ message: "Correo verificado", user });
+    } catch (error) {
+      sendError(res, error, 400, "No se pudo verificar el correo");
+    }
+  };
+
+  resendVerificationEmail = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      await this.authService.resendVerificationEmail(req.user!.id);
+      res.status(200).json({ message: "Correo de verificación reenviado" });
+    } catch (error) {
+      sendError(res, error, 400, "No se pudo reenviar el correo de verificación");
+    }
+  };
+
+  logout = async (req: Request, res: Response): Promise<void> => {
+    // Revoca el refresh token: sin él, el access token que queda (15 min
+    // como máximo) no se puede renovar.
+    await this.authService.revokeSession(readCookie(req, REFRESH_TOKEN_COOKIE));
+    clearSessionCookies(res);
     res.status(200).json({ message: AUTH_MESSAGES.LOGOUT_SUCCESS });
   };
 }

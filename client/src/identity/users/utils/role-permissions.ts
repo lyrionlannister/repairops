@@ -37,6 +37,7 @@ const PERMISSION_LABELS: Record<TenantPermission, string> = {
   "settings.manage": "Cambiar ajustes generales",
   "imports.run": "Importar datos",
   "billing.read": "Ver el plan contratado",
+  "billing.manage": "Cambiar el plan y comprar paquetes de WhatsApp",
   "customers.read": "Ver todos los clientes",
   "customers.read.own": "Ver clientes de sus notas",
   "customers.write": "Crear y editar clientes",

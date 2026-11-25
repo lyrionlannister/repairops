@@ -76,6 +76,23 @@ export async function createOneTimeCheckoutSession(
   });
 }
 
+export interface CreateBillingPortalSessionInput {
+  stripeCustomerId: string;
+  returnUrl: string;
+}
+
+// Portal del cliente de Stripe: el taller cancela, cambia de plan o de
+// método de pago sin pasar por soporte. La sesión expira sola; el return
+// vuelve a la app.
+export async function createBillingPortalSession(
+  input: CreateBillingPortalSessionInput,
+): Promise<Stripe.BillingPortal.Session> {
+  return stripe().billingPortal.sessions.create({
+    customer: input.stripeCustomerId,
+    return_url: input.returnUrl,
+  });
+}
+
 export async function retrieveSubscription(
   stripeSubscriptionId: string,
 ): Promise<Stripe.Subscription> {

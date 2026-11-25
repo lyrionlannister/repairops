@@ -5,16 +5,15 @@ import type { LayawayItemLine } from "../types/layaway-item-lines";
 
 const emptyLine: LayawayItemLine = { inventoryItemId: "", quantity: "1", unitPrice: "" };
 
-export const useLayawayItemLines = (inventoryItems: InventoryItem[]) => {
+export const useLayawayItemLines = () => {
   const [lines, setLines] = useState<LayawayItemLine[]>([{ ...emptyLine }]);
 
   const updateLine = (index: number, patch: Partial<LayawayItemLine>) => {
     setLines((prev) => prev.map((l, i) => (i === index ? { ...l, ...patch } : l)));
   };
 
-  const handleItemChange = (index: number, inventoryItemId: string) => {
-    const item = inventoryItems.find((i) => i.id === inventoryItemId);
-    updateLine(index, { inventoryItemId, unitPrice: item ? String(item.salePrice) : "" });
+  const handleItemChange = (index: number, item: InventoryItem | null) => {
+    updateLine(index, { inventoryItemId: item?.id ?? "", unitPrice: item ? String(item.salePrice) : "" });
   };
 
   const addLine = () => setLines((prev) => [...prev, { ...emptyLine }]);

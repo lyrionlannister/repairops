@@ -11,6 +11,8 @@ export const createRepairNoteRouter = (controller: RepairNoteController): Router
   router.param("id", publicIdParam("repair_notes"));
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", requirePermission("repair-notes.read", "repair-notes.read.own"), controller.getAll);
+  router.get("/stats", requirePermission("repair-notes.read", "repair-notes.read.own"), controller.getStats);
+  router.get("/brands", requirePermission("repair-notes.read", "repair-notes.read.own"), controller.getKnownBrands);
   router.get("/by-control-number/:controlNumber", requirePermission("repair-notes.read", "repair-notes.read.own"), controller.getByControlNumber);
   router.get("/:id", requirePermission("repair-notes.read", "repair-notes.read.own"), controller.getById);
   router.get("/:id/items", requirePermission("repair-notes.read", "repair-notes.read.own"), controller.getItems);

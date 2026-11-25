@@ -2,13 +2,13 @@ import type { FC } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
-import { Select } from "@ui/select/select";
+import { InventoryItemSelect } from "@commerce/inventory/components/inventory-item-select";
 import { SectionTitle } from "./section-title";
 import type { RepairNoteItemLinesSectionProps } from "../props/repair-note-item-lines-section-props";
 
 export const RepairNoteItemLinesSection: FC<RepairNoteItemLinesSectionProps> = ({
   itemLines,
-  inventoryItems,
+  branchId,
   saving,
   onItemChange,
   onLineChange,
@@ -24,18 +24,11 @@ export const RepairNoteItemLinesSection: FC<RepairNoteItemLinesSectionProps> = (
       {itemLines.map((line, index) => (
         <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <Select
+            <InventoryItemSelect
               value={line.inventoryItemId}
-              onChange={(value) => onItemChange(index, value)}
-              placeholder="Selecciona un producto"
+              onSelect={(item) => onItemChange(index, item)}
+              branchId={branchId}
               disabled={saving}
-              options={inventoryItems.map((i) => ({
-                value: i.id,
-                // "Disponible", no quantityOnHand bruto -- resta lo ya
-                // reservado en otras notas (Fase 5, Pieza 3) para no
-                // prometer dos veces la misma refaccion.
-                label: `${i.name} (disponible: ${i.available})`,
-              }))}
             />
           </div>
           <div className="w-full sm:w-24">
@@ -60,6 +53,7 @@ export const RepairNoteItemLinesSection: FC<RepairNoteItemLinesSectionProps> = (
             type="button"
             onClick={() => onRemoveLine(index)}
             disabled={saving}
+            aria-label="Quitar producto"
             className="p-2.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
           >
             <Trash2 className="size-4" />
