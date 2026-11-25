@@ -15,7 +15,7 @@ import { UUID } from "../http/public-id/public-id-metadata.js";
 
 // El JWT dura 15 min: si roles, flag de plataforma o estado activo se tomaran del token,
 // desactivar o cambiar los roles de alguien no surtiría efecto hasta que expirara.
-interface Access {
+export interface Access {
   id: string;
   tenantId: string;
   roles: UserRole[];
@@ -25,8 +25,12 @@ interface Access {
 }
 
 // El JWT solo trae public_ids (usuario y tenant): aqui se resuelven a los ids internos,
-// y el usuario tiene que pertenecer a ese tenant.
-async function loadAccess(tenantPublicId: string, userPublicId: string): Promise<Access | null> {
+// y el usuario tiene que pertenecer a ese tenant. Tambien la usa ChatRealtimeService
+// para autenticar el handshake del socket con el mismo criterio que el HTTP normal.
+export async function loadAccess(
+  tenantPublicId: string,
+  userPublicId: string,
+): Promise<Access | null> {
   if (!UUID.test(userPublicId) || !UUID.test(tenantPublicId)) return null;
   const rows: Access[] = await AppDataSource.query(
     `SELECT u.id::text AS "id", u.tenant_id::text AS "tenantId", u.es_platform_admin AS "isPlatformAdmin",

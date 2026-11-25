@@ -12,6 +12,7 @@ import { ChatRetentionService } from "./messaging/chats/services/chat-retention.
 import { WhatsappInboundQueueService } from "./messaging/whatsapp-official/services/whatsapp-inbound-queue.service.js";
 import { WhatsappAutomationQueueService } from "./messaging/whatsapp-official/services/whatsapp-automation-queue.service.js";
 import { PlatformAdminBootstrapService } from "./identity/auth/services/platform-admin-bootstrap.service.js";
+import { ChatRealtimeService } from "./messaging/chats/services/chat-realtime.service.js";
 
 const app = express();
 const port = optionalEnvNumber("PORT", 3000);
@@ -41,6 +42,12 @@ app.use(
     },
   }),
 );
+
+// Desde Node 15 una promesa rechazada sin catch (p.ej. una notificacion lanzada
+// sin await) mata el proceso y con el a todos los tenants: se registra y se sigue.
+process.on("unhandledRejection", (reason) => {
+  console.error("Promesa rechazada sin manejar:", reason);
+});
 
 AppDataSource.initialize()
   .then(async () => {
@@ -86,6 +93,10 @@ AppDataSource.initialize()
       });
     });
 
+    app.use("/api", (_req, res) => {
+      res.status(404).json({ error: "No encontramos lo que buscas." });
+    });
+
     // Handler global de errores (Express 5 reenvía aquí los rechazos de
     // handlers async): nunca devuelve el mensaje interno -- JSON inválido
     // es 400, todo lo demás 500 genérico. Los controladores siguen usando
@@ -105,14 +116,19 @@ AppDataSource.initialize()
           res.status(400).json({ error: "Cuerpo JSON inválido" });
           return;
         }
+        if (error.type === "entity.too.large") {
+          res.status(413).json({ error: "La información enviada es demasiado grande." });
+          return;
+        }
         console.error("Error no controlado:", error);
         res.status(500).json({ error: "Ocurrió un error inesperado. Intenta de nuevo." });
       },
     );
 
-    app.listen(port, "0.0.0.0", () => {
+    const server = app.listen(port, "0.0.0.0", () => {
       console.log(`Servidor escuchando en el puerto ${port}`);
     });
+    container.resolve(ChatRealtimeService).attach(server, allowedOrigins);
   })
   .catch((error) => {
     console.error("Error al conectar la base de datos:", error);

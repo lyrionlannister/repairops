@@ -6,9 +6,15 @@ import { ContactName } from "../entities/contact-name.entity.js";
 import { ChatDirection, ChatMessageType, ChatSender } from "../entities/chat-message.entity.js";
 import { repositoryToken } from "../../../core/di/repository-token.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
-import { normalizePhone, toConversationDto, toMessageDto } from "../helpers/chats.helpers.js";
+import {
+  canAccessConversation,
+  normalizePhone,
+  toConversationDto,
+  toMessageDto,
+} from "../helpers/chats.helpers.js";
 import { ConversationDto, MessageDto } from "../types/chats.types.js";
 import { can, currentUserId } from "../../../identity/authz/access.js";
+import { ChatRealtimeService } from "./chat-realtime.service.js";
 
 export interface RecordMessageInput {
   contactPhone: string;
@@ -31,13 +37,24 @@ export class ChatsService {
     private chatMessageDao: ChatMessageDao,
     private chatStatsDao: ChatStatsDao,
     @inject(repositoryToken(ContactName)) private contactNameRepository: Repository<ContactName>,
+    private chatRealtimeService: ChatRealtimeService,
   ) {}
 
+  // Si `record` devuelve null (wa_message_id duplicado, Meta reentrego el
+  // webhook) no hubo fila nueva y no se avisa por socket -- ya se avisó la
+  // primera vez.
   async recordMessage(input: RecordMessageInput): Promise<void> {
-    await this.chatMessageDao.record({
+    const recorded = await this.chatMessageDao.record({
       ...input,
       contactPhone: normalizePhone(input.contactPhone),
     });
+    if (recorded) {
+      this.chatRealtimeService.broadcastMessage(
+        getCurrentTenantId(),
+        recorded.contactPhone,
+        toMessageDto(recorded),
+      );
+    }
   }
 
   async findMediaMessage(sessionId: string, publicId: string) {
@@ -47,16 +64,7 @@ export class ChatsService {
   // read: ver la conversación y sus medios; reply: responder o tomar el control.
   // Con el permiso completo, cualquiera; con el .own, solo las de sus notas asignadas.
   async canAccess(sessionId: string, action: "read" | "reply"): Promise<boolean> {
-    const [full, own] =
-      action === "read"
-        ? (["chats.read", "chats.read.own"] as const)
-        : (["chats.reply", "chats.reply.own"] as const);
-    if (can(full)) return true;
-    const userId = currentUserId();
-    if (!can(own) || !userId) return false;
-    return (await this.chatMessageDao.findPhonesOfAssignedNotes(userId)).has(
-      normalizePhone(sessionId),
-    );
+    return canAccessConversation(this.chatMessageDao, sessionId, action);
   }
 
   async getConversations(): Promise<ConversationDto[]> {

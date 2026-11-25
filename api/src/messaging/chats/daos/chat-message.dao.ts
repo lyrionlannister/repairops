@@ -35,25 +35,47 @@ export interface RecordChatMessageInput {
 // Un solo statement: el mensaje y sus contadores diarios (chat_daily_stats,
 // chat_daily_contacts) se escriben juntos o ninguno. Si el wa_message_id ya
 // existe en el tenant (Meta reentrega webhooks), `ins` no devuelve fila y los
-// contadores tampoco se tocan.
+// contadores tampoco se tocan. Postgres ejecuta `stat` y `contact` igual
+// (son CTEs con INSERT, corren siempre) aunque el SELECT final solo lea de
+// `ins` -- asi el caller sabe si de verdad se grabo una fila nueva (para
+// avisar por socket) sin perder la atomicidad original.
 const RECORD_SQL = `
   WITH ins AS (
     INSERT INTO chat_messages (tenant_id, contact_phone, direction, sender, body, wa_message_id, repair_note_id,
                                message_type, media_key, media_mime, media_size, location_lat, location_lng)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT (tenant_id, wa_message_id) WHERE wa_message_id IS NOT NULL DO NOTHING
-    RETURNING created_at
+    RETURNING public_id, contact_phone, direction, body, message_type, media_key, media_mime, media_size, location_lat, location_lng, created_at
   ), stat AS (
     INSERT INTO chat_daily_stats (tenant_id, day, messages, last_message_at)
     SELECT $1, (created_at AT TIME ZONE COALESCE((SELECT zona_horaria FROM local_config WHERE tenant_id = $1), 'America/Mexico_City'))::date, 1, created_at FROM ins
     ON CONFLICT (tenant_id, day) DO UPDATE
       SET messages = chat_daily_stats.messages + 1, last_message_at = EXCLUDED.last_message_at
     RETURNING 1
+  ), contact AS (
+    INSERT INTO chat_daily_contacts (tenant_id, day, contact_phone)
+    SELECT $1, (created_at AT TIME ZONE COALESCE((SELECT zona_horaria FROM local_config WHERE tenant_id = $1), 'America/Mexico_City'))::date, $2 FROM ins
+    ON CONFLICT DO NOTHING
+    RETURNING 1
   )
-  INSERT INTO chat_daily_contacts (tenant_id, day, contact_phone)
-  SELECT $1, (created_at AT TIME ZONE COALESCE((SELECT zona_horaria FROM local_config WHERE tenant_id = $1), 'America/Mexico_City'))::date, $2 FROM ins
-  ON CONFLICT DO NOTHING
+  SELECT public_id AS "publicId", contact_phone AS "contactPhone", direction, body,
+         message_type AS "messageType", media_key AS "mediaKey", media_mime AS "mediaMime",
+         media_size AS "mediaSize", location_lat AS "locationLat", location_lng AS "locationLng"
+  FROM ins
 `;
+
+export interface RecordedChatMessage {
+  publicId: string;
+  contactPhone: string;
+  direction: ChatDirection;
+  body: string;
+  messageType: ChatMessageType;
+  mediaKey: string | null;
+  mediaMime: string | null;
+  mediaSize: number | null;
+  locationLat: string | null;
+  locationLng: string | null;
+}
 
 @singleton()
 export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
@@ -61,8 +83,10 @@ export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
     super(repository);
   }
 
-  async record(input: RecordChatMessageInput): Promise<void> {
-    await this.repository.query(RECORD_SQL, [
+  // null cuando el wa_message_id ya existia en el tenant (Meta reentrego el
+  // webhook): no hubo fila nueva, así que el caller no debe avisar por socket.
+  async record(input: RecordChatMessageInput): Promise<RecordedChatMessage | null> {
+    const rows: RecordedChatMessage[] = await this.repository.query(RECORD_SQL, [
       this.currentTenantId(),
       input.contactPhone,
       input.direction,
@@ -77,6 +101,7 @@ export class ChatMessageDao extends TenantScopedDao<ChatMessage> {
       input.locationLat ?? null,
       input.locationLng ?? null,
     ]);
+    return rows[0] ?? null;
   }
 
   async getConversations(): Promise<ConversationRow[]> {
