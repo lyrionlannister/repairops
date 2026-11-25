@@ -1,2 +1,2 @@
 export const formatMoney = (value: number) =>
-  `$${value.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+  `$${Number(value).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

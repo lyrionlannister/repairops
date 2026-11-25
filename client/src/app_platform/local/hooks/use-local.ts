@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { LocalRecord } from "../types/local";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const useLocal = () => {
   const { apiClient } = useApiClient();
@@ -15,11 +16,11 @@ export const useLocal = () => {
     setError(null);
     try {
       const response = await apiClient("/local");
-      if (!response.ok) throw new Error("Error al cargar configuración");
+      if (!response.ok) throw new Error(await readApiError(response, "Error al cargar configuración"));
       const data = (await response.json()) as LocalRecord;
       setLocal(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -40,7 +41,7 @@ export const useLocal = () => {
           const body = (await response.json().catch(() => null)) as {
             error?: string | string[];
           } | null;
-          const message = Array.isArray(body?.error) ? body.error.join(", ") : body?.error;
+          const message = apiErrorText(body, "");
           throw new Error(message || "Error al guardar configuración");
         }
         const updated = (await response.json()) as LocalRecord;
@@ -48,7 +49,7 @@ export const useLocal = () => {
         setSaveSuccess(true);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);

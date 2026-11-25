@@ -1,28 +1,16 @@
-import { useEffect } from "react";
-
-import { useSales } from "../../../commerce/inventory/hooks/use-sales";
-import { useRepairNotes } from "../../../commerce/repair-notes/hooks/use-repair-notes";
-
-const CLOSED_REPAIR_STATUSES = ["delivered", "cancelled"];
+import { useApiResource } from "@common/hooks/use-api-resource";
+import type { SaleStats } from "../../../commerce/inventory/types/inventory-stats";
+import type { RepairNoteStats } from "../../../commerce/repair-notes/types/repair-note-stats";
 
 export function useEmployeeContext(employeeId: string | null) {
-  const { sales, fetchAll: fetchSales } = useSales();
-  const { notes, fetchNotes } = useRepairNotes();
-
-  useEffect(() => {
-    if (!employeeId) return;
-    fetchSales();
-    fetchNotes();
-  }, [employeeId, fetchSales, fetchNotes]);
-
-  const employeeSales = employeeId ? sales.filter((s) => s.createdByEmployeeId === employeeId) : [];
-  const employeeNotes = employeeId ? notes.filter((n) => n.assignedEmployeeId === employeeId) : [];
-  const openNotes = employeeNotes.filter((n) => !CLOSED_REPAIR_STATUSES.includes(n.status));
+  const id = employeeId ? encodeURIComponent(employeeId) : null;
+  const sales = useApiResource<SaleStats>(id && `/sales/stats?employeeId=${id}`);
+  const notes = useApiResource<RepairNoteStats>(id && `/repair-notes/stats?assignedEmployeeId=${id}`);
 
   return {
-    salesCount: employeeSales.length,
-    salesTotal: employeeSales.reduce((sum, s) => sum + s.totalValue, 0),
-    notesTotal: employeeNotes.length,
-    notesOpenCount: openNotes.length,
+    salesCount: sales.data?.count ?? 0,
+    salesTotal: Number(sales.data?.total ?? 0),
+    notesTotal: notes.data?.total ?? 0,
+    notesOpenCount: notes.data?.open ?? 0,
   };
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApiClient } from "./use-api-client";
 import type { LoginPayload, LoginResponse } from "../types/login";
+import { apiErrorText } from "@common/utils/api-error";
 
 export const useLogin = () => {
   const { apiClient } = useApiClient();
@@ -35,13 +36,13 @@ export const useLogin = () => {
 
       if (!response.ok) {
         const errorData = await safeReadJson<{ error?: string }>(response);
-        throw new Error(errorData?.error || "Error al iniciar sesión");
+        throw new Error(apiErrorText(errorData, "Error al iniciar sesión"));
       }
 
       const result = await safeReadJson<LoginResponse>(response);
 
       if (!result?.user) {
-        throw new Error("Respuesta invalida del servidor al iniciar sesion");
+        throw new Error("No pudimos iniciar sesión. Intenta de nuevo.");
       }
 
       // El token de sesion viaja en una cookie httpOnly (Set-Cookie de la

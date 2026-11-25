@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { Branch } from "../types/branches";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const useBranches = () => {
   const { apiClient } = useApiClient();
@@ -14,10 +15,10 @@ export const useBranches = () => {
     setError(null);
     try {
       const res = await apiClient("/branches");
-      if (!res.ok) throw new Error("Error al cargar sucursales");
+      if (!res.ok) throw new Error(await readApiError(res, "Error al cargar sucursales"));
       setBranches(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -35,13 +36,13 @@ export const useBranches = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al crear sucursal");
+          throw new Error(apiErrorText(body, "Error al crear sucursal"));
         }
         const created: Branch = await res.json();
         setBranches((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -62,13 +63,13 @@ export const useBranches = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al actualizar sucursal");
+          throw new Error(apiErrorText(body, "Error al actualizar sucursal"));
         }
         const updated: Branch = await res.json();
         setBranches((prev) => prev.map((b) => (b.id === id ? updated : b)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -86,12 +87,12 @@ export const useBranches = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isActive }),
         });
-        if (!res.ok) throw new Error("Error al actualizar sucursal");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al actualizar sucursal"));
         const updated: Branch = await res.json();
         setBranches((prev) => prev.map((b) => (b.id === id ? updated : b)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },

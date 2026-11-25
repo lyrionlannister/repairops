@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { usePermissions } from "@common/hooks/use-permissions";
 import type { EmployeeOption } from "../types/employees";
+import { readApiError } from "@common/utils/api-error";
 
 export const useEmployees = () => {
   const { apiClient } = useApiClient();
@@ -18,10 +19,10 @@ export const useEmployees = () => {
     setError(null);
     try {
       const res = await apiClient("/auth/employees");
-      if (!res.ok) throw new Error("Error al cargar empleados");
+      if (!res.ok) throw new Error(await readApiError(res, "Error al cargar empleados"));
       setEmployees(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }

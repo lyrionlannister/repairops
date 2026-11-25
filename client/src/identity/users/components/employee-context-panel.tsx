@@ -20,7 +20,7 @@ export const EmployeeContextPanel: React.FC<EmployeeContextPanelProps> = ({
           </div>
         </div>
         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-          Total facturado: {`$${salesTotal.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`}
+          Total facturado: {`$${Number(salesTotal).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
         </p>
       </div>
 

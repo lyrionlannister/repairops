@@ -4,4 +4,5 @@ export interface SupplierContextPanelProps {
   skuCount: number;
   stockValueAtCost: number;
   criticalItems: SupplierCriticalItem[];
+  criticalCount: number;
 }

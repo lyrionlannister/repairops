@@ -4,5 +4,6 @@ export interface EmployeeOption {
   id: string;
   firstName: string;
   lastName: string;
+  isActive: boolean;
   roles: UserRole[];
 }

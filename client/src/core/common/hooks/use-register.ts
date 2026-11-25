@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApiClient } from "./use-api-client";
 import type { RegisterPayload, RegisterResponse } from "../types/register";
+import { apiErrorText } from "@common/utils/api-error";
 
 export const useRegister = () => {
   const { apiClient } = useApiClient();
@@ -35,7 +36,7 @@ export const useRegister = () => {
 
       if (!response.ok) {
         const errorData = await safeReadJson<{ error?: string }>(response);
-        throw new Error(errorData?.error || "Error en el registro");
+        throw new Error(apiErrorText(errorData, "Error en el registro"));
       }
 
       const result = await safeReadJson<RegisterResponse>(response);

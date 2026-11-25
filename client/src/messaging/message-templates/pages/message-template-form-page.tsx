@@ -44,7 +44,7 @@ export const MessageTemplateFormPage: React.FC = () => {
 
   return (
     <PageShell
-      title={isEdit ? "Editar template" : "Nuevo template"}
+      title={isEdit ? "Editar plantilla" : "Nueva plantilla"}
       description={
         isEdit
           ? "Modifica el mensaje predefinido."

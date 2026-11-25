@@ -1,33 +1,18 @@
-import { useEffect, useMemo } from "react";
-import { useInventory } from "../../inventory/hooks/use-inventory";
+import { useApiResource } from "@common/hooks/use-api-resource";
+import type { InventoryStats } from "../../inventory/types/inventory-stats";
 import type { SupplierCriticalItem } from "../types/supplier-context";
 
 export const useSupplierContext = (supplierId: string | null) => {
-  const { items, fetchAll } = useInventory();
-
-  useEffect(() => {
-    if (supplierId !== null) fetchAll();
-  }, [supplierId, fetchAll]);
-
-  const supplierItems = useMemo(
-    () => items.filter((i) => i.supplierId === supplierId),
-    [items, supplierId],
+  const { data } = useApiResource<InventoryStats>(
+    supplierId ? `/inventory/stats?supplierId=${encodeURIComponent(supplierId)}` : null,
   );
 
-  const skuCount = supplierItems.length;
+  const criticalItems: SupplierCriticalItem[] = data?.criticalItems ?? [];
 
-  const stockValueAtCost = useMemo(
-    () => supplierItems.reduce((sum, i) => sum + i.quantityOnHand * i.costPrice, 0),
-    [supplierItems],
-  );
-
-  const criticalItems: SupplierCriticalItem[] = useMemo(
-    () =>
-      supplierItems
-        .filter((i) => i.quantityOnHand <= i.minStock)
-        .map((i) => ({ id: i.id, name: i.name, quantityOnHand: i.quantityOnHand })),
-    [supplierItems],
-  );
-
-  return { skuCount, stockValueAtCost, criticalItems };
+  return {
+    skuCount: data?.skuCount ?? 0,
+    stockValueAtCost: Number(data?.stockValueAtCost ?? 0),
+    criticalCount: data?.criticalCount ?? 0,
+    criticalItems,
+  };
 };

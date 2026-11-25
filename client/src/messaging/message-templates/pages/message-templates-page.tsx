@@ -32,7 +32,7 @@ export const MessageTemplatesPage = () => {
 
   return (
     <PageShell
-      title="Templates de Mensajes"
+      title="Plantillas de mensajes"
       description="Mensajes predefinidos que usa el agente de WhatsApp."
       action={
         <Button variant="primary" onClick={() => navigate("/messaging/message-templates/new")}>
@@ -51,7 +51,7 @@ export const MessageTemplatesPage = () => {
               setSearch(event.target.value);
               setPage(1);
             }}
-            placeholder="Buscar template"
+            placeholder="Buscar plantilla"
             className="pl-9"
           />
         </div>
@@ -158,8 +158,8 @@ export const MessageTemplatesPage = () => {
 
       <ConfirmModal
         isOpen={deleteConfirmId !== null}
-        title="Eliminar template"
-        message="¿Eliminar este template de mensaje? Esta acción no se puede deshacer."
+        title="Eliminar plantilla"
+        message="¿Eliminar esta plantilla de mensaje? Esta acción no se puede deshacer."
         danger
         loading={saving}
         onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}
