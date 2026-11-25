@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
 import { useQuotes } from "../hooks/use-quotes";
@@ -6,7 +6,6 @@ import { useQuotesPage } from "../hooks/use-quotes-page";
 import { Button } from "@ui/button/button";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
-import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { usePermissions } from "@common/hooks/use-permissions";
 import { QuotesFilterBar } from "../components/quotes-filter-bar";
 import { QuotesTable } from "../components/quotes-table";
@@ -14,16 +13,10 @@ import { QuotesTable } from "../components/quotes-table";
 export const QuotesPage: React.FC = () => {
   const navigate = useNavigate();
   const { can, canAny } = usePermissions();
-  const { quotes, loading, error, fetchQuotes, deleteQuote, setStatus } = useQuotes();
-  const { search, setSearch, statusFilter, setStatusFilter, deletingId, filteredQuotes, handleDelete, handleStatusChange } =
-    useQuotesPage({ quotes, deleteQuote, setStatus });
-  const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
-    usePaginatedList(filteredQuotes);
+  const { deleteQuote, setStatus } = useQuotes();
+  const { search, setSearch, statusFilter, setStatusFilter, deletingId, list, hasFilters, handleDelete, handleStatusChange } =
+    useQuotesPage({ deleteQuote, setStatus });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchQuotes();
-  }, [fetchQuotes]);
 
   return (
     <PageShell
@@ -38,36 +31,30 @@ export const QuotesPage: React.FC = () => {
         )
       }
     >
-      {error && <div className="text-sm text-red-500">{error}</div>}
 
       <QuotesFilterBar
         search={search}
-        onSearchChange={(value) => {
-          setSearch(value);
-          setPage(1);
-        }}
+        onSearchChange={setSearch}
         statusFilter={statusFilter}
-        onStatusFilterChange={(value) => {
-          setStatusFilter(value);
-          setPage(1);
-        }}
+        onStatusFilterChange={setStatusFilter}
       />
 
       <QuotesTable
+        error={list.items.length === 0 ? list.error : null}
+        onRetry={() => void list.refetch()}
         canEdit={canAny("quotes.write", "quotes.write.own")}
         canDelete={can("quotes.delete")}
-        loading={loading}
-        quotes={quotes}
-        filteredQuotes={filteredQuotes}
-        pageItems={pageItems}
+        loading={list.loading}
+        hasFilters={hasFilters}
+        pageItems={list.items}
         deletingId={deletingId}
-        page={page}
-        pageSize={pageSize}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        startIndex={startIndex}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
+        page={list.page}
+        pageSize={list.pageSize}
+        totalPages={list.totalPages}
+        totalItems={list.total}
+        startIndex={list.startIndex}
+        onPageChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
         onStatusChange={handleStatusChange}
         onRequestDelete={setDeleteConfirmId}
       />

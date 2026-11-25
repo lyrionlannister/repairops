@@ -2,12 +2,12 @@ import type { FC } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
-import { Select } from "@ui/select/select";
+import { InventoryItemSelect } from "@commerce/inventory/components/inventory-item-select";
 import type { QuoteItemLinesSectionProps } from "../props/quote-item-lines-section-props";
 
 export const QuoteItemLinesSection: FC<QuoteItemLinesSectionProps> = ({
   itemLines,
-  inventoryItems,
+  branchId,
   saving,
   onInventoryItemChange,
   onLineChange,
@@ -15,7 +15,7 @@ export const QuoteItemLinesSection: FC<QuoteItemLinesSectionProps> = ({
   onRemoveLine,
 }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/3 space-y-4">
-    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Items cotizados</p>
+    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Productos cotizados</p>
     <p className="text-xs text-gray-500 dark:text-gray-400">
       Selecciona un producto del inventario para autocompletar, o escribe una descripción libre (mano de obra, servicio, etc.).
     </p>
@@ -23,12 +23,12 @@ export const QuoteItemLinesSection: FC<QuoteItemLinesSectionProps> = ({
       {itemLines.map((line, index) => (
         <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="w-full sm:w-56">
-            <Select
+            <InventoryItemSelect
               value={line.inventoryItemId}
-              onChange={(value) => onInventoryItemChange(index, value)}
+              onSelect={(item) => onInventoryItemChange(index, item)}
+              branchId={branchId}
               placeholder="Producto de inventario (opcional)"
               disabled={saving}
-              options={inventoryItems.map((i) => ({ value: i.id, label: i.name }))}
             />
           </div>
           <div className="flex-1">

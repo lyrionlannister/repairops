@@ -1,9 +1,10 @@
 import type { QuoteListItem } from "../types/quotes-page";
 
 export interface QuotesTableProps {
+  error?: string | null;
+  onRetry?: () => void;
   loading: boolean;
-  quotes: QuoteListItem[];
-  filteredQuotes: QuoteListItem[];
+  hasFilters: boolean;
   pageItems: QuoteListItem[];
   deletingId: string | null;
   page: number;

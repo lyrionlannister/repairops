@@ -13,6 +13,7 @@ import { SetQuoteStatusDto } from "../dtos/set-quote-status.dto.js";
 import { flattenValidationErrors as validationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
 import { sendError, queryString } from "../../../core/http/error-response.js";
+import { readPageQuery } from "../../../core/common/utils/page-query.js";
 
 @singleton()
 export class QuoteController {
@@ -26,6 +27,17 @@ export class QuoteController {
   getAll = async (req: Request, res: Response): Promise<void> => {
     try {
       const branchId = await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"]));
+      const customerId = queryString(req.query["customerId"]) || undefined;
+      const page = await readPageQuery(req.query);
+      if (page || customerId) {
+        const status = queryString(req.query["status"]) || undefined;
+        const result = await this.service.getPage(
+          { branchId, customerId, status, search: page?.search },
+          page ?? { page: 1, pageSize: 100 },
+        );
+        res.status(200).json(page ? result : result.items);
+        return;
+      }
       res.status(200).json(await this.service.getAll(branchId));
     } catch (error) {
       sendError(res, error, 500);

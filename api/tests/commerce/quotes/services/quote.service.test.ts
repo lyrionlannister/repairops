@@ -104,7 +104,7 @@ describe("QuoteService", () => {
   it("rejects creating a quote with no items", async () => {
     const payload = { localId: "1", customerName: "Sin items" };
     await expect(runWithTenant(tenantId, () => service.create(payload, []))).rejects.toThrow(
-      "al menos un item",
+      "al menos un producto",
     );
   });
 

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 import type { QuoteRecord, QuoteItemInput, QuoteItemRecord, QuoteFormData, QuoteStatus } from "../types/quotes";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 const toPayload = (form: QuoteFormData) => ({
   localId: form.localId,
@@ -32,10 +33,10 @@ export const useQuotes = () => {
     setError(null);
     try {
       const res = await apiClient(`/quotes${branchQuery}`);
-      if (!res.ok) throw new Error("Error al obtener cotizaciones");
+      if (!res.ok) throw new Error(await readApiError(res, "Error al obtener cotizaciones"));
       setQuotes(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -47,12 +48,12 @@ export const useQuotes = () => {
       setError(null);
       try {
         const res = await apiClient(`/quotes/${id}`);
-        if (!res.ok) throw new Error("Error al obtener cotización");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al obtener cotización"));
         const data = (await res.json()) as QuoteRecord;
         setQuote(data);
         return data;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setLoading(false);
@@ -99,11 +100,11 @@ export const useQuotes = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string | string[] }).error?.toString() ?? "Error al crear cotización");
+          throw new Error(apiErrorText(body, "Error al crear cotización"));
         }
         return (await res.json()) as QuoteRecord;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);
@@ -124,11 +125,11 @@ export const useQuotes = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string | string[] }).error?.toString() ?? "Error al actualizar cotización");
+          throw new Error(apiErrorText(body, "Error al actualizar cotización"));
         }
         return (await res.json()) as QuoteRecord;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);
@@ -146,12 +147,12 @@ export const useQuotes = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status }),
         });
-        if (!res.ok) throw new Error("Error al actualizar estado");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al actualizar estado"));
         const updated: QuoteRecord = await res.json();
         setQuotes((prev) => prev.map((q) => (q.id === id ? updated : q)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },
@@ -163,11 +164,11 @@ export const useQuotes = () => {
       setError(null);
       try {
         const res = await apiClient(`/quotes/${id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Error al eliminar cotización");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al eliminar cotización"));
         setQuotes((prev) => prev.filter((q) => q.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },

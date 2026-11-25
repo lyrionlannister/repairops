@@ -11,6 +11,10 @@ export type QuoteKind = "product" | "repair";
 @Entity("quotes")
 @Index("IDX_quotes_tenant", ["tenantId"])
 @Index("IDX_quotes_local", ["localId"])
+@Index("IDX_quotes_tenant_created", ["tenantId", "createdAt"])
+@Index("IDX_quotes_customer", ["customerId"])
+// Indices GIN trigram (pg_trgm, migracion 029): TypeORM no sabe declararlos, se ignoran en la sincronizacion.
+@Index("IDX_quotes_nombre_cliente_trgm", { synchronize: false })
 @Unique("UQ_quotes_tenant_numero", ["tenantId", "quoteNumber"])
 @Check("CHK_quotes_tipo", `"tipo" IN ('product', 'repair')`)
 @Check("CHK_quotes_reparacion_datos", `"tipo" = 'product' OR ("marca" IS NOT NULL AND "modelo" IS NOT NULL AND "falla_reportada" IS NOT NULL)`)

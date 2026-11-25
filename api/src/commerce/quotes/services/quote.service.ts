@@ -7,6 +7,8 @@ import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { AuditLogService, AUDIT_ACTIONS } from "../../../core/audit/services/audit-log.service.js";
 import { QuoteDao } from "../daos/quote.dao.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { QuoteFilters } from "../types/quote-page.types.js";
 import { QuoteItemDao } from "../daos/quote-item.dao.js";
 import { QuoteServiceTypeDao } from "../daos/quote-service-type.dao.js";
 import { Quote, QuoteStatus } from "../entities/quote.entity.js";
@@ -94,7 +96,7 @@ export class QuoteService {
       const listItem = await this.priceListDao.findBySupplierAndModel(item.supplierId, item.name);
       if (listItem && price.equals(new Decimal(listItem.price))) return;
     }
-    throw new BusinessError("El precio unitario no coincide con el precio de venta del item");
+    throw new BusinessError("El precio no coincide con el precio de venta del producto. Recarga la página e intenta de nuevo.");
   }
 
   // Revalida el precio de cada renglón en el servidor: el unitPrice del
@@ -106,7 +108,7 @@ export class QuoteService {
     for (const item of items) {
       if (item.inventoryItemId) {
         const inventoryItem = await this.itemDao.findById(item.inventoryItemId);
-        if (!inventoryItem) throw new BusinessError("Item de inventario no encontrado");
+        if (!inventoryItem) throw new BusinessError("No encontramos el producto en el inventario");
         await this.assertInventoryPrice(inventoryItem, item.unitPrice);
       } else {
         const price = new Decimal(item.unitPrice);
@@ -145,6 +147,10 @@ export class QuoteService {
     return this.quoteDao.findAllOrdered(branchId);
   }
 
+  async getPage(filters: QuoteFilters, request: PageRequest): Promise<Page<Quote>> {
+    return this.quoteDao.findPage(filters, request);
+  }
+
   async getById(id: string): Promise<Quote | null> {
     return this.quoteDao.findById(id);
   }
@@ -180,7 +186,7 @@ export class QuoteService {
     serviceTypeIds: string[] = [],
   ): Promise<Quote> {
     if (items.length === 0) {
-      throw new BusinessError("La cotización debe tener al menos un item");
+      throw new BusinessError("La cotización debe tener al menos un producto");
     }
     const tenantId = getCurrentTenantId();
     const totalValue = sumItems(items);
@@ -193,9 +199,8 @@ export class QuoteService {
     }
     const humanPricedLines = await this.validateItemPrices(items);
 
-    const quoteNumber = await this.localService.consumeFolio("quote");
-
     const savedQuote = await AppDataSource.transaction(async (manager) => {
+      const quoteNumber = await this.localService.consumeFolio("quote", manager);
       const customerId = await resolveOrCreateCustomer(manager, tenantId, data);
       const quote = manager.create(Quote, {
         ...data,
@@ -245,7 +250,7 @@ export class QuoteService {
       return this.quoteDao.update(id, data);
     }
     if (items !== undefined && items.length === 0) {
-      throw new BusinessError("La cotización debe tener al menos un item");
+      throw new BusinessError("La cotización debe tener al menos un producto");
     }
     const humanPricedLines = items !== undefined ? await this.validateItemPrices(items) : [];
 
