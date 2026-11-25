@@ -38,7 +38,7 @@ import { ReturnItemDao } from "../../../../src/commerce/returns/daos/return-item
 import { ReturnService } from "../../../../src/commerce/returns/services/return.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
-import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
+import { makeDiscountCapService, makeUserRoleDao, makeAuditLogStub } from "../../../support/authz-deps.js";
 
 describe("ReturnService.create", () => {
   let inventoryService: InventoryService;
@@ -67,7 +67,7 @@ describe("ReturnService.create", () => {
       cashMovementDao,
       localService,
       new UserDao(AppDataSource.getRepository(User)),
-      makeUserRoleDao(),
+      makeUserRoleDao(), makeAuditLogStub(),
     );
     serviceTypeDao = new ServiceTypeDao(AppDataSource.getRepository(ServiceType));
     const saleDao = new SaleDao(AppDataSource.getRepository(Sale));
@@ -242,8 +242,9 @@ describe("ReturnService.create", () => {
           cashSessionId: session.id,
           refundMethod: "efectivo",
           reason: "Exceso",
-          totalRefunded: 60,
-          items: [{ saleItemId: saleItems[0].id, quantity: 2, refundAmount: 60 }],
+          // Monto bajo a proposito: aisla la regla de cantidad de la de "no reembolsar mas que la venta".
+          totalRefunded: 1,
+          items: [{ saleItemId: saleItems[0].id, quantity: 2, refundAmount: 1 }],
         }),
       ),
     ).rejects.toThrow("excede lo disponible");
@@ -287,8 +288,8 @@ describe("ReturnService.create", () => {
         cashSessionId: session.id,
         refundMethod: "efectivo",
         reason: "Primera devolución",
-        totalRefunded: 30,
-        items: [{ saleItemId: saleItems[0].id, quantity: 1, refundAmount: 30 }],
+        totalRefunded: 1,
+        items: [{ saleItemId: saleItems[0].id, quantity: 1, refundAmount: 1 }],
       }),
     );
 
@@ -299,8 +300,8 @@ describe("ReturnService.create", () => {
           cashSessionId: session.id,
           refundMethod: "efectivo",
           reason: "Segunda devolución, ya no queda nada",
-          totalRefunded: 30,
-          items: [{ saleItemId: saleItems[0].id, quantity: 1, refundAmount: 30 }],
+          totalRefunded: 1,
+          items: [{ saleItemId: saleItems[0].id, quantity: 1, refundAmount: 1 }],
         }),
       ),
     ).rejects.toThrow("excede lo disponible");

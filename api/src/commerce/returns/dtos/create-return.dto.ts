@@ -48,7 +48,7 @@ export class CreateReturnDto {
   idempotencyKey?: string;
 
   @IsArray({ message: "Renglones deben ser una lista" })
-  @ArrayMinSize(1, { message: "La devolución debe tener al menos un item" })
+  @ArrayMinSize(1, { message: "La devolución debe tener al menos un producto" })
   @ValidateNested({ each: true, message: "Renglones contienen un valor inválido" })
   @Type(() => ReturnItemInputDto)
   items!: ReturnItemInputDto[];

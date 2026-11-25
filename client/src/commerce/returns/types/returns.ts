@@ -4,6 +4,7 @@ export interface SaleItemRecord {
   id: string;
   lineType: SaleItemLineType;
   referenceId: string;
+  itemName?: string | null;
   quantity: number;
   unitPrice: number;
   discountAmount: number;

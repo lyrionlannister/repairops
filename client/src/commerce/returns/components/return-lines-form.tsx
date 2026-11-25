@@ -12,7 +12,6 @@ export const ReturnLinesForm: FC<ReturnLinesFormProps> = ({
   sale,
   lines,
   alreadyReturned,
-  itemNames,
   refundMethod,
   reason,
   totalRefunded,
@@ -45,8 +44,7 @@ export const ReturnLinesForm: FC<ReturnLinesFormProps> = ({
         return (
           <div key={item.id} className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="flex-1 text-sm text-gray-600 dark:text-gray-300">
-              {(item.lineType === "inventory_item" ? itemNames[item.referenceId] : undefined) ??
-                (item.lineType === "inventory_item" ? "Producto" : "Servicio")}{" "}
+              {item.itemName ?? (item.lineType === "inventory_item" ? "Producto" : "Servicio")}{" "}
               · cant. {item.quantity} · {formatMoney(item.unitPrice)} c/u
               {returned > 0 && <span className="text-amber-500"> · ya devuelto: {returned}</span>}
             </div>

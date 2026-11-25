@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import { isUniqueViolation } from "../../../core/database/unique-violation.js";
 import { Decimal } from "decimal.js";
 import { toMoney } from "../../../core/common/utils/money.js";
 import { BusinessError } from "../../../core/http/business-error.js";
@@ -83,7 +84,7 @@ export class ReturnService {
   // cliente en el body se ignora.
   async create(data: CreateReturnPayload): Promise<Return> {
     if (data.items.length === 0) {
-      throw new BusinessError("La devolución debe tener al menos un item");
+      throw new BusinessError("La devolución debe tener al menos un producto");
     }
 
     const sale = await this.saleDao.findById(data.saleId);
@@ -117,10 +118,12 @@ export class ReturnService {
     }
 
     const tenantId = getCurrentTenantId();
-    const returnNumber = await this.localService.consumeReturnNumber();
     const createdByEmployeeId = currentUserId();
 
+    // Doble envío simultáneo con la misma clave: el segundo choca con el UNIQUE
+    // y recibe la devolución que ya quedó registrada, no un error.
     return AppDataSource.transaction(async (manager) => {
+      const returnNumber = await this.localService.consumeReturnNumber(manager);
       // Tope total de la venta: lo ya reembolsado en devoluciones previas
       // más este reembolso no puede superar el total de la venta.
       const previousTotalRow = await manager
@@ -241,6 +244,13 @@ export class ReturnService {
       await manager.save(cashMovement);
 
       return savedReturn;
+    }).catch(async (error: unknown) => {
+      const replay =
+        isUniqueViolation(error) && data.idempotencyKey
+          ? await this.returnDao.findByIdempotencyKey(data.idempotencyKey)
+          : null;
+      if (replay) return replay;
+      throw error;
     });
   }
 }

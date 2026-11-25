@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   useReturns
 } from "../hooks/use-returns";
-import { useInventory } from "@commerce/inventory/hooks/use-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useBranch } from "@common/hooks/use-branch";
 import { Alert } from "@ui/alert/alert";
@@ -25,11 +24,6 @@ export const ReturnPage: React.FC = () => {
     create,
   } = useReturns();
   const { workingBranchId } = useBranch();
-  const { items: inventoryItems, fetchAll: fetchInventory } = useInventory();
-  useEffect(() => {
-    fetchInventory();
-  }, [fetchInventory]);
-  const itemNames = Object.fromEntries(inventoryItems.map((i) => [i.id, i.name]));
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
 
   const [saleNumberInput, setSaleNumberInput] = useState("");
@@ -162,7 +156,6 @@ export const ReturnPage: React.FC = () => {
           sale={sale}
           lines={lines}
           alreadyReturned={alreadyReturned}
-          itemNames={itemNames}
           refundMethod={refundMethod}
           reason={reason}
           totalRefunded={totalRefunded}
