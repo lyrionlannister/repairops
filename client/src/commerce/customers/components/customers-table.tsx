@@ -4,10 +4,14 @@ import { Pencil, Plus, Trash2, Smartphone, Users, Eye } from "lucide-react";
 import { Button } from "@ui/button/button";
 import { DataTable } from "@ui/table/data-table";
 import { CustomerCreditStatus } from "./customer-credit-status";
+import { formatMoney } from "../utils/format";
 import type { CustomersTableProps } from "../props/customers-table-props";
 
 export const CustomersTable: FC<CustomersTableProps> = ({
+  error,
+  onRetry,
   loading,
+  hasFilters,
   pageItems,
   page,
   pageSize,
@@ -24,14 +28,18 @@ export const CustomersTable: FC<CustomersTableProps> = ({
 
   return (
     <DataTable
+      error={error}
+      onRetry={onRetry}
       loading={loading}
       loadingText="Cargando clientes..."
       isEmpty={pageItems.length === 0}
       empty={{
         icon: <Users />,
-        title: "No hay clientes registrados.",
-        description: "Registra el primero para comenzar.",
-        action: canEdit && (
+        title: hasFilters ? "Sin resultados para la búsqueda." : "No hay clientes registrados.",
+        description: hasFilters
+          ? "Prueba con otro nombre, teléfono o filtro de crédito."
+          : "Registra el primero para comenzar.",
+        action: canEdit && !hasFilters && (
           <Button
             variant="primary"
             startIcon={<Plus className="size-4" />}
@@ -105,7 +113,7 @@ export const CustomersTable: FC<CustomersTableProps> = ({
               {customer.email || "—"}
             </td>
             <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
-              {customer.creditLimit > 0 ? `$${customer.creditLimit.toLocaleString("es-MX")}` : "—"}
+              {Number(customer.creditLimit) > 0 ? formatMoney(customer.creditLimit) : "—"}
             </td>
             <td className="px-4 py-4">
               <CustomerCreditStatus customer={customer} />

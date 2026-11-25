@@ -52,6 +52,10 @@ export class CustomerService {
     return this.dao.findAll();
   }
 
+  async lookup(search: string | undefined, limit: number): Promise<Customer[]> {
+    return this.dao.lookup(search, limit);
+  }
+
   async getById(id: string): Promise<Customer | null> {
     return this.dao.findById(id);
   }

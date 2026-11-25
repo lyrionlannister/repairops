@@ -16,6 +16,9 @@ export type LayawayStatus = "open" | "completed" | "cancelled" | "expired";
 @Entity("layaways")
 @Index("IDX_layaways_tenant", ["tenantId"])
 @Index("IDX_layaways_local", ["localId"])
+@Index("IDX_layaways_tenant_created", ["tenantId", "createdAt"])
+@Index("IDX_layaways_tenant_status_expires", ["tenantId", "status", "expiresAt"])
+@Index("IDX_layaways_customer", ["customerId"])
 export class Layaway extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

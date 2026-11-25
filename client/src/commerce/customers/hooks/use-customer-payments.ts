@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { CustomerPaymentRecord, RegisterCustomerPaymentInput } from "../types/customer-payments";
+import { apiErrorText } from "@common/utils/api-error";
 
 export const useCustomerPayments = () => {
   const { apiClient } = useApiClient();
@@ -33,12 +34,12 @@ export const useCustomerPayments = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string | string[] }).error?.toString() ?? "Error al registrar el abono");
+          throw new Error(apiErrorText(body, "Error al registrar el abono"));
         }
         await fetchPayments(customerId);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);

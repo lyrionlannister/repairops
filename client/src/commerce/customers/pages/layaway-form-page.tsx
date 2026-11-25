@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useLayaways } from "../hooks/use-layaways";
-import { useCustomers } from "../hooks/use-customers";
 import { useCustomerContext } from "../hooks/use-customer-context";
 import { useLayawayItemLines } from "../hooks/use-layaway-item-lines";
 import { CustomerContextPanel } from "../components/customer-context-panel";
-import { useBranchScopedInventory } from "@commerce/inventory/hooks/use-branch-scoped-inventory";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useBranch } from "@common/hooks/use-branch";
 import { Alert } from "@ui/alert/alert";
@@ -16,12 +14,7 @@ import type { LayawayMethod } from "../types/layaways";
 export const LayawayFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { saving, error, open } = useLayaways();
-  const { customers, fetchAll: fetchCustomers } = useCustomers();
   const { workingBranchId } = useBranch();
-  // Solo items de la sucursal activa -- un apartado reserva stock fisico,
-  // no tiene sentido reservar de una sucursal que el cajero no ve.
-  const { items: inventoryItems, fetchAll: fetchInventory } =
-    useBranchScopedInventory(workingBranchId);
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -30,12 +23,7 @@ export const LayawayFormPage: React.FC = () => {
   const [depositAmount, setDepositAmount] = useState("");
   const [depositMethod, setDepositMethod] = useState<LayawayMethod>("efectivo");
   const { lines, updateLine, handleItemChange, addLine, totalValue, buildItemsPayload } =
-    useLayawayItemLines(inventoryItems);
-
-  useEffect(() => {
-    fetchCustomers();
-    fetchInventory();
-  }, [fetchCustomers, fetchInventory]);
+    useLayawayItemLines();
 
   useEffect(() => {
     if (workingBranchId) fetchOpenSession(workingBranchId);
@@ -71,12 +59,11 @@ export const LayawayFormPage: React.FC = () => {
   const form = (
     <LayawayForm
       hasContext={hasContext}
-      customers={customers}
       customerId={customerId}
       onCustomerIdChange={setCustomerId}
       expiresAt={expiresAt}
       onExpiresAtChange={setExpiresAt}
-      inventoryItems={inventoryItems}
+      branchId={workingBranchId}
       lines={lines}
       onUpdateLine={updateLine}
       onItemChange={handleItemChange}

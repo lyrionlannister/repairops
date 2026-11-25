@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import type { LocalService } from "../../../../src/app_platform/local/services/local.service.js";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
 import { LayawayService } from "../../../../src/commerce/customers/services/layaway.service.js";
@@ -42,6 +43,7 @@ function makeService(inventoryItem: Record<string, unknown> | null) {
     { findById: vi.fn().mockResolvedValue(inventoryItem) } as unknown as InventoryItemDao,
     { reserve: vi.fn().mockResolvedValue(undefined) } as unknown as InventoryReservationService,
     { findBySupplierAndModel: vi.fn().mockResolvedValue(null) } as unknown as PriceListDao,
+    { getConfig: vi.fn().mockResolvedValue({ timeZone: "America/Mexico_City" }) } as unknown as LocalService,
   );
 }
 

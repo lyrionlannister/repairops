@@ -1,5 +1,5 @@
 import { Wallet, TrendingUp, Smartphone, ShoppingBag } from "lucide-react";
-import { formatMoney } from "../utils/format";
+import { formatDate, formatMoney } from "../utils/format";
 import type { CustomerContextPanelProps } from "../props/customer-context-panel-props";
 
 export const CustomerContextPanel: React.FC<CustomerContextPanelProps> = ({
@@ -61,7 +61,7 @@ export const CustomerContextPanel: React.FC<CustomerContextPanelProps> = ({
         <ul className="max-h-64 space-y-2 overflow-y-auto">
           {devices.map((d) => (
             <li key={`${d.controlNumber}-${d.brand}-${d.model}`} className="text-sm text-gray-600 dark:text-gray-300">
-              {d.brand} {d.model} — última recepción {d.lastReceivedAt}, {d.notesCount} nota(s)
+              {d.brand} {d.model} — última recepción {formatDate(d.lastReceivedAt)}, {d.notesCount} {d.notesCount === 1 ? "nota" : "notas"}
             </li>
           ))}
         </ul>
@@ -79,7 +79,7 @@ export const CustomerContextPanel: React.FC<CustomerContextPanelProps> = ({
         <ul className="max-h-64 space-y-2 overflow-y-auto">
           {activeLayaways.map((l) => (
             <li key={l.id} className="text-sm text-gray-600 dark:text-gray-300">
-              Vence {l.expiresAt} — {formatMoney(l.totalValue)} (anticipo {formatMoney(l.depositAmount)})
+              Vence {formatDate(l.expiresAt)} — {formatMoney(l.totalValue)} (anticipo {formatMoney(l.depositAmount)})
             </li>
           ))}
         </ul>

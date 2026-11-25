@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { Customer, CustomerCreditBalance, CustomerDeviceHistoryEntry } from "../types/customers";
+import { readApiError, apiErrorText } from "@common/utils/api-error";
 
 export const useCustomers = () => {
   const { apiClient } = useApiClient();
@@ -10,19 +11,23 @@ export const useCustomers = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient("/customers");
-      if (!res.ok) throw new Error("Error al cargar clientes");
-      setCustomers(await res.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient]);
+  const fetchByCustomer = useCallback(
+    async (customerId: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiClient(`/customers/${encodeURIComponent(customerId)}`);
+        if (!res.ok) throw new Error(await readApiError(res, "Error al cargar el cliente"));
+        setCustomers([await res.json()]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiClient],
+  );
+
 
   const fetchDevices = useCallback(
     async (customerId: string) => {
@@ -51,13 +56,13 @@ export const useCustomers = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al crear cliente");
+          throw new Error(apiErrorText(body, "Error al crear cliente"));
         }
         const created: Customer = await res.json();
         setCustomers((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
         return created;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);
@@ -81,13 +86,13 @@ export const useCustomers = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? "Error al actualizar cliente");
+          throw new Error(apiErrorText(body, "Error al actualizar cliente"));
         }
         const updated: Customer = await res.json();
         setCustomers((prev) => prev.map((c) => (c.id === id ? updated : c)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -101,11 +106,11 @@ export const useCustomers = () => {
       setError(null);
       try {
         const res = await apiClient(`/customers/${id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Error al eliminar cliente");
+        if (!res.ok) throw new Error(await readApiError(res, "Error al eliminar cliente"));
         setCustomers((prev) => prev.filter((c) => c.id !== id));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       }
     },
@@ -135,7 +140,7 @@ export const useCustomers = () => {
     loading,
     saving,
     error,
-    fetchAll,
+    fetchByCustomer,
     fetchDevices,
     fetchCreditBalance,
     create,

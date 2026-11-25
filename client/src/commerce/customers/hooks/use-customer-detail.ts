@@ -14,10 +14,10 @@ import type { CustomerDebts, ProfileDraft } from "../types/customer-detail";
 export const useCustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { apiClient } = useApiClient();
-  const { customers, loading, saving, error, fetchAll, update } = useCustomers();
+  const { customers, loading, saving, error, fetchByCustomer: fetchCustomer, update } = useCustomers();
   const { notes, fetchNotes } = useRepairNotes();
-  const { sales, fetchAll: fetchSales } = useSales();
-  const { layaways, fetchAll: fetchLayaways } = useLayaways();
+  const { sales, fetchByCustomer: fetchSales } = useSales();
+  const { layaways, fetchByCustomer: fetchLayaways } = useLayaways();
   const { workingBranchId } = useBranch();
   const {
     payments,
@@ -56,13 +56,14 @@ export const useCustomerDetail = () => {
   }, [apiClient, id]);
 
   useEffect(() => {
-    fetchAll();
-    fetchNotes();
-    fetchSales();
-    fetchLayaways();
+    if (!id) return;
+    fetchCustomer(id);
+    fetchNotes(id);
+    fetchSales(id);
+    fetchLayaways(id);
     fetchDebts();
-    if (id) fetchPayments(id);
-  }, [fetchAll, fetchNotes, fetchSales, fetchLayaways, fetchDebts, fetchPayments, id]);
+    fetchPayments(id);
+  }, [fetchCustomer, fetchNotes, fetchSales, fetchLayaways, fetchDebts, fetchPayments, id]);
 
   useEffect(() => {
     if (customer) setCreditDraft(String(customer.creditLimit));

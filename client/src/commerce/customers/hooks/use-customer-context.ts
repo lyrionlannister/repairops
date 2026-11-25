@@ -5,13 +5,13 @@ import { useLayaways } from "./use-layaways";
 
 export const useCustomerContext = (customerId: string | null) => {
   const { devices, creditBalances, fetchDevices, fetchCreditBalance } = useCustomers();
-  const { layaways, fetchAll: fetchLayaways } = useLayaways();
+  const { layaways, fetchByCustomer: fetchLayaways } = useLayaways();
 
   useEffect(() => {
     if (!customerId) return;
     fetchCreditBalance(customerId);
     fetchDevices(customerId);
-    fetchLayaways();
+    fetchLayaways(customerId);
   }, [customerId, fetchCreditBalance, fetchDevices, fetchLayaways]);
 
   const credit = customerId ? creditBalances[customerId] : undefined;

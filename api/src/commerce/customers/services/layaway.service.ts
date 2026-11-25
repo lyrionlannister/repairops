@@ -1,4 +1,7 @@
 import { singleton } from "tsyringe";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { LayawayFilters, LayawayListRow } from "../types/layaway-page.types.js";
+import { LocalService } from "../../../app_platform/local/services/local.service.js";
 import { Decimal } from "decimal.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { BusinessError } from "../../../core/http/business-error.js";
@@ -39,7 +42,6 @@ export interface CompletePaymentInput {
   amount: number;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
 
 @singleton()
 export class LayawayService {
@@ -51,6 +53,7 @@ export class LayawayService {
     private itemDao: InventoryItemDao,
     private reservationService: InventoryReservationService,
     private priceListDao: PriceListDao,
+    private localService: LocalService,
   ) {}
 
   // Precio de inventario: debe ser igual a precio_venta del item o al precio
@@ -59,7 +62,7 @@ export class LayawayService {
   private async validateItemPrices(items: LayawayItemInput[]): Promise<void> {
     for (const item of items) {
       const inventoryItem = await this.itemDao.findById(item.inventoryItemId);
-      if (!inventoryItem) throw new BusinessError("Item de inventario no encontrado");
+      if (!inventoryItem) throw new BusinessError("No encontramos el producto en el inventario");
       const price = new Decimal(item.unitPrice);
       if (price.equals(new Decimal(inventoryItem.salePrice))) continue;
       if (inventoryItem.supplierId) {
@@ -69,12 +72,28 @@ export class LayawayService {
         );
         if (listItem && price.equals(new Decimal(listItem.price))) continue;
       }
-      throw new BusinessError("El precio unitario no coincide con el precio de venta del item");
+      throw new BusinessError("El precio no coincide con el precio de venta del producto. Recarga la página e intenta de nuevo.");
     }
   }
 
-  async getAll(branchId?: string | null): Promise<Layaway[]> {
-    return this.layawayDao.findAllOrdered(branchId);
+  // El vencimiento se aplica al leer: la lista también debe mostrarlo y liberar
+  // el stock, no solo el detalle.
+  async getAll(branchId?: string | null, customerId?: string): Promise<Layaway[]> {
+    await this.expireAllDue();
+    return this.layawayDao.findAllOrdered(branchId, customerId);
+  }
+
+  async getPage(filters: LayawayFilters, request: PageRequest): Promise<Page<LayawayListRow>> {
+    await this.expireAllDue();
+    return this.layawayDao.findPage(filters, request);
+  }
+
+  // Sin cron, los vencidos se expiran antes de cualquier lectura que dependa de ellos
+  // (lista de apartados, disponible del inventario). Normalmente no hay ninguno.
+  async expireAllDue(): Promise<void> {
+    const { timeZone } = await this.localService.getConfig();
+    const due = await this.layawayDao.findOpenDue(new Date().toLocaleDateString("en-CA", { timeZone }));
+    for (const layaway of due) await this.expireIfDue(layaway);
   }
 
   async getItems(layawayId: string): Promise<LayawayItem[]> {
@@ -93,7 +112,11 @@ export class LayawayService {
   }
 
   private async expireIfDue(layaway: Layaway): Promise<Layaway> {
-    if (layaway.status !== "open" || layaway.expiresAt >= today()) return layaway;
+    if (layaway.status !== "open") return layaway;
+    // "Hoy" del taller, no de UTC: con toISOString un apartado vencia a las 18:00
+    // de Mexico de su ultimo dia y liberaba el stock reservado antes de tiempo.
+    const { timeZone } = await this.localService.getConfig();
+    if (layaway.expiresAt >= new Date().toLocaleDateString("en-CA", { timeZone })) return layaway;
 
     const tenantId = getCurrentTenantId();
     return AppDataSource.transaction(async (manager) => {
@@ -115,7 +138,7 @@ export class LayawayService {
   // cliente en el body se ignora.
   async open(data: OpenLayawayPayload): Promise<Layaway> {
     if (data.items.length === 0) {
-      throw new BusinessError("El apartado debe tener al menos un item");
+      throw new BusinessError("El apartado debe tener al menos un producto");
     }
     const customer = await this.customerDao.findById(data.customerId);
     if (!customer) throw new BusinessError("Cliente no encontrado");
@@ -124,6 +147,12 @@ export class LayawayService {
     if (!session) throw new BusinessError("Sesión de caja no encontrada");
     if (session.status !== "open") {
       throw new BusinessError("No se puede abrir el apartado: la sesión de caja está cerrada");
+    }
+
+    const { timeZone } = await this.localService.getConfig();
+    const today = new Date().toLocaleDateString("en-CA", { timeZone });
+    if (String(data.expiresAt).slice(0, 10) < today) {
+      throw new BusinessError("La fecha límite del apartado no puede ser anterior a hoy");
     }
 
     await this.validateItemPrices(data.items);

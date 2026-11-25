@@ -8,6 +8,7 @@ export interface LayawayItemRecord {
 export interface LayawayRecord {
   id: string;
   customerId: string;
+  customerName?: string | null;
   status: LayawayStatus;
   totalValue: number;
   depositAmount: number;
@@ -33,5 +34,7 @@ export interface OpenLayawayPayload {
 }
 
 export type LayawayStatus = "open" | "completed" | "cancelled" | "expired";
+
+export type LayawayStatusFilter = LayawayStatus | "all";
 
 export type LayawayMethod = "efectivo" | "tarjeta" | "transferencia";

@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
-import { useBranchQuery } from "../../../core/common/hooks/use-branch-query";
 import type { LayawayRecord, OpenLayawayPayload, LayawayMethod } from "../types/layaways";
+import { readApiError } from "@common/utils/api-error";
 
 async function readError(res: Response, fallback: string): Promise<string> {
   const body = await res.json().catch(() => ({}));
@@ -15,21 +15,24 @@ export const useLayaways = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const branchQuery = useBranchQuery();
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient(`/layaways${branchQuery}`);
-      if (!res.ok) throw new Error("Error al cargar apartados");
-      setLayaways(await res.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiClient, branchQuery]);
+  const fetchByCustomer = useCallback(
+    async (customerId: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiClient(`/layaways?customerId=${encodeURIComponent(customerId)}`);
+        if (!res.ok) throw new Error(await readApiError(res, "Error al cargar apartados"));
+        setLayaways(await res.json());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiClient],
+  );
+
 
   const open = useCallback(
     async (data: OpenLayawayPayload): Promise<LayawayRecord | null> => {
@@ -46,7 +49,7 @@ export const useLayaways = () => {
         setLayaways((prev) => [created, ...prev]);
         return created;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return null;
       } finally {
         setSaving(false);
@@ -74,7 +77,7 @@ export const useLayaways = () => {
         setLayaways((prev) => prev.map((l) => (l.id === id ? updated : l)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -94,7 +97,7 @@ export const useLayaways = () => {
         setLayaways((prev) => prev.map((l) => (l.id === id ? updated : l)));
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.");
         return false;
       } finally {
         setSaving(false);
@@ -103,5 +106,5 @@ export const useLayaways = () => {
     [apiClient],
   );
 
-  return { layaways, loading, saving, error, fetchAll, open, complete, cancel };
+  return { layaways, loading, saving, error, fetchByCustomer, open, complete, cancel };
 };

@@ -6,7 +6,6 @@ import { Input } from "@ui/inputs/input";
 import { Select } from "@ui/select/select";
 import { ConfirmModal } from "@ui/modal/confirm-modal";
 import { PageShell } from "@common/components/page-shell/page-shell";
-import { usePaginatedList } from "@common/hooks/use-paginated-list";
 import { usePermissions } from "@common/hooks/use-permissions";
 
 import { useCustomers } from "../hooks/use-customers";
@@ -17,8 +16,7 @@ import { CREDIT_FILTER_OPTIONS, parseCreditFilter } from "../utils/overdue";
 export const CustomersPage = () => {
   const navigate = useNavigate();
   const { can } = usePermissions();
-  const { customers, loading, saving, fetchAll, remove } = useCustomers();
-
+  const { saving, remove } = useCustomers();
   const {
     deleteConfirmId,
     setDeleteConfirmId,
@@ -26,12 +24,10 @@ export const CustomersPage = () => {
     setSearch,
     creditFilter,
     setCreditFilter,
-    filteredCustomers,
+    list,
+    hasFilters,
     handleDelete,
-  } = useCustomersPage({ customers, fetchAll, remove });
-
-  const { page, setPage, pageSize, setPageSize, totalPages, totalItems, startIndex, pageItems } =
-    usePaginatedList(filteredCustomers);
+  } = useCustomersPage({ remove });
 
   return (
     <PageShell
@@ -46,49 +42,44 @@ export const CustomersPage = () => {
         )
       }
     >
-
       <div className="shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            name="search"
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage(1);
-            }}
-            placeholder="Buscar cliente"
-            className="pl-9"
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              name="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por nombre, teléfono o correo"
+              className="pl-9"
+            />
+          </div>
+          <Select
+            value={creditFilter}
+            onChange={(value) => setCreditFilter(parseCreditFilter(value))}
+            options={CREDIT_FILTER_OPTIONS}
+            className="w-full sm:w-60"
           />
-        </div>
-        <Select
-          value={creditFilter}
-          onChange={(value) => {
-            setCreditFilter(parseCreditFilter(value));
-            setPage(1);
-          }}
-          options={CREDIT_FILTER_OPTIONS}
-          className="w-full sm:w-60"
-        />
         </div>
       </div>
 
       <CustomersTable
+        error={list.items.length === 0 ? list.error : null}
+        onRetry={() => void list.refetch()}
         canEdit={can("customers.write")}
         canDelete={can("customers.delete")}
-        loading={loading}
-        pageItems={pageItems}
-        page={page}
-        pageSize={pageSize}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        startIndex={startIndex}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
+        loading={list.loading}
+        hasFilters={hasFilters}
+        pageItems={list.items}
+        page={list.page}
+        pageSize={list.pageSize}
+        totalPages={list.totalPages}
+        totalItems={list.total}
+        startIndex={list.startIndex}
+        onPageChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
         onRequestDelete={setDeleteConfirmId}
       />
-
 
       <ConfirmModal
         isOpen={deleteConfirmId !== null}

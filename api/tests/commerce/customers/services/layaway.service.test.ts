@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import AppDataSource from "../../../../src/core/config/data-source.js";
+import { ensureFixtureBranch } from "../../../support/tenant-fixture.subscriber.js";
 import { InventoryItem } from "../../../../src/commerce/inventory/entities/inventory-item.entity.js";
 import { InventoryMovement } from "../../../../src/commerce/inventory/entities/inventory-movement.entity.js";
 import { InventoryItemDao } from "../../../../src/commerce/inventory/daos/inventory-item.dao.js";
@@ -29,14 +30,14 @@ import { LayawayDao } from "../../../../src/commerce/customers/daos/layaway.dao.
 import { LayawayItemDao } from "../../../../src/commerce/customers/daos/layaway-item.dao.js";
 import { LayawayService } from "../../../../src/commerce/customers/services/layaway.service.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
-import { makeUserRoleDao } from "../../../support/authz-deps.js";
+import { makeUserRoleDao, makeAuditLogStub } from "../../../support/authz-deps.js";
 
 describe("LayawayService", () => {
   let inventoryService: InventoryService;
   let layawayService: LayawayService;
   let customerDao: CustomerDao;
   let cashMovementDao: CashMovementDao;
-  let openSessionHelper: (localId: string) => Promise<{ id: string }>;
+  let openSessionHelper: (localId: string) => Promise<{ id: string; localId: string }>;
   const tenantId = `${Date.now()}9`;
 
   beforeAll(async () => {
@@ -57,6 +58,7 @@ describe("LayawayService", () => {
       localService,
       new UserDao(AppDataSource.getRepository(User)),
       makeUserRoleDao(),
+      makeAuditLogStub(),
     );
     customerDao = new CustomerDao(AppDataSource.getRepository(Customer));
     layawayService = new LayawayService(
@@ -67,6 +69,7 @@ describe("LayawayService", () => {
       itemDao,
       reservationService,
       new PriceListDao(AppDataSource.getRepository(PriceListItem)),
+      new LocalService(new LocalDao(AppDataSource.getRepository(Local))),
     );
     openSessionHelper = (localId: string) =>
       runWithTenant(tenantId, () => cashService.openSession(localId, 0));
@@ -96,7 +99,15 @@ describe("LayawayService", () => {
 
   const futureDate = () =>
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const pastDate = () => new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  // Sucursal propia del tenant de la prueba: los ids fijos ("1".."7") pueden
+  // ser sucursales reales de otro tenant en la base de desarrollo.
+  const fixtureBranch = async (suffix: string) => {
+    const branchId = `${tenantId}${suffix}`.slice(-15);
+    await ensureFixtureBranch(AppDataSource, tenantId, branchId);
+    return branchId;
+  };
+  // Tres dias atras: "ayer" en UTC puede seguir siendo "hoy" en la zona del taller.
+  const pastDate = () => new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   it("opens a layaway: reserves stock (never decrements) and registers the deposit as a real cash movement", async () => {
     const session = await openSessionHelper("1");
@@ -133,6 +144,53 @@ describe("LayawayService", () => {
     );
     expect(deposit?.type).toBe("income");
     expect(Number(deposit?.amount)).toBe(30);
+  });
+
+  it("never reserves more than the free stock, even with concurrent layaways", async () => {
+    const session = await openSessionHelper(await fixtureBranch("11"));
+    const item = await makeItem("LAY-OVER", session.localId, 3);
+    const customer = await runWithTenant(tenantId, () =>
+      customerDao.create({ name: "Cliente Sobreventa", phone: "555" }),
+    );
+    const open = (quantity: number) =>
+      runWithTenant(tenantId, () =>
+        layawayService.open({
+          customerId: customer.id,
+          cashSessionId: session.id,
+          depositAmount: 10,
+          depositMethod: "efectivo",
+          expiresAt: futureDate(),
+          items: [{ inventoryItemId: item.id, quantity, unitPrice: 100 }],
+        }),
+      );
+
+    await expect(open(4)).rejects.toThrow("Solo hay 3 piezas libres");
+    const results = await Promise.allSettled([open(2), open(2)]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const available = await runWithTenant(tenantId, () =>
+      inventoryService.getAvailableQuantity(item.id),
+    );
+    expect(available).toBe(1);
+  });
+
+  it("rejects an expiry date in the past", async () => {
+    const session = await openSessionHelper(await fixtureBranch("12"));
+    const item = await makeItem("LAY-PAST", session.localId, 3);
+    const customer = await runWithTenant(tenantId, () =>
+      customerDao.create({ name: "Cliente Pasado", phone: "555" }),
+    );
+    await expect(
+      runWithTenant(tenantId, () =>
+        layawayService.open({
+          customerId: customer.id,
+          cashSessionId: session.id,
+          depositAmount: 10,
+          depositMethod: "efectivo",
+          expiresAt: pastDate(),
+          items: [{ inventoryItemId: item.id, quantity: 1, unitPrice: 100 }],
+        }),
+      ),
+    ).rejects.toThrow("no puede ser anterior a hoy");
   });
 
   it("rejects a deposit greater than the total value", async () => {
@@ -278,10 +336,11 @@ describe("LayawayService", () => {
         cashSessionId: session.id,
         depositAmount: 20,
         depositMethod: "efectivo",
-        expiresAt: pastDate(),
+        expiresAt: futureDate(),
         items: [{ inventoryItemId: item.id, quantity: 1, unitPrice: 100 }],
       }),
     );
+    await AppDataSource.getRepository(Layaway).update(layaway.id, { expiresAt: pastDate() });
 
     const read = await runWithTenant(tenantId, () => layawayService.getById(layaway.id));
     expect(read?.status).toBe("expired");
