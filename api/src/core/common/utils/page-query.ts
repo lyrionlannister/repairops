@@ -13,7 +13,7 @@ const firstValue = (value: unknown): unknown => (Array.isArray(value) ? value[0]
 const pick = (query: Record<string, unknown>, keys: string[]): Record<string, unknown> =>
   Object.fromEntries(
     keys
-      .map((key) => [key, firstValue(query[key])])
+      .map((key): [string, unknown] => [key, firstValue(query[key])])
       .filter(([, value]) => value !== undefined && value !== ""),
   );
 

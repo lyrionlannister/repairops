@@ -1,9 +1,11 @@
 import { singleton } from "tsyringe";
 import { Request, Response } from "express";
-import { bodyOf, optionalString } from "../../../core/http/request-body.js";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import { InventoryCountService, InventoryCountCloseBlockedError } from "../services/inventory-count.service.js";
+import {
+  InventoryCountService,
+  InventoryCountCloseBlockedError,
+} from "../services/inventory-count.service.js";
 import { OpenInventoryCountDto } from "../dtos/open-inventory-count.dto.js";
 import { SetCountedInventoryCountItemDto } from "../dtos/set-counted-inventory-count-item.dto.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
@@ -49,7 +51,11 @@ export class InventoryCountController {
         res.status(400).json({ error: flattenValidationErrors(errors) });
         return;
       }
-      const updated = await this.service.setCounted(req.params["itemId"] as string, dto.countedQuantity, dto.reason);
+      const updated = await this.service.setCounted(
+        req.params["itemId"] as string,
+        dto.countedQuantity,
+        dto.reason,
+      );
       res.status(200).json(updated);
     } catch (error) {
       sendError(res, error, 400);
@@ -62,7 +68,9 @@ export class InventoryCountController {
       res.status(200).json(closed);
     } catch (error) {
       if (error instanceof InventoryCountCloseBlockedError) {
-        res.status(400).json({ error: error.message, missingReasonItemIds: error.missingReasonItemIds });
+        res
+          .status(400)
+          .json({ error: error.message, missingReasonItemIds: error.missingReasonItemIds });
         return;
       }
       sendError(res, error, 400);

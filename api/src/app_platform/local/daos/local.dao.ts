@@ -92,8 +92,10 @@ export class LocalDao extends TenantScopedDao<Local> {
        WHERE "id" = $1
        RETURNING "${counter}" - 1 AS number`;
     if (manager) {
-      const result = (await manager.query(sql, [local.id])) as
-        { number: number }[] | [{ number: number }[], number];
+      const result = await manager.query<{ number: number }[] | [{ number: number }[], number]>(
+        sql,
+        [local.id],
+      );
       const rows = isRowsTuple(result) ? result[0] : result;
       return rows[0].number;
     }
@@ -104,7 +106,10 @@ export class LocalDao extends TenantScopedDao<Local> {
   // El nombre del local es el nombre comercial del taller: el panel de
   // plataforma lista los tenants por ese nombre.
   async syncTenantName(name: string): Promise<void> {
-    await this.runQuery(`UPDATE tenants SET nombre = $1 WHERE id = $2`, [name, this.currentTenantId()]);
+    await this.runQuery(`UPDATE tenants SET nombre = $1 WHERE id = $2`, [
+      name,
+      this.currentTenantId(),
+    ]);
   }
 
   // Ultimo folio asignado de cada documento: el siguiente configurable nunca puede ser
