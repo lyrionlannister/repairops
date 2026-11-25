@@ -27,13 +27,13 @@ export const OnboardingPlanPage: React.FC = () => {
           </div>
 
           <div className="mb-8 flex justify-center">
-            <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-800 dark:bg-white/3">
+            <div className="inline-flex rounded-full bg-gray-100 p-1 dark:bg-white/5">
               <button
                 type="button"
                 onClick={() => interval !== "month" && toggleInterval()}
-                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   interval === "month"
-                    ? "bg-brand-500 text-white"
+                    ? "bg-white text-gray-800 shadow-theme-xs dark:bg-gray-800 dark:text-white/90"
                     : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white/90"
                 }`}
               >
@@ -42,9 +42,9 @@ export const OnboardingPlanPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => interval !== "year" && toggleInterval()}
-                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   interval === "year"
-                    ? "bg-brand-500 text-white"
+                    ? "bg-white text-gray-800 shadow-theme-xs dark:bg-gray-800 dark:text-white/90"
                     : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white/90"
                 }`}
               >
