@@ -79,7 +79,7 @@ export const AsideMenu: React.FC<{
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(nav.name, menuType)}
-              className={`menu-item group text-gray-500 ${
+              className={`menu-item group ${
                 openSubmenu?.type === menuType && openSubmenu?.name === nav.name
                   ? "menu-item-active"
                   : "menu-item-inactive"
@@ -90,7 +90,7 @@ export const AsideMenu: React.FC<{
               }`}
             >
               <span
-                className={`menu-item-icon-size text-gray-500  ${
+                className={`menu-item-icon-size ${
                   openSubmenu?.type === menuType && openSubmenu?.name === nav.name
                     ? "menu-item-icon-active"
                     : "menu-item-icon-inactive"
@@ -99,7 +99,7 @@ export const AsideMenu: React.FC<{
                 {nav.icon}
               </span>
               {(isExpanded || isHovered || isMobileOpen) && (
-                <span className="menu-item-text text-gray-500">{nav.name}</span>
+                <span className="menu-item-text">{nav.name}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronRight

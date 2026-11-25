@@ -29,6 +29,8 @@ export const DatePicker: FC<DatePickerProps> = ({
       locale: Spanish,
       monthSelectorType: "static",
       dateFormat: "Y-m-d",
+      altInput: true,
+      altFormat: "d/m/Y",
       defaultDate: value || undefined,
       onChange: ([date]) => {
         if (date) onChange?.(flatpickr.formatDate(date, "Y-m-d"));
@@ -47,6 +49,19 @@ export const DatePicker: FC<DatePickerProps> = ({
   useEffect(() => {
     instanceRef.current?.setDate(value || "", false);
   }, [value]);
+
+  // altInput es un input aparte creado por flatpickr: no hereda los cambios
+  // de props posteriores al montaje.
+  useEffect(() => {
+    const altInput = instanceRef.current?.altInput;
+    if (!altInput) return;
+    altInput.disabled = disabled;
+    altInput.required = required;
+    // La input original queda oculta: si conservara `required`, el navegador
+    // bloquearía el envío sin poder enfocarla ni mostrar el aviso.
+    instanceRef.current!.input.required = false;
+    altInput.placeholder = placeholder ?? "dd/mm/aaaa";
+  }, [disabled, required, placeholder]);
 
   return (
     <div className="relative">
