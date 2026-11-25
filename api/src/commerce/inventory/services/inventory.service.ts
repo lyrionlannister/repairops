@@ -18,6 +18,8 @@ import type { InventoryImportRow } from "../utils/inventory-import-parser.js";
 import type { Decimal } from "decimal.js";
 import { toMoney } from "../../../core/common/utils/money.js";
 import { BusinessError } from "../../../core/http/business-error.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { InventoryFilters, InventoryStats } from "../types/inventory-page.types.js";
 
 export interface RegisterMovementInput {
   inventoryItemId: string;
@@ -98,6 +100,33 @@ export class InventoryService {
     );
   }
 
+  async getPage(
+    filters: InventoryFilters,
+    request: PageRequest,
+  ): Promise<Page<InventoryItem & { available: number }>> {
+    const page = await this.itemDao.findPage(filters, request);
+    return { ...page, items: await this.withAvailability(page.items) };
+  }
+
+  async lookup(filters: InventoryFilters, limit: number): Promise<Array<InventoryItem & { available: number }>> {
+    return this.withAvailability(await this.itemDao.lookup(filters, limit));
+  }
+
+  async getStats(filters: InventoryFilters): Promise<InventoryStats> {
+    return this.itemDao.stats(filters);
+  }
+
+  async getMovementsPage(inventoryItemId: string, request: PageRequest): Promise<Page<InventoryMovement>> {
+    return this.movementDao.findPageByItem(inventoryItemId, request);
+  }
+
+  private async withAvailability(items: InventoryItem[]): Promise<Array<InventoryItem & { available: number }>> {
+    const reserved = await this.reservationDao.sumActiveQuantityByItem(items.map((item) => String(item.id)));
+    return items.map((item) =>
+      hideCostsUnlessAllowed({ ...item, available: item.quantityOnHand - (reserved.get(String(item.id)) ?? 0) }),
+    );
+  }
+
   async getById(id: string): Promise<InventoryItem | null> {
     const item = await this.itemDao.findById(id);
     return item && hideCostsUnlessAllowed(item);
@@ -108,7 +137,7 @@ export class InventoryService {
   // activas calculado en cada lectura.
   async getAvailableQuantity(inventoryItemId: string): Promise<number> {
     const item = await this.itemDao.findById(inventoryItemId);
-    if (!item) throw new BusinessError("Item no encontrado");
+    if (!item) throw new BusinessError("Producto no encontrado");
     const reserved = await this.reservationDao.sumActiveQuantityForItem(inventoryItemId);
     return item.quantityOnHand - reserved;
   }
@@ -193,6 +222,40 @@ export class InventoryService {
     return AppDataSource.transaction((manager) => this.applyMovement(manager, input));
   }
 
+  // Lo apartado (apartados, refacciones de notas abiertas) ya no se puede
+  // prometer a nadie más. El FOR UPDATE serializa a quien aparta o vende el
+  // mismo producto: sin él, dos apartados simultáneos verían el mismo libre.
+  async assertUnreservedStock(
+    manager: EntityManager,
+    inventoryItemId: string,
+    quantity: number,
+  ): Promise<void> {
+    const tenantId = getCurrentTenantId();
+    const result = await manager.query<
+      Array<{ name: string; free: number }> | [Array<{ name: string; free: number }>, number]
+    >(
+      `SELECT i.nombre AS name,
+              i.cantidad_disponible - COALESCE((
+                SELECT SUM(r.cantidad) FROM inventory_reservations r
+                WHERE r.id_item_inventario = i.id AND r.tenant_id = i.tenant_id AND r.estado = 'active'
+              ), 0) AS free
+       FROM inventory_items i
+       WHERE i.id = $1 AND i.tenant_id = $2
+       FOR UPDATE OF i`,
+      [inventoryItemId, tenantId],
+    );
+    const [row] = isRowsTuple(result) ? result[0] : result;
+    if (!row) throw new BusinessError("No encontramos el producto en el inventario");
+    const free = Math.max(0, Number(row.free));
+    if (free < quantity) {
+      throw new BusinessError(
+        free === 0
+          ? `No hay piezas libres de "${row.name}": las que quedan ya están apartadas.`
+          : `Solo hay ${free} pieza${free === 1 ? "" : "s"} libre${free === 1 ? "" : "s"} de "${row.name}".`,
+      );
+    }
+  }
+
   // Reusable dentro de una transaccion mas grande que ya esta en curso
   // (crear una Sale o guardar los items de una RepairNote): el caller pasa
   // su propio EntityManager para que el decremento de stock, el insert del
@@ -225,7 +288,7 @@ export class InventoryService {
     const rows = isRowsTuple(result) ? result[0] : result;
     if (rows.length === 0) {
       throw new BusinessError(
-        "No se pudo registrar el movimiento: item inexistente o stock insuficiente",
+        "No hay suficiente stock de uno de los productos. Revisa las existencias e intenta de nuevo.",
       );
     }
 

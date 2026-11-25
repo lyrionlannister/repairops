@@ -35,6 +35,7 @@ export class InventoryReservationService {
   // No toca quantityOnHand -- solo dejar constancia de que esa cantidad ya
   // esta comprometida con esta linea de origen.
   async reserve(manager: EntityManager, input: ReserveInput): Promise<InventoryReservation> {
+    await this.inventoryService.assertUnreservedStock(manager, input.inventoryItemId, input.quantity);
     const tenantId = getCurrentTenantId();
     const reservation = manager.create(InventoryReservation, {
       tenantId,

@@ -11,6 +11,7 @@ export const createSaleRouter = (controller: SaleController): Router => {
   router.param("id", publicIdParam("sales"));
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", requirePermission("sales.read"), controller.getAll);
+  router.get("/stats", requirePermission("sales.read"), controller.getStats);
   router.get("/:id", requirePermission("sales.read"), controller.getById);
   router.post("/", requirePermission("sales.create"), controller.create);
   return router;

@@ -1,9 +1,10 @@
 import type { Sale } from "../types/sales";
 
 export interface SalesTableProps {
+  error?: string | null;
+  onRetry?: () => void;
   loading: boolean;
-  sales: Sale[];
-  filteredSales: Sale[];
+  hasFilters: boolean;
   pageItems: Sale[];
   page: number;
   pageSize: number;

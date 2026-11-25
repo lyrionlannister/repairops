@@ -33,7 +33,7 @@ import { Customer } from "../../../../src/commerce/customers/entities/customer.e
 import { CustomerDao } from "../../../../src/commerce/customers/daos/customer.dao.js";
 import { runWithTenant } from "../../../../src/core/tenancy/tenant-context.js";
 import { ensureFixtureTenant } from "../../../support/tenant-fixture.subscriber.js";
-import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
+import { makeDiscountCapService, makeUserRoleDao, makeAuditLogStub } from "../../../support/authz-deps.js";
 
 describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => {
   let inventoryService: InventoryService;
@@ -58,7 +58,7 @@ describe("SaleService.create: credito con limite (Fase 5, Rama Cliente)", () => 
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       localService,
       new UserDao(AppDataSource.getRepository(User)),
-      makeUserRoleDao(),
+      makeUserRoleDao(), makeAuditLogStub(),
     );
     customerDao = new CustomerDao(AppDataSource.getRepository(Customer));
     saleService = new SaleService(

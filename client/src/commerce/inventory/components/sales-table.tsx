@@ -8,9 +8,10 @@ import { formatMoney, formatDate } from "../utils/format";
 import type { SalesTableProps } from "../props/sales-table-props";
 
 export const SalesTable: FC<SalesTableProps> = ({
+  error,
+  onRetry,
   loading,
-  sales,
-  filteredSales,
+  hasFilters,
   pageItems,
   page,
   pageSize,
@@ -24,17 +25,17 @@ export const SalesTable: FC<SalesTableProps> = ({
 
   return (
     <DataTable
+      error={error}
+      onRetry={onRetry}
       loading={loading}
       loadingText="Cargando ventas..."
-      isEmpty={filteredSales.length === 0}
+      isEmpty={pageItems.length === 0}
       empty={{
         icon: <ShoppingCart />,
-        title:
-          sales.length === 0 ? "No hay ventas registradas." : "Sin resultados para la búsqueda.",
-        description:
-          sales.length === 0
-            ? "Las ventas aparecerán aquí al cobrarlas."
-            : "Prueba con otro término.",
+        title: hasFilters ? "Sin resultados para la búsqueda." : "No hay ventas registradas.",
+        description: hasFilters
+          ? "Prueba con otro cliente o folio."
+          : "Las ventas aparecerán aquí al cobrarlas.",
         action: (
           <Button
             variant="primary"

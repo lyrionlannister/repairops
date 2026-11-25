@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useSearchParams } from "react-router";
+import { useServerList } from "@common/hooks/use-server-list";
 import type { InventoryItem } from "../types/inventory";
 import type { InventoryMovementForm } from "../types/inventory-page";
 
@@ -10,19 +12,12 @@ export const emptyMovementForm: InventoryMovementForm = {
 };
 
 export const useInventoryPage = ({
-  items,
   branchId,
-  fetchAll,
   remove,
   bulkImport,
   registerMovement,
-  error,
-  loading,
-  saving,
 }: {
-  items: InventoryItem[];
   branchId: string;
-  fetchAll: () => Promise<void>;
   remove: (id: string) => Promise<boolean>;
   bulkImport: (file: File, localId: string) => Promise<{ imported: number } | null>;
   registerMovement: (
@@ -34,10 +29,10 @@ export const useInventoryPage = ({
       createdByEmployeeId?: string;
     },
   ) => Promise<boolean>;
-  error: string | null;
-  loading: boolean;
-  saving: boolean;
 }) => {
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState("");
+  const [criticalOnly, setCriticalOnly] = useState(() => searchParams.get("stock") === "critical");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -46,9 +41,13 @@ export const useInventoryPage = ({
   const [movementItem, setMovementItem] = useState<InventoryItem | null>(null);
   const [movementForm, setMovementForm] = useState<InventoryMovementForm>(emptyMovementForm);
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+  // Solo productos de la sucursal activa: vender o ajustar de otra sucursal afectaria
+  // stock que esta pantalla no muestra.
+  const list = useServerList<InventoryItem>("/inventory", {
+    search,
+    filters: { branchId: branchId || undefined, stock: criticalOnly ? "critical" : undefined },
+    errorText: "No pudimos cargar el inventario.",
+  });
 
   const notify = (message: string) => {
     setSuccessMsg(message);
@@ -57,8 +56,11 @@ export const useInventoryPage = ({
 
   const handleDelete = async (id: string) => {
     const ok = await remove(id);
-    if (ok) notify("Item eliminado.");
     setDeleteConfirmId(null);
+    if (ok) {
+      notify("Producto eliminado.");
+      await list.refetch();
+    }
   };
 
   const closeImport = () => {
@@ -72,8 +74,9 @@ export const useInventoryPage = ({
 
     const result = await bulkImport(importFile, branchId);
     if (result) {
-      notify(`Importación completada: ${result.imported} items cargados.`);
+      notify(`Importación completada: ${result.imported} productos cargados.`);
       closeImport();
+      await list.refetch();
     }
   };
 
@@ -103,14 +106,17 @@ export const useInventoryPage = ({
     if (ok) {
       notify("Movimiento registrado.");
       closeMovement();
+      await list.refetch();
     }
   };
 
   return {
-    items,
-    error,
-    loading,
-    saving,
+    list,
+    search,
+    setSearch,
+    criticalOnly,
+    setCriticalOnly,
+    hasFilters: list.hasSearch || criticalOnly,
     deleteConfirmId,
     setDeleteConfirmId,
     successMsg,

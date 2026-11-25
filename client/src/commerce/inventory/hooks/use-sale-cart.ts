@@ -21,12 +21,10 @@ export const newIdempotencyKey = () =>
 export const useSaleCart = ({
   taxRatePercent,
   isOnline,
-  inventoryItems,
   customerId,
 }: {
   taxRatePercent: number;
   isOnline: boolean;
-  inventoryItems: InventoryItem[];
   customerId: string;
 }) => {
   // El IVA no se asume: el cajero lo marca por venta.
@@ -42,9 +40,8 @@ export const useSaleCart = ({
     setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
   };
 
-  const handleItemChange = (index: number, inventoryItemId: string) => {
-    const item = inventoryItems.find((i) => i.id === inventoryItemId);
-    updateLine(index, { inventoryItemId, unitPrice: item ? String(item.salePrice) : "" });
+  const handleItemChange = (index: number, item: InventoryItem | null) => {
+    updateLine(index, { inventoryItemId: item?.id ?? "", unitPrice: item ? String(item.salePrice) : "" });
   };
 
   const addLine = () => setLines((prev) => [...prev, { ...emptyLine }]);

@@ -7,6 +7,7 @@ export type RelatedEntityType = "sale" | "repair_note" | "return" | "transfer" |
 
 @Entity("inventory_movements")
 @Index("IDX_inventory_movements_tenant", ["tenantId"])
+@Index("IDX_inventory_movements_item_created", ["inventoryItemId", "createdAt"])
 export class InventoryMovement extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

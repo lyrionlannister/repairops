@@ -2,17 +2,15 @@ import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { useToast } from "@common/hooks/use-toast";
 import { useOfflineSalesQueue } from "../hooks/use-offline-sales-queue";
-import { useBranchScopedInventory } from "../hooks/use-branch-scoped-inventory";
 import { useSaleCart } from "../hooks/use-sale-cart";
 import { useCash } from "@commerce/cash/hooks/use-cash";
 import { useLocal } from "@app-platform/local/hooks/use-local";
-import { useCustomers } from "@commerce/customers/hooks/use-customers";
+import { CustomerSelect } from "@common/components/customer-select";
 import { useBranch } from "@common/hooks/use-branch";
 import { EmployeeSelect } from "@common/components/employee-select";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-import { Select } from "@ui/select/select";
 import { Alert } from "@ui/alert/alert";
 import { PageShell } from "@common/components/page-shell/page-shell";
 import { OfflineSalesQueueBanner } from "../components/offline-sales-queue-banner";
@@ -25,13 +23,8 @@ export const QuickSalePage: React.FC = () => {
   const { showToast } = useToast();
   const [creating, setCreating] = useState(false);
   const { workingBranchId } = useBranch();
-  // Solo items de la sucursal activa -- vender de otra sucursal decrementaria
-  // stock que el cajero no puede ver ni reponer desde aqui.
-  const { items: inventoryItems, fetchAll: fetchInventory } =
-    useBranchScopedInventory(workingBranchId);
   const { session: cashSession, loading: loadingCashSession, fetchOpenSession } = useCash();
   const { local, fetchLocal } = useLocal();
-  const { customers, fetchAll: fetchCustomers } = useCustomers();
 
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -63,15 +56,12 @@ export const QuickSalePage: React.FC = () => {
   } = useSaleCart({
     taxRatePercent: taxRate,
     isOnline,
-    inventoryItems,
     customerId,
   });
 
   useEffect(() => {
-    fetchInventory();
     fetchLocal();
-    fetchCustomers();
-  }, [fetchInventory, fetchLocal, fetchCustomers]);
+  }, [fetchLocal]);
 
   useEffect(() => {
     if (workingBranchId) fetchOpenSession(workingBranchId);
@@ -123,7 +113,6 @@ export const QuickSalePage: React.FC = () => {
 
     if ("sale" in result) {
       resetForm();
-      fetchInventory();
     } else if ("queued" in result) {
       showToast({
         title: "Sin conexión",
@@ -185,17 +174,16 @@ export const QuickSalePage: React.FC = () => {
             <Label className="text-gray-500">
               Cliente registrado (requerido para vender a crédito)
             </Label>
-            <Select
+            <CustomerSelect
               value={customerId}
-              onChange={setCustomerId}
-              placeholder="Sin cliente registrado"
-              options={customers.map((c) => ({ value: c.id, label: c.name }))}
+              onChange={(id) => setCustomerId(id)}
+              placeholder="Busca un cliente (opcional)"
             />
           </div>
 
           <SaleCartLinesSection
             lines={lines}
-            inventoryItems={inventoryItems}
+            branchId={workingBranchId}
             onItemChange={handleItemChange}
             onLineChange={updateLine}
             onAddLine={addLine}

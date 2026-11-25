@@ -1,4 +1,5 @@
 import { singleton } from "tsyringe";
+import { isUniqueViolation } from "../../../core/database/unique-violation.js";
 import { Decimal } from "decimal.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { BusinessError } from "../../../core/http/business-error.js";
@@ -24,6 +25,8 @@ import { resolveCreditDueDate } from "../../customers/utils/credit-due-date.js";
 import { calculateSaleTotals } from "../../pricing/calculate-sale-totals.js";
 import { toMoney } from "../../../core/common/utils/money.js";
 import type { UserRole } from "../../../identity/auth/entities/user.entity.js";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { SaleFilters, SaleStats } from "../types/sale-page.types.js";
 import { BranchDiscountCapService } from "../../../identity/branches/services/branch-discount-cap.service.js";
 
 export interface SaleItemInput {
@@ -83,16 +86,34 @@ export class SaleService {
     private auditLog?: AuditLogService,
   ) {}
 
-  async getAll(branchId?: string | null): Promise<Sale[]> {
-    return this.saleDao.findAllOrdered(branchId);
+  async getAll(branchId?: string | null, customerId?: string): Promise<Sale[]> {
+    return this.saleDao.findAllOrdered(branchId, customerId);
+  }
+
+  async getPage(filters: SaleFilters, request: PageRequest): Promise<Page<Sale>> {
+    return this.saleDao.findPage(filters, request);
+  }
+
+  async getStats(filters: SaleFilters, currentMonthOnly: boolean): Promise<SaleStats> {
+    if (!currentMonthOnly) return this.saleDao.stats(filters);
+    const { timeZone } = await this.localService.getConfig();
+    return this.saleDao.stats({ ...filters, currentMonthIn: timeZone });
   }
 
   async getById(id: string): Promise<Sale | null> {
     return this.saleDao.findById(id);
   }
 
-  async getItems(saleId: string): Promise<SaleItem[]> {
-    return this.saleItemDao.findBySaleId(saleId);
+  async getItems(saleId: string): Promise<Array<SaleItem & { itemName: string | null }>> {
+    const items = await this.saleItemDao.findBySaleId(saleId);
+    const labels = await this.itemDao.findLabels(
+      items.filter((item) => item.lineType === "inventory_item").map((item) => item.referenceId),
+    );
+    return items.map((item) =>
+      Object.assign(item, {
+        itemName: item.lineType === "inventory_item" ? (labels.get(String(item.referenceId))?.name ?? null) : null,
+      }),
+    );
   }
 
   async getPayments(saleId: string): Promise<SalePayment[]> {
@@ -109,7 +130,7 @@ export class SaleService {
       const listItem = await this.priceListDao.findBySupplierAndModel(item.supplierId, item.name);
       if (listItem && price.equals(new Decimal(listItem.price))) return;
     }
-    throw new BusinessError("El precio unitario no coincide con el precio de venta del item");
+    throw new BusinessError("El precio no coincide con el precio de venta del producto. Recarga la página e intenta de nuevo.");
   }
 
   // Revalida el precio de cada renglón en el servidor, antes de crear la
@@ -136,7 +157,7 @@ export class SaleService {
         }
       } else {
         const inventoryItem = await this.itemDao.findById(item.referenceId);
-        if (!inventoryItem) throw new BusinessError("Item de inventario no encontrado");
+        if (!inventoryItem) throw new BusinessError("No encontramos el producto en el inventario");
         await this.assertInventoryPrice(inventoryItem, item.unitPrice);
       }
     }
@@ -178,7 +199,7 @@ export class SaleService {
   // cliente en el body se ignora (un empleado no puede atribuir ventas a otro).
   async create(data: CreateSalePayload, requestingRoles: readonly UserRole[]): Promise<Sale> {
     if (data.items.length === 0) {
-      throw new BusinessError("La venta debe tener al menos un item");
+      throw new BusinessError("La venta debe tener al menos un producto");
     }
     if (data.payments.length === 0) {
       throw new BusinessError("La venta debe tener al menos un pago");
@@ -251,9 +272,9 @@ export class SaleService {
     }
 
     const tenantId = getCurrentTenantId();
-    const saleNumber = await this.localService.consumeSaleNumber();
-
+    const replay = { hit: false };
     const savedSale = await AppDataSource.transaction(async (manager) => {
+      const saleNumber = await this.localService.consumeSaleNumber(manager);
       const sale = manager.create(Sale, {
         tenantId,
         localId: data.localId,
@@ -305,6 +326,11 @@ export class SaleService {
         const line = totals.lines[index];
 
         if (item.lineType === "inventory_item") {
+          await this.inventoryService.assertUnreservedStock(
+            manager,
+            item.referenceId,
+            item.quantity,
+          );
           await this.inventoryService.applyMovement(manager, {
             inventoryItemId: item.referenceId,
             type: "out",
@@ -328,7 +354,19 @@ export class SaleService {
       }
 
       return savedSale;
+    }).catch(async (error: unknown) => {
+      // Doble envío simultáneo con la misma clave: el segundo recibe la venta ya registrada.
+      const existing =
+        isUniqueViolation(error) && data.idempotencyKey
+          ? await this.saleDao.findByIdempotencyKey(data.idempotencyKey)
+          : null;
+      if (existing) {
+        replay.hit = true;
+        return existing;
+      }
+      throw error;
     });
+    if (replay.hit) return savedSale;
 
     await this.recordHumanPrices(savedSale.id, humanPricedLines);
     return savedSale;

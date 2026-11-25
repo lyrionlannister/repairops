@@ -52,7 +52,10 @@ function makeService(overrides: {
     { findByIdempotencyKey: vi.fn().mockResolvedValue(null) } as unknown as SaleDao,
     {} as unknown as SaleItemDao,
     { sumCreditoForCustomer: vi.fn().mockResolvedValue("0") } as unknown as SalePaymentDao,
-    { applyMovement: vi.fn().mockResolvedValue(undefined) } as unknown as InventoryService,
+    {
+      applyMovement: vi.fn().mockResolvedValue(undefined),
+      assertUnreservedStock: vi.fn().mockResolvedValue(undefined),
+    } as unknown as InventoryService,
     {
       getConfig: vi.fn().mockResolvedValue({ taxRatePercent: 0, timeZone: "America/Mexico_City" }),
       consumeSaleNumber: vi.fn().mockResolvedValue(42),
@@ -180,7 +183,7 @@ describe("SaleService.create: precio revalidado en servidor", () => {
         null,
         ACTOR,
       ),
-    ).rejects.toThrow("Item de inventario no encontrado");
+    ).rejects.toThrow("No encontramos el producto en el inventario");
   });
 
   it("rechaza un servicio cuyo precio no coincide con su base_price configurado", async () => {

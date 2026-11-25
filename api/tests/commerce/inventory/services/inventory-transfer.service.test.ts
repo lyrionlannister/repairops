@@ -110,6 +110,6 @@ describe("InventoryTransferService.create", () => {
       runWithTenant(otherTenantId, () =>
         transferService.create({ fromInventoryItemId: itemOfTenantA.id, toInventoryItemId: itemOfTenantB.id, quantity: 1 }),
       ),
-    ).rejects.toThrow("Item origen no encontrado");
+    ).rejects.toThrow("No encontramos el producto de origen");
   });
 });

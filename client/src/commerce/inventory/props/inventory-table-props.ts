@@ -1,7 +1,10 @@
 import type { InventoryItem } from "../types/inventory";
 
 export interface InventoryTableProps {
+  error?: string | null;
+  onRetry?: () => void;
   loading: boolean;
+  hasFilters: boolean;
   pageItems: InventoryItem[];
   supplierName: (supplierId: string | null) => string;
   page: number;

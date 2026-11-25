@@ -3,36 +3,72 @@ import { Request, Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { InventoryService } from "../services/inventory.service.js";
+import { LayawayService } from "../../customers/services/layaway.service.js";
 import { CreateInventoryItemDto } from "../dtos/create-inventory-item.dto.js";
 import { RegisterMovementDto } from "../dtos/register-movement.dto.js";
 import { parseInventoryImportFile } from "../utils/inventory-import-parser.js";
 import { flattenValidationErrors } from "../../../core/common/utils/validation-errors.js";
 import { BranchAccessService } from "../../../identity/branches/services/branch-access.service.js";
 import { sendError, queryString } from "../../../core/http/error-response.js";
+import { readLookupQuery, readPageQuery } from "../../../core/common/utils/page-query.js";
+import type { InventoryFilters } from "../types/inventory-page.types.js";
 
 @singleton()
 export class InventoryController {
   constructor(
     private service: InventoryService,
     private branchAccess: BranchAccessService,
+    private layawayService: LayawayService,
   ) {}
 
   getAll = async (req: Request, res: Response): Promise<void> => {
     try {
-      const branchId = await this.branchAccess.resolveReadBranch(
-        queryString(req.query["branchId"]),
-      );
-      res.status(200).json(await this.service.getAllWithAvailability(branchId));
+      const filters = await this.filtersOf(req);
+      const page = await readPageQuery(req.query);
+      // Un apartado vencido deja de reservar: se expira antes de calcular el disponible.
+      await this.layawayService.expireAllDue();
+      if (page) {
+        res.status(200).json(await this.service.getPage({ ...filters, search: page.search }, page));
+        return;
+      }
+      res.status(200).json(await this.service.getAllWithAvailability(filters.branchId));
     } catch (error) {
       sendError(res, error, 500);
     }
   };
 
+  lookup = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const filters = await this.filtersOf(req);
+      const { search, limit } = await readLookupQuery(req.query);
+      await this.layawayService.expireAllDue();
+      res.status(200).json(await this.service.lookup({ ...filters, search }, limit));
+    } catch (error) {
+      sendError(res, error, 500);
+    }
+  };
+
+  getStats = async (req: Request, res: Response): Promise<void> => {
+    try {
+      res.status(200).json(await this.service.getStats(await this.filtersOf(req)));
+    } catch (error) {
+      sendError(res, error, 500);
+    }
+  };
+
+  private async filtersOf(req: Request): Promise<InventoryFilters> {
+    return {
+      branchId: await this.branchAccess.resolveReadBranch(queryString(req.query["branchId"])),
+      supplierId: queryString(req.query["supplierId"]) || undefined,
+      criticalOnly: queryString(req.query["stock"]) === "critical",
+    };
+  }
+
   getBySku = async (req: Request, res: Response): Promise<void> => {
     try {
       const item = await this.service.getBySku(req.params["sku"] as string);
       if (!item) {
-        res.status(404).json({ error: "Item no encontrado" });
+        res.status(404).json({ error: "Producto no encontrado" });
         return;
       }
       res.status(200).json(item);
@@ -53,7 +89,7 @@ export class InventoryController {
     try {
       const item = await this.service.getById(req.params["id"] as string);
       if (!item) {
-        res.status(404).json({ error: "Item no encontrado" });
+        res.status(404).json({ error: "Producto no encontrado" });
         return;
       }
       res.status(200).json(item);
@@ -81,7 +117,7 @@ export class InventoryController {
     try {
       const item = await this.service.update(req.params["id"] as string, req.body);
       if (!item) {
-        res.status(404).json({ error: "Item no encontrado" });
+        res.status(404).json({ error: "Producto no encontrado" });
         return;
       }
       res.status(200).json(item);
@@ -94,10 +130,10 @@ export class InventoryController {
     try {
       const deleted = await this.service.delete(req.params["id"] as string);
       if (!deleted) {
-        res.status(404).json({ error: "Item no encontrado" });
+        res.status(404).json({ error: "Producto no encontrado" });
         return;
       }
-      res.status(200).json({ message: "Item eliminado" });
+      res.status(200).json({ message: "Producto eliminado" });
     } catch (error) {
       sendError(res, error, 500);
     }
@@ -105,7 +141,9 @@ export class InventoryController {
 
   getMovements = async (req: Request, res: Response): Promise<void> => {
     try {
-      res.status(200).json(await this.service.getMovements(req.params["id"] as string));
+      const id = req.params["id"] as string;
+      const page = await readPageQuery(req.query);
+      res.status(200).json(page ? await this.service.getMovementsPage(id, page) : await this.service.getMovements(id));
     } catch (error) {
       sendError(res, error, 500);
     }

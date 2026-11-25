@@ -40,7 +40,7 @@ import { BranchAccessService } from "../../../../src/identity/branches/services/
 import { BranchDao } from "../../../../src/identity/branches/daos/branch.dao.js";
 import { Branch } from "../../../../src/identity/branches/entities/branch.entity.js";
 import { setupStaff } from "../../../support/staff.js";
-import { makeDiscountCapService, makeUserRoleDao } from "../../../support/authz-deps.js";
+import { makeDiscountCapService, makeUserRoleDao, makeAuditLogStub } from "../../../support/authz-deps.js";
 
 // Integration test contra Postgres real + el router real -- un técnico no
 // opera el POS, igual criterio de módulo que cash.routes.ts.
@@ -71,7 +71,7 @@ describe("sale routes: permisos por rol (modulo POS)", () => {
       new CashMovementDao(AppDataSource.getRepository(CashMovement)),
       localService,
       new UserDao(AppDataSource.getRepository(User)),
-      makeUserRoleDao(),
+      makeUserRoleDao(), makeAuditLogStub(),
     );
     inventoryService = new InventoryService(
       new InventoryItemDao(AppDataSource.getRepository(InventoryItem)),

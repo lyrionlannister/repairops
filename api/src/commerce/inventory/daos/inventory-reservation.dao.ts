@@ -31,6 +31,18 @@ export class InventoryReservationDao extends TenantScopedDao<InventoryReservatio
     return Number(row?.total ?? 0);
   }
 
+  async sumActiveQuantityByItem(inventoryItemIds: string[]): Promise<Map<string, number>> {
+    if (inventoryItemIds.length === 0) return new Map();
+    const rows = await this.scoped()
+      .select("entity.inventoryItemId", "inventoryItemId")
+      .addSelect("SUM(entity.quantity)", "total")
+      .andWhere("entity.status = 'active'")
+      .andWhere("entity.inventoryItemId IN (:...inventoryItemIds)", { inventoryItemIds })
+      .groupBy("entity.inventoryItemId")
+      .getRawMany<{ inventoryItemId: string; total: string }>();
+    return new Map(rows.map((r) => [String(r.inventoryItemId), Number(r.total)]));
+  }
+
   // Una sola consulta agrupada para todo el tenant -- evita N+1 al listar el
   // inventario completo con su disponible (ver InventoryService.getAllWithAvailability).
   async sumActiveQuantityByItemForTenant(): Promise<Map<string, number>> {

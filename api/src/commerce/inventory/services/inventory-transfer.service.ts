@@ -1,4 +1,6 @@
 import { singleton } from "tsyringe";
+import type { Page, PageRequest } from "../../../core/common/types/page.types.js";
+import type { InventoryTransferListRow } from "../types/inventory-transfer-page.types.js";
 import AppDataSource from "../../../core/config/data-source.js";
 import { getCurrentTenantId } from "../../../core/tenancy/tenant-context.js";
 import { InventoryItemDao } from "../daos/inventory-item.dao.js";
@@ -30,6 +32,10 @@ export class InventoryTransferService {
     return this.transferDao.findAllOrdered();
   }
 
+  async getPage(request: PageRequest): Promise<Page<InventoryTransferListRow>> {
+    return this.transferDao.findPage(request);
+  }
+
   // Todo-o-nada: resuelve ambos items (tenant-scoped, 404 generico si alguno
   // no es de este tenant), valida que de verdad sean sucursales distintas, y
   // mueve el stock con el mismo ledger atomico que ya usan venta/nota/
@@ -39,17 +45,17 @@ export class InventoryTransferService {
       throw new BusinessError("La cantidad a transferir debe ser mayor a 0");
     }
     if (data.fromInventoryItemId === data.toInventoryItemId) {
-      throw new BusinessError("El item origen y destino no pueden ser el mismo");
+      throw new BusinessError("El producto de origen y el de destino no pueden ser el mismo");
     }
 
     const [fromItem, toItem] = await Promise.all([
       this.itemDao.findById(data.fromInventoryItemId),
       this.itemDao.findById(data.toInventoryItemId),
     ]);
-    if (!fromItem) throw new BusinessError("Item origen no encontrado");
-    if (!toItem) throw new BusinessError("Item destino no encontrado");
+    if (!fromItem) throw new BusinessError("No encontramos el producto de origen");
+    if (!toItem) throw new BusinessError("No encontramos el producto de destino");
     if (fromItem.localId === toItem.localId) {
-      throw new BusinessError("El item origen y destino pertenecen a la misma sucursal");
+      throw new BusinessError("El producto de origen y el de destino están en la misma sucursal");
     }
 
     const tenantId = getCurrentTenantId();

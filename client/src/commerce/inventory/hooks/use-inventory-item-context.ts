@@ -1,32 +1,28 @@
-import { useEffect, useMemo } from "react";
-import { useInventory } from "./use-inventory";
-import type { InventoryMovement } from "../types/inventory";
+import { useMemo } from "react";
+import { useApiResource } from "@common/hooks/use-api-resource";
+import type { PageResponse } from "@common/types/server-list";
+import type { InventoryItem, InventoryMovement } from "../types/inventory";
+
+const MOVEMENTS_SHOWN = 20;
 
 export const useInventoryItemContext = (itemId: string | null) => {
-  const { items, movements, fetchAll, fetchMovements } = useInventory();
-
-  useEffect(() => {
-    if (itemId !== null) fetchAll();
-  }, [itemId, fetchAll]);
-
-  useEffect(() => {
-    if (itemId !== null) fetchMovements(itemId);
-  }, [itemId, fetchMovements]);
-
-  const currentItem = useMemo(() => items.find((i) => i.id === itemId), [items, itemId]);
-
-  const sortedMovements = useMemo<InventoryMovement[]>(
-    () =>
-      [...movements].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      ),
-    [movements],
+  const id = itemId ? encodeURIComponent(itemId) : null;
+  const item = useApiResource<InventoryItem>(id && `/inventory/${id}`);
+  const movements = useApiResource<PageResponse<InventoryMovement>>(
+    id && `/inventory/${id}/movements?page=1&pageSize=${MOVEMENTS_SHOWN}`,
   );
 
+  const currentItem = item.data ?? undefined;
+
   const marginPercent = useMemo(() => {
-    if (!currentItem?.supplierId || currentItem.costPrice <= 0) return null;
-    return ((currentItem.salePrice - currentItem.costPrice) / currentItem.costPrice) * 100;
+    if (!currentItem?.supplierId || Number(currentItem.costPrice) <= 0) return null;
+    return ((Number(currentItem.salePrice) - Number(currentItem.costPrice)) / Number(currentItem.costPrice)) * 100;
   }, [currentItem]);
 
-  return { movements: sortedMovements, currentItem, marginPercent };
+  return {
+    movements: movements.data?.items ?? [],
+    movementsTotal: movements.data?.total ?? 0,
+    currentItem,
+    marginPercent,
+  };
 };

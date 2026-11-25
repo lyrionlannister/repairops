@@ -12,6 +12,8 @@ export const createInventoryRouter = (controller: InventoryController): Router =
   router.use(authMiddleware, tenantMiddleware);
   router.get("/", requirePermission("inventory.read", "inventory.lookup"), controller.getAll);
   router.post("/import", requirePermission("inventory.manage"), express.raw({ type: "*/*", limit: "10mb" }), controller.bulkImport);
+  router.get("/lookup", requirePermission("inventory.read", "inventory.lookup"), controller.lookup);
+  router.get("/stats", requirePermission("inventory.read"), controller.getStats);
   router.get("/low-stock", requirePermission("inventory.read"), controller.getLowStock);
   router.get("/by-sku/:sku", requirePermission("inventory.read", "inventory.lookup"), controller.getBySku);
   router.get("/:id", requirePermission("inventory.read", "inventory.lookup"), controller.getById);

@@ -3,12 +3,12 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@ui/button/button";
 import { Input } from "@ui/inputs/input";
 import { Label } from "@ui/inputs/label";
-import { Select } from "@ui/select/select";
+import { InventoryItemSelect } from "@commerce/inventory/components/inventory-item-select";
 import type { SaleCartLinesSectionProps } from "../props/sale-cart-lines-section-props";
 
 export const SaleCartLinesSection: FC<SaleCartLinesSectionProps> = ({
   lines,
-  inventoryItems,
+  branchId,
   onItemChange,
   onLineChange,
   onAddLine,
@@ -19,20 +19,18 @@ export const SaleCartLinesSection: FC<SaleCartLinesSectionProps> = ({
     {lines.map((line, index) => (
       <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <Select
+          <InventoryItemSelect
             value={line.inventoryItemId}
-            onChange={(value) => onItemChange(index, value)}
-            placeholder="Selecciona un producto"
-            options={inventoryItems.map((i) => ({
-              value: i.id,
-              label: `${i.name} (stock: ${i.quantityOnHand})`,
-            }))}
+            onSelect={(item) => onItemChange(index, item)}
+            branchId={branchId}
+            blockOutOfStock
           />
         </div>
         <div className="w-full sm:w-24">
           <Input
             type="number"
-            placeholder="Cant."
+            placeholder="Cantidad"
+            aria-label="Cantidad"
             value={line.quantity}
             onChange={(e) => onLineChange(index, { quantity: e.target.value })}
           />
@@ -41,6 +39,7 @@ export const SaleCartLinesSection: FC<SaleCartLinesSectionProps> = ({
           <Input
             type="number"
             placeholder="Precio"
+            aria-label="Precio unitario"
             value={line.unitPrice}
             onChange={(e) => onLineChange(index, { unitPrice: e.target.value })}
           />
@@ -49,6 +48,7 @@ export const SaleCartLinesSection: FC<SaleCartLinesSectionProps> = ({
           <button
             type="button"
             onClick={() => onRemoveLine(index)}
+            aria-label="Quitar producto"
             className="p-2.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
           >
             <Trash2 className="size-4" />

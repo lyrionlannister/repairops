@@ -9,6 +9,7 @@ import { Tenant } from "../../../core/tenancy/entities/tenant.entity.js";
 // por SKU; el backend solo valida que no sean la misma fila/sucursal.
 @Entity("inventory_transfers")
 @Index("IDX_inventory_transfers_tenant", ["tenantId"])
+@Index("IDX_inventory_transfers_tenant_created", ["tenantId", "createdAt"])
 export class InventoryTransfer extends BaseEntity {
   @Column({ type: "bigint", nullable: false, name: "tenant_id" })
   tenantId!: string;

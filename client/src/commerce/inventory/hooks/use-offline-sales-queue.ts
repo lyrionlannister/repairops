@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "@common/hooks/use-api-client";
 import type { CreateSalePayload, Sale } from "../types/sales";
 import type { QueuedSale } from "../types/offline-sales-queue";
+import { apiErrorText } from "@common/utils/api-error";
 
 const STORAGE_KEY = "repairops_offline_sales_queue";
 const COUNTER_KEY = "repairops_offline_sales_counter";
@@ -98,7 +99,7 @@ export const useOfflineSalesQueue = () => {
           });
           if (!res.ok) {
             const body = await res.json().catch(() => ({}));
-            const message = (body as { error?: string }).error ?? "Error al sincronizar";
+            const message = apiErrorText(body, "Error al sincronizar");
             current = current.map((q) =>
               q.idempotencyKey === item.idempotencyKey ? { ...q, lastError: message } : q,
             );
@@ -145,7 +146,7 @@ export const useOfflineSalesQueue = () => {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          return { error: (body as { error?: string }).error ?? "Error al registrar la venta" };
+          return { error: apiErrorText(body, "Error al registrar la venta") };
         }
         return { sale: (await res.json()) as Sale };
       } catch {
