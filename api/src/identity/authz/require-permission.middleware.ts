@@ -14,7 +14,7 @@ function guard(permissions: readonly Permission[]): PermissionGuard {
   const middleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     const granted = req.user?.permissions;
     if (!granted || !permissions.some((permission) => granted.has(permission))) {
-      res.status(403).json({ error: "No autorizado" });
+      res.status(403).json({ error: "No tienes permiso para hacer esto." });
       return;
     }
     next();

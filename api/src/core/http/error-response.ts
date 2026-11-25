@@ -20,6 +20,14 @@ const PG_ERROR_MAP: Record<string, { status: number; message: string }> = {
   },
   "23505": { status: 409, message: "Ya existe un registro con esos datos." },
   "23514": { status: 400, message: "Los datos no cumplen una regla de validación." },
+  "22001": {
+    status: 400,
+    message: "Uno de los textos es demasiado largo. Acórtalo e intenta de nuevo.",
+  },
+  "22003": { status: 400, message: "Una de las cantidades es demasiado grande." },
+  "22007": { status: 400, message: "Una de las fechas no es válida." },
+  "22008": { status: 400, message: "Una de las fechas no es válida." },
+  "22P02": { status: 400, message: "Uno de los datos tiene un formato inválido." },
 };
 
 // Único lugar donde un controlador traduce un error atrapado a una
@@ -55,7 +63,7 @@ export function sendError(
   // Errores de reglas de roles (p.ej. "Elige al menos un rol"): mensajes de
   // negocio escritos para el usuario.
   if (error instanceof UserRoleRuleError) {
-    res.status(fallbackStatus).json({ error: error.message });
+    res.status(fallbackStatus >= 500 ? 400 : fallbackStatus).json({ error: error.message });
     return;
   }
 
@@ -91,8 +99,12 @@ export function sendError(
   }
 
   // Mensaje de negocio explícito: el único `Error` plano cuyo texto se muestra.
+  // Una regla de negocio rota es culpa de la petición, nunca del servidor:
+  // varios controladores pasan 500 como fallback genérico.
   if (error instanceof BusinessError) {
-    res.status(error.status ?? fallbackStatus).json({ error: error.message });
+    res
+      .status(error.status ?? (fallbackStatus >= 500 ? 400 : fallbackStatus))
+      .json({ error: error.message });
     return;
   }
 

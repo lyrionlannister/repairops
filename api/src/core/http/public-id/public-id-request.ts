@@ -21,7 +21,7 @@ interface Reference {
 }
 
 const notFound = (table: string): PublicIdNotFoundError =>
-  new PublicIdNotFoundError(`${NOT_FOUND_LABELS.get(table) ?? "Registro"} no encontrado`);
+  new PublicIdNotFoundError(`No encontramos ${NOT_FOUND_LABELS.get(table) ?? "el registro"}.`);
 
 // El filtro de tenant va en la misma query: un public_id de otro tenant no se
 // traduce y responde el mismo 404 que uno inexistente. Las filas globales

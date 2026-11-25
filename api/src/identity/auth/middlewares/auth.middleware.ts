@@ -57,7 +57,7 @@ export const authMiddleware = (
     if (error instanceof Error && error.name === "TokenExpiredError") {
       res.status(401).json({ error: "Sesion expirada" });
     } else {
-      res.status(401).json({ error: "Token invalido" });
+      res.status(401).json({ error: "Tu sesión expiró. Vuelve a iniciar sesión." });
     }
   }
 };
